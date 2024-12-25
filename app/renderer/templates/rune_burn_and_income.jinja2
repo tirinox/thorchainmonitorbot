@@ -3,15 +3,24 @@
 {% block content %}
 
     <style>
+        .shadow-box, .indicator-box {
+            border-radius: 22px;
+            background: rgba(52, 51, 51, 0.21);
+            box-shadow: rgb(0, 0, 0, 0.5) 0 0 20px;
+        }
+
         /* Optional: Style the canvas container */
         #chart-container {
             position: absolute;
             top: 20%;
-            left: 5%;
-            right: 5%;
-            width: auto;
-            height: 55%;
-            padding: 0;
+            left: 3%;
+
+            right: 3%;
+            height: 56%;
+            {#padding: 0;#}
+            padding: 20px;
+            font-family: ThorFontLight, serif;
+            font-weight: lighter;
         }
 
         .header-box {
@@ -30,7 +39,7 @@
 
         .indicator-container {
             position: absolute;
-            bottom: 5%;
+            bottom: 3.5%;
             left: 3%;
             right: 3%;
 
@@ -38,21 +47,19 @@
             flex-direction: row;
             align-items: stretch;
             flex-wrap: nowrap;
-            justify-content: space-around;
+            justify-content: space-between;
         }
 
         .indicator-box {
             display: flex;
-            margin: 6px;
-            padding: 6px;
+            padding: 12px;
 
             background: rgba(52, 51, 51, 0.21);
             border-radius: 12px;
-            font-family: ThorFontLight;
+            font-family: ThorFontLight, serif;
             justify-content: space-between;
             flex-direction: column;
             align-items: center;
-
         }
 
         .indicator-label {
@@ -60,7 +67,8 @@
 
             font-weight: normal;
             font-size: 18px;
-            color: #a3a3a3;
+            {#color: #a3a3a3;#}
+            color: rgb(40 244 175);
             letter-spacing: 1px;
             text-transform: uppercase;
         }
@@ -69,7 +77,7 @@
             display: flex;
             font-weight: bolder;
             font-size: 24px;
-            color: #dddcdc;
+            color: #eee;
             margin-bottom: 3px;
             letter-spacing: 2px;
             text-shadow: none;
@@ -81,46 +89,18 @@
             color: #ffffff; /* Bright orange color */
             margin-bottom: 3px;
             letter-spacing: 2px;
-            text-shadow: #e4bf01 1px 0 10px;
+            text-shadow: rgba(228, 164, 1, 0.53) 1px 0 10px;
         }
 
         .burn-percent {
-            font-size: 40px;
+            padding-top: 9px;
+            font-size: 42px;
         }
 
         .fire:after {
             content: '🔥';
         }
-        .fire-1 {
-            filter: saturate(10%);
-        }
-        .fire-2 {
-            filter: saturate(20%);
-        }
-        .fire-3 {
-            filter: saturate(30%);
-        }
-        .fire-4 {
-            filter: saturate(40%);
-        }
-        .fire-5 {
-            filter: saturate(50%);
-        }
-        .fire-6 {
-            filter: saturate(60%);
-        }
-        .fire-7 {
-            filter: saturate(70%);
-        }
-        .fire-8 {
-            filter: saturate(80%);
-        }
-        .fire-9 {
-            filter: saturate(90%);
-        }
-        .fire-10 {
-            filter: saturate(100%);
-        }
+
         .fire-over {
             filter: saturate(200%);
         }
@@ -130,7 +110,7 @@
 
     <div class="header-box">
         <img class="logo" src="renderer/static/tc_logo_transparent.png?rv=1" alt="THORChain logo">
-        <div class="title">THORCHAIN ⤬ BURNED RUNE 🔥</div>
+        <div class="title">THORCHAIN 🔥 BURNED RUNE </div>
     </div>
 
     <div class="indicator-container">
@@ -143,19 +123,19 @@
         <div class="indicator-box">
             <div class="indicator-value"><span class="fire"></span>{{ "%.1f"|format(points[-1][1]) }}ᚱ</div>
             <div class="indicator-subvalue">({{ short_dollar(usd_per_rune * points[-1][1]) }})</div>
-            <div class="indicator-label">Rune burned last 24H</div>
+            <div class="indicator-label">burned last 24H</div>
         </div>
 
         <div class="indicator-box">
             <div class="indicator-value"><span class="fire"></span>{{ short_rune(prev_max_rune - curr_max_rune) }}</div>
             <div class="indicator-subvalue">({{ short_dollar((prev_max_rune - curr_max_rune) * usd_per_rune) }})</div>
-            <div class="indicator-label">Rune burned last {{ tally_days|int }} days</div>
+            <div class="indicator-label">burned last {{ tally_days|int }} days</div>
         </div>
 
         <div class="indicator-box">
             <div class="indicator-value"><span class="fire"></span> {{ short_rune(total_burned_rune) }}</div>
             <div class="indicator-subvalue">({{ short_dollar(total_burned_usd) }})</div>
-            <div class="indicator-label">Total Rune burned</div>
+            <div class="indicator-label">Total burned</div>
         </div>
 
         <div class="indicator-box">
@@ -167,7 +147,7 @@
     </div>
 
 
-    <div id="chart-container">
+    <div id="chart-container" class="shadow-box">
         <canvas id="myBarChart"></canvas>
     </div>
 
@@ -175,8 +155,8 @@
         // Get the context of the canvas element we want to select
         const ctx = document.getElementById('myBarChart').getContext('2d');
 
-        Chart.defaults.font.family = 'ThorFont'; // Set the font family for the chart
-        Chart.defaults.color = 'white'; // Set the font color for the chart
+        Chart.defaults.font.family = 'ThorFontLight'; // Set the font family for the chart
+        Chart.defaults.color = 'rgb(200, 200, 200)'; // Set the font color for the chart
 
         const runeBurnt = {{ points|safe }};
         // points are [ [x, y], [x, y], ... ]
@@ -188,8 +168,8 @@
         dateStrings = dateStrings.map(date => {
             const day = date.getDate().toString().padStart(2, '0');
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
+//            const hours = date.getHours().toString().padStart(2, '0');
+//            const minutes = date.getMinutes().toString().padStart(2, '0');
             even = !even
             return even ? `${day}.${month}` : '';
         });
@@ -221,6 +201,7 @@
                 },
 
                 responsive: true, // Make the chart responsive
+                maintainAspectRatio: false, // Maintain the aspect ratio
                 tooltips: {
                     enabled: false
                 },
@@ -254,11 +235,6 @@
                 plugins: {
                     title: {
                         display: false,
-                        text: 'Burnt Rune Chart',
-                        font: {
-                            family: 'ThorFont',
-                            size: 20,
-                        }
                     },
                     legend: {
                         display: false
@@ -270,7 +246,7 @@
         // when fonts loaded
         document.fonts.ready.then(() => {
             // Create and render the chart
-            const myBarChart = new Chart(ctx, config);
+            new Chart(ctx, config);
         });
 
     </script>
