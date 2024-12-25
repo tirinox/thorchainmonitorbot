@@ -52,8 +52,16 @@ class AlertPresenter(INotified, WithLogger):
         self.deps = deps
         self.broadcaster: Broadcaster = deps.broadcaster
         self.name_service: NameService = deps.name_service
-        self.renderer = InfographicRendererRPC(deps)
-        self.use_renderer = deps.cfg.get_pure('user_html_renderer', False)
+
+        r_cfg = deps.cfg.infographic_renderer
+
+        self.renderer = InfographicRendererRPC(
+            deps,
+            url=r_cfg.as_str('infographic_renderer_url', 'http://127.0.0.1:8404/render')
+        )
+        self.use_renderer = r_cfg.get_pure('user_html_renderer', False)
+        if self.use_renderer:
+            self.logger.info(f'Using renderer: {self.use_renderer} @ {self.renderer.url}')
 
     async def on_data(self, sender, data):
         # noinspection PyAsyncCall

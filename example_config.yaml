@@ -7,7 +7,11 @@ colorful_logs: false
 sleep_before_start: 3
 startup_step_delay: 3.0
 
-user_html_renderer: true
+
+infographic_renderer:  # (!) new
+  user_html_renderer: true
+  renderer_url: "http://renderer:8404/render"
+
 
 sentry:
   url: ""
