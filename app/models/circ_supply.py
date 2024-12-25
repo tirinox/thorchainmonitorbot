@@ -167,7 +167,7 @@ class EventRuneBurn(NamedTuple):
 
     @property
     def last_24h_burned_rune(self):
-        return self.points[-1][1] - self.points[-2][1] if len(self.points) > 1 else 0
+        return self.points[-1][1] if len(self.points) > 0 else 0
 
     @property
     def last_24h_burned_usd(self):
