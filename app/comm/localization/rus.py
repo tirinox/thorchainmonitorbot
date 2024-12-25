@@ -81,7 +81,7 @@ class RussianLocalization(BaseLocalization):
 
     @classmethod
     def _conditional_announcement(cls):
-        return cls._announcement() if hit_every('rus_tg_move', 4) else ''
+        return cls._announcement() if hit_every('rus_tg_move', 20) else ''
 
     # ---- WELCOME ----
     def help_message(self):
@@ -2109,10 +2109,9 @@ class RussianLocalization(BaseLocalization):
 
     @staticmethod
     def notification_rune_burn(e: EventRuneBurn):
-        # return f'{short_rune(e.last_24h_burned_rune)} $RUNE was burned today ({short_dollar(e.last_24h_burned_usd)}).'
         return (
             f'Сегодня сожжено {bold(pretty_rune(e.last_24h_burned_rune))} RUNE '
-            f'({bold(pretty_dollar(e.last_24h_burned_usd))}).'
+            f'({bold(pretty_dollar(e.last_24h_burned_usd))})'
         )
 
         # trend = 'Дефляция' if e.deflation_percent > 0 else 'Инфляция'

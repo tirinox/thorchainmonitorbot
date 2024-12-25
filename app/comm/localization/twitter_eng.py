@@ -1063,7 +1063,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     @staticmethod
     def notification_rune_burn(e: EventRuneBurn):
-        return f'{short_rune(e.last_24h_burned_rune)} $RUNE was burned today ({short_dollar(e.last_24h_burned_usd)}).'
+        return f'{short_rune(e.last_24h_burned_rune)} $RUNE was burned today ({short_dollar(e.last_24h_burned_usd)})'
 
         # trend = 'Deflation' if e.deflation_percent > 0 else 'Inflation'
         # return (

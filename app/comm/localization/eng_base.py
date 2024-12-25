@@ -2876,7 +2876,7 @@ class BaseLocalization(ABC):  # == English
     @staticmethod
     def notification_rune_burn(e: EventRuneBurn):
         return (f'{bold(short_rune(e.last_24h_burned_rune))} $RUNE was burned today '
-                f'({short_dollar(e.last_24h_burned_usd)}).')
+                f'({short_dollar(e.last_24h_burned_usd)})')
 
         # trend = 'Deflation' if e.deflation_percent > 0 else 'Inflation'
         # return (
