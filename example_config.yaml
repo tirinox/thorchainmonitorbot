@@ -9,7 +9,7 @@ startup_step_delay: 3.0
 
 
 infographic_renderer:  # (!) new
-  user_html_renderer: true
+  use_html_renderer: true
   renderer_url: "http://renderer:8404/render"
 
 
