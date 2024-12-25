@@ -9,10 +9,11 @@ from lib.config import Config
 from lib.date_utils import DAY
 from lib.utils import setup_logs
 from notify.channel import BoardMessage, ChannelDescriptor
+from notify.public.burn_notify import BurnNotifier
 from tools.debug.dbg_supply_graph import get_supply_pic
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
-MOCK = False
+MOCK = True
 
 
 async def twitter_post_supply(app: LpAppFramework):
@@ -38,14 +39,28 @@ async def twitter_post_price(app: LpAppFramework):
     # )
 
 
-async def main():
-    setup_logs(logging.INFO)
-    print(os.getcwd())
-    cfg = Config('../../../temp/twitter.yaml')
-    twitter_bot = TwitterBotMock(cfg) if MOCK else TwitterBot(cfg)
+async def twitter_post_burned_rune(app: LpAppFramework):
+    await app.deps.last_block_fetcher.run_once()
+    await app.deps.mimir_const_fetcher.run_once()
+    await app.deps.pool_fetcher.run_once()
+    notifier = BurnNotifier(app.deps)
+    event = await notifier.get_event()
+    photo, name = app.deps.alert_presenter.render_rune_burn_graph(event)
+    loc = app.deps.loc_man.default
+    text = loc.notification_rune_burn(event)
+    await app.deps.broadcaster.broadcast_to_all(
+        BoardMessage.make_photo(photo, caption=text, photo_file_name=name)
+    )
 
+
+async def main():
     app = LpAppFramework()
+
     async with app(brief=True):
+        print(os.getcwd())
+        cfg = Config('../../../temp/twitter.yaml')
+        twitter_bot = TwitterBotMock(cfg) if MOCK else TwitterBot(cfg)
+
         # configure
         app.deps.twitter_bot = twitter_bot
         app.deps.twitter_bot.emergency = app.deps.emergency
@@ -60,7 +75,7 @@ async def main():
         # await twitter_post_supply(app)
 
         # await twitter_bot.post('I want to make sure everything works.')
-        await twitter_post_price(app)
+        # await twitter_post_price(app)
 
 
 if __name__ == '__main__':
