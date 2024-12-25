@@ -12,25 +12,9 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), 'redis_copy_keys
 
 
 def analise_keys(src_redis, pattern):
-    cursor = 0
-    n = 0
-    i = 1
-    while True:
-        cursor, keys = src_redis.scan(cursor=cursor, match=pattern, count=1000)
-        if not keys:
-            break
-
-        if i < 100:
-            for key in keys:
-                print(f'{i: 6}: {key}')
-                i += 1
-
-        n += len(keys)
-
-        if cursor == 0:
-            break
-
-    print(f'Total keys to copy: {n}')
+    keys = src_redis.keys(pattern)
+    print(f'Total keys to copy: {len(keys)}')
+    return keys
 
 
 def copy_keys(src_redis, dst_redis, pattern):
@@ -41,48 +25,50 @@ def copy_keys(src_redis, dst_redis, pattern):
     :param dst_redis: Destination Redis connection object
     :param pattern: Key pattern to match keys to copy
     """
-    cursor = 0
-    while True:
-        cursor, keys = src_redis.scan(cursor=cursor, match=pattern, count=1000)
-        if not keys:
-            break
+    keys = src_redis.keys(pattern)
+    for key in keys:
+        value = src_redis.dump(key)
+        ttl = src_redis.ttl(key)
+        if value is not None:
+            dst_redis.restore(key, ttl if ttl > 0 else 0, value, replace=True)
+        print(f'Copied key: {key}')
 
-        for key in keys:
-            value = src_redis.dump(key)
-            ttl = src_redis.ttl(key)
-            if value is not None:
-                dst_redis.restore(key, ttl if ttl > 0 else 0, value, replace=True)
-
-        if cursor == 0:
-            break
+def get_redis(prefix):
+    host = os.getenv(f'{prefix}_REDIS_HOST')
+    port = int(os.getenv(f'{prefix}_REDIS_PORT'))
+    db = int(os.getenv(f'{prefix}_REDIS_DB'))
+    password = os.getenv(f'{prefix}_REDIS_PASSWORD')
+    r = redis.StrictRedis(
+        host=host,
+        port=port,
+        db=db,
+        password=password,
+        decode_responses=True
+    )
+    try:
+        r.ping()
+        print(f'Connected to {prefix} Redis ({host}:{port}/{db})')
+        return r
+    except Exception as e:
+        print(f'Error connecting to {prefix} Redis:', e)
+        return None
 
 
 def main():
     # Get source Redis credentials from environment variables
-    src_redis = redis.StrictRedis(
-        host=(host_scr := os.getenv('SRC_REDIS_HOST')),
-        port=(port_scr := int(os.getenv('SRC_REDIS_PORT'))),
-        db=(db_src := int(os.getenv('SRC_REDIS_DB'))),
-        password=os.getenv('SRC_REDIS_PASSWORD'),
-        decode_responses=True
-    )
-    print(src_redis.ping())
+    if not (src_redis := get_redis('SRC')):
+        return
 
     # Get destination Redis credentials from environment variables
-    dst_redis = redis.StrictRedis(
-        host=(host_dst := os.getenv('DST_REDIS_HOST')),
-        port=(port_dst := int(os.getenv('DST_REDIS_PORT'))),
-        db=(db_dst := int(os.getenv('DST_REDIS_DB'))),
-        password=os.getenv('DST_REDIS_PASSWORD'),
-        decode_responses=True
-    )
-    print(dst_redis.ping())
-
-    print(f'From {host_scr}:{port_scr}:{db_src} => '
-          f'{host_dst}:{port_dst}:{db_dst}')
+    if not (dst_redis := get_redis('DST')):
+        return
 
     # Pattern to match keys
     key_pattern = sys.argv[1] if len(sys.argv) == 2 else input('Enter key pattern:')
+    key_pattern = key_pattern.strip()
+    if not key_pattern:
+        print('Invalid key pattern.')
+        return
 
     analise_keys(src_redis, key_pattern)
 
