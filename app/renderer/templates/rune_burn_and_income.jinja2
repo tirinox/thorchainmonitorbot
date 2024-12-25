@@ -155,6 +155,10 @@
         // Get the context of the canvas element we want to select
         const ctx = document.getElementById('myBarChart').getContext('2d');
 
+        const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+        gradient.addColorStop(1, '#33FF99'); // Top color
+        gradient.addColorStop(0, '#00CCFF'); // Bottom color
+
         Chart.defaults.font.family = 'ThorFontLight'; // Set the font family for the chart
         Chart.defaults.color = 'rgb(200, 200, 200)'; // Set the font color for the chart
 
@@ -182,7 +186,8 @@
             datasets: [{
                 label: '',
                 data: values, // Y-axis data
-                backgroundColor: '#33FF99', // Bar color
+                {#backgroundColor: '#33FF99', // Bar color#}
+                backgroundColor: gradient,
                 borderWidth: 2,
                 borderRadius: Number.MAX_VALUE,
                 borderSkipped: false,
