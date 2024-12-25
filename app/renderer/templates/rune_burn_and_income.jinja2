@@ -169,13 +169,21 @@
         console.log(runeBurnt);
         // format dates to DD.MM HH:MM
         let even = false
+        let prevDate = null
         dateStrings = dateStrings.map(date => {
             const day = date.getDate().toString().padStart(2, '0');
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
 //            const hours = date.getHours().toString().padStart(2, '0');
 //            const minutes = date.getMinutes().toString().padStart(2, '0');
             even = !even
-            return even ? `${day}.${month}` : '';
+            const label = `${day}.${month}`
+            if(prevDate === label) {
+                return ''
+            } else {
+                prevDate = label
+                return label
+            }
+            
         });
 
         const values = runeBurnt.map(point => point[1]);
