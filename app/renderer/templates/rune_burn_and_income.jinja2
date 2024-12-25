@@ -121,8 +121,8 @@
         </div>
 
         <div class="indicator-box">
-            <div class="indicator-value"><span class="fire"></span>{{ "%.1f"|format(points[-1][1]) }}ᚱ</div>
-            <div class="indicator-subvalue">({{ short_dollar(usd_per_rune * points[-1][1]) }})</div>
+            <div class="indicator-value"><span class="fire"></span>{{ "%.1f"|format(last_24h_burned_rune) }}ᚱ</div>
+            <div class="indicator-subvalue">({{ short_dollar(last_24h_burned_usd) }})</div>
             <div class="indicator-label">burned last 24H</div>
         </div>
 
@@ -163,28 +163,29 @@
         Chart.defaults.color = 'rgb(200, 200, 200)'; // Set the font color for the chart
 
         const runeBurnt = {{ points|safe }};
+        console.log(runeBurnt);
+
         // points are [ [x, y], [x, y], ... ]
 
         let dateStrings = runeBurnt.map(point => new Date(point[0] * 1e3));
-        console.log(runeBurnt);
+        console.log(dateStrings)
+
         // format dates to DD.MM HH:MM
-        let even = false
         let prevDate = null
-        dateStrings = dateStrings.map(date => {
+        dateStrings = dateStrings.reverse().map(date => {
             const day = date.getDate().toString().padStart(2, '0');
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
 //            const hours = date.getHours().toString().padStart(2, '0');
-//            const minutes = date.getMinutes().toString().padStart(2, '0');
-            even = !even
+//            const minutes = date.getMinutes().toString().padStart(2, '0');even
             const label = `${day}.${month}`
             if(prevDate === label) {
-                return ''
+                return ' '
             } else {
                 prevDate = label
                 return label
             }
-            
-        });
+        }).reverse()
+        console.log(dateStrings)
 
         const values = runeBurnt.map(point => point[1]);
 

@@ -135,6 +135,7 @@ class EventRuneBurn(NamedTuple):
     start_ts: int = 0
     tally_days: int = 7
     circulating_suppy: float = 1
+    last_24h_burned_rune: float = 0
 
     @property
     def total_burned_rune(self):
@@ -164,10 +165,6 @@ class EventRuneBurn(NamedTuple):
     def deflation_percent(self):
         pct = calculate_yearly_growth_from_values(self.curr_max_rune, self.prev_max_rune, self.tally_days)
         return -pct
-
-    @property
-    def last_24h_burned_rune(self):
-        return self.points[-1][1] if len(self.points) > 0 else 0
 
     @property
     def last_24h_burned_usd(self):

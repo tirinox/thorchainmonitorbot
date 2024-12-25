@@ -33,6 +33,7 @@ def copy_keys(src_redis, dst_redis, pattern):
             dst_redis.restore(key, ttl if ttl > 0 else 0, value, replace=True)
         print(f'Copied key: {key}')
 
+
 def get_redis(prefix):
     host = os.getenv(f'{prefix}_REDIS_HOST')
     port = int(os.getenv(f'{prefix}_REDIS_PORT'))

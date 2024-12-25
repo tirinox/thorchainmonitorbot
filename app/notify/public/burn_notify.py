@@ -37,8 +37,8 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
             self.logger.error('Mimir constants are not loaded yet!')
             return
 
-        max_supply = mimir[MIMIR_KEY_MAX_RUNE_SUPPLY]
-        if not max_supply:
+        curr_max_supply_8 = mimir[MIMIR_KEY_MAX_RUNE_SUPPLY]
+        if not curr_max_supply_8:
             self.logger.error(f'Max supply ({MIMIR_KEY_MAX_RUNE_SUPPLY}) is not set!')
             return
 
@@ -47,40 +47,59 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
             self.logger.error(f'System income burn rate {MIMIR_KEY_SYSTEM_INCOME_BURN_RATE} is not set!')
             return
 
-        # last_supply = await self.get_last_supply_float()
-        last_supply = await self.get_supply_time_ago(self.tally_period)
+        # save current max supply (as int, no decimal)
+        await self.ts.add(max_supply=curr_max_supply_8)
+
+        # then convert
+        curr_max_supply = thor_to_float(curr_max_supply_8)
+
+        # get previous max supply (from tally_period days ago)
+        prev_supply = await self.get_supply_time_ago(self.tally_period)
+        prev_supply = thor_to_float(prev_supply)
+
+        # get 24h burned rune as sum of last 24h deltas
+        supply_24h_ago = await self.get_supply_time_ago(DAY)
+        supply_24h_ago = thor_to_float(supply_24h_ago)
+        last_24h_burned_rune = max(0.0, supply_24h_ago - curr_max_supply)
 
         supply_info = await self.deps.rune_market_fetcher.get_full_supply_info()
 
-        await self.ts.add(max_supply=max_supply)
+        all_points = await self.get_last_supply_dataframe()
+        all_points_resampled = await self.resample(all_points)
+        points_deltas = self._extract_only_burned_rune_delta(all_points_resampled)
 
-        points = await self.get_points_for_chart()
-        points = self._extract_only_burned_rune_delta(pd.DataFrame(points))
         return EventRuneBurn(
-            curr_max_rune=thor_to_float(max_supply),
-            prev_max_rune=thor_to_float(last_supply),
-            points=points,
+            curr_max_rune=curr_max_supply,
+            prev_max_rune=prev_supply,
+            points=points_deltas,
             usd_per_rune=self.deps.price_holder.usd_per_rune,
             system_income_burn_percent=system_income_burn_bp / THOR_BASIS_POINT_MAX * 100.0,
             period_seconds=self.cd.cooldown,
             start_ts=ADR17_TIMESTAMP,
             tally_days=self.tally_period / DAY,
             circulating_suppy=supply_info.circulating,
+            last_24h_burned_rune=last_24h_burned_rune,
         )
 
-    async def get_points_for_chart(self):
-        points = await self.ts.get_last_points(self.tally_period)
-
-        df = ts_event_points_to_pandas(points, shift_time=False)
+    async def get_last_supply_dataframe(self):
+        all_points = await self.ts.get_last_points(self.tally_period)
+        df = ts_event_points_to_pandas(all_points, shift_time=False)
         df["t"] = pd.to_datetime(df["t"], unit='s')
         df['max_supply'] = df['max_supply'].apply(thor_to_float)
-        df['max_supply_delta'] = -df['max_supply'].diff().dropna()
-        df = df.resample('4h', on='t').sum()
+        df['max_supply_delta'] = -df['max_supply'].diff().fillna(0)
+        return df
 
+    @staticmethod
+    async def resample(df, period='4h'):
+        df = df.resample(period, on='t').sum()
         return df
 
     @staticmethod
     def _extract_only_burned_rune_delta(df: pd.DataFrame):
+        """
+        Extract only burned rune delta from the dataframe
+        Returns list of tuples (timestamp, burned_rune_delta)
+        """
         row = df['max_supply_delta']
         timestamps = row.index
         return [
