@@ -2109,17 +2109,23 @@ class RussianLocalization(BaseLocalization):
 
     @staticmethod
     def notification_rune_burn(e: EventRuneBurn):
-        trend = 'Дефляция' if e.deflation_percent > 0 else 'Инфляция'
+        # return f'{short_rune(e.last_24h_burned_rune)} $RUNE was burned today ({short_dollar(e.last_24h_burned_usd)}).'
         return (
-            f'🔥 <b>Сожжено рун</b>\n\n'
-            f'За последние {int(e.tally_days)} дней сожжено: {bold(pretty_rune(e.delta_rune))} '
-            f'({ital(pretty_dollar(e.delta_usd))})\n'
-            f'Всего сожжено: {bold(pretty_rune(e.total_burned_rune))} '
-            f'({ital(pretty_dollar(e.total_burned_usd))})\n'
-            f'Сжигается {bold(pretty_percent(e.system_income_burn_percent, signed=False))} от дохода системы, '
-            f'примерно {ital(pretty_rune(e.yearly_burn_prediction))} рун будет сожжено за год.\n'
-            f'{trend} составляет {bold(pretty_percent(e.deflation_percent, signed=False))}.'
+            f'Сегодня сожжено {bold(pretty_rune(e.last_24h_burned_rune))} RUNE '
+            f'({bold(pretty_dollar(e.last_24h_burned_usd))}).'
         )
+
+        # trend = 'Дефляция' if e.deflation_percent > 0 else 'Инфляция'
+        # return (
+        #     f'🔥 <b>Сожжено рун</b>\n\n'
+        #     f'За последние {int(e.tally_days)} дней сожжено: {bold(pretty_rune(e.delta_rune))} '
+        #     f'({ital(pretty_dollar(e.delta_usd))})\n'
+        #     f'Всего сожжено: {bold(pretty_rune(e.total_burned_rune))} '
+        #     f'({ital(pretty_dollar(e.total_burned_usd))})\n'
+        #     f'Сжигается {bold(pretty_percent(e.system_income_burn_percent, signed=False))} от дохода системы, '
+        #     f'примерно {ital(pretty_rune(e.yearly_burn_prediction))} рун будет сожжено за год.\n'
+        #     f'{trend} составляет {bold(pretty_percent(e.deflation_percent, signed=False))}.'
+        # )
 
     # ------ Bond providers alerts ------
 

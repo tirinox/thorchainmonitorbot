@@ -402,7 +402,7 @@ class MetricsDialog(BaseDialog):
             return
 
         text = self.loc.notification_rune_burn(event)
-        photo, photo_name = await rune_burn_graph(event.points, self.loc, days=7)
+        photo, photo_name = await self.deps.alert_presenter.render_rune_burn_graph(self.loc, event)
         await message.answer_photo(img_to_bio(photo, photo_name), caption=text, disable_notification=True)
 
     # ---- Ask for duration (universal)

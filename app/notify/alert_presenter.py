@@ -382,19 +382,22 @@ class AlertPresenter(INotified, WithLogger):
     async def _handle_price_divergence(self, data: AlertPriceDiverge):
         await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_price_divergence, data)
 
+    async def render_rune_burn_graph(self, loc, data: EventRuneBurn):
+        if self.use_renderer:
+            # todo: share EventRuneBurn between the components, use Pydantic
+            photo = await self.renderer.render('rune_burn_and_income.jinja2', namedtuple_to_dict(data))
+            photo_name = 'rune_burnt.png'
+        else:
+            # old style
+            photo, photo_name = await rune_burn_graph(data.points, loc, days=data.tally_days)
+        return photo, photo_name
+
     async def _handle_rune_burn(self, data: EventRuneBurn):
         async def message_gen(loc: BaseLocalization):
             text = loc.notification_rune_burn(data)
-
-            if self.use_renderer:
-                # todo: share EventRuneBurn between the components, use Pydantic
-                photo = await self.renderer.render('rune_burn_and_income.jinja2', namedtuple_to_dict(data))
-            else:
-                # old style
-                photo, photo_name = await rune_burn_graph(data.points, loc, days=data.tally_days)
-
+            photo, photo_name = await self.render_rune_burn_graph(loc, data)
             if photo is not None:
-                return BoardMessage.make_photo(photo, text, 'rune_burnt.png')
+                return BoardMessage.make_photo(photo, text, photo_name)
             else:
                 return text
 

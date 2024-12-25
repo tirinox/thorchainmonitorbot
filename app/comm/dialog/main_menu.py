@@ -175,7 +175,7 @@ class MainMenuDialog(BaseDialog):
     async def cmd_trade_acc_stats(self, message: Message):
         await self.build_metrics_dialog().show_trade_acc_stats(message)
 
-    @message_handler(commands='runeburn', state='*')
+    @message_handler(commands='burntrune,burnedrune,burn', state='*')
     async def cmd_rune_burn(self, message: Message):
         await self.build_metrics_dialog().show_rune_burned(message)
 

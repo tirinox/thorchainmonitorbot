@@ -164,3 +164,11 @@ class EventRuneBurn(NamedTuple):
     def deflation_percent(self):
         pct = calculate_yearly_growth_from_values(self.curr_max_rune, self.prev_max_rune, self.tally_days)
         return -pct
+
+    @property
+    def last_24h_burned_rune(self):
+        return self.points[-1][1] - self.points[-2][1] if len(self.points) > 1 else 0
+
+    @property
+    def last_24h_burned_usd(self):
+        return self.last_24h_burned_rune * self.usd_per_rune

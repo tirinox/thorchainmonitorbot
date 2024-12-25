@@ -1063,14 +1063,16 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     @staticmethod
     def notification_rune_burn(e: EventRuneBurn):
-        trend = 'Deflation' if e.deflation_percent > 0 else 'Inflation'
-        return (
-            f'🔥 Rune burned\n\n'
-            f'Last {int(e.tally_days)} days burned: {pretty_rune(e.delta_rune)} '
-            f'({pretty_dollar(e.delta_usd)})\n'
-            f'Total burned: {pretty_rune(e.total_burned_rune)} '
-            f'({pretty_dollar(e.total_burned_usd)})\n'
-            f"Burning {pretty_percent(e.system_income_burn_percent, signed=False)} of the system's income, "
-            f"approximately {pretty_rune(e.yearly_burn_prediction)} Runes will be burned in a year.\n"
-            f"{trend} is {pretty_percent(e.deflation_percent, signed=False)}."
-        )
+        return f'{short_rune(e.last_24h_burned_rune)} $RUNE was burned today ({short_dollar(e.last_24h_burned_usd)}).'
+
+        # trend = 'Deflation' if e.deflation_percent > 0 else 'Inflation'
+        # return (
+        #     f'🔥 Rune burned\n\n'
+        #     f'Last {int(e.tally_days)} days burned: {pretty_rune(e.delta_rune)} '
+        #     f'({pretty_dollar(e.delta_usd)})\n'
+        #     f'Total burned: {pretty_rune(e.total_burned_rune)} '
+        #     f'({pretty_dollar(e.total_burned_usd)})\n'
+        #     f"Burning {pretty_percent(e.system_income_burn_percent, signed=False)} of the system's income, "
+        #     f"approximately {pretty_rune(e.yearly_burn_prediction)} Runes will be burned in a year.\n"
+        #     f"{trend} is {pretty_percent(e.deflation_percent, signed=False)}."
+        # )

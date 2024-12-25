@@ -108,7 +108,7 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
             max_supply = await self.get_supply_at_block(block)
             await self.ts.add_ts(ts, max_supply=max_supply)
 
-            print(f"block: {block}, ts: {ts}, max_supply: {max_supply}")
+            self.logger.info(f"block: {block}, ts: {ts}, max_supply: {max_supply}")
 
             block += block_step
             ts += period
