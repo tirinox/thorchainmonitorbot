@@ -1,5 +1,5 @@
 import asyncio
-from typing import List
+from typing import List, Optional
 
 from jobs.fetch.base import BaseFetcher
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
@@ -78,9 +78,18 @@ class SaversStatsFetcher(BaseFetcher):
         saver_pools = {}
 
         for pool in all_saver_pools:
-            savers_history: MidgardSaversHistory = await self.deps.midgard_connector.query_savers_history(
-                pool.asset, count=9, interval='day'
-            )
+            savers_history: Optional[MidgardSaversHistory] = None
+            for _ in range(3):
+                savers_history = await self.deps.midgard_connector.query_savers_history(
+                    pool.asset, count=9, interval='day'
+                )
+                if savers_history is not None:
+                    break
+                else:
+                    self.logger.warning(f'Failed to fetch savers history for {pool.asset}')
+            if not savers_history:
+                self.logger.error(f'Failed to fetch savers history for {pool.asset}!')
+                continue
 
             synth_cap = 2.0 * mimir_max_synth_per_pool_depth * pool.balance_asset
             synth_supply = supplies.get(pool.asset, 0)
