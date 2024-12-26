@@ -17,8 +17,8 @@
 
         .route-box {
             position: absolute;
-            left: 10%;
-            right: 10%;
+            left: 15%;
+            right: 15%;
             top: 30%;
             height: 30%;
             display: flex;
@@ -33,9 +33,13 @@
         }
 
         .circle-tc-logo {
-            width: 120px;
-            margin: 10px;
+            width: 154px;
+            padding: 13px;
             filter: drop-shadow(6px 6px 12px rgba(0, 213, 213, 0.51)) drop-shadow(-6px -6px 12px rgba(3, 243, 150, 0.51));
+        }
+
+        .affiliate-logo {
+            width: 120px;
         }
 
         .arrow-lr {
@@ -50,12 +54,37 @@
 
         .asset-part {
             margin-top: 12px;
-            display: flex;
+
             font-family: ThorFontLight, serif;
             font-weight: bolder;
             font-size: 30px;
-            justify-content: center;
-            align-content: center;
+
+            position: absolute;
+            top: 80%;
+
+            text-align: center;
+
+        }
+
+        .arrow-down-holder {
+            position: absolute;
+            margin-top: 165px;
+            width: 154px;
+            text-align: center;
+        }
+
+        .arrow-down {
+            width: 24px;
+            margin-bottom: 10px;
+        }
+
+        .aff-fee {
+            position: absolute;
+            top: 32px;
+            left: 100px;
+            font-family: ThorFontLight;
+            font-weight: 300;
+            font-size: 32px;
         }
 
 
@@ -63,7 +92,7 @@
 
     <div class="header-box">
         <img class="logo" src="renderer/static/tc_logo_transparent.png?rv=1" alt="THORChain logo">
-        <div class="title">THORCHAIN → STREAMING SWAP</div>
+        <div class="title">THORCHAIN ⤬ STREAMING SWAP</div>
     </div>
 
     <div class="foo">
@@ -73,10 +102,11 @@
             <div id="source_logo" class="logo-holder">
                 <div class="logo-part">
                     <img src="renderer/logo/{{ source_asset }}.png" alt="Source asset logo" class="asset-logo shadow">
+                    <div class="asset-part">
+                        {{ source_asset }}
+                    </div>
                 </div>
-                <div class="asset-part">
-                    {{ source_asset }}
-                </div>
+
             </div>
 
             <div class="line-box">
@@ -85,24 +115,36 @@
 
             <div class="logo-holder">
                 <img class="circle-tc-logo" src="renderer/static/tc_logo_circle.png?rv=1" alt="THORChain logo">
+
+                <div class="arrow-down-holder">
+                    <div>
+                        <img src="renderer/static/arrow1-down.png" alt="Arrow down" class="shadow arrow-down">
+                        <div class="aff-fee">
+                            {{ "%.1f"|format(affiliate_fee) }}%
+                        </div>
+                    </div>
+
+                    <img class="affiliate-logo" src="renderer/logo/unknown.png?rv=1" alt="Affiliate logo">
+                </div>
+
             </div>
 
             <div class="line-box">
                 <div>
                     <img src="renderer/static/arrow1.png" alt="Arrow right" class="arrow-lr shadow">
                 </div>
-
             </div>
 
             <div id="dest_logo" class="logo-holder">
                 <div class="logo-part">
                     <img src="renderer/logo/{{ destination_asset }}.png" alt="Destination asset logo"
                          class="asset-logo shadow">
+                    <div class="asset-part">
+                        {{ destination_asset }}
+                    </div>
                 </div>
 
-                <div class="asset-part">
-                    {{ destination_asset }}
-                </div>
+
             </div>
 
 
