@@ -1,0 +1,118 @@
+{% extends "base.jinja2" %}
+
+{% block content %}
+
+    {% include "_tx_helpers.jinja2" %}
+
+    <style>
+
+        .line-box {
+            display: flex;
+
+        }
+
+        .foo {
+            padding: 30px;
+        }
+
+        .route-box {
+            position: absolute;
+            left: 10%;
+            right: 10%;
+            top: 30%;
+            height: 30%;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-holder {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .circle-tc-logo {
+            width: 120px;
+            margin: 10px;
+            filter: drop-shadow(6px 6px 12px rgba(0, 213, 213, 0.51)) drop-shadow(-6px -6px 12px rgba(3, 243, 150, 0.51));
+        }
+
+        .arrow-lr {
+            width: 180px;
+        }
+
+        .logo-part {
+            display: flex;
+            justify-content: center;
+            align-content: center;
+        }
+
+        .asset-part {
+            margin-top: 12px;
+            display: flex;
+            font-family: ThorFontLight, serif;
+            font-weight: bolder;
+            font-size: 30px;
+            justify-content: center;
+            align-content: center;
+        }
+
+
+    </style>
+
+    <div class="header-box">
+        <img class="logo" src="renderer/static/tc_logo_transparent.png?rv=1" alt="THORChain logo">
+        <div class="title">THORCHAIN → STREAMING SWAP</div>
+    </div>
+
+    <div class="foo">
+
+        <div class="route-box">
+
+            <div id="source_logo" class="logo-holder">
+                <div class="logo-part">
+                    <img src="renderer/logo/{{ source_asset }}.png" alt="Source asset logo" class="asset-logo shadow">
+                </div>
+                <div class="asset-part">
+                    {{ source_asset }}
+                </div>
+            </div>
+
+            <div class="line-box">
+                <img src="renderer/static/arrow1.png" alt="Arrow right" class="arrow-lr">
+            </div>
+
+            <div class="logo-holder">
+                <img class="circle-tc-logo" src="renderer/static/tc_logo_circle.png?rv=1" alt="THORChain logo">
+            </div>
+
+            <div class="line-box">
+                <div>
+                    <img src="renderer/static/arrow1.png" alt="Arrow right" class="arrow-lr shadow">
+                </div>
+
+            </div>
+
+            <div id="dest_logo" class="logo-holder">
+                <div class="logo-part">
+                    <img src="renderer/logo/{{ destination_asset }}.png" alt="Destination asset logo"
+                         class="asset-logo shadow">
+                </div>
+
+                <div class="asset-part">
+                    {{ destination_asset }}
+                </div>
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+    <script>
+
+    </script>
+
+{% endblock %}

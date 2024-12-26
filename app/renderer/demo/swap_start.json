@@ -1,0 +1,22 @@
+{
+  "template_name": "swap_start.jinja2",
+  "parameters": {
+    "user_name": "John Doe",
+    "source_address": "0x1234567890abcdef4567890abcdef1234567890",
+    "destination_address": "3BvDZy1Y5J8Q1hj5t7Pv1J8Q1hj5t7Pv1",
+    "source_asset": "ETH.ETH",
+    "destination_asset": "BTC.BTC",
+    "source_amount": 30,
+    "volume_usd": 9303345,
+    "affiliate": "t",
+    "affiliate_name": "THORSwap",
+    "affiliate_fee": 0.5,
+
+    "swap_steps": 100,
+    "swap_period_blocks": 5,
+    "total_estimated_time_sec": 4242,
+    
+    "_width": 1200,
+    "_height": 800
+  }
+}

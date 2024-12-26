@@ -1,0 +1,35 @@
+<style>
+    :root {
+        --arrow-width: 220px; /* Total width of the arrow */
+        --line-height: 4px;  /* Height of the line */
+        --point-size: 20px;   /* Half of the triangle's height */
+    }
+
+    .arrow {
+        width: var(--arrow-width);
+    }
+
+    .line {
+        margin-top: calc(var(--point-size) - var(--line-height) / 2);
+        width: calc(var(--arrow-width) - var(--point-size) * 2);
+        background: white;
+        height: var(--line-height);
+        float: left;
+    }
+
+    .point {
+        width: 0;
+        height: 0;
+        border-top: var(--point-size) solid transparent;
+        border-bottom: var(--point-size) solid transparent;
+        border-left: calc(var(--point-size) * 2) solid white;
+        float: right;
+    }
+
+    .asset-logo {
+        width: 120px;
+        height: 120px;
+        padding: 0;
+    }
+
+</style>
