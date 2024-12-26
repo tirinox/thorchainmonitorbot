@@ -41,7 +41,7 @@ renderer = Renderer(templates_dir=TEMPLATES_DIR, device_scale_factor=DEVICE_SCAL
 
 # Initialize FastAPI with Lifespan
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_: FastAPI):
     # Initialize Renderer
     global renderer
 
@@ -66,6 +66,8 @@ app = FastAPI(title="HTML to PNG Renderer", lifespan=lifespan)
 # Mount the static directory
 app.mount("/static", StaticFiles(directory="renderer/static"), name="static")
 
+app.mount("/logo", StaticFiles(directory="data/asset_logo"), name="asset_logo")
+
 
 async def render_html_to_png(browser, html_content, w=1280, h=720):
     start = time.monotonic()
@@ -87,7 +89,6 @@ async def render_full_pipeline(template_name, parameters):
 
     # Render the template
     try:
-        # rendered_html = renderer.render_template(template_name, parameters, replace_base_url=LOC_HOST_BASE)
         rendered_html = renderer.render_template(template_name, parameters)
     except TemplateNotFound:
         return Response(status_code=404, content=f"Template '{template_name}' not found.")
