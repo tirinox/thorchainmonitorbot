@@ -3,6 +3,7 @@ import os
 import signal
 import sys
 import time
+import traceback
 from contextlib import asynccontextmanager
 from typing import Dict
 
@@ -10,6 +11,7 @@ from fastapi import FastAPI, Response, Request
 from fastapi.staticfiles import StaticFiles
 from jinja2 import TemplateNotFound
 from pydantic import BaseModel, Field
+from starlette.responses import JSONResponse
 
 from .demo import demo_template_parameters, available_demo_templates
 from .renderer import Renderer
@@ -142,6 +144,17 @@ async def render_demo_template(name: str, req: Request):
         return Response(status_code=404,
                         content=f"Demo template '{name}' not found. Available templates: {available_demo_templates()}")
     return await render_full_pipeline(template_name, parameters)
+
+
+@app.exception_handler(Exception)
+async def unicorn_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=418,
+        content={
+            "message": f"Oops! {exc!r} did something. There goes a rainbow...",
+            "detail": traceback.format_exc().split("\n")
+        },
+    )
 
 
 def handle_shutdown(sig, frame):
