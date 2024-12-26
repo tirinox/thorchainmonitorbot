@@ -523,7 +523,7 @@ class App(WithLogger):
         if d.cfg.get('supply.enabled', True):
             supply_notifier = SupplyNotifier(d)
             d.rune_market_fetcher.add_subscriber(supply_notifier)
-            if not d.rune_market_fetcher in tasks:
+            if d.rune_market_fetcher not in tasks:
                 tasks.append(d.rune_market_fetcher)
             supply_notifier.add_subscriber(d.alert_presenter)
 
