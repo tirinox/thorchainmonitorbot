@@ -125,6 +125,9 @@ class RuneMarketInfoFetcher(BaseFetcher):
         )
         self.logger.info(result)
         result.pools = price_holder.pool_info_map
+        if not result.pools:
+            result.pools = await self.deps.pool_fetcher.fetch()
+
         return result
 
     @a_result_cached(RUNE_MARKET_INFO_CACHE_TIME)
