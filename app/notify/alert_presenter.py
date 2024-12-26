@@ -348,10 +348,10 @@ class AlertPresenter(INotified, WithLogger):
         async def supply_pic_gen(loc: BaseLocalization):
             gen = SupplyPictureGenerator(loc, market_info.supply_info, self.deps.net_stats)
             pic, pic_name = await gen.get_picture()
-            return BoardMessage.make_photo(pic, loc.SUPPLY_PIC_CAPTION, pic_name)
+            text = loc.text_metrics_supply(market_info)
+            # text = loc.SUPPLY_PIC_CAPTION
+            return BoardMessage.make_photo(pic, text, pic_name)
 
-        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.text_metrics_supply,
-                                                     market_info)
         await self.deps.broadcaster.broadcast_to_all(supply_pic_gen)
 
     async def _handle_version_upgrade_progress(self, data: AlertVersionUpgradeProgress):

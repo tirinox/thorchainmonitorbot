@@ -328,12 +328,10 @@ class MetricsDialog(BaseDialog):
 
         text = self.loc.text_metrics_supply(market_info)
 
-        await message.answer(text, disable_notification=True)
-
         pic_gen = SupplyPictureGenerator(self.loc, market_info.supply_info, self.deps.net_stats)
         pic, pic_name = await pic_gen.get_picture()
 
-        await message.answer_photo(img_to_bio(pic, pic_name), disable_notification=True)
+        await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
 
     async def show_dex_aggr(self, message: Message, period=DAY):
         await self.start_typing(message)

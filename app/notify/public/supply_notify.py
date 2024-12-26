@@ -14,6 +14,14 @@ class SupplyNotifier(INotified, WithDelegates, WithLogger):
         self._cd = Cooldown(self.deps.db, 'SupplyNotifyPublic', cd_period)
 
     async def on_data(self, sender, market_info: RuneMarketInfo):
+        if not market_info or not (supply := market_info.supply_info):
+            self.logger.error(f'Market Info is incomplete: {market_info = }. Ignoring!')
+            return
+
+        if not supply.bonded or not supply.pooled:
+            self.logger.error(f'Supply Info is incomplete: {supply.pooled = }, {supply.bonded = }. Ignoring!')
+            return
+
         if await self._cd.can_do():
-            await self._cd.do()
             await self.pass_data_to_listeners(market_info)
+            await self._cd.do()
