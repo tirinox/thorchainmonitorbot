@@ -1,0 +1,78 @@
+<style>
+    .affiliate-logo {
+        width: 120px;
+    }
+
+    .affiliate-name {
+        margin-top: 10px;
+        font-size: 24px;
+        width: 100%;
+        text-align: center;
+    }
+</style>
+
+{% if affiliate_name %}
+    <img src="renderer/logo/unknown.png?rv=1" alt="{{ affiliate_name }} logo" class="affiliate-logo">
+    <div class="affiliate-name">{{ affiliate_name }}</div>
+{% else %}
+    {% include "components/no-aff-logo.jinja2" %}
+{% endif %}
+
+<script>
+    const affiliateName = "{{ affiliate_name }}".toLowerCase();
+
+    const nameToCode = {
+        'trust wallet': 'trust',
+        'trustwallet': 'trust',
+        'trust': '',
+        'thorswap': '',
+        'asgardex': '',
+        'babylonswap': '',
+        'bitget': '',
+        'cacaoswap': '',
+        'cakewallet': '',
+        'coinbot': '',
+        'ctrl': '',
+        'decentralfi': '',
+        'edgewallet': '',
+        'eldorito': '',
+        'ethos': '',
+        'gemwallet': '',
+        'giddy': '',
+        'instaswap': '',
+
+        'ledgerlive': '',
+        'ledger': 'ledgerlive',
+        'll': 'ledgerlive',
+        'lends': '',
+        'lifi': '',
+        'okx': '',
+        'onekey': '',
+        'rango': '',
+        'shapeshift': '',
+        'symbiosis': '',
+        'thorwallet': '',
+        'unizen': '',
+        'vultisig': '',
+        'zengo': ''
+    };
+    let code = nameToCode[affiliateName];
+
+    if (code !== undefined) {
+        if (code === '') {
+            code = affiliateName;
+        }
+        const basePath = `https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/${code}/logo.svg`
+        const affiliateLogo = document.querySelector('.affiliate-logo');
+
+        // on error try the same name with .png extension
+        affiliateLogo.onerror = function () {
+            affiliateLogo.src = basePath.replace('.svg', '.png');
+        }
+
+        affiliateLogo.src = basePath;
+        console.log(`Affiliate logo for ${affiliateName} URL is ${basePath}`)
+    }
+
+</script>
+

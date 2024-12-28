@@ -8,7 +8,6 @@
 
         .line-box {
             display: flex;
-
         }
 
         .foo {
@@ -19,7 +18,7 @@
             position: absolute;
             left: 15%;
             right: 15%;
-            top: 30%;
+            top: 24%;
             height: 30%;
             display: flex;
             flex-direction: row;
@@ -32,18 +31,27 @@
             flex-direction: column;
         }
 
-        .circle-tc-logo {
-            width: 154px;
-            padding: 13px;
+        .tc-glow {
             filter: drop-shadow(6px 6px 12px rgba(0, 213, 213, 0.51)) drop-shadow(-6px -6px 12px rgba(3, 243, 150, 0.51));
         }
 
-        .affiliate-logo {
-            width: 120px;
+        .circle-tc-logo {
+            width: 154px;
+            padding: 13px;
         }
 
-        .arrow-lr {
+        .arrow-lr, .arrow-pending {
             width: 180px;
+            filter: brightness(190%) hue-rotate(30deg) saturate(200%) drop-shadow(3px 3px 4px rgba(0, 213, 213, 0.51)) drop-shadow(-3px -3px 4px rgba(3, 243, 150, 0.51));
+        }
+
+        .arrow-pending {
+            filter: brightness(45%) hue-rotate(60deg) saturate(160%);
+            opacity: 0.9;
+        }
+
+        .white-shadow {
+            filter: drop-shadow(0px 0px 10px rgba(255, 255, 255, 0.3));
         }
 
         .logo-part {
@@ -53,17 +61,17 @@
         }
 
         .asset-part {
-            margin-top: 12px;
+            margin-top: 8px;
 
             font-family: ThorFontLight, serif;
-            font-weight: bolder;
+            font-weight: bold;
             font-size: 30px;
 
             position: absolute;
             top: 80%;
+            width: 200px;
 
             text-align: center;
-
         }
 
         .arrow-down-holder {
@@ -74,25 +82,47 @@
         }
 
         .arrow-down {
-            width: 24px;
+            width: 30px;
             margin-bottom: 10px;
+            filter: brightness(2000%);
         }
 
         .aff-fee {
             position: absolute;
             top: 32px;
-            left: 100px;
-            font-family: ThorFontLight;
-            font-weight: 300;
-            font-size: 32px;
+            left: 120px;
+            font-size: 24px;
+            width: 200px;
+            text-align: left;
+        }
+
+        .no-aff {
+            opacity: 0.5;
+            letter-spacing: 1px;
+            text-align: left;
         }
 
 
+        .time-block {
+            position: absolute;
+            bottom: 150px;
+            transform: translate(55px);
+            filter: brightness(50%);
+        }
+
+        .clock {
+            width: 60px;
+        }
+
+        .usd-volume {
+            color: #acacac;
+            font-weight: 400;
+        }
     </style>
 
     <div class="header-box">
         <img class="logo" src="renderer/static/tc_logo_transparent.png?rv=1" alt="THORChain logo">
-        <div class="title">THORCHAIN ⤬ STREAMING SWAP</div>
+        <div class="title">THORCHAIN ⤬ STREAMING SWAP STARTED</div>
     </div>
 
     <div class="foo">
@@ -101,52 +131,65 @@
 
             <div id="source_logo" class="logo-holder">
                 <div class="logo-part">
-                    <img src="renderer/logo/{{ source_asset }}.png" alt="Source asset logo" class="asset-logo shadow">
+                    <img src="renderer/logo/{{ source_asset }}.png" alt="Source asset logo"
+                         class="asset-logo white-shadow">
                     <div class="asset-part">
-                        {{ source_asset }}
+                        <div class="input-amount">
+                            {{ short_money(source_amount) }} {{ source_asset_name }}
+                        </div>
+                        <div class="usd-volume">
+                            ({{ short_dollar(volume_usd) }})
+                        </div>
                     </div>
                 </div>
 
             </div>
 
             <div class="line-box">
-                <img src="renderer/static/arrow1.png" alt="Arrow right" class="arrow-lr">
+                <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
             </div>
 
             <div class="logo-holder">
-                <img class="circle-tc-logo" src="renderer/static/tc_logo_circle.png?rv=1" alt="THORChain logo">
+                <img class="circle-tc-logo tc-glow" src="renderer/static/tc_logo_circle.png?rv=1" alt="THORChain logo">
 
                 <div class="arrow-down-holder">
                     <div>
-                        <img src="renderer/static/arrow1-down.png" alt="Arrow down" class="shadow arrow-down">
-                        <div class="aff-fee">
-                            {{ "%.1f"|format(affiliate_fee) }}%
-                        </div>
+                        {% if affiliate_fee > 0 %}
+                            <img src="renderer/static/arrow2-down.png" alt="Arrow down" class="shadow arrow-down">
+                            <div class="aff-fee">
+                                {{ "%.1f"|format(affiliate_fee) }}%
+                            </div>
+                        {% else %}
+                            <img src="renderer/static/arrow2-down.png" alt="Arrow down"
+                                 class="shadow arrow-down no-aff">
+                            <div class="aff-fee no-aff">
+                                No affiliate
+                            </div>
+                        {% endif %}
                     </div>
 
-                    <img class="affiliate-logo" src="renderer/logo/unknown.png?rv=1" alt="Affiliate logo">
+                    {% include "components/aff-logo.jinja2" %}
+
                 </div>
 
             </div>
 
             <div class="line-box">
-                <div>
-                    <img src="renderer/static/arrow1.png" alt="Arrow right" class="arrow-lr shadow">
+                <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-pending shadow">
+                <div class="time-block">
+                    <img src="renderer/static/time-is-money.png" alt="Time is money..." class="clock">
                 </div>
             </div>
 
             <div id="dest_logo" class="logo-holder">
                 <div class="logo-part">
                     <img src="renderer/logo/{{ destination_asset }}.png" alt="Destination asset logo"
-                         class="asset-logo shadow">
+                         class="asset-logo white-shadow">
                     <div class="asset-part">
-                        {{ destination_asset }}
+                        {{ destination_asset_name }}
                     </div>
                 </div>
-
-
             </div>
-
 
         </div>
 
