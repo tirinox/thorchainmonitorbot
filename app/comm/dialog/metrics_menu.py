@@ -299,9 +299,12 @@ class MetricsDialog(BaseDialog):
         await self.start_typing(message)
 
         notifier: BestPoolsNotifier = self.deps.best_pools_notifier
-        text = self.loc.notification_text_best_pools(notifier.last_pool_detail, notifier.n_pools)
+        if not (event := notifier.last_pool_detail):
+            await message.answer(self.loc.TEXT_BEST_POOLS_NO_DATA, disable_notification=True)
+            return
 
-        generator = PoolPictureGenerator(self.loc, notifier.last_pool_detail)
+        text = self.loc.notification_text_best_pools(event, notifier.n_pools)
+        generator = PoolPictureGenerator(self.loc, event)
         pic, pic_name = await generator.get_picture()
         await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
 

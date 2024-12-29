@@ -30,7 +30,7 @@ from models.last_block import EventBlockSpeed, BlockProduceState
 from models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from models.mimir import AlertMimirChange, AlertMimirVoting
 from models.node_info import AlertNodeChurn
-from models.pool_info import PoolChanges, PoolMapPair
+from models.pool_info import PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.queue import AlertQueue
 from models.runepool import AlertPOLState, AlertRunepoolStats
@@ -104,7 +104,7 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_chain_halt(data)
         elif isinstance(data, AlertLendingStats):
             await self._handle_lending_stats(data)
-        elif isinstance(data, PoolMapPair):
+        elif isinstance(data, EventPools):
             await self._handle_best_pools(data)
         elif isinstance(data, AlertTradeAccountAction):
             await self._handle_trace_account_move(data)
@@ -307,8 +307,8 @@ class AlertPresenter(INotified, WithLogger):
             data,
         )
 
-    async def _handle_best_pools(self, data: PoolMapPair):
-        async def generate_pool_picture(loc: BaseLocalization, event: PoolMapPair):
+    async def _handle_best_pools(self, data: EventPools):
+        async def generate_pool_picture(loc: BaseLocalization, event: EventPools):
             pic_gen = PoolPictureGenerator(loc, event)
             pic, pic_name = await pic_gen.get_picture()
             caption = loc.notification_text_best_pools(event, 5)

@@ -3,11 +3,12 @@ from PIL import Image, ImageDraw
 from comm.localization.eng_base import BaseLocalization
 from comm.picture.common import BasePictureGenerator
 from comm.picture.resources import Resources
+from lib.constants import thor_to_float
 from lib.draw_utils import result_color, TC_LIGHTNING_BLUE
 from lib.money import pretty_money, short_money, short_dollar
 from lib.utils import async_wrap
 from models.asset import Asset, is_ambiguous_asset
-from models.pool_info import PoolMapPair
+from models.pool_info import EventPools
 
 
 class PoolPictureGenerator(BasePictureGenerator):
@@ -16,7 +17,7 @@ class PoolPictureGenerator(BasePictureGenerator):
 
     N_POOLS = 7
 
-    def __init__(self, loc: BaseLocalization, event: PoolMapPair):
+    def __init__(self, loc: BaseLocalization, event: EventPools):
         super().__init__(loc)
         self.bg = Image.open(self.BG_FILE)
         self.event = event
@@ -120,28 +121,25 @@ class PoolPictureGenerator(BasePictureGenerator):
                   fill='#fff', font=r.fonts.get_font_bold(80),
                   anchor='lm')
 
-        sub_header_font = r.fonts.get_font(60)
+        sub_header_font = r.fonts.get_font(57)
         sub_header_color = '#bbb'
-        draw.text((240, 290), loc.TEXT_BP_BEST_APR_TITLE, fill=sub_header_color, font=sub_header_font, anchor='lt')
+        draw.text((240, 290), loc.TEXT_BP_INCOME_TITLE, fill=sub_header_color, font=sub_header_font, anchor='lt')
         draw.text((850, 290), loc.TEXT_BP_HIGH_VOLUME_TITLE, fill=sub_header_color, font=sub_header_font, anchor='lt')
         draw.text((1530, 290), loc.TEXT_BP_DEEPEST_TITLE, fill=sub_header_color, font=sub_header_font, anchor='lt')
 
         # numbers
-        for column, attr_name in enumerate([PoolMapPair.BY_APR, PoolMapPair.BY_VOLUME_24h, PoolMapPair.BY_DEPTH]):
+        for column, attr_name in enumerate([EventPools.BY_INCOME, EventPools.BY_VOLUME_24h, EventPools.BY_DEPTH]):
             top_pools = e.get_top_pools(attr_name, n=self.N_POOLS)
-            total_value = e.total_liquidity() if attr_name == PoolMapPair.BY_DEPTH else e.total_volume_24h()
+            total_value = self.event.total_value(attr_name)
             attr_value_accum = 0.0
             for i, pool in enumerate(top_pools, start=1):
                 v = e.get_value(pool.asset, attr_name)
                 p = e.get_difference_percent(pool.asset, attr_name)
-                prefix, suffix = '', ''
-                if attr_name == PoolMapPair.BY_APR:
-                    suffix = '%'
+                prefix, suffix = '$', ''
+                if attr_name == EventPools.BY_APR:
+                    prefix, suffix = '', '%'
                     total_value = None
-                elif attr_name == PoolMapPair.BY_VOLUME_24h:
-                    prefix = '$'
-                else:
-                    prefix = '$'
+
                 self.draw_one_number(draw, image, pool, i, column, v, p, prefix, suffix, total_value, attr_value_accum)
                 attr_value_accum += v
 

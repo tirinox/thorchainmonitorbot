@@ -29,7 +29,7 @@ from models.mimir import MimirChange, MimirHolder
 from models.net_stats import AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight, EventProviderStatus, EventProviderBondChange, BondProvider
-from models.pool_info import PoolInfo, PoolChanges, PoolMapPair
+from models.pool_info import PoolInfo, PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.queue import QueueInfo
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
@@ -1658,7 +1658,7 @@ class RussianLocalization(BaseLocalization):
 
     TEXT_BP_HEADER = 'ЛУЧШИЕ ПУЛЫ'
 
-    TEXT_BP_BEST_APR_TITLE = 'ПРИРОСТ'
+    TEXT_BP_INCOME_TITLE = 'ДОХОД НЕДЕЛИ'
     TEXT_BP_HIGH_VOLUME_TITLE = 'ОБЪЕМЫ'
     TEXT_BP_DEEPEST_TITLE = 'ГЛУБИНА'
 
@@ -1666,7 +1666,7 @@ class RussianLocalization(BaseLocalization):
     TEXT_BP_TOTAL_LIQ = 'Общая ликвидность'
     TEXT_BP_24H_VOLUME = 'Объем за 24 часа'
 
-    def notification_text_best_pools(self, pd: PoolMapPair, n_pools):
+    def notification_text_best_pools(self, pd: EventPools, n_pools):
         return 'Топ пулов ликвидности THORChain'
 
     # ------------------------------------------

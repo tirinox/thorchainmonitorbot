@@ -10,7 +10,7 @@ from lib.date_utils import parse_timespan_to_seconds
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
-from models.pool_info import PoolInfoMap, PoolMapPair
+from models.pool_info import PoolInfoMap, EventPools
 from notify.channel import BoardMessage
 
 
@@ -22,8 +22,10 @@ class BestPoolsNotifier(INotified, WithDelegates, WithLogger):
         cooldown = parse_timespan_to_seconds(deps.cfg.as_str('best_pools.cooldown', '5h'))
         self._cooldown = Cooldown(self.deps.db, 'BestPools', cooldown)
         self._fetcher: Optional[PoolInfoFetcherMidgard] = None
-        self.last_pool_detail = PoolMapPair({}, {})
+        self.last_pool_detail = EventPools({}, {})
         self.n_pools = deps.cfg.as_int('best_pools.num_of_top_pools', 5)
+        self.income_intervals = 7
+        self.income_period = 'day'
 
     DB_KEY_PREVIOUS_STATS = 'PoolInfo:PreviousPoolsState'
 
@@ -53,14 +55,20 @@ class BestPoolsNotifier(INotified, WithDelegates, WithLogger):
         self._fetcher = sender
 
         prev = await self._get_previous_data()
-        self.last_pool_detail = PoolMapPair(curr=data, prev=prev)
+
+        # + 1 is due to the Midgard's bug that responds the last day with zero-fields
+        earnings = await self.deps.midgard_connector.query_earnings(count=self.income_intervals + 1,
+                                                                    interval=self.income_period)
+
+        usd_per_rune = self.deps.price_holder.calculate_rune_price_here(data)
+        self.last_pool_detail = EventPools(data, prev, earnings, usd_per_rune=usd_per_rune)
 
         if await self._cooldown.can_do():
             await self._cooldown.do()
             await self._notify(self.last_pool_detail)
             await self._write_previous_data(sender.last_raw_result)
 
-    async def _notify(self, pd: PoolMapPair):
+    async def _notify(self, pd: EventPools):
         await self.pass_data_to_listeners(pd)
 
     async def _debug_twitter(self):

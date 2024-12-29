@@ -38,7 +38,7 @@ from models.net_stats import NetworkStats, AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash, EventProviderBondChange, \
     EventProviderStatus, NodeListHolder, BondProvider
-from models.pool_info import PoolInfo, PoolChanges, PoolMapPair
+from models.pool_info import PoolInfo, PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge, LastPriceHolder
 from models.queue import QueueInfo
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
@@ -2123,7 +2123,7 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_BP_HEADER = "TOP POOLS"
 
-    TEXT_BP_BEST_APR_TITLE = "BEST APR"
+    TEXT_BP_INCOME_TITLE = "WEEKLY INCOME"
     TEXT_BP_HIGH_VOLUME_TITLE = "HIGH VOLUME"
     TEXT_BP_DEEPEST_TITLE = "DEEPEST"
 
@@ -2131,7 +2131,9 @@ class BaseLocalization(ABC):  # == English
     TEXT_BP_TOTAL_LIQ = 'TOTAL LIQUIDITY'
     TEXT_BP_24H_VOLUME = '24H VOLUME'
 
-    def notification_text_best_pools(self, pd: PoolMapPair, n_pools):
+    TEXT_BEST_POOLS_NO_DATA = 'No pool data available. Please try again later.'
+
+    def notification_text_best_pools(self, pd: EventPools, n_pools):
         return 'THORChain top liquidity pools'
 
     # ------- INLINE BOT (English only) -------

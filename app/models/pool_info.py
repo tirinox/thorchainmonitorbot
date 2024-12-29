@@ -11,6 +11,7 @@ from api.aionode.types import ThorPool
 from lib.constants import thor_to_float
 from lib.money import calc_percent_change
 from .asset import Asset
+from .earnings_history import EarningHistoryResponse
 
 
 def pool_share(rune_depth, asset_depth, my_units, pool_total_units):
@@ -239,15 +240,17 @@ class PoolChanges(NamedTuple):
         return self.pools_changed or self.pools_added or self.pools_removed
 
 
-class PoolMapPair:
-    def __init__(self, curr: PoolInfoMap, prev: PoolInfoMap):
-        self.pool_detail_dic: PoolInfoMap = curr or {}
-        self.pool_detail_dic_prev: PoolInfoMap = prev or {}
+class EventPools(NamedTuple):
+    pool_detail_dic: PoolInfoMap
+    pool_detail_dic_prev: PoolInfoMap
+    earnings: Optional[EarningHistoryResponse] = None
+    usd_per_rune: float = 0.0
 
     BY_VOLUME_24h = 'usd_volume_24h'
     BY_DEPTH = 'total_liquidity'
     BY_APY = 'pool_apy'
     BY_APR = 'pool_apr'
+    BY_INCOME = 'pool_income'
 
     @staticmethod
     def bad_value(x: float):
@@ -263,13 +266,28 @@ class PoolMapPair:
 
         if criterion in (self.BY_APR, self.BY_VOLUME_24h):
             pools = filter(lambda p: p.is_enabled, pools)
-        pools = filter(lambda p: not self.bad_value(getattr(p, criterion)), pools)
+        pools = filter(lambda p: not self.bad_value(self.get_value(p.asset, criterion)), pools)
 
         pool_list = list(pools)
-        pool_list.sort(key=attrgetter(criterion), reverse=descending)
+        pool_list.sort(key=lambda p: self.get_value(p.asset, criterion), reverse=descending)
         return pool_list if n is None else pool_list[:n]
 
+    def total_value(self, attr_name):
+        if attr_name == EventPools.BY_DEPTH:
+            return self.total_liquidity()
+        elif attr_name == EventPools.BY_VOLUME_24h:
+            return self.total_volume_24h()
+        elif attr_name == EventPools.BY_INCOME:
+            total_earnings = sum(thor_to_float(e.earnings) for e in self.earnings.meta.pools)
+            return total_earnings * self.usd_per_rune
+        return 0.0
+
     def get_value(self, pool_name, attr_name):
+        if attr_name == self.BY_INCOME:
+            pools = self.earnings.meta.pools
+            pool = next((p for p in pools if p.pool == pool_name), None)
+            return thor_to_float(pool.earnings) * self.usd_per_rune if pool else 0.0
+
         if pool_name not in self.pool_detail_dic:
             raise KeyError(f'no pool: {pool_name}')
 
@@ -277,6 +295,9 @@ class PoolMapPair:
         return float(getattr(curr_pool, attr_name))
 
     def get_difference_percent(self, pool_name, attr_name):
+        if attr_name == self.BY_INCOME:
+            return 0.0
+
         curr_value = self.get_value(pool_name, attr_name)
 
         prev_pool = self.pool_detail_dic_prev.get(pool_name)

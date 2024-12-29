@@ -24,7 +24,7 @@ from models.memo import ActionType
 from models.mimir import MimirChange, MimirHolder
 from models.net_stats import AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo
-from models.pool_info import PoolMapPair, PoolChanges, PoolInfo
+from models.pool_info import EventPools, PoolChanges, PoolInfo
 from models.price import RuneMarketInfo, AlertPrice, AlertPriceDiverge
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
@@ -678,7 +678,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return text.strip()
 
-    def format_pool_top(self, attr_name, pd: PoolMapPair, title, no_pool_text, n_pools):
+    def format_pool_top(self, attr_name, pd: EventPools, title, no_pool_text, n_pools):
         top_pools = pd.get_top_pools(attr_name, n=n_pools)
         text = title + '\n'
         for i, pool in enumerate(top_pools, start=1):
@@ -708,7 +708,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             text += no_pool_text
         return text.strip()
 
-    def notification_text_best_pools(self, pd: PoolMapPair, n_pools):
+    def notification_text_best_pools(self, pd: EventPools, n_pools):
         return 'THORChain top liquidity pools'
 
     def link_to_address(self, addr, name_map, chain=Chains.THOR, is_loan=False):
