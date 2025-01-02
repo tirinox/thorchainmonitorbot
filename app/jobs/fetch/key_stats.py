@@ -14,7 +14,7 @@ from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
-from models.earnings_history import EarningsInterval
+from models.earnings_history import EarningsInterval, EarningHistoryResponse
 from models.key_stats_model import AlertKeyStats, KeyStats, LockedValue, AffiliateCollectors
 from models.vol_n import TxCountStats
 
@@ -211,16 +211,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         double_period = self.tally_days_period * 2 + 1
         earnings = await self.deps.midgard_connector.query_earnings(count=double_period, interval='day')
 
-        def calc_earnings(intervals: List[EarningsInterval]):
-            """liquidityEarnings + bondingEarnings = earnings
-            blockRewards +  liquidityFees = earnings"""
-
-            total_earnings = sum(thor_to_float(e.earnings) * e.rune_price_usd for e in intervals)
-            block_earnings = sum(thor_to_float(e.block_rewards) * e.rune_price_usd for e in intervals)
-            organic_fees = sum(thor_to_float(e.liquidity_fees) * e.rune_price_usd for e in intervals)
-            return total_earnings, block_earnings, organic_fees
-
         return (
-            calc_earnings(intervals=earnings.intervals[0:self.tally_days_period]),
-            calc_earnings(intervals=earnings.intervals[self.tally_days_period:])
+            EarningHistoryResponse.calc_earnings(intervals=earnings.intervals[0:self.tally_days_period]),
+            EarningHistoryResponse.calc_earnings(intervals=earnings.intervals[self.tally_days_period:])
         )

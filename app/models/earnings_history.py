@@ -1,5 +1,8 @@
 from typing import NamedTuple, List
 
+from lib.constants import thor_to_float
+from lib.utils import safe_get
+
 
 class PoolEarnings(NamedTuple):
     asset_liquidity_fees: int
@@ -61,3 +64,13 @@ class EarningHistoryResponse(NamedTuple):
             intervals=[EarningsInterval.from_dict(interval) for interval in data['intervals']],
             meta=EarningsInterval.from_dict(data['meta'])
         )
+
+    @staticmethod
+    def calc_earnings(intervals: List[EarningsInterval]):
+        """liquidityEarnings + bondingEarnings = earnings
+        blockRewards +  liquidityFees = earnings"""
+
+        total_earnings = sum(thor_to_float(e.earnings) * e.rune_price_usd for e in intervals)
+        block_earnings = sum(thor_to_float(e.block_rewards) * e.rune_price_usd for e in intervals)
+        organic_fees = sum(thor_to_float(e.liquidity_fees) * e.rune_price_usd for e in intervals)
+        return total_earnings, block_earnings, organic_fees
