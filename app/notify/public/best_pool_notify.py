@@ -57,7 +57,7 @@ class BestPoolsNotifier(INotified, WithDelegates, WithLogger):
         prev = await self._get_previous_data()
 
         # + 1 is due to the Midgard's bug that responds the last day with zero-fields
-        earnings = await self.deps.midgard_connector.query_earnings(count=self.income_intervals + 1,
+        earnings = await self.deps.midgard_connector.query_earnings(count=self.income_intervals * 2 + 1,
                                                                     interval=self.income_period)
 
         usd_per_rune = self.deps.price_holder.calculate_rune_price_here(data)

@@ -250,7 +250,8 @@ class EventPools(NamedTuple):
     BY_DEPTH = 'total_liquidity'
     BY_APY = 'pool_apy'
     BY_APR = 'pool_apr'
-    BY_INCOME = 'pool_income'
+    BY_INCOME_FULL = 'earnings'
+    BY_INCOME_LIQ = 'total_liquidity_fees_rune'
 
     @staticmethod
     def bad_value(x: float):
@@ -272,39 +273,50 @@ class EventPools(NamedTuple):
         pool_list.sort(key=lambda p: self.get_value(p.asset, criterion), reverse=descending)
         return pool_list if n is None else pool_list[:n]
 
-    def total_value(self, attr_name):
+    def total_value(self, attr_name, is_previous=False):
         if attr_name == EventPools.BY_DEPTH:
             return self.total_liquidity()
         elif attr_name == EventPools.BY_VOLUME_24h:
             return self.total_volume_24h()
-        elif attr_name == EventPools.BY_INCOME:
-            total_earnings = sum(thor_to_float(e.earnings) for e in self.earnings.meta.pools)
-            return total_earnings * self.usd_per_rune
+        elif attr_name in (EventPools.BY_INCOME_FULL, EventPools.BY_INCOME_LIQ):
+            scoped_intervals = self.get_earning_interval(is_previous)
+
+            total_earnings_usd = 0.0
+            for interval in scoped_intervals:
+                for pool in interval.pools:
+                    total_earnings_usd += thor_to_float(getattr(pool, attr_name)) * interval.rune_price_usd
+
+            return total_earnings_usd
         return 0.0
 
-    def get_value(self, pool_name, attr_name):
-        if attr_name == self.BY_INCOME:
-            pools = self.earnings.meta.pools
-            pool = next((p for p in pools if p.pool == pool_name), None)
-            return thor_to_float(pool.earnings) * self.usd_per_rune if pool else 0.0
+    def get_earning_interval(self, is_previous=False):
+        intervals = self.earnings.intervals
+        tally_days_period = len(intervals) // 2
+        scoped_intervals = intervals[0:tally_days_period] if not is_previous else intervals[tally_days_period:]
+        return scoped_intervals
 
-        if pool_name not in self.pool_detail_dic:
+    def get_value(self, pool_name, attr_name, is_previous=False):
+        if attr_name in (self.BY_INCOME_FULL, self.BY_INCOME_LIQ):
+            scoped_intervals = self.get_earning_interval(is_previous)
+
+            pool_earnings = 0.0
+            for interval in scoped_intervals:
+                pool = next((p for p in interval.pools if p.pool == pool_name), None)
+                if pool:
+                    pool_earnings += thor_to_float(getattr(pool, attr_name)) * interval.rune_price_usd
+
+            return pool_earnings
+
+        source = self.pool_detail_dic if not is_previous else self.pool_detail_dic_prev
+        if pool_name not in source:
             raise KeyError(f'no pool: {pool_name}')
 
-        curr_pool = self.pool_detail_dic[pool_name]
-        return float(getattr(curr_pool, attr_name))
+        pool = source[pool_name]
+        return float(getattr(pool, attr_name))
 
     def get_difference_percent(self, pool_name, attr_name):
-        if attr_name == self.BY_INCOME:
-            return 0.0
-
         curr_value = self.get_value(pool_name, attr_name)
-
-        prev_pool = self.pool_detail_dic_prev.get(pool_name)
-        if not prev_pool:
-            return None
-
-        prev_value = float(getattr(prev_pool, attr_name))
+        prev_value = self.get_value(pool_name, attr_name, is_previous=True)
         if prev_value == 0.0:
             return None
 

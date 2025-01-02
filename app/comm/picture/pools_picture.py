@@ -128,7 +128,7 @@ class PoolPictureGenerator(BasePictureGenerator):
         draw.text((1530, 290), loc.TEXT_BP_DEEPEST_TITLE, fill=sub_header_color, font=sub_header_font, anchor='lt')
 
         # numbers
-        for column, attr_name in enumerate([EventPools.BY_INCOME, EventPools.BY_VOLUME_24h, EventPools.BY_DEPTH]):
+        for column, attr_name in enumerate([EventPools.BY_INCOME_LIQ, EventPools.BY_VOLUME_24h, EventPools.BY_DEPTH]):
             top_pools = e.get_top_pools(attr_name, n=self.N_POOLS)
             total_value = self.event.total_value(attr_name)
             attr_value_accum = 0.0
