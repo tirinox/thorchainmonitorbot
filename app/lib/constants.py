@@ -69,8 +69,9 @@ class Chains:
     AVAX = 'AVAX'
     ATOM = 'GAIA'
     BSC = 'BSC'
+    BASE = 'BASE'
 
-    META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM, BSC)
+    META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM, BSC, BASE)
 
     @staticmethod
     def detect_chain(orig_address: str) -> str:
@@ -107,6 +108,8 @@ class Chains:
             return 3.0
         elif chain == Chains.BSC:
             return 3.0
+        elif chain == Chains.BASE:
+            return 2.0
         return 0.01
 
     @staticmethod
@@ -117,11 +120,8 @@ class Chains:
             return 43114
         elif chain == Chains.BSC:
             return 56
-
-    @staticmethod
-    def l1_asset(chain: str) -> str:
-        assert chain in Chains.META_ALL
-        return f'{chain}.{chain}'
+        elif chain == Chains.BASE:
+            return 8453
 
 
 class NetworkIdents:
@@ -253,6 +253,7 @@ class ThorRealms:
     INCOME_BURN = 'System income burn'
 
 
+# todo: this information is already put in the config file
 THOR_ADDRESS_DICT = {
     # Reserves:
     'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt': (ThorRealms.RESERVES, ThorRealms.RESERVES),

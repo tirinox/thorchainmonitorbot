@@ -16,7 +16,8 @@ class StaticTokenList:
     DEFAULT_LISTS = {
         Chains.ETH: f'{CONTRACT_DATA_BASE_PATH}/eth_mainnet_latest.json',
         Chains.AVAX: f'{CONTRACT_DATA_BASE_PATH}/avax_mainnet_latest.json',
-        Chains.BSC: f'{CONTRACT_DATA_BASE_PATH}/bsc_mainnet_latest.json'
+        Chains.BSC: f'{CONTRACT_DATA_BASE_PATH}/bsc_mainnet_latest.json',
+        Chains.BASE: f'{CONTRACT_DATA_BASE_PATH}/base_mainnet_latest.json',
     }
 
     def __init__(self, filename, chain_id):

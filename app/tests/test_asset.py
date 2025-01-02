@@ -1,3 +1,6 @@
+import pytest
+
+from lib.constants import Chains
 from lib.money import short_address
 from models.asset import Asset, is_ambiguous_asset
 
@@ -96,3 +99,17 @@ def test_ambiguous_name():
     assert is_ambiguous_asset('THOR.BTC', [])
     assert is_ambiguous_asset('ETH.ETH', ['ETH.ETH', 'ARB.ETH'])
     assert not is_ambiguous_asset('ETH.ETH', ['ETH.ETH', 'LTC.LTC', 'DOGE.DOGE'])
+
+
+@pytest.mark.parametrize('asset_name, chain', [
+    ('ETH.ETH', 'ETH'),
+    ('BTC.BTC', 'BTC'),
+    ('LTC.LTC', 'LTC'),
+    ('AVAX.AVAX', 'AVAX'),
+    ('DOGE.DOGE', 'DOGE'),
+    ('GAIA.ATOM', 'GAIA'),
+    ('BSC.BNB', 'BSC')
+])
+def test_l1_asset_vs_gas_asset(asset_name, chain):
+    # assert Chains.l1_asset(chain) == asset_name
+    assert str(Asset.gas_asset_from_chain(chain)) == asset_name

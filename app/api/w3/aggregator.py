@@ -25,7 +25,7 @@ class AggregatorSingleChain:
         self.deps = deps
 
         self.chain = chain
-        self.l1_asset = Chains.l1_asset(chain)
+        self.l1_asset = str(Asset.gas_asset_from_chain(chain))
 
         chain_id = Chains.web3_chain_id(chain)
         assert chain_id > 0
@@ -94,7 +94,7 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
         super().__init__()
         self.deps = deps
         self.asset_to_aggr = {
-            Chains.l1_asset(chain): AggregatorSingleChain(deps, chain) for chain in suitable_chains
+            str(Asset.gas_asset_from_chain(chain)): AggregatorSingleChain(deps, chain) for chain in suitable_chains
         }
 
     @property
@@ -166,4 +166,4 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
         await self.pass_data_to_listeners(txs, sender)  # pass through
 
     def get_by_chain(self, chain: str) -> Optional[AggregatorSingleChain]:
-        return self.asset_to_aggr.get(Chains.l1_asset(chain))
+        return self.asset_to_aggr.get(str(Asset.gas_asset_from_chain(chain)))

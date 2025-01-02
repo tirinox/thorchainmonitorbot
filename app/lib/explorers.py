@@ -34,6 +34,8 @@ def get_explorer_url_to_address(network_id, pool_or_chain: str, address: str, ta
         return f'https://www.mintscan.io/cosmos/account/{address.lower()}'
     elif chain == Chains.BSC:
         return f'https://bscscan.com/address/{address}'
+    elif chain == Chains.BASE:
+        return f'https://basescan.org/address/{address}'
     else:
         url = f'https://www.google.com/search?q={chain}+explorer'
         return url if is_live else f'{url}+test'
@@ -76,6 +78,8 @@ def get_explorer_url_to_tx(network_id, pool_or_chain: str, tx_id: str):
         return f'https://www.mintscan.io/cosmos/txs/{tx_id.upper()}'
     elif chain == Chains.BSC:
         return f'https://bscscan.com/tx/{tx_id}'
+    elif chain == Chains.BASE:
+        return f'https://basescan.org/tx/{tx_id}'
     else:
         url = f'https://www.google.com/search?q={chain}+explorer'
         return url if is_live else f'{url}+test'
