@@ -5,13 +5,8 @@
     {% include "_tx_helpers.jinja2" %}
 
     <style>
-
         .line-box {
             display: flex;
-        }
-
-        .foo {
-            padding: 30px;
         }
 
         .route-box {
@@ -106,18 +101,39 @@
         .time-block {
             position: absolute;
             bottom: 150px;
-            transform: translate(55px);
-            filter: brightness(50%);
+
+        }
+
+        .time-block-flex {
+            display: flex;
+            width: 200px;
+            align-items: center;
+            flex-direction: row;
         }
 
         .clock {
             width: 60px;
+            display: flex;
+
+            filter: brightness(80%);
+            padding: 10px;
+        }
+
+
+        .wait-time {
+            padding-left: 5px;
+            display: flex;
+            color: #45dded;
+            opacity: 0.8;
+            font-weight: 400;
+            font-size: 30px;
         }
 
         .usd-volume {
             color: #acacac;
             font-weight: 400;
         }
+
     </style>
 
     <div class="header-box">
@@ -125,74 +141,73 @@
         <div class="title">THORCHAIN ⤬ STREAMING SWAP STARTED</div>
     </div>
 
-    <div class="foo">
 
-        <div class="route-box">
+    <div class="route-box">
 
-            <div id="source_logo" class="logo-holder">
-                <div class="logo-part">
-                    <img src="renderer/logo/{{ source_asset }}.png" alt="Source asset logo"
-                         class="asset-logo white-shadow">
-                    <div class="asset-part">
-                        <div class="input-amount">
-                            {{ short_money(source_amount) }} {{ source_asset_name }}
-                        </div>
-                        <div class="usd-volume">
-                            ({{ short_dollar(volume_usd) }})
-                        </div>
+        <div id="source_logo" class="logo-holder">
+            <div class="logo-part">
+                <img src="renderer/logo/{{ source_asset }}.png" alt="Source asset logo"
+                     class="asset-logo white-shadow">
+                <div class="asset-part">
+                    <div class="input-amount">
+                        {{ short_money(source_amount) }} {{ source_asset_name }}
                     </div>
-                </div>
-
-            </div>
-
-            <div class="line-box">
-                <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
-            </div>
-
-            <div class="logo-holder">
-                <img class="circle-tc-logo tc-glow" src="renderer/static/tc_logo_circle.png?rv=1" alt="THORChain logo">
-
-                <div class="arrow-down-holder">
-                    <div>
-                        {% if affiliate_fee > 0 %}
-                            <img src="renderer/static/arrow2-down.png" alt="Arrow down" class="shadow arrow-down">
-                            <div class="aff-fee">
-                                {{ "%.1f"|format(affiliate_fee) }}%
-                            </div>
-                        {% else %}
-                            <img src="renderer/static/arrow2-down.png" alt="Arrow down"
-                                 class="shadow arrow-down no-aff">
-                            <div class="aff-fee no-aff">
-                                No affiliate
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    {% include "components/aff-logo.jinja2" %}
-
-                </div>
-
-            </div>
-
-            <div class="line-box">
-                <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-pending shadow">
-                <div class="time-block">
-                    <img src="renderer/static/time-is-money.png" alt="Time is money..." class="clock">
-                </div>
-            </div>
-
-            <div id="dest_logo" class="logo-holder">
-                <div class="logo-part">
-                    <img src="renderer/logo/{{ destination_asset }}.png" alt="Destination asset logo"
-                         class="asset-logo white-shadow">
-                    <div class="asset-part">
-                        {{ destination_asset_name }}
+                    <div class="usd-volume">
+                        ({{ short_dollar(volume_usd) }})
                     </div>
                 </div>
             </div>
 
         </div>
 
+        <div class="line-box">
+            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
+        </div>
+
+        <div class="logo-holder">
+            <img class="circle-tc-logo tc-glow" src="renderer/static/tc_logo_circle.png?rv=1" alt="THORChain logo">
+
+            <div class="arrow-down-holder">
+                <div>
+                    {% if affiliate_fee > 0 %}
+                        <img src="renderer/static/arrow2-down.png" alt="Arrow down" class="shadow arrow-down">
+                        <div class="aff-fee">
+                            {{ "%.1f"|format(affiliate_fee) }}%
+                        </div>
+                    {% else %}
+                        <img src="renderer/static/arrow2-down.png" alt="Arrow down"
+                             class="shadow arrow-down no-aff">
+                        <div class="aff-fee no-aff">
+                            No affiliate
+                        </div>
+                    {% endif %}
+                </div>
+
+                {% include "components/aff-logo.jinja2" %}
+
+            </div>
+
+        </div>
+
+        <div class="line-box">
+            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-pending shadow">
+            <div class="time-block">
+                <div class="time-block-flex">
+                    <img src="renderer/static/time-is-money.png" alt="Time is money..." class="clock">
+                    <div class="wait-time">{{ total_estimated_time_fmt }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="dest_logo" class="logo-holder">
+            <div class="logo-part">
+                <img src="renderer/logo/{{ destination_asset }}.png" alt="Destination asset logo"
+                     class="asset-logo white-shadow">
+                <div class="asset-part">
+                    {{ destination_asset_name }}
+                </div>
+            </div>
+        </div>
 
     </div>
 

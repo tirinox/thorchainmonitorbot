@@ -17,6 +17,7 @@
     "swap_steps": 100,
     "swap_period_blocks": 5,
     "total_estimated_time_sec": 4242,
+    "total_estimated_time_fmt": "10:45:44",
 
     "_width": 1200,
     "_height": 800
