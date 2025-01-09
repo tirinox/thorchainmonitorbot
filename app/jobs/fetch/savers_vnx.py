@@ -7,6 +7,7 @@ from jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from lib.async_cache import AsyncTTL
 from lib.constants import thor_to_float
 from lib.depcont import DepContainer
+from lib.utils import a_result_cached
 from models.asset import normalize_asset
 from models.savers import SaverVault, AlertSaverStats, SaversBank, VNXSaversStats, MidgardSaversHistory
 
@@ -143,7 +144,8 @@ class SaversStatsFetcher(BaseFetcher):
 
     CACHE_TTL = 60
 
-    @AsyncTTL(time_to_live=CACHE_TTL)
+    # @AsyncTTL(time_to_live=CACHE_TTL)
+    @a_result_cached(CACHE_TTL)
     async def get_savers_event_cached(self) -> AlertSaverStats:
         return await self.get_savers_event()
 
