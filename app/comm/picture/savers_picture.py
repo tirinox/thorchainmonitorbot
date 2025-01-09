@@ -4,7 +4,7 @@ from comm.localization.manager import BaseLocalization
 from comm.picture.common import BasePictureGenerator
 from comm.picture.resources import Resources
 from lib.draw_utils import TC_WHITE, result_color, rect_progress_bar
-from lib.money import short_money, short_dollar
+from lib.money import short_money, short_dollar, format_percent
 from lib.utils import async_wrap
 from models.asset import Asset, is_ambiguous_asset
 from models.savers import SaverVault, AlertSaverStats
@@ -100,7 +100,8 @@ class SaversPictureGenerator(BasePictureGenerator):
         draw_key_metric(3, self.loc.TEXT_PIC_SAVERS_TOTAL_EARNED, 'total_rune_earned',
                         formatter=lambda x, **_: short_dollar(x * usd_per_rune, signed=True))
         draw_key_metric(4, self.loc.TEXT_PIC_SAVERS_APR_MEAN, 'average_apr',
-                        formatter=lambda x, **_: f'{x:+.2f}%')
+                        # formatter=lambda x, **_: f'{round(x, 2):+.2f}%')
+                        formatter=lambda x, **_: format_percent(x))
         draw_key_metric(5, self.loc.TEXT_PIC_SAVERS_TOTAL_FILLED, 'overall_fill_cap_percent',
                         formatter=lambda x, **_: short_money(x, postfix='%'),
                         extra_args=[pool_map])
@@ -186,8 +187,7 @@ class SaversPictureGenerator(BasePictureGenerator):
                         formatter=short_dollar, tolerance=0.5)
 
             draw_metric(apr_x, y, 'apr', vault,
-                        formatter=short_money, tolerance=1.0,
-                        postfix='%')
+                        formatter=format_percent, tolerance=1.0)
 
             draw_metric(savers_n_x, y, 'number_of_savers', vault,
                         formatter=short_money, tolerance=0.0,

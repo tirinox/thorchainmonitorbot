@@ -105,7 +105,7 @@ async def demo_show_savers_pic(app: LpAppFramework):
     # event = await ssn.data_source.get_savers_event(7 * DAY)
 
     source = SaversStatsFetcher(app.deps)
-    event = await source.get_savers_event()
+    event = await source.get_savers_event_cached()
 
     loc = app.deps.loc_man[Language.ENGLISH]
     pic_gen = SaversPictureGenerator(loc, event)
