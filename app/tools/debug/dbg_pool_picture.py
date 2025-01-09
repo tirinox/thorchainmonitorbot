@@ -15,7 +15,7 @@ async def main():
     async with lp_app(brief=True):
         mdg = PoolInfoFetcherMidgard(lp_app.deps, 10)
         pools = await mdg.get_pool_info_midgard()
-        earnings = await lp_app.deps.midgard_connector.query_earnings(count=8, interval='day')
+        earnings = await lp_app.deps.midgard_connector.query_earnings(count=15, interval='day')
 
         prev_pools = deepcopy(pools)
         if randomize := True:
