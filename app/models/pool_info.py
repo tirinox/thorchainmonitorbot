@@ -301,9 +301,10 @@ class EventPools(NamedTuple):
 
             pool_earnings = 0.0
             for interval in scoped_intervals:
-                pool = next((p for p in interval.pools if p.pool == pool_name), None)
-                if pool:
-                    pool_earnings += thor_to_float(getattr(pool, attr_name)) * interval.rune_price_usd
+                # pool = next((p for p in interval.pools if p.pool == pool_name), None)
+                for pool in interval.pools:
+                    if (pool_name and pool.pool == pool_name) or not pool_name:
+                        pool_earnings += thor_to_float(getattr(pool, attr_name)) * interval.rune_price_usd
 
             return pool_earnings
 
@@ -313,6 +314,14 @@ class EventPools(NamedTuple):
 
         pool = source[pool_name]
         return float(getattr(pool, attr_name))
+
+    @property
+    def total_pool_earnings_full(self):
+        return self.get_value(None, self.BY_INCOME_FULL)
+
+    @property
+    def total_pool_earnings_liq(self):
+        return self.get_value(None, self.BY_INCOME_LIQ)
 
     def get_difference_percent(self, pool_name, attr_name):
         curr_value = self.get_value(pool_name, attr_name)
@@ -357,4 +366,13 @@ class EventPools(NamedTuple):
 
         prev = self.total_volume_24h(prev=True)
         curr = self.total_volume_24h()
+        return calc_percent_change(prev, curr)
+
+    @property
+    def pool_earnings_liq_diff_percent(self):
+        if not self.pool_detail_dic_prev:
+            return None
+
+        prev = self.total_pool_earnings_liq
+        curr = self.total_pool_earnings_liq
         return calc_percent_change(prev, curr)

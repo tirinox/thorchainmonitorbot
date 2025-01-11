@@ -1659,10 +1659,11 @@ class RussianLocalization(BaseLocalization):
     TEXT_BP_HEADER = 'ЛУЧШИЕ ПУЛЫ'
 
     TEXT_BP_INCOME_TITLE = 'ДОХОД НЕДЕЛИ'
-    TEXT_BP_HIGH_VOLUME_TITLE = 'ОБЪЕМЫ'
+    TEXT_BP_HIGH_VOLUME_TITLE = 'ОБЪЕМЫ 24ч'
     TEXT_BP_DEEPEST_TITLE = 'ГЛУБИНА'
 
     TEXT_BP_ACTIVE_POOLS = 'Активные пулы'
+    TEXT_BP_REVENUE = 'Недельная доходность'
     TEXT_BP_TOTAL_LIQ = 'Общая ликвидность'
     TEXT_BP_24H_VOLUME = 'Объем за 24 часа'
 

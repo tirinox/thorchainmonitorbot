@@ -128,7 +128,7 @@ class PoolPictureGenerator(BasePictureGenerator):
         draw.text((1530, 290), loc.TEXT_BP_DEEPEST_TITLE, fill=sub_header_color, font=sub_header_font, anchor='lt')
 
         # numbers
-        for column, attr_name in enumerate([EventPools.BY_INCOME_LIQ, EventPools.BY_VOLUME_24h, EventPools.BY_DEPTH]):
+        for column, attr_name in enumerate([EventPools.BY_INCOME_FULL, EventPools.BY_VOLUME_24h, EventPools.BY_DEPTH]):
             top_pools = e.get_top_pools(attr_name, n=self.N_POOLS)
             total_value = self.event.total_value(attr_name)
             attr_value_accum = 0.0
@@ -150,9 +150,15 @@ class PoolPictureGenerator(BasePictureGenerator):
 
         # total pools
         x = 240
-        total_pools = e.number_of_active_pools
-        draw.text((x, bottom_value_y), str(total_pools), fill='#eee', font=bottom_value_font, anchor='lm')
-        draw.text((x, bottom_text_y), loc.TEXT_BP_ACTIVE_POOLS, fill='#aaa', font=bottom_text_font, anchor='lt')
+
+        total_revenue = e.total_pool_earnings_full
+        draw.text((x, bottom_value_y), short_dollar(total_revenue), fill='#eee', font=bottom_value_font, anchor='lm')
+        draw.text((x, bottom_text_y), loc.TEXT_BP_REVENUE, fill='#aaa', font=bottom_text_font, anchor='lt')
+
+        # OLD: Number of active pools
+        # total_pools = e.number_of_active_pools
+        # draw.text((x, bottom_value_y), str(total_pools), fill='#eee', font=bottom_value_font, anchor='lm')
+        # draw.text((x, bottom_text_y), loc.TEXT_BP_ACTIVE_POOLS, fill='#aaa', font=bottom_text_font, anchor='lt')
 
         # total volume
         x = 870
