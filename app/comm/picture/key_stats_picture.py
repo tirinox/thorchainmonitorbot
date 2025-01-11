@@ -130,7 +130,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
             if postfix == 'usd':
                 text = short_dollar(new_v)
             else:
-                text = pretty_money(new_v, postfix=postfix)
+                text = short_money(new_v, postfix=postfix)
 
             self.text_and_change(old_v, new_v, draw, text_x, y,
                                  text, coin_font, font_small_n)
