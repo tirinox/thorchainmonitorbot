@@ -63,20 +63,38 @@ class MimirUnits:
 class MimirNameRules:
     def __init__(self):
         self.rules = {}
-        self.dict_word_sorted = []
 
     def load(self, filename):
         self.rules = self._load_mimir_naming_rules(filename)
-        self.dict_word_sorted = list(sorted(self.rules.get('words', []), key=len, reverse=True))
+        self._make_words_proper()
+
+    @property
+    def dict_word_sorted(self):
+        return self.rules.get('words', [])
+
+    def save_to(self, filename):
+        with open(filename, 'w') as f:
+            yaml.safe_dump(self.rules, f)
+
+    def add_words(self, words):
+        self.rules['words'] += words
+        self._make_words_proper()
+
+    def _make_words_proper(self):
+        # upper and strip
+        words = [w.strip().upper() for w in self.dict_word_sorted]
+        # remove duplicates
+        words = list(set(words))
+        # sort by length longest first
+        words = list(sorted(words, key=len, reverse=True))
+        # save
+        self.rules['words'] = words
 
     @staticmethod
     def _load_mimir_naming_rules(filename):
         with open(filename, 'r') as f:
             data = yaml.safe_load(f)
 
-        data['words'] = [
-            w.strip().upper() for w in data['words']
-        ]
         data['word_transform'] = {
             k.strip().upper(): v
             for k, v in data.get('word_transform', {}).items()
