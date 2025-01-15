@@ -498,7 +498,7 @@ class RussianLocalization(BaseLocalization):
             )
         elif tx.is_of_type(ActionType.SWAP):
             content += self.format_swap_route(tx, usd_per_rune)
-            slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
+
 
             if tx.affiliate_fee > 0:
                 aff_collector = self.name_service.get_affiliate_name(tx.memo.affiliate_address)
@@ -508,10 +508,11 @@ class RussianLocalization(BaseLocalization):
             else:
                 aff_text = ''
 
-            content += (
-                f"\n{aff_text}"
-                f"Проскальзывание: {bold(slip_str)}\n"
-            )
+            # slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
+            # content += (
+            #     f"\n{aff_text}"
+            #     f"Проскальзывание: {bold(slip_str)}\n"
+            # )
 
             if tx.liquidity_fee_percent:
                 content += f"Комиссия пулам: {bold(format_percent(tx.liquidity_fee_percent))}"

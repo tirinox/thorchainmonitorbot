@@ -87,6 +87,7 @@ class StreamingSwap(NamedTuple):
 
     @property
     def total_duration(self):
+        # fixme!
         return self.quantity * self.interval * THOR_BLOCK_TIME
 
     @property

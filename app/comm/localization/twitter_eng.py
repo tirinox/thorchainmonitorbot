@@ -177,7 +177,6 @@ class TwitterEnglishLocalization(BaseLocalization):
             )
         elif tx.is_of_type(ActionType.SWAP):
             content += self.format_swap_route(tx, usd_per_rune)
-            slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
 
             if tx.affiliate_fee > 0:
                 aff_collector = self.name_service.get_affiliate_name(tx.memo.affiliate_address)
@@ -188,10 +187,10 @@ class TwitterEnglishLocalization(BaseLocalization):
                 aff_text = ''
 
             liq_fee_pct = tx.liquidity_fee_percent
+            # slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             content += (
                 f"\n{aff_text}"
-                f"Slip: {slip_str}, "
-                f"liq. fee: {format_percent(liq_fee_pct) if liq_fee_pct else self.NA}"
+                f"Liq. fee: {format_percent(liq_fee_pct) if liq_fee_pct else self.NA}"
             )
 
             if tx.is_streaming:

@@ -699,7 +699,6 @@ class BaseLocalization(ABC):  # == English
             )
         elif tx.is_of_type(ActionType.SWAP):
             content += self.format_swap_route(tx, usd_per_rune)
-            slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
 
             if tx.affiliate_fee > 0:
                 aff_collector = self.name_service.get_affiliate_name(tx.memo.affiliate_address)
@@ -709,11 +708,11 @@ class BaseLocalization(ABC):  # == English
             else:
                 aff_text = ''
 
+            # slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             liq_fee_pct = tx.liquidity_fee_percent
             content += (
                 f"\n{aff_text}"
-                f"Slip: {bold(slip_str)}, "
-                f"liquidity fee: {bold(format_percent(liq_fee_pct)) if liq_fee_pct else self.NA}"
+                f"Liquidity fee: {bold(format_percent(liq_fee_pct)) if liq_fee_pct else self.NA}"
             )
 
             if tx.is_streaming:
