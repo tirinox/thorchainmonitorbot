@@ -499,6 +499,7 @@ class RussianLocalization(BaseLocalization):
         elif tx.is_of_type(ActionType.SWAP):
             content += self.format_swap_route(tx, usd_per_rune)
 
+            content += '\n'
 
             if tx.affiliate_fee > 0:
                 aff_collector = self.name_service.get_affiliate_name(tx.memo.affiliate_address)
@@ -507,6 +508,7 @@ class RussianLocalization(BaseLocalization):
                 aff_text = f'{aff_collector}: {format_percent(tx.affiliate_fee, 1)}\n'
             else:
                 aff_text = ''
+            content += aff_text
 
             # slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             # content += (
@@ -1745,7 +1747,7 @@ class RussianLocalization(BaseLocalization):
     SUPPLY_PIC_VESTING_9R = 'NineRealms вестинг'
     SUPPLY_PIC_RESERVES = 'Резерв'
     SUPPLY_PIC_UNDEPLOYED = 'Неразвернутый резерв'
-    SUPPLY_PIC_BONDED = 'Бонд в нодах'
+    SUPPLY_PIC_BONDED = 'Активный бонд нод'
     SUPPLY_PIC_TREASURY = 'Сокровищница'
     SUPPLY_PIC_MAYA = 'Maya пул'
     SUPPLY_PIC_POOLED = 'В пулах'

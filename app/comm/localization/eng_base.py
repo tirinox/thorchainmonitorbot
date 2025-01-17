@@ -2222,7 +2222,7 @@ class BaseLocalization(ABC):  # == English
     SUPPLY_PIC_CIRCULATING = 'Other circulating'
     SUPPLY_PIC_RESERVES = ThorRealms.RESERVES
     SUPPLY_PIC_UNDEPLOYED = ThorRealms.STANDBY_RESERVES
-    SUPPLY_PIC_BONDED = 'Node bonds'
+    SUPPLY_PIC_BONDED = 'Active node bonds'
     SUPPLY_PIC_TREASURY = 'Treasury'
     SUPPLY_PIC_MAYA = 'Maya pool'
     SUPPLY_PIC_POOLED = ThorRealms.LIQ_POOL

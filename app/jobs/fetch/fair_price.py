@@ -58,7 +58,7 @@ class RuneMarketInfoFetcher(BaseFetcher):
     def _enrich_circulating_supply(self, supply: RuneCirculatingSupply) -> RuneCirculatingSupply:
         ns = self.deps.net_stats
         if ns:
-            supply.set_holder(RuneHoldEntry('bond_module', int(ns.total_bond_rune), 'Bonded', ThorRealms.BONDED))
+            supply.set_holder(RuneHoldEntry('bond_module', int(ns.total_active_bond_rune), 'Bonded', ThorRealms.BONDED))
             supply.set_holder(RuneHoldEntry('pool_module', int(ns.total_rune_lp), 'Pooled', ThorRealms.LIQ_POOL))
             supply.set_holder(RuneHoldEntry('pol', int(ns.total_rune_pol), 'POL', ThorRealms.POL))
             supply.set_holder(RuneHoldEntry('runepool', int(ns.total_rune_pool), 'POL', ThorRealms.RUNEPOOL))
