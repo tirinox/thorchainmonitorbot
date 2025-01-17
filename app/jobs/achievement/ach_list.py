@@ -310,7 +310,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.WEEKLY_AFFILIATE_REVENUE_USD, 'Weekly affiliate revenue', prefix='$', thresholds=60_300),
 
     # loans
-    ADesc(A.RUNE_BURNT_LENDING, 'Burnt Rune from lending', postfix=POSTFIX_RUNE,
+    ADesc(A.RUNE_BURNT_LENDING, 'Rune Burned from lending', postfix=POSTFIX_RUNE,
           preferred_bg=BURN_BG, tint='#f83f0e'),
     ADesc(A.LOANS_OPENED, 'Total loans opened'),
     ADesc(A.BORROWER_COUNT, 'Total borrowers count'),

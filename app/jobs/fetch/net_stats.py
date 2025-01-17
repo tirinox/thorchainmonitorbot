@@ -104,7 +104,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         runepool = await self.deps.thor_connector.query_runepool()
         if runepool:
             ns.total_rune_pool = thor_to_float(runepool.providers.current_deposit)
-            ns.total_rune_pol = thor_to_float(runepool.pol.value)
+            ns.total_rune_pol = thor_to_float(runepool.reserve.current_deposit)
         else:
             self.logger.error('Failed to get RUNE pool stats from')
 
@@ -129,5 +129,5 @@ class NetworkStatisticsFetcher(BaseFetcher):
 
         await self._get_rune_pool_stats(ns)
 
-        ns.date_ts = now_ts()
+        ns.date_ts = int(now_ts())
         return ns

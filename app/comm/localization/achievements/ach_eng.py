@@ -50,7 +50,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         A.WEEKLY_PROTOCOL_REVENUE_USD: "Weekly protocol revenue",
         A.WEEKLY_AFFILIATE_REVENUE_USD: "Weekly affiliate revenue",
 
-        A.RUNE_BURNT_LENDING: "RUNE burnt",
+        A.RUNE_BURNT_LENDING: "RUNE burned",
         A.LOANS_OPENED: "Loans opened",
         A.BORROWER_COUNT: "Borrowers count",
         A.MAX_LOAN_AMOUNT_USD: "Maximum loan amount",

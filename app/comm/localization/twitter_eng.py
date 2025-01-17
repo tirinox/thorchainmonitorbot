@@ -760,21 +760,15 @@ class TwitterEnglishLocalization(BaseLocalization):
     def text_metrics_supply(self, market_info: RuneMarketInfo):
         sp = market_info.supply_info
 
-        burn_amt = short_rune(abs(sp.lending_burnt_rune))
-        burn_pct = format_percent(abs(sp.lending_burnt_rune), sp.total)
-        if sp.lending_burnt_rune > 0:
-            str_burnt = f'🔥 Burnt Rune are {burn_amt} ({burn_pct})\n'
-        elif sp.lending_burnt_rune < 0:
-            str_burnt = f'🪙 Minted Rune are {burn_amt} ({burn_pct})\n'
-        else:
-            str_burnt = ''
+        burn_amt = short_rune(abs(sp.total_burned_rune))
+        burn_pct = format_percent(abs(sp.total_burned_rune), sp.total)
 
         return (
-            f'⚡️Rune supply is {pretty_rune(market_info.total_supply)}.\n'
-            f'{str_burnt}'
+            f'⚡️ Rune supply is {pretty_rune(market_info.total_supply)}.\n'
+            f'🔥 Burned Rune: {burn_amt} ({burn_pct})\n'
             f'🏊‍ Liquidity pools: {short_rune(sp.pooled)} ({format_percent(sp.pooled_percent)})\n'
-            f'RUNEPool: {short_rune(sp.runepool)} ({format_percent(sp.runepool_percent)})\n'
-            f'POL: {short_rune(sp.pol)} ({format_percent(sp.pol_percent)})\n'
+            f'🏊‍♀️ RUNEPool: {short_rune(sp.runepool)} ({format_percent(sp.runepool_percent)})\n'
+            f'⚡️ POL: {short_rune(sp.pol)} ({format_percent(sp.pol_percent)})\n'
             f'🔒 Bond: {short_rune(sp.bonded)} ({format_percent(sp.bonded_percent)})\n'
             f'🏦 CEX: {short_rune(sp.in_cex)} ({format_percent(sp.in_cex_percent, )})\n'
             f'💰 Treasury: {short_rune(sp.treasury)}'

@@ -2199,21 +2199,15 @@ class BaseLocalization(ABC):  # == English
     def text_metrics_supply(self, market_info: RuneMarketInfo):
         sp = market_info.supply_info
 
-        burn_amt = short_rune(abs(sp.lending_burnt_rune))
-        burn_pct = format_percent(abs(sp.lending_burnt_rune), sp.total)
-        if sp.lending_burnt_rune > 0:
-            str_burnt = f'🔥 Burnt Rune are {code(burn_amt)} ({burn_pct}).\n'
-        elif sp.lending_burnt_rune < 0:
-            str_burnt = f'🪙 Minted Rune are {burn_amt} ({burn_pct}).\n'
-        else:
-            str_burnt = ''
+        burn_amt = short_rune(abs(sp.total_burned_rune))
+        burn_pct = format_percent(abs(sp.total_burned_rune), sp.maximum)
 
         return (
-            f'⚡️Rune supply is {pre(pretty_rune(market_info.total_supply))}\n'
-            f'{str_burnt}'
-            f'🏊‍Liquidity pools: {pre(short_rune(sp.pooled))} ({format_percent(sp.pooled_percent)}).\n'
-            f'RUNEPool: {pre(short_rune(sp.runepool))} ({format_percent(sp.runepool_percent)}).\n'
-            f'POL: {pre(short_rune(sp.pol))} ({format_percent(sp.pol_percent)}).\n'
+            f'⚡️ Rune supply is {pre(pretty_rune(market_info.total_supply))}\n'
+            f'🔥 Burned Rune are {code(burn_amt)} ({burn_pct}).\n'
+            f'🏊‍ Liquidity pools: {pre(short_rune(sp.pooled))} ({format_percent(sp.pooled_percent)}).\n'
+            f'🏊‍ RUNEPool: {pre(short_rune(sp.runepool))} ({format_percent(sp.runepool_percent)}).\n'
+            f'⚡️ POL: {pre(short_rune(sp.pol))} ({format_percent(sp.pol_percent)}).\n'
             f'🔒 Bond: {pre(short_rune(sp.bonded))} ({format_percent(sp.bonded_percent)}).\n'
             f'🏦 CEX: {pre(short_rune(sp.in_cex))} ({format_percent(sp.in_cex_percent)}).\n'
             f'💰 Treasury: {pre(short_rune(sp.treasury))}.'
@@ -2228,9 +2222,10 @@ class BaseLocalization(ABC):  # == English
     SUPPLY_PIC_POOLED = ThorRealms.LIQ_POOL
     SUPPLY_PIC_RUNE_POOL = 'RUNEPool'
     SUPPLY_PIC_POL = 'POL'
-    SUPPLY_PIC_BURNED_INCOME = 'Income 5%'
+    SUPPLY_PIC_BURNED_INCOME = 'Income'
+    SUPPLY_PIC_BURNED_GENERAL = 'Burned'
     SUPPLY_PIC_BURNED_LENDING = 'Loans'
-    SUPPLY_PIC_BURNED_ADR12 = 'Burnt by ADR12'
+    SUPPLY_PIC_BURNED_ADR12 = 'ADR12'
     SUPPLY_PIC_SECTION_CIRCULATING = 'THOR.RUNE circulating'
     SUPPLY_PIC_SECTION_LOCKED = 'THOR.RUNE locked'
     SUPPLY_PIC_SECTION_KILLED = 'Killed'

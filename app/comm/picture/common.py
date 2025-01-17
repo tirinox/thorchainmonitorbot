@@ -124,6 +124,17 @@ class Rect(NamedTuple):
             max(1, self.h + a * 2)
         )
 
+    def anchored_position(self, anchor, extra_x=0, extra_y=0):
+        if anchor == 'center':
+            x, y = self.center
+        elif anchor == 'top':
+            x, y = self.center[0], self.y
+        elif anchor == 'bottom':
+            x, y = self.center[0], self.y2
+        else:
+            raise ValueError(f'Unknown anchor: {anchor}')
+        return x + extra_x, y + extra_y
+
 
 class PackItem(NamedTuple):
     label: str

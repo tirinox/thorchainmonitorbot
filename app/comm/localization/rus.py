@@ -1721,21 +1721,15 @@ class RussianLocalization(BaseLocalization):
     def text_metrics_supply(self, market_info: RuneMarketInfo):
         sp = market_info.supply_info
 
-        burn_amt = short_rune(abs(sp.lending_burnt_rune))
-        burn_pct = format_percent(abs(sp.lending_burnt_rune), sp.total)
-        if sp.lending_burnt_rune > 0:
-            str_burnt = f'🔥 Сожжено Rune – {code(burn_amt)} ({burn_pct}).\n'
-        elif sp.lending_burnt_rune < 0:
-            str_burnt = f'🪙 Напечатано Rune – {burn_amt} ({burn_pct}).\n'
-        else:
-            str_burnt = ''
+        burn_amt = short_rune(abs(sp.total_burned_rune))
+        burn_pct = format_percent(abs(sp.total_burned_rune), sp.total)
 
         return (
             f'⚡️ Предложение монеты Rune – {pre(pretty_rune(market_info.total_supply))}\n'
-            f'{str_burnt}'
+            f'🔥 Сожжено Rune – {code(burn_amt)} ({burn_pct}).\n'
             f'🏊‍ Пулы ликвидности: {pre(short_rune(sp.pooled))} ({format_percent(sp.pooled_percent)}).\n'
-            f'RUNEPool: {pre(short_rune(sp.runepool))} ({format_percent(sp.runepool_percent)}).\n'
-            f'POL: {pre(short_rune(sp.pol))} ({format_percent(sp.pol_percent)}).\n'
+            f'🏊‍ RUNEPool: {pre(short_rune(sp.runepool))} ({format_percent(sp.runepool_percent)}).\n'
+            f'⚡️ POL: {pre(short_rune(sp.pol))} ({format_percent(sp.pol_percent)}).\n'
             f'🔒 Бонды нод: {pre(short_rune(sp.bonded))} ({format_percent(sp.bonded_percent)}).\n'
             f'🏦 Биржы: {pre(short_rune(sp.in_cex))} ({format_percent(sp.in_cex_percent)}).\n'
             f'💰 Сокровищница имеет {pre(short_rune(sp.treasury))}.'

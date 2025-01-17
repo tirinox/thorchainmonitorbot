@@ -331,7 +331,9 @@ class MetricsDialog(BaseDialog):
 
         text = self.loc.text_metrics_supply(market_info)
 
-        pic_gen = SupplyPictureGenerator(self.loc, market_info.supply_info, self.deps.net_stats)
+        pic_gen = SupplyPictureGenerator(
+            self.loc, market_info.supply_info, self.deps.net_stats, prev_supply=market_info.prev_supply_info
+        )
         pic, pic_name = await pic_gen.get_picture()
 
         await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)

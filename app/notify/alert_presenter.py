@@ -346,7 +346,9 @@ class AlertPresenter(INotified, WithLogger):
 
     async def _handle_supply(self, market_info: RuneMarketInfo):
         async def supply_pic_gen(loc: BaseLocalization):
-            gen = SupplyPictureGenerator(loc, market_info.supply_info, self.deps.net_stats)
+            gen = SupplyPictureGenerator(
+                loc, market_info.supply_info, self.deps.net_stats, market_info.prev_supply_info
+            )
             pic, pic_name = await gen.get_picture()
             text = loc.text_metrics_supply(market_info)
             # text = loc.SUPPLY_PIC_CAPTION

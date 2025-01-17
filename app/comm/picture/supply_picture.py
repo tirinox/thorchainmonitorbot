@@ -7,7 +7,7 @@ from PIL import Image
 from comm.localization.eng_base import BaseLocalization
 from comm.picture.common import BasePictureGenerator, DrawRectPacker, Rect, PackItem
 from comm.picture.resources import Resources
-from lib.constants import RUNE_IDEAL_SUPPLY, ThorRealms
+from lib.constants import ThorRealms
 from lib.draw_utils import font_estimate_size, reduce_alpha, adjust_brightness
 from lib.money import short_money
 from lib.plot_graph import PlotGraph
@@ -32,11 +32,13 @@ class SupplyPictureGenerator(BasePictureGenerator):
 
     FILENAME_PREFIX = 'thorchain_supply'
 
-    MIN_FONT_SIZE = 32
+    MIN_FONT_SIZE = 24
     MAX_FONT_SIZE = 50
 
     MIN_VALUE_FONT_SIZE = 45
     MAX_VALUE_FONT_SIZE = 99
+
+    MIN_WEIGHT_TO_DISPLAY = 1.5e6
 
     def _draw_rect(self, r: Rect, item: PackItem, outline='black'):
         if item.color:
@@ -48,17 +50,33 @@ class SupplyPictureGenerator(BasePictureGenerator):
         if path := item.meta_key('overlay_path'):
             self._put_overlay(r, path, alpha=0.2)
 
-        if item.meta_key('show_weight') and item.weight > 1e6:
+        if item.meta_key('show_weight') and item.weight >= self.MIN_WEIGHT_TO_DISPLAY:
             font_sz = min(item.meta_key('max_value_font', self.MAX_VALUE_FONT_SIZE),
                           max(self.MIN_FONT_SIZE, int(sqrt(item.weight) / 80)))
             font = self.res.fonts.get_font(font_sz)
             text = short_money(item.weight)
 
-            self._add_text(r.center, text,
-                           anchor='mm',
+            too_thin = font_sz >= r.h
+            anchor = 'mm' if not too_thin else 'mb'
+            value_pos = r.center if not too_thin else r.anchored_position('top', 0, -5)
+            self._add_text(value_pos,
+                           text,
+                           anchor=anchor,
                            font=font,
                            fill=adjust_brightness(item.color, 5.1),
                            stroke_fill=adjust_brightness(item.color, 0.2))
+
+            # if prev_value := item.meta_key('prev'):
+            #     diff = item.weight - prev_value
+            #     value_pos = (value_pos[0], value_pos[1] + 0.5 * font_sz + 5)
+            #     if diff and abs(diff) > item.weight * 0.01:
+            #         diff_text = short_money(diff, signed=True)
+            #         self._add_text(value_pos, diff_text, anchor=anchor,
+            #                        fill=adjust_brightness(item.color, 0.7),
+            #                        stroke_fill=adjust_brightness(item.color, 0.3),
+            #                        font=self.res.fonts.get_font(30))
+
+
         if item.label:
             label_pos = item.meta_key('label_pos')
             if label_pos == 'up':
@@ -71,6 +89,10 @@ class SupplyPictureGenerator(BasePictureGenerator):
                 px, py, anchor = 10, 6, 'lt'
             else:
                 px, py, anchor = 10, 14, 'lt'
+
+            if item.weight < 0:
+                self.logger.warning(f'Negative weight for {item.label}: {item.weight}')
+                item = item._replace(weight=0)
 
             font_sz = min(
                 item.meta_key('max_title_font', self.MAX_FONT_SIZE),
@@ -93,7 +115,8 @@ class SupplyPictureGenerator(BasePictureGenerator):
 
     def __init__(self, loc: BaseLocalization,
                  supply: RuneCirculatingSupply,
-                 net_stats: NetworkStats):
+                 net_stats: NetworkStats,
+                 prev_supply: RuneCirculatingSupply):
         super().__init__(loc)
 
         if not supply.bonded:
@@ -103,8 +126,8 @@ class SupplyPictureGenerator(BasePictureGenerator):
             raise ValueError('Pooled supply is not set. Please, check the data.')
 
         self.supply = supply
+        self.prev_supply = prev_supply or RuneCirculatingSupply.zero()
         self.net_stats = net_stats
-        self.maya_pool = self.supply.total_rune_in_realm(ThorRealms.MAYA_POOL)
 
         self.res = Resources()
 
@@ -232,108 +255,136 @@ class SupplyPictureGenerator(BasePictureGenerator):
             return {'show_weight': value, 'label_pos': label, 'overlay_path': self.OVERLAYS.get(realm),
                     **kwargs}
 
+        # Top level sections
+        protocol_section = self.supply.reserves_without_pol + self.supply.pol
+        working_section = self.supply.runepool + self.supply.bonded + self.supply.pooled
+        free_float_section = self.supply.total - protocol_section - working_section
+        burned_section = self.supply.total_burned_rune
+
         # Top level layout (horizontal)
-        rune_pool = self.net_stats.total_rune_pool
-        reserves_1st_column = self.supply.in_reserves + rune_pool
         (
             locked_rect,
             working_rect,
             circulating_rect,
+            burned_rect,
         ) = self._pack([
-            PackItem('', reserves_1st_column, ''),
-            PackItem('', self.supply.working, ''),
-            PackItem('', self.supply.circulating, ''),
+            PackItem('', protocol_section, ''),
+            PackItem('', working_section, ''),
+            PackItem('', free_float_section, ''),
+            PackItem('', burned_section, '')
         ], outer_rect, align=DrawRectPacker.H)
 
-        # Column 1: Reserves
-        reserve = self.supply.find_by_realm(ThorRealms.RESERVES)[0]
-
+        # --------------------------------------------------------------------------------------------------------------
+        # Column 1 is protocol section: Reserves and POL
         self._pack([
             PackItem(
-                self.translate.get(reserve.realm, reserve.realm),
-                reserve.amount,
-                self.PALETTE.get(reserve.realm, 'black'),
-                meta_data=meta(realm=reserve.realm, max_value_font=80)
+                self.translate.get(ThorRealms.RESERVES, ThorRealms.RESERVES),
+                self.supply.reserves_without_pol,
+                self.PALETTE.get(ThorRealms.RESERVES, 'black'),
+                meta_data=meta(realm=ThorRealms.RESERVES, max_value_font=80)
             ),
-
+            PackItem(
+                self.loc.SUPPLY_PIC_POL, self.supply.pol, self.PALETTE[ThorRealms.POL],
+                meta(realm=ThorRealms.POL, prev=self.prev_supply.pol)
+            ),
         ], locked_rect, align=DrawRectPacker.V)
 
-        # Column 2: Bond and Pool (working Rune)
-        bonded = self.net_stats.total_bond_rune
-        pooled = self.net_stats.total_rune_lp
-        burnt_income = self.supply.burnt_rune_from_income
-
+        # --------------------------------------------------------------------------------------------------------------
+        # Column 2: Users' Rune those are working in the protocol
         self._pack([
-            PackItem(self.loc.SUPPLY_PIC_BONDED, bonded, self.PALETTE[ThorRealms.BONDED],
-                     meta(realm=ThorRealms.BONDED)),
-            PackItem(self.loc.SUPPLY_PIC_POOLED, pooled, self.PALETTE[ThorRealms.LIQ_POOL],
-                     meta(realm=ThorRealms.LIQ_POOL)),
-            PackItem(self.loc.SUPPLY_PIC_RUNE_POOL, rune_pool, self.PALETTE[ThorRealms.RUNEPOOL],
-                     meta(realm=ThorRealms.RUNEPOOL, label='tight_top',
-                          max_title_font=24)),
-            PackItem(self.loc.SUPPLY_PIC_POL, self.net_stats.total_rune_pol, self.PALETTE[ThorRealms.POL],
-                     meta(realm=ThorRealms.POL)),
-
-            PackItem('', burnt_income,
-                     self.PALETTE[ThorRealms.BURNED], meta(realm=ThorRealms.INCOME_BURN)),
+            PackItem(self.loc.SUPPLY_PIC_BONDED, self.supply.bonded, self.PALETTE[ThorRealms.BONDED],
+                     meta(realm=ThorRealms.BONDED, prev=self.prev_supply.bonded)),
+            PackItem(self.loc.SUPPLY_PIC_POOLED, self.supply.pooled, self.PALETTE[ThorRealms.LIQ_POOL],
+                     meta(realm=ThorRealms.LIQ_POOL, prev=self.prev_supply.pooled)),
+            PackItem(self.loc.SUPPLY_PIC_RUNE_POOL, self.supply.runepool, self.PALETTE[ThorRealms.RUNEPOOL],
+                     meta(realm=ThorRealms.RUNEPOOL,
+                          label='tight_top', max_title_font=24, prev=self.prev_supply.runepool
+                          )),
 
         ], working_rect, align=DrawRectPacker.V)
 
+        # --------------------------------------------------------------------------------------------------------------
         # Column 3: Circulating Rune
 
-        # Circulating
-        # other_circulating = self.supply.circulating - self.supply.treasury - self.supply.in_cex
-        other_circulating = self.supply.circulating - self.supply.treasury - self.supply.in_cex
-        burned_killed_rune = (self.supply.maximum or RUNE_IDEAL_SUPPLY) - self.supply.total
-
-        [cex_rect, *_, other_rect, killed_rect] = self._pack([
-            PackItem('', self.supply.in_cex, ''),  # CEX Block
-
-            # PackItem(self.loc.SUPPLY_PIC_TREASURY, self.supply.treasury, self.PALETTE[ThorRealms.TREASURY],
-            #          meta(realm=ThorRealms.TREASURY)),
-            # PackItem(self.loc.SUPPLY_PIC_MAYA, self.maya_pool, self.PALETTE[ThorRealms.MAYA_POOL],
-            #          meta(realm=ThorRealms.MAYA_POOL, label='up')),
-
-            PackItem('', other_circulating, ''),
-            PackItem('', max(1, burned_killed_rune), ''),  # Killed & burned
-        ], circulating_rect, align=DrawRectPacker.V)
-
+        # first, we will show CEX block
         cex_items = [
             PackItem(
                 (it.name if it.amount > 2e6 else ''),
                 it.amount,
                 self.PALETTE.get(it.name, self.PALETTE.get(ThorRealms.CEX)),
-                meta_data=meta(realm=it.name)
+                meta_data=meta(
+                    realm=it.name, label='tight_top' if it.amount < 15e6 else None,
+                    # todo: prev
+                    # prev=self.prev_supply.find_by_realm(it.name).amount
+                )
             )
             for it in sorted(
                 self.supply.find_by_realm(ThorRealms.CEX, join_by_name=True),
                 key=lambda it: it.amount, reverse=True
             )
         ]
-        self._pack(cex_items, cex_rect, align=DrawRectPacker.H)
 
-        # Circulating, Maya, Treasury, Burned, Killed
+        total_displayed_cex_rune = sum(it.weight for it in cex_items)
+
+        other_circulating = (
+                free_float_section -
+                self.supply.treasury -
+                total_displayed_cex_rune -
+                self.supply.maya_pool
+        )
 
         self._pack([
+            *cex_items,
+            PackItem(self.loc.SUPPLY_PIC_TREASURY, self.supply.treasury, self.PALETTE[ThorRealms.TREASURY],
+                     meta(realm=ThorRealms.TREASURY,
+                          max_title_font=24, label='tight_top',
+                          prev=self.prev_supply.treasury)),
             PackItem(self.loc.SUPPLY_PIC_CIRCULATING, other_circulating, self.PALETTE[ThorRealms.CIRCULATING],
                      meta(realm=ThorRealms.CIRCULATING)),
-            PackItem(self.loc.SUPPLY_PIC_TREASURY, self.supply.treasury, self.PALETTE[ThorRealms.TREASURY],
-                     meta(realm=ThorRealms.TREASURY)),
-            PackItem(self.loc.SUPPLY_PIC_MAYA, self.maya_pool, self.PALETTE[ThorRealms.MAYA_POOL],
-                     meta(realm=ThorRealms.MAYA_POOL, label='up')),
+            PackItem(
+                self.loc.SUPPLY_PIC_MAYA,
+                self.supply.maya_pool,
+                self.PALETTE[ThorRealms.MAYA_POOL],
+                meta(realm=ThorRealms.MAYA_POOL, max_title_font=30, label='up', prev=self.prev_supply.maya_pool)
+            ),  # , label='up'
+        ], circulating_rect, align=DrawRectPacker.V)
 
-        ], other_rect, align=DrawRectPacker.INSIDE_LARGEST)
+        # --------------------------------------------------------------------------------------------------------------
+        # Column 4: Burned and Killed Rune
+        adr12_burned = self.supply.adr12_burnt_rune
+        killed_switched = self.supply.killed_switched
 
-        items = []
-        if self.supply.lending_burnt_rune > 0:
-            items.append(PackItem(self.loc.SUPPLY_PIC_BURNED_LENDING, abs(self.supply.lending_burnt_rune),
-                                  self.PALETTE[ThorRealms.BURNED], meta(value=True, realm=ThorRealms.BURNED)))
-        if self.supply.adr12_burnt_rune > 0:
-            items.append(PackItem(self.loc.SUPPLY_PIC_BURNED_ADR12, abs(self.supply.adr12_burnt_rune),
-                                  self.PALETTE[ThorRealms.BURNED], meta(value=True, realm=ThorRealms.BURNED)))
-        if self.supply.killed_switched > 0:
-            items.append(PackItem(self.loc.SUPPLY_PIC_SECTION_KILLED,
-                                  self.supply.killed_switched,
-                                  self.PALETTE[ThorRealms.KILLED],
-                                  meta(value=True, realm=ThorRealms.KILLED)))
-        self._pack(items, killed_rect, align=DrawRectPacker.H)
+        if burned_section >= (adr12_burned + killed_switched):
+            burn_items = []
+            if self.supply.lending_burnt_rune > 0:
+                burn_items.append(PackItem(
+                    self.loc.SUPPLY_PIC_BURNED_LENDING, self.supply.lending_burnt_rune,
+                    self.PALETTE[ThorRealms.BURNED],
+                    meta(value=True, realm=ThorRealms.BURNED, prev=self.prev_supply.lending_burnt_rune)
+                ))
+            if self.supply.adr12_burnt_rune > 0:
+                burn_items.append(PackItem(
+                    self.loc.SUPPLY_PIC_BURNED_ADR12, adr12_burned,
+                    self.PALETTE[ThorRealms.BURNED], meta(value=True, realm=ThorRealms.BURNED)
+                ))
+            if self.supply.killed_switched > 0:
+                burn_items.append(PackItem(
+                    self.loc.SUPPLY_PIC_SECTION_KILLED,
+                    self.supply.killed_switched,
+                    self.PALETTE[ThorRealms.KILLED],
+                    meta(value=True, realm=ThorRealms.KILLED)
+                ))
+        else:
+            # If there is no enough space for all burned sections, we will show them without distribution
+            prev_burned = self.prev_supply.total_burned_rune
+            burn_items = [
+                PackItem(
+                    self.loc.SUPPLY_PIC_BURNED_GENERAL,
+                    burned_section,
+                    self.PALETTE[ThorRealms.BURNED], meta(value=True, realm=ThorRealms.BURNED, prev=prev_burned)
+                )
+            ]
+
+        # PackItem('', burnt_income, self.PALETTE[ThorRealms.BURNED], meta(realm=ThorRealms.INCOME_BURN)),
+
+        self._pack(burn_items, burned_rect, align=DrawRectPacker.V)

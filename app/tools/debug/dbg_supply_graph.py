@@ -47,7 +47,12 @@ async def get_supply_pic(app, cached=True):
     else:
         net_stats, rune_market_info = await debug_get_rune_market_data(app)
 
-    pic_gen = SupplyPictureGenerator(loc, rune_market_info.supply_info, net_stats)
+    # prev supply
+    rune_market_info.prev_supply_info = rune_market_info.supply_info.distorted()
+    # rune_market_info.prev_supply_info = rune_market_info.supply_info.zero()
+    # rune_market_info.prev_supply_info = None
+
+    pic_gen = SupplyPictureGenerator(loc, rune_market_info.supply_info, net_stats, rune_market_info.prev_supply_info)
 
     return await pic_gen.get_picture()
 
