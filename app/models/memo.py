@@ -11,6 +11,20 @@ MAX_AFF_LEVELS = 5
 THOR_AFFILIATE_BASIS_POINT_MAX = 1000
 
 
+def is_action(x, y):
+    if isinstance(y, (tuple, set, list, dict)):
+        return any(is_action(x, t) for t in y)
+
+    if isinstance(x, ActionType):
+        x = x.value
+    if isinstance(y, ActionType):
+        y = y.value
+
+    return str(x).lower() == str(y).lower()
+
+# --- copy from xchainpy2 bellow ---
+
+
 class ActionType(Enum):
     # Standard
     ADD_LIQUIDITY = 'addLiquidity'
@@ -136,13 +150,11 @@ class THORMemo:
         """
         Returns affiliate address/THORName when there is only one affiliate
         Returns '' if no affiliates
-        Raises ValueError if multiple affiliates
+        Returns concatenated addresses when multiple affiliates, glued by '/'
         :return: Affiliate address/name
         """
         if not self.affiliates:
             return ''
-        elif len(self.affiliates) == 1:
-            return self.affiliates[0].address
         else:
             raise '/'.join(af.address for af in self.affiliates)
 
@@ -151,15 +163,20 @@ class THORMemo:
         """
         Returns affiliate fee in basis points (0...1000) when there is only one affiliate
         Returns 0 if no affiliates
-        Raises ValueError if multiple affiliates
+        Returns sum of all affiliates' fees if multiple affiliates
         :return: Affiliate fee in basis points
         """
         if not self.affiliates:
             return 0
-        elif len(self.affiliates) == 1:
-            return self.affiliates[0].fee_bp
         else:
             raise sum(af.fee_bp for af in self.affiliates)
+
+    @property
+    def affiliate_fee_0_1(self) -> float:
+        """
+        Returns affiliate fee in 0...1 range when there is only one affiliate
+        """
+        return self.affiliate_fee_bp / THOR_BASIS_POINT_MAX
 
     @property
     def has_affiliate_part(self):
@@ -167,7 +184,7 @@ class THORMemo:
 
     @property
     def is_streaming(self):
-        return self.s_swap_quantity > 1
+        return self.s_swap_quantity is not None and self.s_swap_quantity > 1
 
     @property
     def uses_aggregator_out(self):
