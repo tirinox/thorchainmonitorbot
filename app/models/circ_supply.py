@@ -14,16 +14,39 @@ class RuneHoldEntry(NamedTuple):
     def add_amount(self, amount):
         return self._replace(amount=self.amount + amount)
 
+    def to_dict(self):
+        return {
+            'address': self.address,
+            'amount': self.amount,
+            'name': self.name,
+            'realm': self.realm
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(d['address'], d['amount'], d['name'], d['realm'])
+
 
 class RuneCirculatingSupply(NamedTuple):
-    circulating: int
     total: int
     maximum: int
     holders: Dict[str, RuneHoldEntry]
 
     @classmethod
+    def from_dict(cls, d):
+        holders = {k: RuneHoldEntry.from_dict(v) for k, v in d['holders'].items()}
+        return cls(d['total'], d['maximum'], holders)
+
+    def to_dict(self):
+        return {
+            'total': self.total,
+            'maximum': self.maximum,
+            'holders': {k: v.to_dict() for k, v in self.holders.items()}
+        }
+
+    @classmethod
     def zero(cls):
-        return cls(0, 0, 0, {})
+        return cls(0, 0, {})
 
     def set_holder(self, h: RuneHoldEntry):
         self.holders[h.address] = h
@@ -31,6 +54,10 @@ class RuneCirculatingSupply(NamedTuple):
     @property
     def killed_switched(self):
         return RUNE_IDEAL_SUPPLY - RUNE_SUPPLY_AFTER_SWITCH
+
+    @property
+    def circulating(self):
+        return self.total - self.bonded - self.in_reserves
 
     @property
     def burnt_rune_from_income(self):
@@ -43,10 +70,6 @@ class RuneCirculatingSupply(NamedTuple):
     @property
     def adr12_burnt_rune(self):
         return RUNE_BURNT_ADR_12
-
-    @property
-    def total_burnt_rune(self):
-        return RUNE_SUPPLY_AFTER_SWITCH - self.total
 
     def find_by_realm(self, realms, join_by_name=False):
         if isinstance(realms, str):
@@ -66,11 +89,23 @@ class RuneCirculatingSupply(NamedTuple):
         return sum(h.amount for h in self.find_by_realm(realms))
 
     def __repr__(self) -> str:
-        return f"RuneCirculatingSupply(circulating={self.circulating}, total={self.total}, holders={len(self.holders)})"
+        return f"RuneCirculatingSupply(total={self.total}, max={self.maximum}, holders={len(self.holders)})"
 
     @property
     def in_cex(self):
         return self.total_rune_in_realm(ThorRealms.CEX)
+
+    @property
+    def maya_pool(self):
+        return self.total_rune_in_realm(ThorRealms.MAYA_POOL)
+
+    @property
+    def reserves_full(self):
+        return self.total_rune_in_realm(ThorRealms.RESERVES)
+
+    @property
+    def reserves_without_pol(self):
+        return self.reserves_full - self.pol
 
     @property
     def in_cex_percent(self):
@@ -106,7 +141,7 @@ class RuneCirculatingSupply(NamedTuple):
 
     @property
     def pol(self):
-        return self.total_rune_in_realm(ThorRealms.POL)
+        return self.total_rune_in_realm(ThorRealms.POL) - self.runepool
 
     @property
     def pol_percent(self):

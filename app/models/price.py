@@ -27,6 +27,7 @@ class RuneMarketInfo:
     total_trade_volume_usd: float = 0.0
     total_supply: int = RUNE_IDEAL_SUPPLY
     supply_info: RuneCirculatingSupply = RuneCirculatingSupply.zero()
+    prev_supply_info: RuneCirculatingSupply = RuneCirculatingSupply.zero()
     pools: PoolInfoMap = None
 
     @property

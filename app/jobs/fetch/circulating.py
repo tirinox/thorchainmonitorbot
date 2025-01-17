@@ -26,10 +26,13 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         @return: RuneCirculatingSupply
         """
 
-        thor_rune_supply = await self.get_thor_rune_total_supply()
-        thor_rune_max_supply = await self.get_max_supply_from_mimir()
+        thor_rune_supply = await self.get_thor_rune_total_supply()  # Actual current Rune supply
+        thor_rune_max_supply = await self.get_max_supply_from_mimir()  # 500M - burned income part = mimir MaxRuneSupply
 
-        result = RuneCirculatingSupply(thor_rune_supply, thor_rune_supply, thor_rune_max_supply, {})
+        result = RuneCirculatingSupply(
+            thor_rune_supply,
+            thor_rune_max_supply, {}
+        )
 
         for address, (wallet_name, realm) in THOR_ADDRESS_DICT.items():
             # No hurry, do it step by step
@@ -37,23 +40,26 @@ class RuneCirculatingSupplyFetcher(WithLogger):
 
             balance = await self.get_thor_address_balance(address)
 
-            if address == TREASURY_LP_ADDRESS:
-                lp_balance = await self.get_treasury_lp_value()
-                self.logger.info(f'Treasury LP balance ({address}): {lp_balance} Rune')
-                balance += lp_balance
+            # fixme: other treasury addresses also hold some LP!
+            # if address == TREASURY_LP_ADDRESS:
+            #     lp_balance = await self.get_treasury_lp_value()
+            #     self.logger.info(f'Treasury LP balance ({address}): {lp_balance} Rune')
+            #     balance += lp_balance
 
             result.set_holder(RuneHoldEntry(address, balance, wallet_name, realm))
 
         maya_pool_balance = await self.maya.get_maya_pool_rune()
         result.set_holder(RuneHoldEntry('Maya pool', int(maya_pool_balance), 'Maya pool', ThorRealms.MAYA_POOL))
 
-        locked_rune = sum(
-            w.amount for w in result.holders.values()
-            if w.realm in (ThorRealms.RESERVES, ThorRealms.STANDBY_RESERVES)
-        )
-        circulating_rune = thor_rune_supply - locked_rune
+        return result
 
-        return result._replace(circulating=circulating_rune)
+        # locked_rune = sum(
+        #     w.amount for w in result.holders.values()
+        #     if w.realm in (ThorRealms.RESERVES, ThorRealms.STANDBY_RESERVES)
+        # )
+        # circulating_rune = thor_rune_supply - locked_rune
+        #
+        # return result._replace(circulating=circulating_rune)
 
     @staticmethod
     def get_pure_rune_from_thor_array(arr):

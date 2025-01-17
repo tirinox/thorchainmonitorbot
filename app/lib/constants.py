@@ -260,7 +260,7 @@ THOR_ADDRESS_DICT = {
     'thor1lj62pg6ryxv2htekqx04nv7wd3g98qf9gfvamy': (ThorRealms.STANDBY_RESERVES, ThorRealms.STANDBY_RESERVES),
 
     # Treasury:
-    'thor1qd4my7934h2sn5ag5eaqsde39va4ex2asz3yv5': ('Treasury Multisig', ThorRealms.TREASURY),
+    'thor1qd4my7934h2sn5ag5eaqsde39va4ex2asz3yv5': ('Treasury Multisig', ThorRealms.TREASURY),  # empty now
     'thor10qh5272ktq4wes8ex343ky9rsuehcypddjh08k': ('Treasury Vultisig', ThorRealms.TREASURY),
     # 'thor1505gp5h48zd24uexrfgka70fg8ccedafsnj0e3': ('Treasury 1', ThorRealms.TREASURY),
     # 'thor14n2q7tpemxcha8zc26j0g5pksx4x3a9xw9ryq9': ('Treasury 2', ThorRealms.TREASURY),
