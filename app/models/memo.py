@@ -169,7 +169,7 @@ class THORMemo:
         if not self.affiliates:
             return 0
         else:
-            raise sum(af.fee_bp for af in self.affiliates)
+            return sum(af.fee_bp for af in self.affiliates)
 
     @property
     def affiliate_fee_0_1(self) -> float:
