@@ -45,7 +45,10 @@ class SupplyPictureGenerator(BasePictureGenerator):
             r = r.extend(-1)
             # self.gr.draw.rectangle(r.coordinates, item.color, outline=outline)
             with suppress(ValueError):
-                self.gr.draw.rounded_rectangle(r.coordinates, radius=14, fill=item.color, outline=outline)
+                ((x1, y1), (x2, y2)) = r.coordinates
+                if y2 < y1 + 2:
+                    y2 = y1 + 2
+                self.gr.draw.rounded_rectangle(((x1, y1), (x2, y2)), radius=14, fill=item.color, outline=outline)
 
         if path := item.meta_key('overlay_path'):
             self._put_overlay(r, path, alpha=0.2)
@@ -76,7 +79,6 @@ class SupplyPictureGenerator(BasePictureGenerator):
             #                        stroke_fill=adjust_brightness(item.color, 0.3),
             #                        font=self.res.fonts.get_font(30))
 
-
         if item.label:
             label_pos = item.meta_key('label_pos')
             if label_pos == 'up':
@@ -100,9 +102,11 @@ class SupplyPictureGenerator(BasePictureGenerator):
             )
             font = self.res.fonts.get_font(font_sz)
 
+            fill = item.meta_key('title_fill', adjust_brightness(item.color, 0.7))
+            stroke = item.meta_key('title_stoke', adjust_brightness(item.color, 0.7))
             self._add_text(r.shift_from_origin(px, py), item.label, anchor=anchor,
-                           fill=adjust_brightness(item.color, 0.7),
-                           stroke_fill=adjust_brightness(item.color, 0.3),
+                           fill=fill,
+                           stroke_fill=stroke,
                            font=font)
 
     def _add_text(self, xy, text, fill='white', stroke_fill='black', stroke_width=1, anchor=None, font=None):
@@ -163,7 +167,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
             ThorRealms.MAYA_POOL: '#347ce0',
             ThorRealms.BURNED: '#dd5627',
             ThorRealms.KILLED: '#9e1d0b',
-            ThorRealms.INCOME_BURN: '#dd5627',
+            ThorRealms.INCOME_BURN: '#e38239',
         }
 
         self.OVERLAYS = {
@@ -207,7 +211,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
             ThorRealms.MAYA_POOL,
             ThorRealms.BURNED,
             ThorRealms.KILLED,
-            # ThorRealms.INCOME_BURN,
+            ThorRealms.INCOME_BURN,
         ]
         for title in legend_items:
             color = self.PALETTE.get(title, '#fff')
@@ -385,6 +389,16 @@ class SupplyPictureGenerator(BasePictureGenerator):
                 )
             ]
 
-        # PackItem('', burnt_income, self.PALETTE[ThorRealms.BURNED], meta(realm=ThorRealms.INCOME_BURN)),
+        burn_items.append(PackItem(
+            self.loc.SUPPLY_PIC_BURNED_INCOME,
+            self.supply.burnt_rune_from_income,
+            self.PALETTE[ThorRealms.INCOME_BURN],
+            meta(
+                realm=ThorRealms.INCOME_BURN,
+                value=True,
+                prev=self.prev_supply.burnt_rune_from_income,
+                label='up', title_fill='#ffcf40'
+            )
+        ))
 
         self._pack(burn_items, burned_rect, align=DrawRectPacker.V)

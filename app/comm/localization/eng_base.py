@@ -2222,7 +2222,7 @@ class BaseLocalization(ABC):  # == English
     SUPPLY_PIC_POOLED = ThorRealms.LIQ_POOL
     SUPPLY_PIC_RUNE_POOL = 'RUNEPool'
     SUPPLY_PIC_POL = 'POL'
-    SUPPLY_PIC_BURNED_INCOME = 'Income'
+    SUPPLY_PIC_BURNED_INCOME = 'System income burn'
     SUPPLY_PIC_BURNED_GENERAL = 'Burned'
     SUPPLY_PIC_BURNED_LENDING = 'Loans'
     SUPPLY_PIC_BURNED_ADR12 = 'ADR12'
