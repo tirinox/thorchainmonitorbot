@@ -156,7 +156,7 @@ class THORMemo:
         if not self.affiliates:
             return ''
         else:
-            raise '/'.join(af.address for af in self.affiliates)
+            return '/'.join(af.address for af in self.affiliates)
 
     @property
     def affiliate_fee_bp(self) -> int:
