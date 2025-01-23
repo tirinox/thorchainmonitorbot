@@ -11,8 +11,8 @@
 
         .route-box {
             position: absolute;
-            left: 15%;
-            right: 15%;
+            left: 12%;
+            right: 12%;
             top: 24%;
             height: 30%;
             display: flex;
@@ -31,7 +31,7 @@
         }
 
         .circle-tc-logo {
-            width: 154px;
+            width: 200px;
             padding: 13px;
         }
 
@@ -55,39 +55,57 @@
             align-content: center;
         }
 
+        .from {
+            font-style: normal;
+            font-weight: normal;
+        }
+
+        .input-amount, .output-amount {
+            text-shadow: 0 0 10px rgba(69, 221, 237, 60%);
+        }
+
         .asset-part {
-            margin-top: 8px;
+            margin-top: 34px;
 
             font-family: ThorFontLight, serif;
             font-weight: bold;
-            font-size: 30px;
+            font-size: 45px;
 
             position: absolute;
             top: 80%;
-            width: 200px;
+            width: 34%;
 
             text-align: center;
         }
 
         .arrow-down-holder {
             position: absolute;
-            margin-top: 165px;
-            width: 154px;
+            margin-top: 22%;
+            width: 200px;
             text-align: center;
         }
 
         .arrow-down {
             width: 30px;
             margin-bottom: 10px;
+        }
+
+        .arrow-aff {
+            filter: brightness(200%);
+            opacity: 90%;
+        }
+
+        .arrow-no-aff {
             filter: brightness(2000%);
+            opacity: 0.4;
         }
 
         .aff-fee {
             position: absolute;
-            top: 32px;
-            left: 120px;
-            font-size: 24px;
-            width: 200px;
+            top: 24px;
+            left: 130px;
+            font-size: 34px;
+            width: 220px;
             text-align: left;
         }
 
@@ -101,7 +119,6 @@
         .time-block {
             position: absolute;
             bottom: 150px;
-
         }
 
         .time-block-flex {
@@ -130,7 +147,7 @@
         }
 
         .usd-volume {
-            color: #acacac;
+            color: #c5c5c5;
             font-weight: 400;
         }
 
@@ -149,6 +166,9 @@
                 <img src="renderer/logo/{{ source_asset }}.png" alt="Source asset logo"
                      class="asset-logo white-shadow">
                 <div class="asset-part">
+                    <div class="from">
+                        👤 {{ user_name }}
+                    </div>
                     <div class="input-amount">
                         {{ short_money(source_amount) }} {{ source_asset_name }}
                     </div>
@@ -170,16 +190,13 @@
             <div class="arrow-down-holder">
                 <div>
                     {% if affiliate_fee > 0 %}
-                        <img src="renderer/static/arrow2-down.png" alt="Arrow down" class="shadow arrow-down">
+                        <img src="renderer/static/arrow2-down.png" alt="Arrow down" class="shadow arrow-down arrow-aff">
                         <div class="aff-fee">
                             {{ "%.1f"|format(affiliate_fee) }}%
                         </div>
                     {% else %}
                         <img src="renderer/static/arrow2-down.png" alt="Arrow down"
-                             class="shadow arrow-down no-aff">
-                        <div class="aff-fee no-aff">
-                            No affiliate
-                        </div>
+                             class="shadow arrow-down arrow-no-aff">
                     {% endif %}
                 </div>
 
@@ -203,8 +220,8 @@
             <div class="logo-part">
                 <img src="renderer/logo/{{ destination_asset }}.png" alt="Destination asset logo"
                      class="asset-logo white-shadow">
-                <div class="asset-part">
-                    {{ destination_asset_name }}
+                <div class="asset-part output-amount">
+                    ≈{{ short_money(destination_amount) }} {{ destination_asset_name }}
                 </div>
             </div>
         </div>

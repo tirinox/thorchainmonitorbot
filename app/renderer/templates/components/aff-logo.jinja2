@@ -5,9 +5,15 @@
 
     .affiliate-name {
         margin-top: 10px;
-        font-size: 24px;
+        font-size: 32px;
         width: 100%;
         text-align: center;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    }
+
+    .affiliate-name-no {
+        text-shadow: none;
+        color: #c5c5c5;
     }
 </style>
 
@@ -16,6 +22,8 @@
     <div class="affiliate-name">{{ affiliate_name }}</div>
 {% else %}
     {% include "components/no-aff-logo.jinja2" %}
+    <div class="affiliate-name no-aff">No affiliate</div>
+
 {% endif %}
 
 <script>

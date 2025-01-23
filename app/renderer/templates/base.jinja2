@@ -117,15 +117,20 @@
             height: 0;
         }
 
+        footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            text-align: right;
+            padding: 5px 8px 5px 5px;
+            font-size: 19px;
+            color: #394151;
+            font-style: italic;
+        }
+
     </style>
     <script src="renderer/static/chart.umd.min.js"></script>
-    {% if auto %}
-        <script>
-            setInterval(function () {
-                location.reload();
-            }, 3000);
-        </script>
-    {% endif %}
+
 </head>
 <body class="night-black">
 <div class="container">
@@ -133,6 +138,22 @@
     {% block content %}
     {% endblock %}
 
+    <footer>
+        THORChain Infobot <span id="today-date"></span>
+    </footer>
+
 </div>
+
+<script>
+    const todayDate = document.querySelector('#today-date');
+    todayDate.innerText = new Date().toLocaleDateString('kz-KZ')
+
+    {% if auto %}
+        setInterval(function () {
+            location.reload();
+        }, 3000);
+    {% endif %}
+</script>
+
 </body>
 </html>

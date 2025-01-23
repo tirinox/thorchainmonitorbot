@@ -1,7 +1,7 @@
 {
   "template_name": "swap_start.jinja2",
   "parameters": {
-    "user_name": "John Doe",
+    "user_name": "JohnDoe.thor",
     "source_address": "0x1234567890abcdef4567890abcdef1234567890",
     "destination_address": "3BvDZy1Y5J8Q1hj5t7Pv1J8Q1hj5t7Pv1",
     "source_asset": "BSC.BNB",
@@ -9,6 +9,7 @@
     "destination_asset": "BTC.BTC",
     "destination_asset_name": "BTC",
     "source_amount": 30,
+    "destination_amount": 4.222323,
     "volume_usd": 9303345,
     "affiliate": "",
     "affiliate_name": "",
