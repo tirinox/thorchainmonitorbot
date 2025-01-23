@@ -205,6 +205,52 @@ class ThorConnector:
         if data:
             return [ThorRunePoolProvider.from_json(p) for p in data]
 
+    async def query_swap_quote(self, from_asset, to_asset, amount, destination='', refund_address=None,
+                               streaming_interval=0, streaming_quantity=0, tolerance_bps=0, affiliate_bps=0,
+                               affiliate=0,
+                               height=None):
+
+        query = {}
+
+        if from_asset:
+            query['from_asset'] = from_asset
+
+        if to_asset:
+            query['to_asset'] = to_asset
+
+        if amount:
+            query['amount'] = amount
+
+        if destination:
+            query['destination'] = destination
+
+        if refund_address:
+            query['refund_address'] = refund_address
+
+        if streaming_interval:
+            query['streaming_interval'] = streaming_interval
+
+        if streaming_quantity:
+            query['streaming_quantity'] = streaming_quantity
+
+        if tolerance_bps:
+            query['tolerance_bps'] = tolerance_bps
+
+        if affiliate_bps:
+            query['affiliate_bps'] = affiliate_bps
+
+        if affiliate:
+            query['affiliate'] = affiliate
+
+        if height:
+            query['height'] = height
+
+        url = self.env.path_quote_swap + '?' + '&'.join([f'{k}={v}' for k, v in query.items()])
+
+        data = await self._request(url)
+        if data:
+            return data
+
     # ---- Internal ----
 
     def __init__(self, env: ThorEnvironment, session: ClientSession, logger=None, extra_headers=None,

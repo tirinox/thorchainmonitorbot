@@ -63,6 +63,8 @@ class ThorEnvironment:
     path_runepool = '/thorchain/runepool?height={height}'
     path_runepool_providers = '/thorchain/rune_providers?height={height}'
 
+    path_quote_swap = '/thorchain/quote/swap'
+
     kind: str = ''
 
     def copy(self):
