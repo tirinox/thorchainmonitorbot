@@ -7,6 +7,8 @@ import redis
 from dotenv import load_dotenv
 import os
 
+from tools.lib.remote_redis import get_redis
+
 # Load environment variables from .env file
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), 'redis_copy_keys.env'))
 
@@ -32,27 +34,6 @@ def copy_keys(src_redis, dst_redis, pattern):
         if value is not None:
             dst_redis.restore(key, ttl if ttl > 0 else 0, value, replace=True)
         print(f'Copied key: {key}')
-
-
-def get_redis(prefix):
-    host = os.getenv(f'{prefix}_REDIS_HOST')
-    port = int(os.getenv(f'{prefix}_REDIS_PORT'))
-    db = int(os.getenv(f'{prefix}_REDIS_DB'))
-    password = os.getenv(f'{prefix}_REDIS_PASSWORD')
-    r = redis.StrictRedis(
-        host=host,
-        port=port,
-        db=db,
-        password=password,
-        decode_responses=True
-    )
-    try:
-        r.ping()
-        print(f'Connected to {prefix} Redis ({host}:{port}/{db})')
-        return r
-    except Exception as e:
-        print(f'Error connecting to {prefix} Redis:', e)
-        return None
 
 
 def main():
