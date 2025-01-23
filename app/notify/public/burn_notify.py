@@ -47,6 +47,11 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
             self.logger.error(f'System income burn rate {MIMIR_KEY_SYSTEM_INCOME_BURN_RATE} is not set!')
             return
 
+        if curr_max_supply_8 <= 0:
+            # fixes jumps of chart if got "-1" here
+            self.logger.error(f'Invalid max supply: {curr_max_supply_8}. Not recording it!')
+            return
+
         # save current max supply (as int, no decimal)
         await self.ts.add(max_supply=curr_max_supply_8)
 
