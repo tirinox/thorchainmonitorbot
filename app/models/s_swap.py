@@ -109,13 +109,13 @@ class AlertSwapStart:
     in_amount: float
     in_asset: str
     out_asset: str
-    expected_rate: float
     volume_usd: float
     block_height: int
     memo: THORMemo
     memo_str: str
     clout: Optional[ThorSwapperClout] = None
     status: Optional[ThorTxStatus] = None
+    quote: Optional[dict] = None
 
     @property
     def is_streaming(self):
@@ -128,3 +128,15 @@ class AlertSwapStart:
     @property
     def in_amount_float(self):
         return thor_to_float(self.in_amount)
+
+    @property
+    def expected_out_amount(self):
+        return self.quote.get('expected_amount_out', 0) if self.quote else 0
+
+    @property
+    def expected_total_swap_sec(self):
+        return self.quote.get('total_swap_seconds', 0) if self.quote else self.ss.interval * self.ss.quantity * THOR_BLOCK_TIME
+
+    @property
+    def expected_outbound_delay_sec(self):
+        return self.quote.get('outbound_delay_seconds', 0) if self.quote else 0

@@ -74,7 +74,6 @@ class SwapStartDetector(WithLogger):
             in_amount=int(amount),
             in_asset=str(in_asset),
             out_asset=out_asset_name,
-            expected_rate=int(memo.limit),
             volume_usd=volume_usd,
             block_height=height,
             memo=memo,

@@ -53,14 +53,14 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         return True
 
     async def _relay_new_event(self, event: AlertSwapStart):
-        await self._load_status_info(event)
+        await self.load_extra_tx_information(event)
         self._correct_streaming_swap_info(event)
         if event.is_streaming:
             await self.deduplicator.mark_as_seen(event.tx_id)
 
         await self.pass_data_to_listeners(event)  # alert!
 
-    async def _load_status_info(self, event: AlertSwapStart):
+    async def load_extra_tx_information(self, event: AlertSwapStart):
         try:
             event.status = await self.deps.thor_connector.query_tx_status(event.tx_id)
         except Exception as e:
@@ -70,6 +70,24 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
             event.clout = await self.deps.thor_connector.query_swapper_clout(event.from_address)
         except Exception as e:
             self.logger.warning(f'Failed to load clout for {event.tx_id}: {e}')
+
+        try:
+            event.quote = await self.deps.thor_connector.query_swap_quote(
+                from_asset=event.in_asset,
+                to_asset=event.out_asset,
+                amount=event.in_amount,
+                refund_address=event.from_address,
+                streaming_quantity=event.ss.quantity,
+                streaming_interval=event.ss.interval,
+                tolerance_bps=50000,
+                affiliate='t' if event.memo.affiliates else '',  # does not matter for quote
+                affiliate_bps=event.memo.affiliate_fee_bp,
+                height=event.block_height,  # for historical quotes
+            )
+        except Exception as e:
+            self.logger.warning(f'Failed to load quote for {event.tx_id}: {e}')
+
+        return event
 
     def _correct_streaming_swap_info(self, event: AlertSwapStart):
         if event.ss and event.ss.quantity == 0 and event.ss.interval > 0:

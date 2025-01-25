@@ -172,6 +172,14 @@ class THORMemo:
             return sum(af.fee_bp for af in self.affiliates)
 
     @property
+    def affiliate_address_as_str(self):
+        return '/'.join(a.address for a in self.affiliates)
+
+    @property
+    def affiliate_fee_bp_as_str(self):
+        return '/'.join(str(a.fee_bp) for a in self.affiliates)
+
+    @property
     def affiliate_fee_0_1(self) -> float:
         """
         Returns affiliate fee in 0...1 range when there is only one affiliate
