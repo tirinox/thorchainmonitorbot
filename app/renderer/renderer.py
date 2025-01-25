@@ -4,6 +4,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from playwright.async_api import async_playwright, Page, ConsoleMessage
 
 from lib.money import short_rune, short_dollar, short_money, pretty_money
+from lib.texts import shorten_text, shorten_text_middle
 
 
 class Renderer:
@@ -30,6 +31,8 @@ class Renderer:
             'short_dollar': short_dollar,
             'short_money': short_money,
             'pretty_money': pretty_money,
+            'shorten_text': shorten_text,
+            'shorten_text_middle': shorten_text_middle,
         })
         self._resource_base_url = resource_base_url
         logging.info(f"Renderer initialized with templates directory: {self.templates_dir}")

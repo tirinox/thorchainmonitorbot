@@ -3,7 +3,10 @@ from typing import List
 from unicodedata import lookup
 from urllib.parse import urlparse
 
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+try:
+    from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+except:
+    pass
 
 from lib.money import pretty_money, short_money
 from lib.utils import grouper
@@ -224,6 +227,55 @@ def shorten_text(text, limit=200, end='...'):
         return text[:limit - len(end)] + end
     else:
         return text
+
+
+def shorten_text_middle(s: str, prefix_len: int = 4, suffix_len: int = 4, separator: str = ' ... ') -> str:
+    """
+    Shortens the string `s` by keeping the first `prefix_len` characters and the last `suffix_len` characters,
+    inserting a customizable `separator` in between if the string exceeds `prefix_len + suffix_len`.
+
+    :param s: The original string to be shortened.
+    :param prefix_len: Number of characters to keep from the start of the string.
+    :param suffix_len: Number of characters to keep from the end of the string.
+    :param separator: The string to insert between the prefix and suffix when shortening is needed.
+                      Defaults to ' ... '.
+    :return: The shortened string with `separator` in the middle if needed, otherwise the original string.
+    """
+    # Validate input lengths
+    if prefix_len < 0 or suffix_len < 0:
+        raise ValueError("prefix_len and suffix_len must be non-negative integers.")
+
+    # Calculate total length to keep (prefix + suffix)
+    total_keep = prefix_len + suffix_len
+
+    # If the original string is short enough, return it as-is
+    if len(s) <= total_keep:
+        return s
+
+    # If the separator length plus total_keep exceeds the string length,
+    # adjust the prefix and suffix to avoid overlap
+    if total_keep + len(separator) > len(s):
+        # Calculate how many characters can be kept without overlapping
+        # Ensure that at least one character from prefix and suffix is kept
+        available = len(s) - len(separator)
+        if available <= 0:
+            # Not enough space to include any characters from s, return separator truncated if necessary
+            return separator[:len(s)] if len(separator) > len(s) else separator
+        # Distribute available characters between prefix and suffix
+        # Prioritize prefix_len first
+        new_prefix_len = min(prefix_len, available)
+        new_suffix_len = min(suffix_len, available - new_prefix_len)
+        prefix = s[:new_prefix_len]
+        suffix = s[-new_suffix_len:] if new_suffix_len > 0 else ''
+    else:
+        # Normal case: enough space to include prefix, suffix, and separator
+        prefix = s[:prefix_len]
+        suffix = s[-suffix_len:] if suffix_len > 0 else ''
+
+    # Construct the shortened string
+    shortened = f"{prefix}{separator}{suffix}"
+
+    return shortened
 
 
 def find_country_emoji(country_code: str):
