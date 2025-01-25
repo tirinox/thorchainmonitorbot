@@ -4,6 +4,7 @@
     "user_name": "0x12..9932",
     "source_address": "0x1234567890abcdef4567890abcdef1234567890",
     "destination_address": "3BvDZy1Y5J8Q1hj5t7Pv1J8Q1hj5t7Pv1",
+    "tx_hash": "356B4E43540880B69A22D7ACA9F0F62E80087C947819AE8118EAAA8100D360C0",
     "source_asset": "ETH.ETH",
     "source_asset_name": "ETH",
     "destination_asset": "BTC.BTC",

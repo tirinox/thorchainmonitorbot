@@ -107,6 +107,7 @@
             font-size: 34px;
             width: 220px;
             text-align: left;
+            color: #51efe2;
         }
 
         .no-aff {
@@ -116,26 +117,39 @@
         }
 
 
-        .time-block {
+        .above-arrow {
             position: absolute;
             bottom: 150px;
+            text-align: center;
+        }
+
+        .tx-id-block {
+            font-size: 20px;
+            font-style: italic;
+            margin-bottom: 4px;
+            color: #23DCC8;
         }
 
         .time-block-flex {
             display: flex;
-            width: 200px;
+            width: 180px;
             align-items: center;
             flex-direction: row;
+        }
+
+        .time-block-interval {
+            display: flex;
+            color: #23DCC8;
+            text-align: center;
+            font-size: 20px;
         }
 
         .clock {
             width: 60px;
             display: flex;
-
             filter: brightness(80%);
             padding: 10px;
         }
-
 
         .wait-time {
             padding-left: 5px;
@@ -182,6 +196,9 @@
 
         <div class="line-box">
             <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
+            <div class="above-arrow tx-id-block">
+                {{ shorten_text_middle(tx_hash, 6, 6) }}
+            </div>
         </div>
 
         <div class="logo-holder">
@@ -208,10 +225,13 @@
 
         <div class="line-box">
             <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-pending shadow">
-            <div class="time-block">
+            <div class="above-arrow">
                 <div class="time-block-flex">
                     <img src="renderer/static/time-is-money.png" alt="Time is money..." class="clock">
                     <div class="wait-time">{{ total_estimated_time_fmt }}</div>
+                </div>
+                <div class="time-block-interval">
+                    5 swaps every 20 sec
                 </div>
             </div>
         </div>
