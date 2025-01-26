@@ -159,6 +159,10 @@ class THORMemo:
             return '/'.join(af.address for af in self.affiliates)
 
     @property
+    def first_affiliate(self):
+        return self.affiliates[0].address if self.affiliates else ''
+
+    @property
     def affiliate_fee_bp(self) -> int:
         """
         Returns affiliate fee in basis points (0...1000) when there is only one affiliate

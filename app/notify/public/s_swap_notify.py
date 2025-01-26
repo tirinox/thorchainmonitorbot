@@ -1,6 +1,7 @@
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.native_scan import BlockResult
 from jobs.scanner.swap_start_detector import SwapStartDetector
+from lib.constants import float_to_thor
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.money import pretty_dollar
@@ -71,6 +72,10 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         except Exception as e:
             self.logger.warning(f'Failed to load clout for {event.tx_id}: {e}')
 
+        await self.load_quote(event)
+        return event
+
+    async def load_quote(self, event: AlertSwapStart):
         try:
             event.quote = await self.deps.thor_connector.query_swap_quote(
                 from_asset=event.in_asset,
@@ -79,15 +84,13 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
                 refund_address=event.from_address,
                 streaming_quantity=event.ss.quantity,
                 streaming_interval=event.ss.interval,
-                tolerance_bps=50000,
-                affiliate='t' if event.memo.affiliates else '',  # does not matter for quote
+                tolerance_bps=10000,  # MAX
+                # affiliate='t' if event.memo.affiliates else '',  # does not matter for quote
                 affiliate_bps=event.memo.affiliate_fee_bp,
                 height=event.block_height,  # for historical quotes
             )
         except Exception as e:
             self.logger.warning(f'Failed to load quote for {event.tx_id}: {e}')
-
-        return event
 
     def _correct_streaming_swap_info(self, event: AlertSwapStart):
         if event.ss and event.ss.quantity == 0 and event.ss.interval > 0:

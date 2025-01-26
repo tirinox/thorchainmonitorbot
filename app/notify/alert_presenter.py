@@ -16,13 +16,15 @@ from comm.picture.savers_picture import SaversPictureGenerator
 from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.achievement.ach_list import Achievement
 from jobs.fetch.chain_id import AlertChainIdChange
-from lib.constants import THOR_BLOCKS_PER_MINUTE
+from lib.constants import THOR_BLOCKS_PER_MINUTE, thor_to_float
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
 from lib.html_renderer import InfographicRendererRPC
 from lib.logs import WithLogger
+from lib.texts import shorten_text_middle
 from lib.utils import namedtuple_to_dict
+from models.asset import Asset
 from models.cap_info import AlertLiquidityCap
 from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
@@ -249,7 +251,56 @@ class AlertPresenter(INotified, WithLogger):
 
         await self.broadcaster.broadcast_to_all(_gen, event)
 
+    async def render_swap_start(self, loc, data: AlertSwapStart, name_map: NameMap):
+        if not self.use_renderer:
+            return None, None
+
+        user_name = name_map.by_address.get(data.from_address) if name_map else None
+        user_name = user_name or shorten_text_middle(data.from_address, 6, 4)
+
+        from_asset = Asset(data.in_asset)
+        to_asset = Asset(data.out_asset)
+
+        parameters = {
+            "user_name": user_name,
+            "source_address": data.from_address,
+            "tx_hash": data.tx_id,
+            "source_asset": str(from_asset.l1_asset),
+            "source_asset_name": from_asset.pretty_str,
+            "destination_asset": str(to_asset.l1_asset),
+            "destination_asset_name": to_asset.pretty_str,
+            "source_amount": thor_to_float(data.in_amount),
+            "destination_amount": thor_to_float(data.expected_out_amount),
+            "volume_usd": data.volume_usd,
+            "affiliate": data.memo.affiliates[0].address if data.memo.affiliates else "",
+            "affiliate_name": data.memo.first_affiliate,
+            "affiliate_fee": data.memo.affiliate_fee_bp,
+
+            "swap_quantity": data.ss.quantity,
+            "swap_interval": data.ss.interval,
+            "total_estimated_time_sec": data.expected_total_swap_sec,
+
+            "_width": 1200,
+            "_height": 800
+        }
+        photo = await self.renderer.render('swap_start.jinja2', parameters)
+        photo_name = 'swap_start.png'
+        return photo, photo_name
+
     async def _handle_streaming_swap_start(self, event: AlertSwapStart):
+        name_map = await self.load_names((event.from_address, event.memo.first_affiliate))
+
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_streaming_swap_started(event, name_map)
+            photo, photo_name = await self.render_swap_start(loc, event, name_map)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
+        await self.deps.broadcaster.broadcast_to_all(message_gen)
+
+    async def _old_handle_streaming_swap_start(self, event: AlertSwapStart):
         name_map = await self.load_names(event.from_address)
 
         await self.broadcaster.broadcast_to_all(

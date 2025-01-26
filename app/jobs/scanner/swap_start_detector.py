@@ -39,7 +39,7 @@ class SwapStartDetector(WithLogger):
             out_asset_name = prices.pool_fuzzy_first(memo.asset, restore_type=True)
 
         if not out_asset_name:
-            self.logger.warning(f'{memo.asset}: asset not found!')
+            self.logger.error(f'{memo.asset}: asset not found!')
             return
 
         # get data

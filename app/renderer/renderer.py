@@ -33,6 +33,9 @@ class Renderer:
             'pretty_money': pretty_money,
             'shorten_text': shorten_text,
             'shorten_text_middle': shorten_text_middle,
+            'int': int,
+            'float': float,
+            'round': round,
         })
         self._resource_base_url = resource_base_url
         logging.info(f"Renderer initialized with templates directory: {self.templates_dir}")
