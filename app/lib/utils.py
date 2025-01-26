@@ -141,6 +141,7 @@ def load_pickle(path):
 
 def save_pickle(path, data):
     if path:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'wb') as f:
             logging.info(f'Saving pickle to "{path}"...')
             pickle.dump(data, f)

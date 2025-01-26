@@ -111,7 +111,7 @@
         }
 
         .tx-id-block {
-            font-size: 20px;
+            font-size: 30px;
             font-style: italic;
             margin-bottom: 4px;
             color: #23DCC8;
@@ -125,10 +125,12 @@
         }
 
         .time-block-interval {
-            display: inline-flex;
+            padding-right: 22px;
+            display: block;
             color: #23DCC8;
             text-align: center;
-            font-size: 20px;
+            font-size: 27px;
+            width: 200px;
         }
 
         .clock {
@@ -177,7 +179,8 @@
                      class="asset-logo white-shadow">
                 <div class="asset-part">
                     <div class="from">
-                        👤 {{ user_name }}
+                        {{ "🤖" if "Arb-Bot" in user_name else "👤" }}
+                        {{ user_name }}
                     </div>
                     <div class="input-amount">
                         {{ short_money(source_amount) }} {{ source_asset_name }}
@@ -193,7 +196,7 @@
         <div class="line-box">
             <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
             <div class="above-arrow tx-id-block">
-                {{ shorten_text_middle(tx_hash, 6, 6) }}
+                {{ shorten_text_middle(tx_hash, 4, 4) }}
             </div>
         </div>
 
@@ -220,8 +223,10 @@
             <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-pending shadow">
             <div class="above-arrow">
                 <div class="time-block-interval">
-                    {{ int(swap_quantity) }} {{ "swaps" if swap_quantity >= 2 else "swap" }}<br>
-                    every {{ int(swap_interval) }} {{ "blocks" if swap_interval >= 2 else "block" }}
+                    <strong>{{ int(swap_quantity) }}</strong>
+                    <span>{{ "swaps" if swap_quantity >= 2 else "swap" }} every</span>
+                    <strong>{{ int(swap_interval) }}</strong>
+                    <span>{{ "blocks" if swap_interval >= 2 else "block" }}</span>
                 </div>
             </div>
         </div>

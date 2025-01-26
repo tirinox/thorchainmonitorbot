@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 
 from api.aionode.connector import ThorConnector
 from api.aionode.types import float_to_thor, thor_to_float
@@ -270,52 +271,64 @@ async def dbg_swap_quote(app):
 FILE_SWAP_START_PICKLE = '../temp/swap_start_event_3.pickle'
 
 
+async def get_any_ongoing_streaming_swap(app):
+    thor = app.deps.thor_connector
+    thor: ThorConnector
+    # noinspection PyProtectedMember
+    r = await thor._request('/thorchain/swaps/streaming')
+    if not r:
+        print('No active swaps')
+        return
+
+    swap = random.sample(r, 1)[0]
+    tx_id = swap['tx_id']
+    quantity, count, interval = swap['quantity'], swap['count'], swap['interval']
+    target_asset = swap['target_asset']
+    source_asset = swap['source_asset']
+    print(f'Found active swap: {tx_id}, {quantity = }, {count = }, {source_asset} -> {target_asset}')
+
+    details = await thor.query_tx_details(tx_id)
+    tx = details['tx']['tx']
+    coins = tx['coins']
+    from_address = tx['from_address']
+    memo_str = tx['memo']
+    memo = THORMemo.parse_memo(memo_str)
+    in_amount = coins[0]['amount']
+    in_asset = coins[0]['asset']
+    height = details['consensus_height']
+
+    pools = parse_thor_pools(await thor.query_pools())
+    price_holder = LastPriceHolder().update_pools(pools)
+
+    ss = StreamingSwap.from_json(swap)
+    event = AlertSwapStart(
+        ss=ss,
+        from_address=from_address,
+        in_amount=in_amount,
+        in_asset=in_asset,
+        out_asset=target_asset,
+        volume_usd=price_holder.convert_to_usd(thor_to_float(in_amount), in_asset),
+        block_height=height,
+        memo=memo, memo_str=memo_str,
+    )
+
+    notifier = StreamingSwapStartTxNotifier(app.deps)
+    event = await notifier.load_extra_tx_information(event)
+    return event
+
+
+async def render_and_safe_stream_swap_start_pic(app, event):
+    alert: AlertPresenter = app.deps.alert_presenter
+    name_map = await alert.load_names(event.from_address)
+    photo, photo_name = await alert.render_swap_start(app.deps.loc_man.default, event, name_map)
+    save_and_show_pic(photo, name=f'../temp/swap_start/{event.tx_id}.png')
+
 async def dbg_spam_any_active_swap_start(app, refresh=False, post=False):
     event = load_pickle(FILE_SWAP_START_PICKLE)
     if not event or refresh:
-        thor = app.deps.thor_connector
-        thor: ThorConnector
-        # noinspection PyProtectedMember
-        r = await thor._request('/thorchain/swaps/streaming')
-        if not r:
-            print('No active swaps')
+        event = await get_any_ongoing_streaming_swap(app)
+        if not event:
             return
-
-        swap = r[0]
-        tx_id = swap['tx_id']
-        quantity, count, interval = swap['quantity'], swap['count'], swap['interval']
-        target_asset = swap['target_asset']
-        source_asset = swap['source_asset']
-        print(f'Found active swap: {tx_id}, {quantity = }, {count = }, {source_asset} -> {target_asset}')
-
-        details = await thor.query_tx_details(tx_id)
-        tx = details['tx']['tx']
-        coins = tx['coins']
-        from_address = tx['from_address']
-        memo_str = tx['memo']
-        memo = THORMemo.parse_memo(memo_str)
-        in_amount = coins[0]['amount']
-        in_asset = coins[0]['asset']
-        height = details['consensus_height']
-
-        pools = parse_thor_pools(await thor.query_pools())
-        price_holder = LastPriceHolder().update_pools(pools)
-
-        ss = StreamingSwap.from_json(swap)
-        event = AlertSwapStart(
-            ss=ss,
-            from_address=from_address,
-            in_amount=in_amount,
-            in_asset=in_asset,
-            out_asset=target_asset,
-            volume_usd=price_holder.convert_to_usd(thor_to_float(in_amount), in_asset),
-            block_height=height,
-            memo=memo, memo_str=memo_str,
-        )
-
-        notifier = StreamingSwapStartTxNotifier(app.deps)
-        event = await notifier.load_extra_tx_information(event)
-
         save_pickle(FILE_SWAP_START_PICKLE, event)
 
     sep()
@@ -325,14 +338,36 @@ async def dbg_spam_any_active_swap_start(app, refresh=False, post=False):
     if not event.quote:
         await StreamingSwapStartTxNotifier(app.deps).load_quote(event)
 
-    alert: AlertPresenter = app.deps.alert_presenter
     if post:
-        await alert._handle_async(event)
+        # noinspection PyProtectedMember
+        await app.deps.alert_presenter._handle_async(event)
         await asyncio.sleep(1)
     else:
-        name_map = await alert.load_names(event.from_address)
-        photo, photo_name = await alert.render_swap_start(app.deps.loc_man.default, event, name_map)
-        save_and_show_pic(photo, photo_name)
+        await render_and_safe_stream_swap_start_pic(app, event)
+
+
+async def dbg_collect_some_streaming_swaps(app):
+    total_collected = 0
+    while True:
+        event = await get_any_ongoing_streaming_swap(app)
+        if not event:
+            print('No more swaps. Waiting...')
+            await asyncio.sleep(10)
+            continue
+
+        pickle_name = f'../temp/swap_start/pickles/{event.tx_id}.pickle'
+        if load_pickle(pickle_name):
+            print(f'{event.tx_id}.pickle: Already collected. Skipping...')
+            await asyncio.sleep(1)
+            continue
+
+        await render_and_safe_stream_swap_start_pic(app, event)
+
+        save_pickle(pickle_name, event)
+        total_collected += 1
+        print(f'Collected: {total_collected} swaps')
+        sep()
+        await asyncio.sleep(1)
 
 
 async def run():
@@ -344,7 +379,10 @@ async def run():
 
         setup_logs(logging.DEBUG)
 
-        await dbg_spam_any_active_swap_start(app)
+
+        # await dbg_spam_any_active_swap_start(app)  # single
+        await dbg_collect_some_streaming_swaps(app)
+
         # await dbg_swap_quote(app)
 
         # await debug_full_pipeline(app)
