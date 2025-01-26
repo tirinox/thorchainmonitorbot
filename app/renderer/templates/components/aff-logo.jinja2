@@ -1,6 +1,11 @@
 <style>
     .affiliate-logo {
         width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+        /* gradient */
+        background: linear-gradient(90deg, #eae5e5, #b8b8b8);
     }
 
     .affiliate-name {
@@ -16,7 +21,6 @@
         text-shadow: none;
         color: #c5c5c5;
     }
-
 
     .aff-fee {
         display: inline;
@@ -45,7 +49,6 @@
             {{ affiliate_name }}
             <div class="aff-fee">{{ "%.1f"|format(affiliate_fee) }}%</div>
         </div>
-
 
     {% else %}
         {% include "components/no-aff-logo.jinja2" %}

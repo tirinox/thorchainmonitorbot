@@ -94,6 +94,10 @@ async def demo_node_names(app: LpAppFramework):
         print(loc.notification_text_rune_transfer_public(tr, name_map))
 
 
+async def dbg_affiliate(app):
+    ns = app.deps.name_service
+    await ns.lookup_name_by_address('t')
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):

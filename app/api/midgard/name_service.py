@@ -32,6 +32,10 @@ class NameMap(NamedTuple):
         for alias in thor_name.aliases:
             self.by_address[alias.address] = thor_name
 
+    def add_name_address(self, name: str, address: str):
+        self.by_name[name] = (n := make_virtual_thor_name(address, name))
+        self.by_address[address] = n
+
 
 # ThorName: address[owner] -> many of [name] -> many of [address (thor + chains)]
 # Here we basically don't care about owners of ThorNames.
@@ -192,7 +196,7 @@ class THORNameCache:
         self.affiliates = keys_to_lower(self.cfg.get_pure('names.affiliates'))
 
     def get_affiliate_name(self, affiliate_short: str):
-        return self.affiliates.get(affiliate_short.lower())
+        return self.affiliates.get(affiliate_short.lower().strip())
 
     @staticmethod
     def _key_thorname_to_addresses(name: str):
