@@ -16,7 +16,7 @@ from comm.picture.savers_picture import SaversPictureGenerator
 from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.achievement.ach_list import Achievement
 from jobs.fetch.chain_id import AlertChainIdChange
-from lib.constants import THOR_BLOCKS_PER_MINUTE, thor_to_float
+from lib.constants import THOR_BLOCKS_PER_MINUTE, thor_to_float, THOR_BASIS_POINT_MAX
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
@@ -280,7 +280,7 @@ class AlertPresenter(INotified, WithLogger):
             "volume_usd": data.volume_usd,
             "affiliate": data.memo.first_affiliate,
             "affiliate_name": affiliate_name,
-            "affiliate_fee": data.memo.affiliate_fee_bp,
+            "affiliate_fee": data.memo.affiliate_fee_bp / THOR_BASIS_POINT_MAX,
 
             "swap_quantity": data.ss.quantity,
             "swap_interval": data.ss.interval,
