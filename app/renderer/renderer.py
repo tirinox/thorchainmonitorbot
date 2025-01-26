@@ -22,6 +22,7 @@ class Renderer:
         self.playwright = None
         self.browser = None
         self.browser_context = None
+        self.render_timeout = 1  # sec
         self.jinja_env = Environment(
             loader=FileSystemLoader(self.templates_dir),
             autoescape=select_autoescape(['html', 'xml', 'jinja2'])
@@ -115,7 +116,7 @@ class Renderer:
                 await page.set_viewport_size(self.default_viewport)
 
             # Set the HTML content
-            await page.set_content(html_content, wait_until='networkidle')
+            await page.set_content(html_content, wait_until='networkidle', timeout=self.render_timeout)
 
             # Take a screenshot
             png_bytes = await page.screenshot(full_page=True)
