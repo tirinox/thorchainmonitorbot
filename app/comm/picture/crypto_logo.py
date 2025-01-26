@@ -44,6 +44,7 @@ class CryptoLogoDownloader:
         Chains.AVAX + CONTRACT: 'avalanchec',
         Chains.ATOM: 'cosmos',
         Chains.BSC: 'smartchain',
+        Chains.BASE: 'base',
     }
 
     # Mapping: Chain to the asset name of the logo of this chain
