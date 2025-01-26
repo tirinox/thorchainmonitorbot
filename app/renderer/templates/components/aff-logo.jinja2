@@ -16,16 +16,42 @@
         text-shadow: none;
         color: #c5c5c5;
     }
+
+
+    .aff-fee {
+        display: inline;
+        font-size: 34px;
+        width: 220px;
+        text-align: left;
+        color: #51efe2;
+    }
+
+    .no-aff {
+        opacity: 0.5;
+        letter-spacing: 1px;
+        text-align: center;
+    }
+
+    .affiliate-part {
+        width: 300px;
+    }
+
 </style>
 
-{% if affiliate_name %}
-    <img src="renderer/logo/unknown.png?rv=1" alt="{{ affiliate_name }} logo" class="affiliate-logo">
-    <div class="affiliate-name">{{ affiliate_name }}</div>
-{% else %}
-    {% include "components/no-aff-logo.jinja2" %}
-    <div class="affiliate-name no-aff">No affiliate</div>
+<div class="affiliate-part">
+    {% if affiliate_name %}
+        <img src="renderer/logo/unknown.png?rv=1" alt="{{ affiliate_name }} logo" class="affiliate-logo">
+        <div class="affiliate-name">
+            {{ affiliate_name }}
+            <div class="aff-fee">{{ "%.1f"|format(affiliate_fee) }}%</div>
+        </div>
 
-{% endif %}
+
+    {% else %}
+        {% include "components/no-aff-logo.jinja2" %}
+        <div class="affiliate-name no-aff">No affiliate</div>
+    {% endif %}
+</div>
 
 <script>
     const affiliateName = "{{ affiliate_name }}".toLowerCase();

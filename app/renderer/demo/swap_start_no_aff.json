@@ -3,7 +3,6 @@
   "parameters": {
     "user_name": "JohnDoe.thor",
     "source_address": "0x1234567890abcdef4567890abcdef1234567890",
-    "destination_address": "3BvDZy1Y5J8Q1hj5t7Pv1J8Q1hj5t7Pv1",
     "tx_hash": "57B2FDD54AD581A77993D8068BB707B1999845F69C789E08DBDF953878EF26C3",
     "source_asset": "BSC.BNB",
     "source_asset_name": "BNB",
@@ -16,10 +15,9 @@
     "affiliate_name": "",
     "affiliate_fee": 0,
 
-    "swap_steps": 100,
-    "swap_period_blocks": 5,
+    "swap_quantity": 100,
+    "swap_interval": 5,
     "total_estimated_time_sec": 4242,
-    "total_estimated_time_fmt": "10:45:44",
 
     "_width": 1200,
     "_height": 800

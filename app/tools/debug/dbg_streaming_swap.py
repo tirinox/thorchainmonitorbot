@@ -27,7 +27,8 @@ from notify.alert_presenter import AlertPresenter
 from notify.public.dex_report_notify import DexReportNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
 from notify.public.tx_notify import SwapTxNotifier
-from tools.lib.lp_common import LpAppFramework
+from tools.debug.dbg_key_metrcis_weekly import show_picture
+from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 BlockScannerClass = BlockScannerCached
 print(BlockScannerClass, ' <= look!')
@@ -266,9 +267,10 @@ async def dbg_swap_quote(app):
     print(quote)
 
 
-FILE_SWAP_START_PICKLE = '../temp/swap_start_event.pickle'
+FILE_SWAP_START_PICKLE = '../temp/swap_start_event_3.pickle'
 
-async def dbg_spam_any_active_swap_start(app, refresh=False):
+
+async def dbg_spam_any_active_swap_start(app, refresh=False, post=False):
     event = load_pickle(FILE_SWAP_START_PICKLE)
     if not event or refresh:
         thor = app.deps.thor_connector
@@ -320,10 +322,17 @@ async def dbg_spam_any_active_swap_start(app, refresh=False):
     print(event)
     sep()
 
-    alert: AlertPresenter = app.deps.alert_presenter
-    await alert._handle_async(event)
+    if not event.quote:
+        await StreamingSwapStartTxNotifier(app.deps).load_quote(event)
 
-    await asyncio.sleep(5)
+    alert: AlertPresenter = app.deps.alert_presenter
+    if post:
+        await alert._handle_async(event)
+        await asyncio.sleep(1)
+    else:
+        name_map = await alert.load_names(event.from_address)
+        photo, photo_name = await alert.render_swap_start(app.deps.loc_man.default, event, name_map)
+        save_and_show_pic(photo, photo_name)
 
 
 async def run():

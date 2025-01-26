@@ -65,6 +65,8 @@
         }
 
         .asset-part {
+            display: flex;
+            flex-direction: column;
             margin-top: 34px;
 
             font-family: ThorFontLight, serif;
@@ -73,7 +75,7 @@
 
             position: absolute;
             top: 80%;
-            width: 34%;
+            width: 42%;
 
             text-align: center;
         }
@@ -81,7 +83,8 @@
         .arrow-down-holder {
             position: absolute;
             margin-top: 22%;
-            width: 200px;
+            transform: translate(-50px, 0);
+            width: 300px;
             text-align: center;
         }
 
@@ -100,26 +103,10 @@
             opacity: 0.4;
         }
 
-        .aff-fee {
-            position: absolute;
-            top: 24px;
-            left: 130px;
-            font-size: 34px;
-            width: 220px;
-            text-align: left;
-            color: #51efe2;
-        }
-
-        .no-aff {
-            opacity: 0.5;
-            letter-spacing: 1px;
-            text-align: left;
-        }
-
-
         .above-arrow {
             position: absolute;
             bottom: 150px;
+            width: 180px;
             text-align: center;
         }
 
@@ -131,14 +118,14 @@
         }
 
         .time-block-flex {
-            display: flex;
-            width: 180px;
+            display: inline-flex;
             align-items: center;
             flex-direction: row;
+            justify-content: center;
         }
 
         .time-block-interval {
-            display: flex;
+            display: inline-flex;
             color: #23DCC8;
             text-align: center;
             font-size: 20px;
@@ -146,13 +133,14 @@
 
         .clock {
             width: 60px;
-            display: flex;
+            display: inline-flex;
             filter: brightness(80%);
-            padding: 10px;
+            padding: 8px;
         }
 
         .wait-time {
             padding-left: 5px;
+            margin-bottom: 5px;
             display: flex;
             color: #45dded;
             opacity: 0.8;
@@ -163,6 +151,14 @@
         .usd-volume {
             color: #c5c5c5;
             font-weight: 400;
+        }
+
+        .expected-out-label {
+            color: #c5c5c5;
+            font-weight: normal;
+            font-size: 30px;
+            margin-top: 7px;
+            margin-bottom: 10px;
         }
 
     </style>
@@ -208,9 +204,6 @@
                 <div>
                     {% if affiliate_fee > 0 %}
                         <img src="renderer/static/arrow2-down.png" alt="Arrow down" class="shadow arrow-down arrow-aff">
-                        <div class="aff-fee">
-                            {{ "%.1f"|format(affiliate_fee) }}%
-                        </div>
                     {% else %}
                         <img src="renderer/static/arrow2-down.png" alt="Arrow down"
                              class="shadow arrow-down arrow-no-aff">
@@ -226,12 +219,9 @@
         <div class="line-box">
             <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-pending shadow">
             <div class="above-arrow">
-                <div class="time-block-flex">
-                    <img src="renderer/static/time-is-money.png" alt="Time is money..." class="clock">
-                    <div class="wait-time">{{ total_estimated_time_fmt }}</div>
-                </div>
                 <div class="time-block-interval">
-                    5 swaps every 20 sec
+                    {{ int(swap_quantity) }} {{ "swaps" if swap_quantity >= 2 else "swap" }}<br>
+                    every {{ int(swap_interval) }} {{ "blocks" if swap_interval >= 2 else "block" }}
                 </div>
             </div>
         </div>
@@ -240,16 +230,44 @@
             <div class="logo-part">
                 <img src="renderer/logo/{{ destination_asset }}.png" alt="Destination asset logo"
                      class="asset-logo white-shadow">
-                <div class="asset-part output-amount">
-                    ≈{{ short_money(destination_amount) }} {{ destination_asset_name }}
+
+                <div class="asset-part">
+                    <div class="expected-out-label">Expected output</div>
+                    <div class="output-amount">
+                        {% if destination_amount %}
+                            ≈{{ short_money(destination_amount) }} {{ destination_asset_name }}
+                        {% else %}
+                            ≈ N/A {{ destination_asset_name }}
+                        {% endif %}
+                    </div>
+
+                        <div class="time-block-flex">
+                            <img src="renderer/static/time-is-money.png" alt="Time is money..." class="clock">
+                            <div class="wait-time" id="wait-time"></div>
+                        </div>
+
                 </div>
+
             </div>
         </div>
 
     </div>
 
     <script>
-
+        const waitTimeSec = {{ total_estimated_time_sec }};
+        let result = '??:??';
+        if (waitTimeSec !== 0) {
+            // format HH:MM:SS or MM:SS if less than 1 hour
+            const formatTime = (time) => {
+                const pad = (num) => String(num).padStart(2, '0');
+                const hours = Math.floor(time / 3600);
+                const minutes = Math.floor((time % 3600) / 60);
+                const seconds = time % 60;
+                return hours > 0 ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
+            };
+            result = formatTime(waitTimeSec);
+        }
+        document.querySelector('#wait-time').textContent = result;
     </script>
 
 {% endblock %}
