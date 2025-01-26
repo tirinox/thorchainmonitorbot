@@ -234,7 +234,7 @@
         <div id="dest_logo" class="logo-holder">
             <div class="logo-part">
                 <img src="renderer/logo/{{ destination_asset }}.png" alt="Destination asset logo"
-                     class="asset-logo white-shadow">
+                     class="asset-logo white-shadow" onerror="console.error('{{ destination_asset }} no logo!')">
 
                 <div class="asset-part">
                     <div class="expected-out-label">Expected output</div>
