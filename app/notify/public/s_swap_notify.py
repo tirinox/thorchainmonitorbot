@@ -6,6 +6,7 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.money import pretty_dollar
 from lib.utils import WithLogger, safe_get
+from models.asset import Asset
 from models.s_swap import AlertSwapStart
 from notify.dup_stop import TxDeduplicator
 
@@ -77,11 +78,13 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
 
     async def load_quote(self, event: AlertSwapStart):
         try:
+            from_asset = str(Asset(event.in_asset).l1_asset)
+            to_asset = str(Asset(event.out_asset).l1_asset)
             event.quote = await self.deps.thor_connector.query_swap_quote(
-                from_asset=event.in_asset,
-                to_asset=event.out_asset,
+                from_asset=from_asset,
+                to_asset=to_asset,
                 amount=event.in_amount,
-                refund_address=event.from_address,
+                # refund_address=event.from_address,
                 streaming_quantity=event.ss.quantity,
                 streaming_interval=event.ss.interval,
                 tolerance_bps=10000,  # MAX
