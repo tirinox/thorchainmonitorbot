@@ -160,7 +160,7 @@ class Asset:
 
     @property
     def l1_asset(self):
-        return dataclasses.replace(self, is_synth=False)
+        return dataclasses.replace(self, is_synth=False, is_trade=False, is_virtual=False)
 
     def __str__(self):
         return self.to_canonical
