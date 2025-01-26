@@ -1,7 +1,7 @@
 import asyncio
 from typing import Union
 
-from api.midgard.name_service import NameService, NameMap
+from api.midgard.name_service import NameService, NameMap, add_thor_suffix
 from api.w3.dex_analytics import DexReport
 from comm.localization.manager import BaseLocalization
 from comm.picture.achievement_picture import build_achievement_picture_generator
@@ -255,8 +255,12 @@ class AlertPresenter(INotified, WithLogger):
         if not self.use_renderer:
             return None, None
 
-        user_name = name_map.by_address.get(data.from_address) if name_map else None
-        user_name = user_name or shorten_text_middle(data.from_address, 6, 4)
+        user_name_thor = name_map.by_address.get(data.from_address) if name_map else None
+        if user_name_thor:
+            user_name = add_thor_suffix(user_name_thor)
+        else:
+            # just address
+            user_name = shorten_text_middle(data.from_address, 6, 4)
 
         from_asset = Asset(data.in_asset)
         to_asset = Asset(data.out_asset)
