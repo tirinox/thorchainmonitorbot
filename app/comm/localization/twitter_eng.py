@@ -499,7 +499,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             if not nodes:
                 return ''
             message = ', '.join(_format_node_text_plain(node) for node in nodes if node.node_address)
-            return f'{title}\n{message}\n'
+            return f'{title}\n{message}\n\n'
 
         components = [
             '♻️ Node churn is complete\n\n'
