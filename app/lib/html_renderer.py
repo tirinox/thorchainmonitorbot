@@ -1,3 +1,5 @@
+import json
+
 from lib.logs import WithLogger
 from lib.utils import random_hex
 
@@ -21,7 +23,7 @@ class InfographicRendererRPC(WithLogger):
         }
 
         async with self.deps.session.post(self.url, json=message) as response:
-            self.logger.info(f'Rendering {template_name = }, {parameters = }')
+            self.logger.info(f'Rendering {template_name = }, JSON = {json.dumps(message, indent=4)}')
             if response.status != 200:
                 raise ValueError(f'Failed to render. Code: {response.status}. {message = }')
 

@@ -1,0 +1,28 @@
+{
+    "template_name": "swap_start.jinja2",
+    "parameters": {
+        "user_name": "bc1qu2 ... x7w0",
+        "source_address": "bc1qu2dq8w8lv8v3l7lr2c5tvx3yltv22r3nhkx7w0",
+        "tx_hash": "9F6F428FA73F5D3C889620C11CAAC1FB623065D1FBEB296C8D6566DABA44582C",
+        "source_asset": "BTC.BTC",
+        "source_asset_logo": "BTC.BTC",
+        "source_asset_name": "BTC",
+        "source_chain": "",
+        "destination_asset": "LTC.LTC",
+        "destination_logo": "LTC.LTC",
+        "destination_asset_name": "LTC",
+        "destination_chain": "",
+        "source_amount": 7.0,
+        "destination_amount": 6282.89328074,
+        "volume_usd": 713710.4483850272,
+        "affiliate": "",
+        "affiliate_name": null,
+        "affiliate_fee": 0.0,
+        "swap_quantity": 352,
+        "swap_interval": 10,
+        "total_estimated_time_sec": 22860,
+        "_width": 1200,
+        "_height": 800
+    },
+    "correlation_id": "b'32b3406cf4e088086b06027d'"
+}

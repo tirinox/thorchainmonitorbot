@@ -2,7 +2,7 @@
 
 {% block content %}
 
-    {% include "_tx_helpers.jinja2" %}
+    {% include "components/_tx_helpers.jinja2" %}
 
     <style>
         .line-box {
@@ -45,9 +45,6 @@
             opacity: 0.9;
         }
 
-        .white-shadow {
-            filter: drop-shadow(0px 0px 10px rgba(255, 255, 255, 0.3));
-        }
 
         .logo-part {
             display: flex;
@@ -175,8 +172,11 @@
 
         <div id="source_logo" class="logo-holder">
             <div class="logo-part">
-                <img src="renderer/logo/{{ source_asset }}.png" alt="Source asset logo"
-                     class="asset-logo white-shadow">
+
+                {% with asset_name=source_asset, asset_logo=source_asset_logo, chain=source_chain %}
+                    {% include "components/asset-logo.jinja2" %}
+                {% endwith %}
+
                 <div class="asset-part">
                     <div class="from">
                         {{ "🤖" if "Arb-Bot" in user_name else "👤" }}
@@ -233,8 +233,9 @@
 
         <div id="dest_logo" class="logo-holder">
             <div class="logo-part">
-                <img src="renderer/logo/{{ destination_asset }}.png" alt="Destination asset logo"
-                     class="asset-logo white-shadow" onerror="console.error('{{ destination_asset }} no logo!')">
+                {% with asset_name=destination_asset, asset_logo=destination_logo, chain=destination_chain %}
+                    {% include "components/asset-logo.jinja2" %}
+                {% endwith %}
 
                 <div class="asset-part">
                     <div class="expected-out-label">Expected output</div>

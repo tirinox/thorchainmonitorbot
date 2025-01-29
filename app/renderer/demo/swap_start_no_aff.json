@@ -4,10 +4,17 @@
     "user_name": "JohnDoe.thor",
     "source_address": "0x1234567890abcdef4567890abcdef1234567890",
     "tx_hash": "57B2FDD54AD581A77993D8068BB707B1999845F69C789E08DBDF953878EF26C3",
+
     "source_asset": "BSC.BNB",
+    "source_asset_logo": "BSC.BNB",
     "source_asset_name": "BNB",
+    "source_asset_chain": "",
+
     "destination_asset": "BTC.BTC",
+    "destination_logo": "BTC.BTC",
     "destination_asset_name": "BTC",
+    "destination_asset_chain": "",
+
     "source_amount": 30,
     "destination_amount": 4.222323,
     "volume_usd": 9303345,

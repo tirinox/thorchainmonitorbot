@@ -4,10 +4,17 @@
     "user_name": "0x12..9932",
     "source_address": "0x1234567890abcdef4567890abcdef1234567890",
     "tx_hash": "356B4E43540880B69A22D7ACA9F0F62E80087C947819AE8118EAAA8100D360C0",
+
     "source_asset": "ETH.ETH",
+    "source_asset_logo": "ETH.ETH",
     "source_asset_name": "ETH",
-    "destination_asset": "BTC.BTC",
-    "destination_asset_name": "trade BTC",
+    "source_chain": "",
+
+    "destination_asset": "BSC~USDT-0X55D398326F99059FF775485246999027B3197955",
+    "destination_logo": "BSC.USDT-0X55D398326F99059FF775485246999027B3197955",
+    "destination_asset_name": "BSC",
+    "destination_chain": "BSC.BNB",
+
     "source_amount": 31.88522,
     "destination_amount": 4.222323,
     "volume_usd": 9303345,

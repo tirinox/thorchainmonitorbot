@@ -1,0 +1,72 @@
+<style>
+    .white-shadow {
+        filter: drop-shadow(0px 0px 10px rgba(255, 255, 255, 0.3));
+    }
+
+    .asset-logo {
+        width: 160px;
+        height: 160px;
+        border-radius: 50%;
+        border: 1px solid rgba(156, 161, 159, 0.4);
+        padding: 0;
+    }
+
+    .chain-logo {
+        position: absolute;
+        top: 12px;
+        left: -10px;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: 1px solid rgba(156, 161, 159, 0.4);
+        padding: 0;
+    }
+
+    .pill {
+        position: absolute;
+        border-radius: 10px;
+        border: 2px inset;
+
+        color: black;
+        padding: 2px 7px 2px 7px;
+        font-size: 25px;
+        text-align: center;
+        font-weight: bold;
+        left: 50px;
+        bottom: 20px;
+    }
+
+    .trade-pill {
+        background: #dcdcdc;
+        border-color: #474747;
+    }
+
+    .synth-pill {
+        background: #92e660;
+        border-color: #30680a;
+    }
+</style>
+
+<div>
+    <img src="renderer/logo/{{ asset_logo }}.png"
+         alt="{{ asset_logo }} logo"
+         class="asset-logo white-shadow"
+         onerror="console.error('{{ asset_logo }}: no logo!')"
+    >
+    {% if '~' in asset_name %}
+        <div class="pill trade-pill">TRADE</div>
+    {% elif '/' in asset_name %}
+        <div class="pill synth-pill">SYNTH</div>
+    {% else %}
+        {# nothing #}
+    {% endif %}
+
+    {% if chain %}
+        <img src="renderer/logo/{{ chain }}.png"
+             alt="{{ asset_logo }} logo"
+             class="chain-logo white-shadow"
+             onerror="console.error('{{ asset_logo }}: no logo!')"
+        >
+    {% endif %}
+
+</div>
