@@ -13,7 +13,7 @@
 
     .chain-logo {
         position: absolute;
-        top: 12px;
+        top: -10px;
         left: -10px;
         width: 60px;
         height: 60px;
@@ -25,15 +25,17 @@
     .pill {
         position: absolute;
         border-radius: 10px;
-        border: 2px inset;
+        {#border: 2px solid;#}
 
         color: black;
-        padding: 2px 7px 2px 7px;
+        padding: 2px 10px 2px 7px;
         font-size: 25px;
         text-align: center;
         font-weight: bold;
-        left: 50px;
-        bottom: 20px;
+        left: 20%;
+        right: auto;
+        bottom: -15px;
+        font-style: italic;
     }
 
     .trade-pill {
@@ -45,13 +47,17 @@
         background: #92e660;
         border-color: #30680a;
     }
+
+    .asset-logo-container {
+        position: relative;
+    }
 </style>
 
-<div>
+<div class="asset-logo-container">
     <img src="renderer/logo/{{ asset_logo }}.png"
          alt="{{ asset_logo }} logo"
          class="asset-logo white-shadow"
-         onerror="console.error('{{ asset_logo }}: no logo!')"
+         onerror="console.error('{{ asset_logo }}: no logo!'); this.src='renderer/logo/unknown.png';"
     >
     {% if '~' in asset_name %}
         <div class="pill trade-pill">TRADE</div>
@@ -61,11 +67,11 @@
         {# nothing #}
     {% endif %}
 
-    {% if chain %}
-        <img src="renderer/logo/{{ chain }}.png"
-             alt="{{ asset_logo }} logo"
+    {% if chain_logo %}
+        <img src="renderer/logo/{{ chain_logo }}.png"
+             alt="{{ chain_logo }} logo"
              class="chain-logo white-shadow"
-             onerror="console.error('{{ asset_logo }}: no logo!')"
+             onerror="console.error('{{ chain_logo }}: no logo!')"
         >
     {% endif %}
 

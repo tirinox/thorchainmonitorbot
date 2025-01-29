@@ -173,7 +173,7 @@
         <div id="source_logo" class="logo-holder">
             <div class="logo-part">
 
-                {% with asset_name=source_asset, asset_logo=source_asset_logo, chain=source_chain %}
+                {% with asset_name=source_asset, asset_logo=source_asset_logo, chain_logo=source_chain_logo %}
                     {% include "components/asset-logo.jinja2" %}
                 {% endwith %}
 
@@ -233,7 +233,7 @@
 
         <div id="dest_logo" class="logo-holder">
             <div class="logo-part">
-                {% with asset_name=destination_asset, asset_logo=destination_logo, chain=destination_chain %}
+                {% with asset_name=destination_asset, asset_logo=destination_logo, chain_logo=destination_chain_logo %}
                     {% include "components/asset-logo.jinja2" %}
                 {% endwith %}
 

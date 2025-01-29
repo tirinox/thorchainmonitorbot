@@ -8,12 +8,12 @@
     "source_asset": "BSC.BNB",
     "source_asset_logo": "BSC.BNB",
     "source_asset_name": "BNB",
-    "source_asset_chain": "",
+    "source_chain_logo": "",
 
     "destination_asset": "BTC.BTC",
     "destination_logo": "BTC.BTC",
     "destination_asset_name": "BTC",
-    "destination_asset_chain": "",
+    "destination_chain_logo": "",
 
     "source_amount": 30,
     "destination_amount": 4.222323,

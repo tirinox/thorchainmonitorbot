@@ -16,7 +16,7 @@ from comm.picture.savers_picture import SaversPictureGenerator
 from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.achievement.ach_list import Achievement
 from jobs.fetch.chain_id import AlertChainIdChange
-from lib.constants import THOR_BLOCKS_PER_MINUTE, thor_to_float, THOR_BASIS_POINT_MAX
+from lib.constants import THOR_BLOCKS_PER_MINUTE, thor_to_float, THOR_BASIS_POINT_MAX, Chains
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
@@ -24,7 +24,7 @@ from lib.html_renderer import InfographicRendererRPC
 from lib.logs import WithLogger
 from lib.texts import shorten_text_middle
 from lib.utils import namedtuple_to_dict
-from models.asset import Asset
+from models.asset import Asset, is_ambiguous_asset
 from models.cap_info import AlertLiquidityCap
 from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
@@ -267,14 +267,31 @@ class AlertPresenter(INotified, WithLogger):
 
         affiliate_name = self.deps.name_service.get_affiliate_name(data.memo.first_affiliate)
 
+        def _get_chain_logo(asset: Asset) -> str:
+            if is_ambiguous_asset(asset):
+                if asset.chain == Chains.BASE:
+                    return 'BASE'  # Base has ETH as gas asset, but we wanna display BASE.png here
+                else:
+                    # other just use chain's gas asset as logo
+                    return str(Asset.gas_asset_from_chain(asset.chain))
+            else:
+                return ''  # no ambiguity
+
         parameters = {
             "user_name": user_name,
             "source_address": data.from_address,
             "tx_hash": data.tx_id,
-            "source_asset": str(from_asset.l1_asset),
-            "source_asset_name": from_asset.pretty_str,
-            "destination_asset": str(to_asset.l1_asset),
-            "destination_asset_name": to_asset.pretty_str,
+
+            "source_asset": str(from_asset),
+            "source_asset_logo": str(from_asset.l1_asset),
+            "source_asset_name": from_asset.name,
+            "source_chain_logo": _get_chain_logo(from_asset),
+
+            "destination_asset": str(to_asset),
+            "destination_logo": str(to_asset.l1_asset),
+            "destination_asset_name": to_asset.name,
+            "destination_chain_logo": _get_chain_logo(to_asset),
+
             "source_amount": thor_to_float(data.in_amount),
             "destination_amount": thor_to_float(data.expected_out_amount),
             "volume_usd": data.volume_usd,

@@ -8,12 +8,12 @@
     "source_asset": "ETH~USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7",
     "source_asset_logo": "ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7",
     "source_asset_name": "ETH",
-    "source_chain": "ETH",
+    "source_chain_logo": "BASE",
 
     "destination_asset": "DOGE/DOGE",
     "destination_logo": "DOGE.DOGE",
     "destination_asset_name": "DOGE",
-    "destination_chain": "",
+    "destination_chain_logo": "",
 
     "source_amount": 31.88522,
     "destination_amount": 4.222323,

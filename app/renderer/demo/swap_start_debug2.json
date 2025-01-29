@@ -1,0 +1,28 @@
+{
+    "template_name": "swap_start.jinja2",
+    "parameters": {
+        "user_name": "thor1j ... 3fdr",
+        "source_address": "thor1jx8a7x4nqv4dru5h2es8tk9w75kj5xseup3fdr",
+        "tx_hash": "B28E29DDBBE8A76D8840FD898829B96207AA70CEDC8F115228B5953A13A077DE",
+        "source_asset": "ETH~GUSD-0X056FD409E1D7A124BD7017459DFEA2F387B6D5CD",
+        "source_asset_logo": "ETH.GUSD-0X056FD409E1D7A124BD7017459DFEA2F387B6D5CD",
+        "source_asset_name": "GUSD",
+        "source_chain_logo": "ETH.ETH",
+        "destination_asset": "ETH~USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+        "destination_logo": "ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+        "destination_asset_name": "USDC",
+        "destination_chain_logo": "ETH.ETH",
+        "source_amount": 690.2,
+        "destination_amount": 684.2336320000001,
+        "volume_usd": 689.0684181429261,
+        "affiliate": "",
+        "affiliate_name": null,
+        "affiliate_fee": 0.0,
+        "swap_quantity": 7,
+        "swap_interval": 1,
+        "total_estimated_time_sec": 42,
+        "_width": 1200,
+        "_height": 800
+    },
+    "correlation_id": "b'599b8e69ea38752d4c3a4747'"
+}
