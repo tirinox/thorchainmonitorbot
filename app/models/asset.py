@@ -182,11 +182,12 @@ class Asset:
         'd': 'DOGE.DOGE',
         'e': 'ETH.ETH',
         'l': 'LTC.LTC',
-        'r': 'THOR.RUNE'
+        'r': 'THOR.RUNE',
+        'f': 'BASE.ETH'
     }
 
     ABBREVIATE_GAS_ASSETS = {
-        'ETH.ETH', 'BTC.BTC', 'LTC.LTC', 'AVAX.AVAX', 'DOGE.DOGE', 'GAIA.ATOM', 'BSC.BNB', 'BCH.BCH'
+        'ETH.ETH', 'BTC.BTC', 'LTC.LTC', 'AVAX.AVAX', 'DOGE.DOGE', 'GAIA.ATOM', 'BSC.BNB', 'BCH.BCH',
     }
 
     GAS_ASSETS = {
@@ -214,10 +215,13 @@ def is_rune(asset: Union[Asset, str]):
     return asset.lower() in ('r', RUNE_DENOM) or asset.upper() == NATIVE_RUNE_SYMBOL
 
 
-def is_ambiguous_asset(asset: str, among_assets: Iterable[str]):
+def is_ambiguous_asset(asset: Union[str, Asset], among_assets: Iterable[str] = None):
     asset = Asset.from_string(asset)
     if asset.gas_asset_from_chain(asset.chain) != asset:
         return True
+
+    if among_assets is None:
+        return False
 
     ambiguous_tracker = defaultdict(set)
     for a in among_assets:
