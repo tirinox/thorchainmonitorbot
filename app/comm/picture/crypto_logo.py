@@ -27,7 +27,7 @@ def convert_eth_address_to_case_checksum(eth_address: str) -> str:
 
 
 class CryptoLogoDownloader:
-    LOGO_WIDTH, LOGO_HEIGHT = 128, 128
+    LOGO_WIDTH, LOGO_HEIGHT = 400, 400
     COIN_BASE_URL = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains'
     UNKNOWN_LOGO = f'unknown.png'
 

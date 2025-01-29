@@ -12,6 +12,8 @@ async def do_download_job(app):
     await app.deps.pool_fetcher.run_once()
     pools = app.deps.price_holder.pool_names
     print(pools)
+    
+    pools.add('THOR.RUNE')
 
     logo_downloader = CryptoLogoDownloader(Resources().LOGO_BASE)
     for pool in tqdm.tqdm(pools):
