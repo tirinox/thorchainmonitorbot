@@ -105,6 +105,7 @@ async def dbg_affiliate(app):
         'ONEKEY ',
         '  ZeNgo ',
         'Xdefi',
+        'ds', 'RO', 'LL', ''
     ]
     for name in test_names:
         memo = THORMemo.parse_memo(f"=:AVAX.AVAX:0xC67F6421e51994bB4406726234f4c24F6c98398B:0/1/0:{name}:70")

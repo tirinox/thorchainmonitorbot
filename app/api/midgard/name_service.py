@@ -202,7 +202,8 @@ class THORNameCache:
         self.affiliates = keys_to_lower(self.cfg.get_pure('names.affiliates'))
 
     def get_affiliate_name(self, affiliate_short: str):
-        return self.affiliates.get(affiliate_short.lower().strip())
+        a = affiliate_short.lower().strip()
+        return self.affiliates.get(a, a)
 
     @staticmethod
     def _key_thorname_to_addresses(name: str):
