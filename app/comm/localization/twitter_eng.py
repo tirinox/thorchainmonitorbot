@@ -298,7 +298,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         if fp.total_trade_volume_usd > 0:
             message += f'24h vol.: {short_dollar(fp.total_trade_volume_usd)}\n'
 
-        if fp.tlv_usd >= 1:
+        if fp.tvl_usd >= 1:
             message += (
                 f"Det. price: {pretty_dollar(fp.fair_price)}\n"
                 f"Spec. mult.: {x_ses(fp.fair_price, price)}\n")

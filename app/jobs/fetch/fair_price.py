@@ -108,16 +108,16 @@ class RuneMarketInfoFetcher(BaseFetcher):
         if not price_holder.pool_info_map or not price_holder.usd_per_rune:
             raise ValueError(f"pool_info_map is empty!")
 
-        tlv_usd = total_pooled_rune * price_holder.usd_per_rune  # == tlv of non-rune assets
+        tvl_usd = total_pooled_rune * price_holder.usd_per_rune  # == tlv of non-rune assets
 
-        fair_price = 3 * tlv_usd / circulating_rune  # The main formula of wealth!
+        fair_price = 3 * tvl_usd / circulating_rune  # The main formula of wealth!
 
         result = RuneMarketInfo(
             circulating=circulating_rune,
             pool_rune_price=price_holder.usd_per_rune,
             fair_price=fair_price,
             cex_price=cex_price,
-            tlv_usd=tlv_usd,
+            tvl_usd=tvl_usd,
             rank=rank,
             total_trade_volume_usd=trade_volume,
             total_supply=total_supply,

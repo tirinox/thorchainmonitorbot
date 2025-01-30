@@ -891,9 +891,9 @@ class BaseLocalization(ABC):  # == English
 
         message += '\n'
 
-        if fp.tlv_usd >= 1:
+        if fp.tvl_usd >= 1:
             det_link = link(self.DET_PRICE_HELP_PAGE, 'deterministic price')
-            message += (f"TVL of non-RUNE assets: {bold(short_dollar(fp.tlv_usd))}\n"
+            message += (f"TVL of non-RUNE assets: {bold(short_dollar(fp.tvl_usd))}\n"
                         f"So {det_link} of RUNE is {code(pretty_dollar(fp.fair_price))}\n"
                         f"Speculative multiplier is {pre(x_ses(fp.fair_price, price))}\n")
 

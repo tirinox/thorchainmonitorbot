@@ -22,7 +22,7 @@ class RuneMarketInfo:
     pool_rune_price: float = 0.0  # THORChain Pool Price (weighted across stable coins)
     fair_price: float = 0.0  # Deterministic Price
     cex_price: float = 0.0  # Price on Centralised Exchanges
-    tlv_usd: float = 0.0
+    tvl_usd: float = 0.0
     rank: int = 0
     total_trade_volume_usd: float = 0.0
     total_supply: int = RUNE_IDEAL_SUPPLY

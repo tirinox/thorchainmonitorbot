@@ -652,8 +652,8 @@ class RussianLocalization(BaseLocalization):
 
         message += '\n'
 
-        if fp.tlv_usd >= 1:
-            message += (f"TVL (не-RUNE активов): ${bold(pretty_money(fp.tlv_usd))}\n"
+        if fp.tvl_usd >= 1:
+            message += (f"TVL (не-RUNE активов): ${bold(pretty_money(fp.tvl_usd))}\n"
                         f"Детерминистическая цена: {code(pretty_money(fp.fair_price, prefix='$'))}\n"
                         f"Спекулятивый множитель: {pre(x_ses(fp.fair_price, price))}\n")
 
