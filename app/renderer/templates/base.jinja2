@@ -84,12 +84,14 @@
             display: block;
             max-width: {{ width }}px;
             max-height: {{ height }}px;
+            overflow: hidden;
         }
 
         .title {
             letter-spacing: 0.15em;
             font-family: ThorFontLight, a;
-            font-size: 2.7em;
+            font-size: 43px;
+            color: #c8c8c8;
             font-weight: normal;
         }
 
@@ -131,12 +133,18 @@
             display: flex;
         }
 
+        .bg {
+            background: url("renderer/static/bg2.svg") no-repeat;
+            background-position: center -79px;
+
+        }
+
     </style>
     <script src="renderer/static/chart.umd.min.js"></script>
 
 </head>
 <body class="">
-<div class="container">
+<div class="container bg">
 
     {% block content %}
     {% endblock %}
@@ -162,11 +170,11 @@
     };
     todayDate.innerText = formatDate(new Date())
 
-        {% if auto %}
-            setInterval(function () {
-                location.reload();
-            }, 3000);
-        {% endif %}
+    {% if auto %}
+        setInterval(function () {
+            location.reload();
+        }, 3000);
+    {% endif %}
 </script>
 
 </body>

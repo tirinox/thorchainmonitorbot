@@ -22,6 +22,11 @@
         padding: 0;
     }
 
+    .chain-logo-right {
+        left: auto;
+        right: -10px;
+    }
+
     .pill {
         position: absolute;
         border-radius: 10px;
@@ -32,8 +37,12 @@
         font-size: 25px;
         text-align: center;
         font-weight: bold;
-        left: 20%;
-        right: auto;
+
+        margin: auto;
+        left: 0;
+        right: 0;
+        width: fit-content;
+
         bottom: -15px;
         font-style: italic;
     }
@@ -59,6 +68,15 @@
          class="asset-logo white-shadow"
          onerror="console.error('{{ asset_logo }}: no logo!'); this.src='renderer/logo/unknown.png';"
     >
+
+    {% if chain_logo %}
+        <img src="renderer/logo/{{ chain_logo }}.png"
+             alt="{{ chain_logo }} logo"
+             class="chain-logo white-shadow {{ "chain-logo-right" if right else "" }}"
+             onerror="console.error('{{ chain_logo }}: no logo!')"
+        >
+    {% endif %}
+
     {% if '~' in asset_name %}
         <div class="pill trade-pill">TRADE</div>
     {% elif '/' in asset_name %}
@@ -67,12 +85,6 @@
         {# nothing #}
     {% endif %}
 
-    {% if chain_logo %}
-        <img src="renderer/logo/{{ chain_logo }}.png"
-             alt="{{ chain_logo }} logo"
-             class="chain-logo white-shadow"
-             onerror="console.error('{{ chain_logo }}: no logo!')"
-        >
-    {% endif %}
+
 
 </div>

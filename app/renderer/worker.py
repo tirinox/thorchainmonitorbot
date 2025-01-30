@@ -77,7 +77,7 @@ async def render_html_to_png(browser, html_content, w=1280, h=720):
     #     browser = await p.chromium.launch()
     page = await browser.new_page(
         viewport={'width': w, 'height': h},
-        device_scale_factor=2
+        device_scale_factor=2,
     )
     await page.set_content(html_content)
     png_bytes = await page.screenshot()

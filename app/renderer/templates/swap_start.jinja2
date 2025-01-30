@@ -11,8 +11,8 @@
 
         .route-box {
             position: absolute;
-            left: 12%;
-            right: 12%;
+            left: 11%;
+            right: 11%;
             top: 24%;
             height: 30%;
             display: flex;
@@ -35,13 +35,17 @@
             padding: 13px;
         }
 
-        .arrow-lr, .arrow-pending {
-            width: 180px;
+        .arrow-lr {
+            width: 200px;
             filter: brightness(190%) hue-rotate(30deg) saturate(200%) drop-shadow(3px 3px 4px rgba(0, 213, 213, 0.51)) drop-shadow(-3px -3px 4px rgba(3, 243, 150, 0.51));
+
+            padding: 0;
         }
 
         .arrow-pending {
-            filter: brightness(45%) hue-rotate(60deg) saturate(160%);
+            width: 200px;
+            padding: 0;
+            filter: brightness(80%) hue-rotate(30deg) saturate(100%);
             opacity: 0.9;
         }
 
@@ -52,27 +56,30 @@
             align-content: center;
         }
 
-        .from {
+        .user-name {
+            font-size: 40px;
             font-style: normal;
             font-weight: normal;
+            color: #bbb;
         }
 
         .input-amount, .output-amount {
             text-shadow: 0 0 10px rgba(69, 221, 237, 60%);
+            font-size: 65px;
         }
 
         .asset-part {
             display: flex;
             flex-direction: column;
-            margin-top: 34px;
+            margin-top: 50px;
 
             font-family: ThorFontLight, serif;
             font-weight: bold;
-            font-size: 45px;
+            font-size: 50px;
 
             position: absolute;
             top: 80%;
-            width: 42%;
+            width: 43%;
 
             text-align: center;
         }
@@ -80,8 +87,8 @@
         .arrow-down-holder {
             position: absolute;
             margin-top: 22%;
-            transform: translate(-50px, 0);
-            width: 300px;
+            transform: translate(-70px, 0);
+            width: 340px;
             text-align: center;
         }
 
@@ -96,13 +103,13 @@
         }
 
         .arrow-no-aff {
-            filter: brightness(2000%);
+            filter: brightness(500%) saturate(0%);
             opacity: 0.4;
         }
 
         .above-arrow {
             position: absolute;
-            bottom: 150px;
+            bottom: 160px;
             width: 180px;
             text-align: center;
         }
@@ -122,12 +129,12 @@
         }
 
         .time-block-interval {
-            padding-right: 22px;
+            transform: translate(-10%);
             display: block;
             color: #23DCC8;
             text-align: center;
-            font-size: 27px;
-            width: 200px;
+            font-size: 30px;
+            width: 220px;
         }
 
         .clock {
@@ -144,20 +151,20 @@
             color: #45dded;
             opacity: 0.8;
             font-weight: 400;
-            font-size: 30px;
+            font-size: 42px;
         }
 
         .usd-volume {
-            color: #c5c5c5;
+            color: #dcdbdb;
             font-weight: 400;
+            font-size: 60px;
         }
 
         .expected-out-label {
-            color: #c5c5c5;
+            color: #bbb;
             font-weight: normal;
-            font-size: 30px;
-            margin-top: 7px;
-            margin-bottom: 10px;
+            font-size: 40px;
+            padding-top: 6px;
         }
 
     </style>
@@ -178,7 +185,7 @@
                 {% endwith %}
 
                 <div class="asset-part">
-                    <div class="from">
+                    <div class="user-name">
                         {{ "🤖" if "Arb-Bot" in user_name else "👤" }}
                         {{ user_name }}
                     </div>
@@ -204,14 +211,9 @@
             <img class="circle-tc-logo tc-glow" src="renderer/static/tc_logo_circle.png?rv=1" alt="THORChain logo">
 
             <div class="arrow-down-holder">
-                <div>
-                    {% if affiliate_fee > 0 %}
-                        <img src="renderer/static/arrow2-down.png" alt="Arrow down" class="shadow arrow-down arrow-aff">
-                    {% else %}
-                        <img src="renderer/static/arrow2-down.png" alt="Arrow down"
-                             class="shadow arrow-down arrow-no-aff">
-                    {% endif %}
-                </div>
+
+                <img src="renderer/static/arrow2-down.png" alt="Arrow down"
+                     class="shadow arrow-down {{ "arrow-aff" if affiliate_fee > 0 else "arrow-no-aff" }}">
 
                 {% include "components/aff-logo.jinja2" %}
 
@@ -233,7 +235,8 @@
 
         <div id="dest_logo" class="logo-holder">
             <div class="logo-part">
-                {% with asset_name=destination_asset, asset_logo=destination_logo, chain_logo=destination_chain_logo %}
+                {% with asset_name=destination_asset, asset_logo=destination_logo, chain_logo=destination_chain_logo,
+                        right=True %}
                     {% include "components/asset-logo.jinja2" %}
                 {% endwith %}
 
@@ -247,10 +250,10 @@
                         {% endif %}
                     </div>
 
-                        <div class="time-block-flex">
-                            <img src="renderer/static/time-is-money.png" alt="Time is money..." class="clock">
-                            <div class="wait-time" id="wait-time"></div>
-                        </div>
+                    <div class="time-block-flex">
+                        <img src="renderer/static/time-is-money.png" alt="Time is money..." class="clock">
+                        <div class="wait-time" id="wait-time"></div>
+                    </div>
 
                 </div>
 
