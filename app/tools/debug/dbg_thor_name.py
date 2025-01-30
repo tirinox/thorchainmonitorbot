@@ -3,6 +3,7 @@ import asyncio
 from comm.localization.languages import Language
 from api.midgard.name_service import NameService
 from lib.texts import sep
+from models.memo import THORMemo
 from models.transfer import RuneTransfer
 from tools.lib.lp_common import LpAppFramework
 
@@ -95,8 +96,22 @@ async def demo_node_names(app: LpAppFramework):
 
 
 async def dbg_affiliate(app):
-    ns = app.deps.name_service
-    await ns.lookup_name_by_address('t')
+    # ns = app.deps.name_service
+    # await ns.lookup_name_by_address('t')
+    test_names = [
+        'td',
+        'okw/_',
+        't/tbc',
+        'ONEKEY ',
+        '  ZeNgo ',
+        'Xdefi',
+    ]
+    for name in test_names:
+        memo = THORMemo.parse_memo(f"=:AVAX.AVAX:0xC67F6421e51994bB4406726234f4c24F6c98398B:0/1/0:{name}:70")
+        m = app.deps.name_service.get_affiliate_name_from_memo(memo)
+        print(f'{name} -> {m}')
+
+
 
 async def run():
     app = LpAppFramework()
@@ -105,7 +120,8 @@ async def run():
         # await t_exists(ns)
         # await t_not_exists(ns)
         # await t_fix_name_map(ns)
-        await demo_node_names(app)
+        # await demo_node_names(app)
+        await dbg_affiliate(app)
 
 
 if __name__ == '__main__':

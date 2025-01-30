@@ -8,6 +8,7 @@ from lib.constants import Chains
 from lib.date_utils import parse_timespan_to_seconds
 from lib.db import DB
 from lib.utils import WithLogger, keys_to_lower, filter_none_values
+from models.memo import THORMemo
 from models.name import ThorName, make_virtual_thor_name, ThorNameAlias
 from models.node_info import NodeListHolder
 from .connector import MidgardConnector
@@ -62,6 +63,11 @@ class NameService(WithLogger):
 
     def get_affiliate_name(self, affiliate_short):
         return self._cache.get_affiliate_name(affiliate_short)
+
+    def get_affiliate_name_from_memo(self, memo: THORMemo):
+        if memo and (aff := memo.first_affiliate):
+            return self.get_affiliate_name(aff)
+        return ''
 
     async def safely_load_thornames_from_address_set(self, addresses: Iterable) -> NameMap:
         try:
