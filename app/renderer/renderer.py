@@ -22,7 +22,7 @@ class Renderer:
         self.playwright = None
         self.browser = None
         self.browser_context = None
-        self.render_timeout = 1  # sec
+        self.render_timeout = 1000  # mSec
         self.jinja_env = Environment(
             loader=FileSystemLoader(self.templates_dir),
             autoescape=select_autoescape(['html', 'xml', 'jinja2'])

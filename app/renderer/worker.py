@@ -112,7 +112,15 @@ async def render_just_html(name: str, req: Request):
 
     if req and req.query_params:
         logging.info(f"Query parameters: {req.query_params}")
-        parameters.update(req.query_params)
+
+        # Values that are numbers are converted to int or float
+        for key, value in req.query_params.items():
+            if value.isdigit():
+                parameters[key] = int(value)
+            elif value.replace(".", "", 1).isdigit():
+                parameters[key] = float(value)
+            else:
+                parameters[key] = value
 
     rendered_html = renderer.render_template(template_name, parameters, override_resource_dir='')
     return Response(content=rendered_html, media_type="text/html")
