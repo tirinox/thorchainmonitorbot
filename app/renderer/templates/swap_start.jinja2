@@ -134,7 +134,7 @@
             color: #23DCC8;
             text-align: center;
             font-size: 30px;
-            width: 220px;
+            width: 240px;
         }
 
         .clock {
@@ -226,8 +226,8 @@
             <div class="above-arrow">
                 <div class="time-block-interval">
                     <strong>{{ int(swap_quantity) }}</strong>
-                    <span>{{ "swaps" if swap_quantity >= 2 else "swap" }} every</span>
-                    <strong>{{ int(swap_interval) }}</strong>
+                    <span>{{ "swaps" if swap_quantity >= 2 else "swap" }}</span><br/>every
+                    <strong>{{ int(swap_interval) if int(swap_interval) > 1 else '' }}</strong>
                     <span>{{ "blocks" if swap_interval >= 2 else "block" }}</span>
                 </div>
             </div>
