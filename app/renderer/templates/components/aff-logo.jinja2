@@ -4,7 +4,7 @@
         height: 120px;
         {#border-radius: 50%;#}
         {#box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);#}
-        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+        filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.2));
         /* gradient */
         {#background: linear-gradient(90deg, #eae5e5, #b8b8b8);#}
     }
@@ -87,7 +87,10 @@
         'cacaoswap': '',
         'cakewallet': '',
         'coinbot': '',
+
         'ctrl': '',
+        'xdefi': 'ctrl',
+
         'decentralfi': '',
         'edgewallet': '',
         'eldorito': '',
@@ -100,6 +103,7 @@
         'ledger live': 'ledgerlive',
         'ledger': 'ledgerlive',
         'll': 'ledgerlive',
+
         'lends': '',
         'lifi': '',
         'li.fi': 'lifi',
@@ -113,7 +117,7 @@
         'vultisig': '',
         'vultisig ios': 'vultisig',
         'vultisig android': 'vultisig',
-        'xdefi': 'ctrl',
+
         'zengo': '',
         'tokenpocket': ''
     };
@@ -121,6 +125,8 @@
     const logoSpecialCase = {
         'shapeshift': 'fox.png',
         'tokenpocket': 'tps.png',
+        'vultisig': 'vult.svg',
+        'rango': 'rango.png',
     }
 
     let code = nameToCode[affiliateName];
@@ -136,7 +142,6 @@
             logoPath = `renderer/static/specialcase/${specialCaseLogo}`
             console.log(`Special case logo for ${affiliateName} URL is ${logoPath}`)
         }
-        console.log(`boo ${specialCaseLogo} (${code})`)
 
         const affiliateLogo = document.querySelector('.affiliate-logo');
 
