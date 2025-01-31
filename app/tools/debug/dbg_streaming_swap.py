@@ -380,7 +380,7 @@ async def run():
 
         setup_logs(logging.DEBUG)
 
-        await dbg_spam_any_active_swap_start(app, post=True, refresh=False)
+        await dbg_spam_any_active_swap_start(app, post=True, refresh=True)
         # await dbg_collect_some_streaming_swaps(app)
 
         # await dbg_swap_quote(app)

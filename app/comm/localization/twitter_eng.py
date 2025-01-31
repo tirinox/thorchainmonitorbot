@@ -1,6 +1,6 @@
 from typing import List
 
-from api.aionode.types import ThorChainInfo, thor_to_float
+from api.aionode.types import ThorChainInfo
 from api.midgard.name_service import NameMap, add_thor_suffix
 from api.w3.dex_analytics import DexReportEntry, DexReport
 from comm.twitter.text_length import twitter_intelligent_text_splitter, TWITTER_LIMIT_CHARACTERS
@@ -223,10 +223,12 @@ class TwitterEnglishLocalization(BaseLocalization):
         amount_str = self.format_op_amount(e.in_amount_float)
         target_asset_str = Asset(e.out_asset).pretty_str
 
+        runescan_link = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, e.tx_id)
+
         return (
             f'🌊 New streaming swap\n'
             f'{user_link}: {amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {target_asset_str}\n'
-            f'Track Tx: {tx_link}'
+            f'Track Tx: {tx_link}. Runescan: {runescan_link}'
         )
 
     def notification_text_queue_update(self, item_type, is_free, value):

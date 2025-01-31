@@ -791,9 +791,12 @@ class BaseLocalization(ABC):  # == English
         amount_str = self.format_op_amount(e.in_amount_float)
         target_asset_str = Asset(e.out_asset).pretty_str
 
+        url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, e.tx_id)
+        runescan_link = link(url, 'Runescan')
+
         return (
             f'🌊 <b>Streaming swap has started</b>\n'
-            f'User: {user_link} / {tx_link}\n'
+            f'User: {user_link} / {tx_link} / {runescan_link}\n'
             f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {bold(target_asset_str)}\n'
         )
 

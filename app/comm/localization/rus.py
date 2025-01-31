@@ -559,9 +559,12 @@ class RussianLocalization(BaseLocalization):
         amount_str = self.format_op_amount(e.in_amount_float)
         target_asset_str = Asset(e.out_asset).pretty_str
 
+        url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, e.tx_id)
+        runescan_link = link(url, 'Runescan')
+
         return (
             '🌊 <b>Потоковый обмен начался</b>\n'
-            f'Пользователь: {user_link} / {tx_link}\n'
+            f'Пользователь: {user_link} / {tx_link} / {runescan_link}\n'
             f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {bold(target_asset_str)}\n'
             f'{self._conditional_announcement()}'
         )
