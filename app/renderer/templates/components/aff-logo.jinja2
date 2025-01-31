@@ -2,20 +2,22 @@
     .affiliate-logo {
         width: 120px;
         height: 120px;
-        border-radius: 50%;
-        box-shadow: 0 0 4px rgba(255, 255, 255, 0.3);
+        {#border-radius: 50%;#}
+        {#box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);#}
+        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
         /* gradient */
-        background: linear-gradient(90deg, #eae5e5, #b8b8b8);
+        {#background: linear-gradient(90deg, #eae5e5, #b8b8b8);#}
     }
 
     .affiliate-name {
         font-weight: bolder;
         margin-top: 8px;
         font-size: 42px;
-        width: 100%;
+        width: 200%;
+        transform: translate(-25%);
         text-align: center;
         text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-        color: #51efe2;
+        color: #ffffff;
     }
 
     .affiliate-name-no {
@@ -25,10 +27,15 @@
 
     .aff-fee {
         display: inline;
-        font-size: 34px;
+        font-size: 36px;
         width: 220px;
         text-align: left;
         color: #51efe2;
+    {#color: #a3f8ef;#}
+    }
+
+    .aff-free {
+        color: #92e660;
     }
 
     .no-aff {
@@ -49,7 +56,15 @@
         <img src="renderer/logo/unknown.png?rv=1" alt="{{ affiliate_name }} logo" class="affiliate-logo">
         <div class="affiliate-name">
             {{ affiliate_name }}
-            <div class="aff-fee">{{ "%.1f"|format(affiliate_fee) }}%</div>
+            {% if float(affiliate_fee) > 0 %}
+                <div class="aff-fee">
+                    {{ pretty_money(float(affiliate_fee)) }}%
+                </div>
+            {% else %}
+                <div class="aff-fee aff-free">
+                    🎉 Free!
+                </div>
+            {% endif %}
         </div>
 
     {% else %}
@@ -59,10 +74,10 @@
 </div>
 
 <script>
-    const affiliateName = "{{ affiliate_name }}".toLowerCase();
+    const affiliateName = "{{ affiliate_name }}".toLowerCase().replace(/\s+/g, '');
+    console.log(`Affiliate name is ${affiliateName}`)
 
     const nameToCode = {
-        'trust wallet': 'trust',
         'trustwallet': 'trust',
         'trust': '',
         'thorswap': '',
@@ -82,6 +97,7 @@
         'instaswap': '',
 
         'ledgerlive': '',
+        'ledger live': 'ledgerlive',
         'ledger': 'ledgerlive',
         'll': 'ledgerlive',
         'lends': '',
@@ -97,24 +113,46 @@
         'vultisig': '',
         'vultisig ios': 'vultisig',
         'vultisig android': 'vultisig',
-        'zengo': ''
+        'xdefi': 'ctrl',
+        'zengo': '',
+        'tokenpocket': ''
     };
+
+    const logoSpecialCase = {
+        'shapeshift': 'fox.png',
+        'tokenpocket': 'tps.png',
+    }
+
     let code = nameToCode[affiliateName];
 
     if (code !== undefined) {
         if (code === '') {
             code = affiliateName;
         }
-        const basePath = `https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/${code}/logo.svg`
+
+        let logoPath = `https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/${code}/logo.svg`
+        const specialCaseLogo = logoSpecialCase[code];
+        if (specialCaseLogo !== undefined) {
+            logoPath = `renderer/static/specialcase/${specialCaseLogo}`
+            console.log(`Special case logo for ${affiliateName} URL is ${logoPath}`)
+        }
+        console.log(`boo ${specialCaseLogo} (${code})`)
+
         const affiliateLogo = document.querySelector('.affiliate-logo');
 
         // on error try the same name with .png extension
+        // do it once
+        let triedPng = false;
         affiliateLogo.onerror = function () {
-            affiliateLogo.src = basePath.replace('.svg', '.png');
+            if(!triedPng) {
+                affiliateLogo.src = logoPath.replace('.svg', '.png');
+                console.log(`Affiliate logo for ${affiliateName} URL is ${logoPath.replace('.svg', '.png')}`)
+                triedPng = true;
+            }
         }
 
-        affiliateLogo.src = basePath;
-        console.log(`Affiliate logo for ${affiliateName} URL is ${basePath}`)
+        affiliateLogo.src = logoPath;
+        console.log(`Affiliate logo for ${affiliateName} (${code}) URL is ${logoPath}`)
     }
 
 </script>
