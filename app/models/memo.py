@@ -366,7 +366,7 @@ class THORMemo:
             if no_raise:
                 return None
             else:
-                raise NotImplementedError(f"Not able to parse memo for {action} yet")
+                raise NotImplementedError(f"Not able to parse memo '{memo}' for {action} yet")
 
     @property
     def _fee_or_empty(self):

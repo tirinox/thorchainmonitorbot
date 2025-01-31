@@ -45,7 +45,7 @@ class SwapProps(NamedTuple):
         return cls(
             attrs,
             results,
-            memo=THORMemo.parse_memo(attrs.get('memo', ''))
+            memo=THORMemo.parse_memo(attrs.get('memo', ''), no_raise=True)
         )
 
     @property
