@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 from lib.logs import WithLogger
@@ -14,6 +15,15 @@ class InfographicRendererRPC(WithLogger):
         self.url = url
 
     async def render(self, template_name: str, parameters: dict):
+        for attempt in range(self._count):
+            try:
+                return await self._render(template_name, parameters)
+            except Exception as e:
+                self.logger.error(f'#{attempt}: Failed to render {template_name = }. {e = }')
+                await asyncio.sleep(self._step_timeout)
+        raise ValueError(f'Failed to render {template_name = }')
+
+    async def _render(self, template_name: str, parameters: dict):
         correlation_id = str(random_hex())
 
         message = {
