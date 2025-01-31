@@ -265,7 +265,9 @@ class AlertPresenter(INotified, WithLogger):
         from_asset = Asset(data.in_asset)
         to_asset = Asset(data.out_asset)
 
-        affiliate_name = self.deps.name_service.get_affiliate_name(data.memo.first_affiliate)
+        affiliate_code = data.memo.first_affiliate
+        affiliate_name = self.deps.name_service.get_affiliate_name(affiliate_code)
+        aff_fee_percent = data.memo.affiliate_fee_bp / THOR_BASIS_POINT_MAX * 100.0
 
         def _get_chain_logo(asset: Asset) -> str:
             if is_ambiguous_asset(asset):
@@ -295,9 +297,10 @@ class AlertPresenter(INotified, WithLogger):
             "source_amount": thor_to_float(data.in_amount),
             "destination_amount": thor_to_float(data.expected_out_amount),
             "volume_usd": data.volume_usd,
-            "affiliate": data.memo.first_affiliate,
+
+            "affiliate": affiliate_code,
             "affiliate_name": affiliate_name,
-            "affiliate_fee": data.memo.affiliate_fee_bp / THOR_BASIS_POINT_MAX,
+            "affiliate_fee": aff_fee_percent,
 
             "swap_quantity": data.ss.quantity,
             "swap_interval": data.ss.interval,
