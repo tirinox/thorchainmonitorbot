@@ -222,25 +222,10 @@ class TwitterEnglishLocalization(BaseLocalization):
         asset_str = Asset(e.in_asset).pretty_str
         amount_str = self.format_op_amount(e.in_amount_float)
         target_asset_str = Asset(e.out_asset).pretty_str
-        total_duration_str = self.seconds_human(e.ss.total_duration)
-
-        clout_str = ''
-        if e.clout and e.clout.score > 10_000:
-            clout_str = f' / {pretty_rune(thor_to_float(e.clout.score))} clout\n'
-
-        if e.ss.quantity > 0:
-            dur_str = (
-                f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
-                f'duration is about {total_duration_str} + outbound delay.'
-            )
-        else:
-            dur_str = f'Swaps every {e.ss.interval} blocks.'
 
         return (
-            f'🌊 Streaming swap has started\n'
+            f'🌊 New streaming swap\n'
             f'{user_link}: {amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {target_asset_str}\n'
-            f'{clout_str}'
-            f'{dur_str}\n'
             f'Track Tx: {tx_link}'
         )
 

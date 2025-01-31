@@ -268,7 +268,7 @@ async def dbg_swap_quote(app):
     print(quote)
 
 
-FILE_SWAP_START_PICKLE = '../temp/swap_start_event_3.pickle'
+FILE_SWAP_START_PICKLE = '../temp/swap_start_event_4.pickle'
 
 
 async def get_any_ongoing_streaming_swap(app):
@@ -322,6 +322,7 @@ async def render_and_safe_stream_swap_start_pic(app, event):
     name_map = await alert.load_names(event.from_address)
     photo, photo_name = await alert.render_swap_start(app.deps.loc_man.default, event, name_map)
     save_and_show_pic(photo, name=f'../temp/swap_start/{event.tx_id}.png')
+
 
 async def dbg_spam_any_active_swap_start(app, refresh=False, post=False):
     event = load_pickle(FILE_SWAP_START_PICKLE)
@@ -379,9 +380,8 @@ async def run():
 
         setup_logs(logging.DEBUG)
 
-
-        # await dbg_spam_any_active_swap_start(app)  # single
-        await dbg_collect_some_streaming_swaps(app)
+        await dbg_spam_any_active_swap_start(app, post=True)
+        # await dbg_collect_some_streaming_swaps(app)
 
         # await dbg_swap_quote(app)
 
