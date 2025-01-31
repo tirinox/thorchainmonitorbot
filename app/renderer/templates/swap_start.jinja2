@@ -86,7 +86,7 @@
 
         .arrow-down-holder {
             position: absolute;
-            margin-top: 22%;
+            margin-top: 21%;
             transform: translate(-70px, 0);
             width: 340px;
             text-align: center;
@@ -94,7 +94,7 @@
 
         .arrow-down {
             width: 30px;
-            margin-bottom: 10px;
+            margin-bottom: 18px;
         }
 
         .arrow-aff {
@@ -213,7 +213,7 @@
             <div class="arrow-down-holder">
 
                 <img src="renderer/static/arrow2-down.png" alt="Arrow down"
-                     class="shadow arrow-down {{ "arrow-aff" if affiliate_fee > 0 else "arrow-no-aff" }}">
+                     class="shadow arrow-down {{ "arrow-aff" if affiliate else "arrow-no-aff" }}">
 
                 {% include "components/aff-logo.jinja2" %}
 

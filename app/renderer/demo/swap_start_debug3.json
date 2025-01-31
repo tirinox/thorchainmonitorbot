@@ -1,0 +1,28 @@
+{
+    "template_name": "swap_start.jinja2",
+    "parameters": {
+        "user_name": "0xb49b ... e10c",
+        "source_address": "0xb49b8bb583126eb60ec1c9dff9ce2b0478a3e10c",
+        "tx_hash": "77809539AF910D4FDB6133F4D6427A9A0AF943C11940EC607DD67F3446407978",
+        "source_asset": "ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+        "source_asset_logo": "ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+        "source_asset_name": "USDC",
+        "source_chain_logo": "ETH.ETH",
+        "destination_asset": "ETH.SNX-0XC011A73EE8576FB46F5E1C5751CA3B9FE0AF2A6F",
+        "destination_logo": "ETH.SNX-0XC011A73EE8576FB46F5E1C5751CA3B9FE0AF2A6F",
+        "destination_asset_name": "SNX",
+        "destination_chain_logo": "ETH.ETH",
+        "source_amount": 59016.917095000004,
+        "destination_amount": 36424.34414077,
+        "volume_usd": 59024.21949154267,
+        "affiliate": "ss",
+        "affiliate_name": "ShapeShift",
+        "affiliate_fee": 0.0,
+        "swap_quantity": 1440,
+        "swap_interval": 10,
+        "total_estimated_time_sec": 86484,
+        "_width": 1200,
+        "_height": 800
+    },
+    "correlation_id": "b'72bb8ccd2c327dd913ed0396'"
+}
