@@ -159,6 +159,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     # Run all together
     if single_block:
         await d.block_scanner.run_once()
+        await asyncio.sleep(10.0)
     else:
         while True:
             await d.block_scanner.run()
@@ -182,6 +183,7 @@ async def demo_search_for_deposit_streaming_synth(app):
                 if tx.memo.is_streaming:
                     sep('BINGO')
                     print(tx)
+
 
 
 async def debug_tx_records(app: LpAppFramework, tx_id):
@@ -380,7 +382,7 @@ async def run():
 
         setup_logs(logging.DEBUG)
 
-        await dbg_spam_any_active_swap_start(app, post=True, refresh=True)
+        # await dbg_spam_any_active_swap_start(app, post=True, refresh=True)
         # await dbg_collect_some_streaming_swaps(app)
 
         # await dbg_swap_quote(app)
@@ -395,12 +397,12 @@ async def run():
 
         # await debug_tx_records(app, '62065183022E32395A1538DE9AE28CCCD81247327971990D8A57FD88BE2594EC')
 
-        # await debug_full_pipeline(
-        #     app,
-        #     start=16151780,
-        #     # tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
-        #     single_block=False
-        # )
+        await debug_full_pipeline(
+            app,
+            start=19667693,
+            # tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
+            single_block=True
+        )
 
         # ------------------- trade to trade no stream -------------------
         # await debug_full_pipeline(

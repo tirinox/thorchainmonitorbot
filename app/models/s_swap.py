@@ -119,7 +119,7 @@ class AlertSwapStart:
 
     @property
     def is_streaming(self):
-        return self.ss.interval > 1
+        return self.ss.interval and self.ss.interval >= 1
 
     @property
     def tx_id(self):

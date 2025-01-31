@@ -228,7 +228,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         return (
             f'🌊 New streaming swap\n'
             f'{user_link}: {amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {target_asset_str}\n'
-            f'Track Tx: {tx_link}. Runescan: {runescan_link}'
+            f'Track Tx: {tx_link}.\n'
+            f'Runescan: {runescan_link}'
         )
 
     def notification_text_queue_update(self, item_type, is_free, value):
