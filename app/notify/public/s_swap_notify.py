@@ -45,7 +45,7 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         e = swap_start_ev
 
         # todo: switch to "debug"
-        log_f = self.logger.warning
+        log_f = self.logger.debug
 
         if not e.is_streaming:
             log_f(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: not streaming')
