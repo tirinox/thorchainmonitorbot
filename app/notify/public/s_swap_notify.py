@@ -1,7 +1,9 @@
+import asyncio
+
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.native_scan import BlockResult
 from jobs.scanner.swap_start_detector import SwapStartDetector
-from lib.constants import float_to_thor
+from lib.constants import float_to_thor, THOR_BLOCK_TIME
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.money import pretty_dollar
@@ -40,21 +42,30 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
                 await self._relay_new_event(swap_start_ev)
 
     async def is_swap_eligible(self, swap_start_ev: AlertSwapStart):
-        # print(f'Swap {swap_start_ev.is_streaming = }, {swap_start_ev.volume_usd = }')
+        e = swap_start_ev
 
-        if not swap_start_ev.is_streaming:
+        # todo: switch to "debug"
+        log_f = self.logger.warning
+
+        if not e.is_streaming:
+            log_f(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: not streaming')
             return False
 
-        if swap_start_ev.volume_usd < self.min_streaming_swap_usd:
+        if e.volume_usd < self.min_streaming_swap_usd:
+            log_f(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: {e.volume_usd = } < {self.min_streaming_swap_usd}')
             return False
 
         if self.check_unique:
-            if await self.deduplicator.have_ever_seen_hash(swap_start_ev.tx_id):
+            if await self.deduplicator.have_ever_seen_hash(e.tx_id):
+                log_f(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: already seen')
                 return False
 
+        self.logger.info(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: eligible')
         return True
 
     async def _relay_new_event(self, event: AlertSwapStart):
+        await asyncio.sleep(THOR_BLOCK_TIME * 1.1)  # Sleep 1 block to ensure the tx appears in the blockchain
+
         await self.load_extra_tx_information(event)
         self._correct_streaming_swap_info(event)
         if event.is_streaming:
@@ -65,6 +76,17 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
     async def load_extra_tx_information(self, event: AlertSwapStart):
         try:
             event.status = await self.deps.thor_connector.query_tx_status(event.tx_id)
+
+            ss = event.status.get_streaming_swap()
+            if ss:
+                event.ss = event.ss._replace(
+                    interval=ss.get('interval', 0),
+                    quantity=ss.get('quantity', 0),
+                    count=ss.get('count', 0),
+                )
+            else:
+                self.logger.warning(f'No streaming swap info in status for {event.tx_id}')
+
         except Exception as e:
             self.logger.warning(f'Failed to load status for {event.tx_id}: {e}')
 
