@@ -223,14 +223,16 @@
 
         <div class="line-box">
             <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-pending shadow">
-            <div class="above-arrow">
-                <div class="time-block-interval">
-                    <strong>{{ int(swap_quantity) }}</strong>
-                    <span>{{ "swaps" if swap_quantity >= 2 else "swap" }}</span><br/>every
-                    <strong>{{ int(swap_interval) if int(swap_interval) > 1 else '' }}</strong>
-                    <span>{{ "blocks" if swap_interval >= 2 else "block" }}</span>
+            {% if int(swap_quantity) > 0 %}
+                <div class="above-arrow">
+                    <div class="time-block-interval">
+                        <strong>{{ int(swap_quantity) }}</strong>
+                        <span>{{ "swaps" if swap_quantity >= 2 else "swap" }}</span><br/>every
+                        <strong>{{ int(swap_interval) if int(swap_interval) > 1 else '' }}</strong>
+                        <span>{{ "blocks" if swap_interval >= 2 else "block" }}</span>
+                    </div>
                 </div>
-            </div>
+            {% endif %}
         </div>
 
         <div id="dest_logo" class="logo-holder">
@@ -250,7 +252,7 @@
                         {% endif %}
                     </div>
 
-                    <div class="time-block-flex">
+                    <div class="time-block-flex" id="time-block">
                         <img src="renderer/static/time-is-money.png" alt="Time is money..." class="clock">
                         <div class="wait-time" id="wait-time"></div>
                     </div>
@@ -264,7 +266,7 @@
 
     <script>
         const waitTimeSec = {{ total_estimated_time_sec }};
-        let result = '??:??';
+
         if (waitTimeSec !== 0) {
             // format HH:MM:SS or MM:SS if less than 1 hour
             const formatTime = (time) => {
@@ -274,9 +276,12 @@
                 const seconds = time % 60;
                 return hours > 0 ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
             };
-            result = formatTime(waitTimeSec);
+            document.querySelector('#wait-time').textContent = formatTime(waitTimeSec);
+        } else {
+            // hide #time-block
+            document.querySelector('#time-block').style.display = 'none';
         }
-        document.querySelector('#wait-time').textContent = result;
+
     </script>
 
 {% endblock %}
