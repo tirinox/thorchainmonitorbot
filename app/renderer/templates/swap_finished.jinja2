@@ -63,7 +63,7 @@
             {% if int(swap_quantity) > 0 %}
                 <div class="above-arrow">
                     <div class="tx-id-block">
-                        todo out hash????
+                        {{ shorten_text_middle(tx_hash_out, 4, 4) }}
                     </div>
                 </div>
             {% endif %}
@@ -78,8 +78,8 @@
 
                 <div class="asset-part">
                     <div class="user-name">
-                        {{ "🤖" if "Arb-Bot" in user_name else "👤" }}
-                        {{ user_name }} todo!
+                        {{ "🤖" if "Arb-Bot" in destination_user_name else "👤" }}
+                        {{ destination_user_name }}
                     </div>
 
                     <div class="output-amount">
@@ -103,7 +103,7 @@
     </div>
 
     <script>
-        const waitTimeSec = {{ total_estimated_time_sec }};
+        const waitTimeSec = {{ total_time_sec }};
 
         if (waitTimeSec !== 0) {
             // format HH:MM:SS or MM:SS if less than 1 hour

@@ -1,0 +1,34 @@
+{
+  "template_name": "swap_finished.jinja2",
+  "parameters": {
+    "user_name": "0x12..9932",
+    "source_address": "0x1234567890abcdef4567890abcdef1234567890",
+    "tx_hash": "356B4E43540880B69A22D7ACA9F0F62E80087C947819AE8118EAAA8100D360C0",
+
+    "source_asset": "ETH.ETH",
+    "source_asset_logo": "ETH.ETH",
+    "source_asset_name": "ETH",
+    "source_chain_logo": "",
+
+    "destination_asset": "BSC~USDT-0X55D398326F99059FF775485246999027B3197955",
+    "destination_logo": "BSC.USDT-0X55D398326F99059FF775485246999027B3197955",
+    "destination_asset_name": "BSC",
+    "destination_chain_logo": "BSC.BNB",
+    "destination_user_name": "valgalla.thor",
+    "tx_hash_out": "77809539AF910D4FDB6133F4D6427A9A0AF943C11940EC607DD67F3446407978",
+
+    "source_amount": 31.88522,
+    "destination_amount": 4.222323,
+    "volume_usd": 9303345,
+    "affiliate": "t",
+    "affiliate_name": "Vultisig Android",
+    "affiliate_fee": 0.5,
+
+    "swap_quantity": 333,
+    "swap_interval": 12,
+    "total_time_sec": 8442,
+
+    "_width": 1200,
+    "_height": 800
+  }
+}
