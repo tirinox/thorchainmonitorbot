@@ -108,6 +108,8 @@ class GenericAchievementPictureGenerator(BasePictureGenerator):
     def put_main_number(self, image, attributes, milestone_str, tint, desc):
         main_number_y = 48 if desc.more_than else 46
 
+        milestone_str = milestone_str.replace('.', '_')
+
         mx, my = self.pos_percent(50, main_number_y)
 
         main_font = attributes['main_font']
