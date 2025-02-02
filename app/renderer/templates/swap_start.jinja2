@@ -2,186 +2,18 @@
 
 {% block content %}
 
-    {% include "components/_tx_helpers.jinja2" %}
+    {% with title="STREAMING SWAP STARTED" %}
+        {% include "components/header.jinja2" %}
+    {% endwith %}
 
     <style>
         .bg {
             background: url("renderer/static/bg2.svg") no-repeat;
             background-position: center -79px;
         }
-
-        .line-box {
-            display: flex;
-        }
-
-        .route-box {
-            position: absolute;
-            left: 11%;
-            right: 11%;
-            top: 24%;
-            height: 30%;
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo-holder {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .tc-glow {
-            filter: drop-shadow(6px 6px 12px rgba(0, 213, 213, 0.51)) drop-shadow(-6px -6px 12px rgba(3, 243, 150, 0.51));
-        }
-
-        .circle-tc-logo {
-            width: 200px;
-            padding: 13px;
-        }
-
-        .arrow-lr {
-            width: 200px;
-            filter: brightness(190%) hue-rotate(30deg) saturate(200%) drop-shadow(3px 3px 4px rgba(0, 213, 213, 0.51)) drop-shadow(-3px -3px 4px rgba(3, 243, 150, 0.51));
-
-            padding: 0;
-        }
-
-        .arrow-pending {
-            width: 200px;
-            padding: 0;
-            filter: brightness(80%) hue-rotate(30deg) saturate(100%);
-            opacity: 0.9;
-        }
-
-
-        .logo-part {
-            display: flex;
-            justify-content: center;
-            align-content: center;
-        }
-
-        .user-name {
-            font-size: 40px;
-            font-style: normal;
-            font-weight: normal;
-            color: #bbb;
-        }
-
-        .input-amount, .output-amount {
-            text-shadow: 0 0 10px rgba(69, 221, 237, 60%);
-            font-size: 65px;
-        }
-
-        .asset-part {
-            display: flex;
-            flex-direction: column;
-            margin-top: 50px;
-
-            font-family: ThorFontLight, serif;
-            font-weight: bold;
-            font-size: 50px;
-
-            position: absolute;
-            top: 80%;
-            width: 43%;
-
-            text-align: center;
-        }
-
-        .arrow-down-holder {
-            position: absolute;
-            margin-top: 21%;
-            transform: translate(-70px, 0);
-            width: 340px;
-            text-align: center;
-        }
-
-        .arrow-down {
-            width: 30px;
-            margin-bottom: 18px;
-        }
-
-        .arrow-aff {
-            filter: brightness(200%);
-            opacity: 90%;
-        }
-
-        .arrow-no-aff {
-            filter: brightness(500%) saturate(0%);
-            opacity: 0.4;
-        }
-
-        .above-arrow {
-            position: absolute;
-            bottom: 160px;
-            width: 180px;
-            text-align: center;
-        }
-
-        .tx-id-block {
-            font-size: 30px;
-            font-style: italic;
-            margin-bottom: 4px;
-            color: #23DCC8;
-        }
-
-        .time-block-flex {
-            display: inline-flex;
-            align-items: center;
-            flex-direction: row;
-            justify-content: center;
-        }
-
-        .time-block-interval {
-            transform: translate(-10%);
-            display: block;
-            color: #23DCC8;
-            text-align: center;
-            font-size: 30px;
-            width: 240px;
-        }
-
-        .clock {
-            width: 60px;
-            display: inline-flex;
-            filter: brightness(80%);
-            padding: 8px;
-        }
-
-        .wait-time {
-            padding-left: 5px;
-            margin-bottom: 5px;
-            display: flex;
-            color: #45dded;
-            opacity: 0.8;
-            font-weight: 400;
-            font-size: 42px;
-        }
-
-        .usd-volume {
-            color: #dcdbdb;
-            font-weight: 400;
-            font-size: 60px;
-        }
-
-        .expected-out-label {
-            color: #bbb;
-            font-weight: normal;
-            font-size: 40px;
-            padding-top: 6px;
-        }
-
     </style>
 
-    <div class="header-box">
-        <img class="logo" src="renderer/static/tc_logo_transparent.png?rv=1" alt="THORChain logo">
-        <div class="title">THORCHAIN ⤬ STREAMING SWAP STARTED</div>
-    </div>
-
-
     <div class="route-box">
-
         <div id="source_logo" class="logo-holder">
             <div class="logo-part">
 
@@ -286,7 +118,6 @@
             // hide #time-block
             document.querySelector('#time-block').style.display = 'none';
         }
-
     </script>
 
 {% endblock %}
