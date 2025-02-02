@@ -1,0 +1,124 @@
+{% extends "base.jinja2" %}
+
+{% block content %}
+
+    {% with title="SWAP FINISHED" %}
+        {% include "components/header.jinja2" %}
+    {% endwith %}
+
+    <style>
+        .bg {
+            background: url("renderer/static/bg2.svg") no-repeat;
+            background-position: center -79px;
+        }
+    </style>
+
+    <div class="route-box">
+        <div id="source_logo" class="logo-holder">
+            <div class="logo-part">
+
+                {% with asset_name=source_asset, asset_logo=source_asset_logo, chain_logo=source_chain_logo %}
+                    {% include "components/asset-logo.jinja2" %}
+                {% endwith %}
+
+                <div class="asset-part">
+                    <div class="user-name">
+                        {{ "🤖" if "Arb-Bot" in user_name else "👤" }}
+                        {{ user_name }}
+                    </div>
+                    <div class="input-amount">
+                        {{ short_money(source_amount) }} {{ source_asset_name }}
+                    </div>
+                    <div class="usd-volume">
+                        ({{ short_dollar(volume_usd) }})
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="line-box">
+            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
+            <div class="above-arrow tx-id-block">
+                {{ shorten_text_middle(tx_hash, 4, 4) }}
+            </div>
+        </div>
+
+        <div class="logo-holder">
+            <img class="circle-tc-logo tc-glow" src="renderer/static/tc_logo_circle.png?rv=1" alt="THORChain logo">
+
+            <div class="arrow-down-holder">
+
+                <img src="renderer/static/arrow2-down.png" alt="Arrow down"
+                     class="shadow arrow-down {{ "arrow-aff" if affiliate else "arrow-no-aff" }}">
+
+                {% include "components/aff-logo.jinja2" %}
+
+            </div>
+
+        </div>
+
+        <div class="line-box">
+            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
+            {% if int(swap_quantity) > 0 %}
+                <div class="above-arrow">
+                    <div class="tx-id-block">
+                        todo out hash????
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div id="dest_logo" class="logo-holder">
+            <div class="logo-part">
+                {% with asset_name=destination_asset, asset_logo=destination_logo, chain_logo=destination_chain_logo,
+                        right=True %}
+                    {% include "components/asset-logo.jinja2" %}
+                {% endwith %}
+
+                <div class="asset-part">
+                    <div class="user-name">
+                        {{ "🤖" if "Arb-Bot" in user_name else "👤" }}
+                        {{ user_name }} todo!
+                    </div>
+
+                    <div class="output-amount">
+                        {% if destination_amount %}
+                            ≈{{ short_money(destination_amount) }} {{ destination_asset_name }}
+                        {% else %}
+                            ≈ N/A {{ destination_asset_name }}
+                        {% endif %}
+                    </div>
+
+                    <div class="time-block-flex" id="time-block">
+                        <img src="renderer/static/time-is-money.png" alt="Time is money..." class="clock">
+                        <div class="wait-time" id="wait-time"></div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const waitTimeSec = {{ total_estimated_time_sec }};
+
+        if (waitTimeSec !== 0) {
+            // format HH:MM:SS or MM:SS if less than 1 hour
+            const formatTime = (time) => {
+                const pad = (num) => String(num).padStart(2, '0');
+                const hours = Math.floor(time / 3600);
+                const minutes = Math.floor((time % 3600) / 60);
+                const seconds = time % 60;
+                return hours > 0 ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
+            };
+            document.querySelector('#wait-time').textContent = formatTime(waitTimeSec);
+        } else {
+            // hide #time-block
+            document.querySelector('#time-block').style.display = 'none';
+        }
+    </script>
+
+{% endblock %}
