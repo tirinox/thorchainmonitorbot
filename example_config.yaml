@@ -215,56 +215,58 @@ names:
     "thor1fddercd7pufy0adf2rh7ml2x9jdwla5lp56dpe": "TrustWalletFee"
 
   affiliates:
-    thor1a427q3v96psuj4fnughdw8glt5r7j38lj7rkp8: THORWallet
-    T: THORSwap
-    tl: TS Ledger
-    thor160yye65pf9rzwrgqmtgav69n6zlsyfpgm9a7xk: THORSwap
-    oky: "OneKey Wallet"
-    sy: Symbiosis
-    cakewallet: "Cake Wallet"
-    lends: "Lends"
-    wr: THORWallet
-    ss: ShapeShift
-    t: THORSwap
-    tr: Trust iOS
-    te-ios: Trust iOS
-    te: "Trust Android"
-    rg: "Rango Exchange"
-    commission: Ferz
-    dx: Asgardex
-    dcf: DecentralFi
-    ej: EdgeWallet
-    xdf: XDEFI
-    cb: CoinBot
-    runifier: Runifier
     0xbami: Unizen
-    ds: Defispot
-    eld: "El Dorito"
+    be: WinBit32
+    bgw: Bitget
+    cakewallet: Cake Wallet
+    cb: CoinBot
     cs: CacaoSwap
-    kf: "Kensho Finance"
-    moca: "Moca"
-    mc: "Moca"
-    ma: "Moca"
-    mo: "Moca"
-    ts: "THORSwap"
-    dcg: "Dash Core"
-    leo: "LeoDex"
-    tt: "Turbo Trade"
-    OS: "Osaia"
-    va: "Vultisig Android"
-    vi: "Vultisig iOS"
-    v0: "Vultisig"
-    v1: "Vultisig"
-    dp: "Astrolescent"
-    oci: "Ociswap"
-    sk: "SwapKit"
-    DPH: "Delphibets"
-    SSP: "ShardSpace"
-    be: "WinBit32"
-    is: "InstaSwap"
-    ll: "Ledger Live"
-    lifi: "Li.Fi"
-    okw: "OKX"
+    dcf: Decentralfi
+    dcg: Dash Core
+    decentralfi: Decentralfi
+    dph: Delphibets
+    ds: Defispot
+    dx: Asgardex
+    edge: edge
+    ej: edge
+    eld: El Dorito
+    is: InstaSwap
+    kf: Kensho Finance
+    lends: Lends
+    leo: LeoDex
+    lifi: LI.FI
+    ll: Ledger Live
+    ma: Moca
+    mc: Moca
+    mo: Moca
+    moca: Moca
+    okw: OKX
+    onekey: OneKey
+    os: Osaia
+    rg: Rango Exchange
+    ro: Rango Exchange
+    runifier: Runifier
+    sk: SwapKit
+    ss: ShapeShift
+    ssp: ShardSpace
+    sy: Symbiosis
+    t: THORSwap
+    tb: TrustWallet
+    td: TrustWallet
+    te: TrustWallet
+    thor160yye65pf9rzwrgqmtgav69n6zlsyfpgm9a7xk: THORSwap
+    thorwallet: THORWallet
+    ti: TrustWallet
+    tps: TokenPocket
+    tr: TrustWallet
+    ts: THORSwap
+    tt: Turbo Trade
+    v0: Vultisig
+    v1: Vultisig
+    va: Vultisig
+    vi: Vultisig
+    xdf: Ctrl
+    zengo: Zengo
 
   arb_bot_detector:
     min_sequence: 10_000  # minimum sequence number to consider this address as arbitrage
