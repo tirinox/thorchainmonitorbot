@@ -251,16 +251,20 @@ class AlertPresenter(INotified, WithLogger):
 
         await self.broadcaster.broadcast_to_all(_gen, event)
 
+    @staticmethod
+    def _gen_user_address_for_renderer(name_map, address):
+        user_name_thor = name_map.by_address.get(address) if name_map else None
+        if user_name_thor:
+            return add_thor_suffix(user_name_thor)
+        else:
+            # just address
+            return shorten_text_middle(address, 6, 4)
+
     async def render_swap_start(self, loc, data: AlertSwapStart, name_map: NameMap):
         if not self.use_renderer:
             return None, None
 
-        user_name_thor = name_map.by_address.get(data.from_address) if name_map else None
-        if user_name_thor:
-            user_name = add_thor_suffix(user_name_thor)
-        else:
-            # just address
-            user_name = shorten_text_middle(data.from_address, 6, 4)
+        user_name = self._gen_user_address_for_renderer(name_map, data.from_address)
 
         from_asset = Asset(data.in_asset)
         to_asset = Asset(data.out_asset)
@@ -312,6 +316,10 @@ class AlertPresenter(INotified, WithLogger):
         photo = await self.renderer.render('swap_start.jinja2', parameters)
         photo_name = 'swap_start.png'
         return photo, photo_name
+
+    async def render_swap_finish(self, loc, data: AlertSwapStart, name_map: NameMap):
+        # todo!
+        return None, None
 
     async def _handle_streaming_swap_start(self, event: AlertSwapStart):
         name_map = await self.load_names((event.from_address, event.memo.first_affiliate))

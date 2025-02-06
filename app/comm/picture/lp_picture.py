@@ -301,6 +301,9 @@ def _generate_lp_pool_picture(price_holder: LastPriceHolder,
               font=r.font_small)
 
     # LOGOS
+    rune_image.thumbnail((128, 128))
+    asset_image.thumbnail((128, 128))
+
     image.paste(rune_image, pos_percent_lp(46, logo_y + 2, -r.LOGO_WIDTH // 2, -r.LOGO_HEIGHT // 2), rune_image)
     image.paste(asset_image, pos_percent_lp(54, logo_y + 2, -r.LOGO_WIDTH // 2, -r.LOGO_HEIGHT // 2), asset_image)
 

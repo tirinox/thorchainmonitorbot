@@ -123,7 +123,8 @@ class CryptoLogoDownloader:
             logger.error(f'error ({e}) loading logo for "{asset}". using the default one...')
 
         if logo.size != (self.LOGO_WIDTH, self.LOGO_HEIGHT):
-            logo.thumbnail((self.LOGO_WIDTH, self.LOGO_HEIGHT))
+            # logo.thumbnail((self.LOGO_WIDTH, self.LOGO_HEIGHT))
+            logo = logo.resize((self.LOGO_WIDTH, self.LOGO_HEIGHT))
         return logo
 
 
