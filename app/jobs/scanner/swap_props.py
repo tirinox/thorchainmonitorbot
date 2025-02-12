@@ -125,23 +125,29 @@ class SwapProps(NamedTuple):
             if isinstance(ev, (EventOutbound, EventScheduledOutbound)) and (ev.is_outbound_memo or ev.is_refund_memo)
         ]
 
-    def gather_outbound(self, affiliate_address) -> List[ThorSubTx]:
+    def gather_outbound(self, affiliate_address, height) -> List[ThorSubTx]:
         results = defaultdict(list)
-        # in_address = self.inbound_address
+        heights = {}
         for outbound in self.true_outbounds:
             # here we must separate the affiliate outbound.
             if outbound.to_address == affiliate_address:
                 continue
 
             results[outbound.to_address].append(ThorCoin(*outbound.amount_asset))
+            heights[outbound.to_address] = outbound.height
 
         # Trade withdraws to Rune Address after trade asset swap
         for e in self.events:
             if isinstance(e, EventTradeAccountDeposit):
                 if e.rune_address:
                     results[e.rune_address].append(ThorCoin(e.amount, e.asset))
+                    heights[e.rune_address] = e.height
 
-        return [ThorSubTx(address, coins, '') for address, coins in results.items()]
+        return [
+            ThorSubTx(
+                address, coins, '',
+                height=heights[address],
+            ) for address, coins in results.items()]
 
     @property
     def has_swaps(self):
@@ -169,7 +175,8 @@ class SwapProps(NamedTuple):
             ThorSubTx(
                 address=attrs.get('from_address', ''),
                 coins=[self.in_coin],
-                tx_id=tx_id
+                tx_id=tx_id,
+                height=height,
             )
         ]
 

@@ -86,6 +86,7 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
                 asset=asset_str,
                 chain=asset.chain,
                 is_deposit=True,
+                height=tx.height,
             )
 
     def _make_withdraw(self, memo, tx: NativeThorTx) -> List[AlertTradeAccountAction]:
@@ -107,4 +108,5 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
                 asset=asset_str,
                 chain=asset.chain,
                 is_deposit=False,
+                height=tx.height,
             )

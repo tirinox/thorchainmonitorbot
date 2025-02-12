@@ -48,7 +48,8 @@ class AlertRunePoolAction(NamedTuple):
                 self.actor, [
                     ThorCoin(float_to_thor(self.amount), NATIVE_RUNE_SYMBOL)
                 ],
-                self.tx_hash
+                self.tx_hash,
+                height=self.height,
             ))
             t = ActionType.RUNEPOOL_ADD
         else:
@@ -56,7 +57,8 @@ class AlertRunePoolAction(NamedTuple):
                 self.destination_address, [
                     ThorCoin(float_to_thor(self.amount), NATIVE_RUNE_SYMBOL)
                 ],
-                self.tx_hash
+                self.tx_hash,
+                height=self.height,
             ))
             t = ActionType.RUNEPOOL_WITHDRAW
 

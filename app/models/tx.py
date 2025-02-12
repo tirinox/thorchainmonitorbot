@@ -44,13 +44,19 @@ class ThorSubTx:
     address: str
     coins: List[ThorCoin]
     tx_id: str
+    height: int = 0
+    is_affiliate: bool = False
 
     @classmethod
     def parse(cls, j):
         coins = [ThorCoin.from_json(cj) for cj in j.get('coins', [])]
-        return cls(address=j.get('address', ''),
-                   coins=coins,
-                   tx_id=j.get('txID', ''))
+        return cls(
+            address=j.get('address', ''),
+            coins=coins,
+            tx_id=j.get('txID', ''),
+            height=int(j.get('height', 0)),
+            is_affiliate=j.get('affiliate', False)
+        )
 
     @property
     def first_asset(self):
@@ -299,6 +305,11 @@ class ThorAction:
     @property
     def sender_address(self):
         return self.in_tx[0].address if self.in_tx else None
+
+    @property
+    def recipient_address(self):
+        # fixme!
+        return self.out_tx[0].address if self.out_tx else None
 
     @property
     def all_addresses(self):
@@ -632,3 +643,7 @@ class EventLargeTransaction:
     mimir: Optional[MimirHolder] = None
     status: Optional[ThorTxStatus] = None
     clout: Optional[ThorSwapperClout] = None
+
+    @property
+    def is_swap(self):
+        return self.transaction.is_of_type(ActionType.SWAP)

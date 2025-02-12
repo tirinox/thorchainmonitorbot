@@ -20,6 +20,7 @@ class AlertTradeAccountAction(NamedTuple):
     is_deposit: bool
     chain: str
     wait_time: float = 0.0
+    height: int = 0
 
     @property
     def is_withdrawal(self) -> bool:
@@ -40,16 +41,18 @@ class AlertTradeAccountAction(NamedTuple):
         if self.is_deposit:
             in_tx_list.append(ThorSubTx(
                 self.actor, [
-                    ThorCoin(float_to_thor(self.amount), self.asset)
+                    ThorCoin(float_to_thor(self.amount), self.asset),
                 ],
-                self.tx_hash
+                self.tx_hash,
+                height=self.height,
             ))
         else:
             out_tx_list.append(ThorSubTx(
                 self.destination_address, [
                     ThorCoin(float_to_thor(self.amount), self.asset)
                 ],
-                self.tx_hash
+                self.tx_hash,
+                height=self.height,
             ))
 
         ts = int(now_ts() * 1e9)
