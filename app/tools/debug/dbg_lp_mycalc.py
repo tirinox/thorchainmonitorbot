@@ -139,8 +139,8 @@ async def main():
         # await demo_summary_all_pools(app, 'bc1qhjp04nzu744lupkjds4agyl2qm92z8z4qd6u9a')  # savers
 
         await demo_report_for_single_pool(app,
-                                          '0x7e7D828e77Ff8a79fDB60A020dE52f31D776CAFd',
-                                          'BSC.TWT-0X4B0F1812E5DF2A09796481FF14017E6005508003',
+                                          '',
+                                          'BTC.BTC',
                                           hidden=False)
 
         # await demo_find_interesting_savers(app)

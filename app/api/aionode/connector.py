@@ -291,6 +291,10 @@ class ThorConnector:
                     else:
                         if data:
                             # only non-empty data is considered as valid
+                            if isinstance(data, dict) and data.get('code', 0) != 0:
+                                self.logger.error(f'Error in THORNode: {data}')
+                                raise ConnectionError(f'Error in THORNode: {data}')
+
                             return data
                         else:
                             # if data is empty and treat_empty_as_ok==False, try next client
