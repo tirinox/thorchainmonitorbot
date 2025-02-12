@@ -8,11 +8,10 @@ from api.midgard.urlgen import free_url_gen
 from api.w3.aggregator import AggregatorDataExtractor
 from comm.localization.languages import Language
 from comm.localization.manager import BaseLocalization
-from jobs.affiliate_merge import AffiliateTXMerger, ZERO_HASH
 from api.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from jobs.fetch.tx import TxFetcher
 from jobs.volume_filler import VolumeFillerUpdater
-from lib.constants import Chains, thor_to_float
+from lib.constants import Chains, thor_to_float, ZERO_HASH
 from lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
 from lib.money import DepthCurve
 from lib.texts import sep
@@ -86,12 +85,6 @@ async def demo_test_2(app):
     await present_one_aff_tx(app, q_path)
 
 
-async def demo_same_merge_swap(app):
-    # 4931F82A96196AD5393BB27A32F9EF98B7D80E46035EC6700E4BADF1B75129AC
-    q_path = free_url_gen.url_for_tx(0, 50, txid='4931F82A96196AD5393BB27A32F9EF98B7D80E46035EC6700E4BADF1B75129AC')
-    await present_one_aff_tx(app, q_path)
-
-
 async def demo_withdraw_savers(app):
     q_path = free_url_gen.url_for_tx(0, 50,
                                      txid='C24DF9D0A379519EBEEF2DBD50F5AD85AB7A5B75A2F3C571E185202EE2E9876F',
@@ -143,7 +136,7 @@ async def load_tx(app, mdg, q_path, find_aff=False):
     tx_parser = get_parser_by_network_id(app.deps.cfg.network_id)
     j = await mdg.request(q_path)
     txs = tx_parser.parse_tx_response(j).txs
-    txs_merged = AffiliateTXMerger().merge_affiliate_txs(txs)
+    txs_merged = txs
     tx = next(tx for tx in txs_merged if tx.affiliate_fee > 0) if find_aff else txs_merged[0]
     return tx
 
@@ -270,7 +263,6 @@ async def demo_verify_tx_scanner_in_the_past(app: LpAppFramework):
     while True:
         batch_txs = await fetcher_tx.fetch_one_batch(page, tx_types=ActionType.GROUP_MAIN)
         batch_txs = batch_txs.txs
-        batch_txs = fetcher_tx.merge_related_txs(batch_txs)
         for tx in batch_txs:
             if tx.tx_hash == ZERO_HASH:
                 n_zeros += 1
@@ -424,7 +416,6 @@ async def main():
     # await demo_test_aff_add_liq(app)
     # await demo_test_2(app)
     # await demo_aggr_aff(app)
-    # await demo_same_merge_swap(app)
     # await demo_withdraw_savers(app)
     # await demo_add_savers(app)
     # await demo_find_last_savers_additions(app)

@@ -195,7 +195,6 @@ def load_sample_txs(name):
 
 async def demo_run_txs_example_file(fetcher_tx: TxFetcher, filename):
     txs = load_sample_txs(f'tests/sample_data/{filename}')
-    txs = fetcher_tx.merge_related_txs(txs)
     await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
 
 

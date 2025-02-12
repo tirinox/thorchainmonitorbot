@@ -5,7 +5,6 @@ from tqdm import tqdm
 
 from api.midgard.parser import get_parser_by_network_id, TxParseResult
 from api.midgard.urlgen import free_url_gen
-from jobs.affiliate_merge import AffiliateTXMerger
 from jobs.fetch.base import BaseFetcher
 from lib.date_utils import parse_timespan_to_seconds, now_ts
 from lib.depcont import DepContainer
@@ -31,7 +30,6 @@ class TxFetcher(BaseFetcher):
         self.announce_pending_after_blocks = int(s_cfg.announce_pending_after_blocks)
 
         self.tx_parser = get_parser_by_network_id(deps.cfg.network_id)
-        self.tx_merger = AffiliateTXMerger()
 
         self.progress_tracker: Optional[tqdm] = None
 
@@ -45,7 +43,6 @@ class TxFetcher(BaseFetcher):
         await self.deps.db.get_redis()
 
         txs = await self._fetch_unseen_txs()
-        txs = self.merge_related_txs(txs)
         if txs:
             self.logger.info(f'New tx to analyze: {len(txs)}')
         return txs
@@ -117,9 +114,6 @@ class TxFetcher(BaseFetcher):
         self.logger.info(f'User {address = } has {len(txs)} tx ({liquidity_change_only = }).')
         return txs
 
-    def merge_related_txs(self, txs) -> List[ThorAction]:
-        txs = self.tx_merger.merge_affiliate_txs(txs)
-        return txs
 
     # -------
 

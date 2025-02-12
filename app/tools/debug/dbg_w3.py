@@ -158,7 +158,6 @@ async def load_dex_txs(app: LpAppFramework):
 
     for tx_hash in tx_hashes:
         r = await fetcher_tx.fetch_one_batch(0, tx_hash)
-        txs = fetcher_tx.merge_related_txs(r.txs)
         await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
 
 
@@ -182,7 +181,7 @@ async def demo_find_aff(app: LpAppFramework):
         while True:
             batch = await fetcher_tx.fetch_one_batch(page)
             if batch:
-                txs = fetcher_tx.merge_related_txs(batch.txs)
+                txs = batch.txs
                 await vf.on_data(None, txs)
 
                 await dex_ex.on_data(None, txs)

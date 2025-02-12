@@ -2,12 +2,11 @@ import os
 
 import pytest
 
-from jobs.affiliate_merge import AffiliateTXMerger
-from lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL
 from api.midgard.parser import MidgardParserV2
+from lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL
 from lib.utils import load_json
 from models.asset import is_rune
-from models.tx import ThorCoin, ThorMetaSwap, ThorAction, ThorSubTx
+from models.tx import ThorCoin, ThorMetaSwap
 
 PATH = './sample_data'
 DIV = THOR_DIVIDER
@@ -67,107 +66,9 @@ def test_merge_two_swap_events():
     assert ThorMetaSwap.merge_two(None, None) is None
 
 
-def test_affiliate_merge_simple(example_tx_gen):
-    affiliate_tx_examples = example_tx_gen('affiliate_merge_test.json').txs
-    t0, t1 = affiliate_tx_examples[:2]
-    t0: ThorAction
-    t1: ThorAction
-    merger = AffiliateTXMerger()
-    tm = merger.merge_same_txs(t0, t1)
-    assert tm.meta_swap.trade_slip == '123'
-    assert tm.meta_swap.trade_target == '1312542530351'
-    assert tm.meta_swap.liquidity_fee == '16417504333'
-
-    assert len(tm.meta_swap.network_fees) == 4
-    assert is_rune(tm.meta_swap.network_fees[0].asset)
-    assert tm.meta_swap.network_fees[0].amount == '2000000'
-
-    assert len(tm.in_tx) == 1
-    assert len(tm.out_tx) == 1
-    assert tm.out_tx == t0.out_tx == t1.out_tx
-    assert tm.type == t0.type == t1.type
-    assert tm.pools == t0.pools == t1.pools
-
-    assert len(tm.in_tx[0].coins) == len(t0.in_tx[0].coins) == len(t1.in_tx[0].coins)
-
-    assert tm.first_input_tx_hash == t0.first_input_tx_hash == t1.first_input_tx_hash
-    assert tm.in_tx[0].coins[0].amount == '10000000000000'  # (!)
-
-
-def test_affiliate_merge(example_tx_gen):
-    affiliate_tx_examples = example_tx_gen('affiliate_merge_test.json').txs
-
-    merged_txs = AffiliateTXMerger().merge_affiliate_txs(affiliate_tx_examples)
-    assert len(merged_txs) > 0
-    assert len(merged_txs) < len(affiliate_tx_examples)  # merged
-    assert len(merged_txs) == 15
-
-
-def test_affiliate_add_merge_single(example_tx_gen):
-    affiliate_tx_examples_add = example_tx_gen('affiliate_merge_test_add.json').txs
-    merged_txs = AffiliateTXMerger().merge_affiliate_txs(affiliate_tx_examples_add)
-    assert len(affiliate_tx_examples_add) == 2
-    assert len(merged_txs) == 1
-    tx = merged_txs[0]
-    assert tx.affiliate_fee == pytest.approx(0.0119, 0.001)
-
-
-def test_affiliate_merge_new_add(example_tx_gen):
-    affiliate_tx_examples_add = example_tx_gen('add_aff_new.json').txs
-    merged_txs = AffiliateTXMerger().merge_affiliate_txs(affiliate_tx_examples_add)
-    assert len(merged_txs) == 1
-
-    tx = merged_txs[0]
-    assert len(tx.in_tx) == 2
-
-    assert tx.in_tx[0] == ThorSubTx('bc1qtrjyuht0pyggve5lk5k4pheusfpmqh2dzngkwf', [
-        ThorCoin(str(77515 + 783), 'BTC.BTC')
-    ], 'B84ECCAED2B2D27CE86B7C0D9EF9CE6B18722584D393B0078590172FAD564AC5')
-
-    assert tx.in_tx[1] == ThorSubTx('thor1akth4h8lmawgz933795klfvkvmkej8ldmx6aq9', [
-        ThorCoin("990000000", 'THOR.RUNE')
-    ], '7E29318D580F7F5E97D93BCB6F0115B0723FE30CE477662608F25CECD45D7B01')
-
-
-@pytest.mark.parametrize('fn', [
-    'affiliate_merge_test_add_2in.json',
-    'affiliate_merge_test_add_2in_mix.json'
-])
-def test_affiliate_add_merge_dual(fn, example_tx_gen):
-    affiliate_tx_examples_add = example_tx_gen(fn).txs
-    merged_txs = AffiliateTXMerger().merge_affiliate_txs(affiliate_tx_examples_add)
-    assert len(affiliate_tx_examples_add) == 2
-    assert len(merged_txs) == 1
-    tx = merged_txs[0]
-    assert tx.affiliate_fee == pytest.approx(0.0101, 0.001)
-
-    assert tx.in_tx[0].coins[0].amount == '5848107'
-    assert tx.in_tx[0].coins[0].asset == 'ETH.ETH'
-    assert tx.in_tx[1].coins[0].amount == '3211421250'
-    assert is_rune(tx.in_tx[1].coins[0].asset)
-
-
 @pytest.fixture
 def v2_single_tx_gen(example_tx_gen):
     return lambda: example_tx_gen('v2_single.json').txs[0]
-
-
-def test_merge_same_1(v2_single_tx_gen):
-    tx1 = v2_single_tx_gen()
-    tx2 = v2_single_tx_gen()  # same TX, but different objects
-
-    assert tx1.deep_eq(tx2)
-    tx1.in_tx[0].coins[0] = ThorCoin('123', tx1.in_tx[0].coins[0].asset)
-    tx2.in_tx[0].coins[0] = ThorCoin('234', tx2.in_tx[0].coins[0].asset)
-    assert not tx1.deep_eq(tx2)
-    r = AffiliateTXMerger().merge_affiliate_txs([tx1, tx2])
-    assert len(r) == 1
-
-    tx1 = v2_single_tx_gen()
-    tx2 = v2_single_tx_gen()  # same TX, but different objects
-
-    r = AffiliateTXMerger().merge_affiliate_txs([tx1, tx2])
-    assert len(r) == 2
 
 
 def test_synth(example_tx_gen):
