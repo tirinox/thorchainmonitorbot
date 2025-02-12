@@ -267,6 +267,7 @@ names:
     vi: Vultisig
     xdf: Ctrl
     zengo: Zengo
+    "-_": SwapKit
 
   arb_bot_detector:
     min_sequence: 10_000  # minimum sequence number to consider this address as arbitrage

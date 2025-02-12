@@ -2,11 +2,9 @@
     .affiliate-logo {
         width: 120px;
         height: 120px;
-        {#border-radius: 50%;#}
-        {#box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);#}
-        filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.2));
+    {#border-radius: 50%;#}{#box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);#} filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.2));
         /* gradient */
-        {#background: linear-gradient(90deg, #eae5e5, #b8b8b8);#}
+    {#background: linear-gradient(90deg, #eae5e5, #b8b8b8);#}
     }
 
     .affiliate-name {
@@ -119,7 +117,8 @@
         'vultisig android': 'vultisig',
 
         'zengo': '',
-        'tokenpocket': ''
+        'tokenpocket': '',
+        'swapkit': '',
     };
 
     const logoSpecialCase = {
@@ -128,38 +127,39 @@
         'vultisig': 'vult.svg',
         'rango': 'rango.png',
         'rangoexchange': 'rango.png',
+        'swapkit': 'swapkit.png',
     }
 
-    let code = nameToCode[affiliateName];
+    let codedAffName = nameToCode[affiliateName];
 
-    if (code !== undefined) {
-        if (code === '') {
-            code = affiliateName;
-        }
-
-        let logoPath = `https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/${code}/logo.svg`
-        const specialCaseLogo = logoSpecialCase[code];
-        if (specialCaseLogo !== undefined) {
-            logoPath = `renderer/static/specialcase/${specialCaseLogo}`
-            console.log(`Special case logo for ${affiliateName} URL is ${logoPath}`)
-        }
-
-        const affiliateLogo = document.querySelector('.affiliate-logo');
-
-        // on error try the same name with .png extension
-        // do it once
-        let triedPng = false;
-        affiliateLogo.onerror = function () {
-            if(!triedPng) {
-                affiliateLogo.src = logoPath.replace('.svg', '.png');
-                console.log(`Affiliate logo for ${affiliateName} URL is ${logoPath.replace('.svg', '.png')}`)
-                triedPng = true;
-            }
-        }
-
-        affiliateLogo.src = logoPath;
-        console.log(`Affiliate logo for ${affiliateName} (${code}) URL is ${logoPath}`)
+    if (codedAffName === undefined || codedAffName === '') {
+        codedAffName = affiliateName;
     }
+
+    let logoPath = `https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/${codedAffName}/logo.svg`
+    const specialCaseLogo = logoSpecialCase[codedAffName];
+    if (specialCaseLogo !== undefined) {
+        logoPath = `renderer/static/specialcase/${specialCaseLogo}`
+        console.log(`Special case logo for ${affiliateName} URL is ${logoPath}`)
+    }
+
+    const affiliateLogo = document.querySelector('.affiliate-logo');
+
+    // on error try the same name with .png extension
+    // do it once
+    let triedPng = false;
+    affiliateLogo.onerror = function () {
+        if (!triedPng) {
+            affiliateLogo.src = logoPath.replace('.svg', '.png');
+            console.log(`Affiliate logo for ${affiliateName} URL is ${logoPath.replace('.svg', '.png')}`)
+            triedPng = true;
+        } else {
+            affiliateLogo.src = 'renderer/logo/unknown.png'
+        }
+    }
+
+    affiliateLogo.src = logoPath;
+    console.log(`Affiliate logo for ${affiliateName} (${codedAffName}) URL is ${logoPath}`)
 
 </script>
 
