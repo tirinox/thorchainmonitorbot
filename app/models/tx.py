@@ -5,7 +5,7 @@ from typing import List, Optional, NamedTuple
 
 from api.aionode.types import ThorTxStatus, ThorSwapperClout
 from api.w3.token_record import SwapInOut
-from lib.constants import RUNE_SYMBOL, Chains, thor_to_float, bp_to_float, THOR_BLOCK_TIME
+from lib.constants import Chains, thor_to_float, bp_to_float, THOR_BLOCK_TIME
 from lib.date_utils import now_ts
 from lib.texts import safe_sum
 from .asset import Asset, is_rune, ASSET_TRADE_SEPARATOR
@@ -223,10 +223,6 @@ class ThorAction:
     # extended properties
 
     # for add, withdraw, donate
-    address_rune: str = ''
-    address_asset: str = ''
-    tx_hash_rune: str = ''
-    tx_hash_asset: str = ''
     asset_amount: float = 0.0
     rune_amount: float = 0.0
 
@@ -303,9 +299,13 @@ class ThorAction:
         return self.in_tx[0].address if self.in_tx else None
 
     @property
-    def recipient_address(self):
-        # fixme!
-        return self.out_tx[0].address if self.out_tx else None
+    def recipient_address(self) -> Optional[str]:
+        r = self.recipients_output
+        return r.address if r else None
+
+    @property
+    def recipients_output(self) -> Optional[ThorSubTx]:
+        return next((tx for tx in self.out_tx if not tx.is_affiliate), None)
 
     @property
     def all_addresses(self):
@@ -436,26 +436,10 @@ class ThorAction:
             self.rune_amount = self.sum_of_rune(in_only=True)
             self.asset_amount = self.sum_of_asset(pool, in_only=True)
 
-            rune_sub_tx = self.get_sub_tx(RUNE_SYMBOL, in_only=True)
-            self.address_rune = rune_sub_tx.address if rune_sub_tx else None
-            self.tx_hash_rune = rune_sub_tx.tx_id if rune_sub_tx else None
-
-            asset_sub_tx = self.get_sub_tx(pool, in_only=True)
-            self.address_asset = asset_sub_tx.address if asset_sub_tx else None
-            self.tx_hash_asset = asset_sub_tx.tx_id if asset_sub_tx else None
-
         elif self.is_of_type(ActionType.WITHDRAW):
             pool = self.first_pool_l1  # withdraw always l1 no matter it was savers or normal liquidity
             self.rune_amount = self.sum_of_rune(out_only=True)
             self.asset_amount = self.sum_of_asset(pool, out_only=True)
-
-            sub_tx_rune = self.get_sub_tx(RUNE_SYMBOL, in_only=True)
-            self.address_rune = sub_tx_rune.address if sub_tx_rune else self.in_tx[0].address
-
-            out_sub_tx_rune = self.get_sub_tx(RUNE_SYMBOL, out_only=True)
-            out_sub_tx_asset = self.get_sub_tx(pool, out_only=True)
-            self.tx_hash_rune = out_sub_tx_rune.tx_id if out_sub_tx_rune else None
-            self.tx_hash_asset = out_sub_tx_asset.tx_id if out_sub_tx_asset else None
 
         elif self.is_of_type((ActionType.REFUND, ActionType.SWAP)):
             # only outputs
@@ -650,6 +634,18 @@ class EventLargeTransaction:
     status: Optional[ThorTxStatus] = None
     clout: Optional[ThorSwapperClout] = None
 
+    # For swaps
+    usd_volume_input: float = 0.0
+    usd_volume_output: float = 0.0
+
     @property
     def is_swap(self):
         return self.transaction.is_of_type(ActionType.SWAP)
+
+    @property
+    def begin_height(self):
+        return self.transaction.height
+
+    @property
+    def end_height(self):
+        return max(tx.height for tx in self.transaction.out_tx)
