@@ -5,7 +5,7 @@ from typing import List, Optional, NamedTuple
 
 from api.aionode.types import ThorTxStatus, ThorSwapperClout
 from api.w3.token_record import SwapInOut
-from lib.constants import RUNE_SYMBOL, Chains, thor_to_float, bp_to_float
+from lib.constants import RUNE_SYMBOL, Chains, thor_to_float, bp_to_float, THOR_BLOCK_TIME
 from lib.date_utils import now_ts
 from lib.texts import safe_sum
 from .asset import Asset, is_rune, ASSET_TRADE_SEPARATOR
@@ -628,6 +628,16 @@ class ThorAction:
         if not self.meta_swap:
             return 0.0
         return self.meta_swap.liquidity_fee_in_percent(self.full_volume_in_rune)
+
+    @property
+    def duration(self) -> float:
+        if self.is_success:
+            height = self.height
+            latest_outbound_height = max(tx.height for tx in self.out_tx)
+            blocks = latest_outbound_height - height
+            assert blocks >= 0, f'Negative duration: {blocks} blocks of {self.first_input_tx_hash}'
+            return blocks * THOR_BLOCK_TIME
+        return 0.0
 
 
 @dataclass
