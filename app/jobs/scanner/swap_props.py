@@ -1,8 +1,8 @@
 import json
-from collections import defaultdict
 from datetime import datetime
-from typing import NamedTuple, List, Optional, Tuple
+from typing import NamedTuple, List, Optional
 
+from jobs.scanner.block_result import ThorEvent
 from models.asset import is_rune
 from models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit
@@ -10,7 +10,6 @@ from models.memo import ActionType
 from models.memo import THORMemo
 from models.s_swap import StreamingSwap
 from models.tx import ThorAction, SUCCESS, ThorMetaSwap, ThorCoin, ThorSubTx
-from jobs.scanner.block_result import ThorEvent
 
 
 class SwapProps(NamedTuple):
@@ -68,7 +67,7 @@ class SwapProps(NamedTuple):
 
     @property
     def is_finished(self) -> bool:
-        # unequivocally, it's done if there is any EventScheduledOutbound
+        # surely, it's done if there is any EventScheduledOutbound
         if any(isinstance(ev, EventScheduledOutbound) for ev in self.events):
             return True
 
@@ -85,23 +84,6 @@ class SwapProps(NamedTuple):
             return True
 
         return False
-
-    def get_affiliate_fee_and_addr(self) -> Tuple[int, str]:
-        if self.memo.affiliate_fee_0_1 and self.memo.affiliate_address:
-            in_coin = self.in_coin
-            if is_rune(in_coin.asset):
-                # In is Rune, so no swap to the affiliate addy
-                amount = int(in_coin.amount * self.memo.affiliate_fee_0_1)
-                return amount, self.memo.affiliate_address
-            else:
-                for ev in self.events:
-                    # fixme: possible bug. it dest addy is THORName,
-                    #  it will mismatch anyway because events have natural addresses
-                    if (isinstance(ev, EventOutbound)
-                            and ev.to_address != self.memo.dest_address and ev.is_outbound_memo):
-                        return ev.amount, ev.to_address
-
-        return 0, ''  # otherwise not found
 
     @property
     def in_coin(self):
@@ -120,34 +102,47 @@ class SwapProps(NamedTuple):
 
     @property
     def true_outbounds(self):
-        return [
+        outbounds = [
             ev for ev in self.events
             if isinstance(ev, (EventOutbound, EventScheduledOutbound)) and (ev.is_outbound_memo or ev.is_refund_memo)
         ]
+        # noinspection PyUnresolvedReferences
+        outbounds += [
+            ev for ev in self.events
+            if isinstance(ev, EventTradeAccountDeposit) and ev.rune_address
+        ]
+        return outbounds
 
-    def gather_outbound(self, affiliate_address, height) -> List[ThorSubTx]:
-        results = defaultdict(list)
-        heights = {}
-        for outbound in self.true_outbounds:
-            # here we must separate the affiliate outbound.
-            if outbound.to_address == affiliate_address:
-                continue
+    def gather_outbounds(self) -> List[ThorSubTx]:
+        results = []
 
-            results[outbound.to_address].append(ThorCoin(*outbound.amount_asset))
-            heights[outbound.to_address] = outbound.height
+        outbounds = self.true_outbounds
+        if not outbounds:
+            return results
 
-        # Trade withdraws to Rune Address after trade asset swap
-        for e in self.events:
-            if isinstance(e, EventTradeAccountDeposit):
-                if e.rune_address:
-                    results[e.rune_address].append(ThorCoin(e.amount, e.asset))
-                    heights[e.rune_address] = e.height
+        all_are_rune = all(is_rune(ev.amount_asset[1]) for ev in outbounds)
+        if all_are_rune:
+            max_amount = max(int(ev.amount_asset[0]) for ev in outbounds)
+        else:
+            max_amount = 0
 
-        return [
-            ThorSubTx(
-                address, coins, '',
-                height=heights[address],
-            ) for address, coins in results.items()]
+        for outbound in outbounds:
+            coins = [ThorCoin(*outbound.amount_asset)]
+
+            if all_are_rune:
+                is_affiliate = int(outbound.amount_asset[0]) != max_amount
+            elif is_rune(outbound.amount_asset[1]):
+                is_affiliate = True
+            else:
+                is_affiliate = False
+
+            results.append(ThorSubTx(
+                outbound.to_address, coins, outbound.tx_id,
+                height=outbound.height,
+                is_affiliate=is_affiliate,
+            ))
+
+        return results
 
     @property
     def has_swaps(self):
@@ -157,7 +152,7 @@ class SwapProps(NamedTuple):
         attrs = self.attrs
 
         memo_str = self.attrs.get('memo', '')
-        height = int(attrs.get('block_height', 0))
+        height = int(attrs.get('block_height', 0))  # when it was observed for the first time
         tx_id = attrs.get('id')
 
         swaps: List[EventSwap] = list(self.find_events(EventSwap))
@@ -180,9 +175,7 @@ class SwapProps(NamedTuple):
             )
         ]
 
-        _affiliate_fee_paid, affiliate_address = self.get_affiliate_fee_and_addr()
-
-        out_tx = self.gather_outbound(affiliate_address)
+        out_txs = self.gather_outbounds()
 
         trade_target = 0  # ignore so far, not really used
 
@@ -229,15 +222,15 @@ class SwapProps(NamedTuple):
             type=ActionType.SWAP.value,
             pools=pools,
             in_tx=in_tx,
-            out_tx=out_tx,
+            out_tx=out_txs,
             meta_swap=ThorMetaSwap(
                 liquidity_fee=liquidity_fee,
                 network_fees=network_fees,
                 trade_slip=slip,
                 trade_target=trade_target,
-                affiliate_fee=self.memo.affiliate_fee_0_1,
                 memo=memo_str,
-                affiliate_address=affiliate_address,
+                affiliate_fee=self.memo.affiliate_fee_0_1,
+                affiliate_address=self.memo.affiliate_address,
                 streaming=ss_desc
             ),
             status=SUCCESS

@@ -302,6 +302,14 @@ class EventTradeAccountDeposit(NamedTuple):
     def amount_float(self):
         return thor_to_float(self.amount)
 
+    @property
+    def amount_asset(self) -> Tuple[int, str]:
+        return self.amount, self.asset
+
+    @property
+    def to_address(self):
+        return self.rune_address
+
 
 class EventTradeAccountWithdraw(NamedTuple):
     tx_id: str
