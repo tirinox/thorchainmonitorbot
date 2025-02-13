@@ -157,7 +157,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         for tx in txs:
             if tx.is_of_type(ActionType.ADD_LIQUIDITY):
                 if pool and tx.first_pool == pool:
-                    if tx.height_int >= BLOCK_ILP_DEPRECATION:
+                    if tx.height >= BLOCK_ILP_DEPRECATION:
                         return True
         return False
 
@@ -197,7 +197,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             else:
                 self.logger.info(f'Not found THOR address for "{address}".')
 
-        txs.sort(key=operator.attrgetter('height_int'))
+        txs.sort(key=operator.attrgetter('height'))
 
         # if the used withdrew 100% of liquidity, we ignore this history.
         # so accounting starts only with the most recent addition
@@ -212,7 +212,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return txs
 
     async def _fetch_historical_pool_states(self, txs: List[ThorAction]) -> HeightToAllPools:
-        heights = list(set(tx.height_int for tx in txs))
+        heights = list(set(tx.height for tx in txs))
         ppf = self.deps.pool_fetcher
         tasks = [ppf.load_pools(h, caching=True) for h in heights]
         pool_states = await asyncio.gather(*tasks)
@@ -238,12 +238,12 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             first_add_date = min(first_add_date, tx_timestamp) if first_add_date else tx_timestamp
             last_add_date = max(last_add_date, tx_timestamp) if last_add_date else tx_timestamp
 
-            pools_info: PoolInfoMap = pool_historic[tx.height_int]
+            pools_info: PoolInfoMap = pool_historic[tx.height]
             usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_info)
 
             # fixme: block has final state after all TX settled. this_asset_pool_info may be None!
             # so this_asset_pool_info is a real object, but 1/1:1 values inside.
-            this_asset_pool_info = self._get_pool(pool_historic, tx.height_int, l1_pool_name)
+            this_asset_pool_info = self._get_pool(pool_historic, tx.height, l1_pool_name)
 
             if tx.is_of_type(ActionType.ADD_LIQUIDITY):
                 runes = tx.sum_of_rune(in_only=True) if not is_savings else 0
@@ -324,10 +324,10 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         earliest_tx = txs[0]
         for tx in txs[1:]:
-            if tx.height_int < earliest_tx.height_int:
+            if tx.height < earliest_tx.height:
                 earliest_tx = tx
 
-        earliest_pools = pool_historic.get(earliest_tx.height_int)
+        earliest_pools = pool_historic.get(earliest_tx.height)
 
         usd_per_rune = self._calculate_weighted_rune_price_in_usd(earliest_pools)
 
@@ -388,15 +388,15 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                 self.logger.warning(f'{tx0.sender_address} completely withdrawn assets. resetting his positions!')
                 position_pairs = []
             else:
-                p0 = self._create_lp_position(pool, tx0.height_int, units, pool_historic, False)
-                p1 = self._create_lp_position(pool, tx1.height_int, units, pool_historic, False)
+                p0 = self._create_lp_position(pool, tx0.height, units, pool_historic, False)
+                p1 = self._create_lp_position(pool, tx1.height, units, pool_historic, False)
                 position_pairs.append((p0, p1))
 
         # add the last window from the latest tx to the present moment
         last_tx = txs[-1]
         units = self._update_units(units, last_tx)
         position_pairs.append((
-            self._create_lp_position(pool, last_tx.height_int, units, pool_historic, False),
+            self._create_lp_position(pool, last_tx.height, units, pool_historic, False),
             self._create_final_lp_position(pool, units, False)
         ))
 
@@ -499,8 +499,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         last_deposit_height = -1
         for tx in txs:
             if tx.is_of_type(ActionType.ADD_LIQUIDITY):
-                if last_deposit_height < tx.height_int:
-                    last_deposit_height = tx.height_int
+                if last_deposit_height < tx.height:
+                    last_deposit_height = tx.height
         return last_deposit_height
 
     @staticmethod
@@ -537,7 +537,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         units = 0
         for tx in txs:
             if tx.is_of_type(ActionType.ADD_LIQUIDITY):
-                pool = self._get_pool(historic_all_pool_states, tx.height_int, pool_name)
+                pool = self._get_pool(historic_all_pool_states, tx.height, pool_name)
                 r, a = pool.get_share_rune_and_asset(tx.meta_add.liquidity_units_int)
                 r0 += r
                 a0 += a

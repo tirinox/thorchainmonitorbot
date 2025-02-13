@@ -110,7 +110,7 @@ class TxFetcher(BaseFetcher):
             )
             txs.extend(this_type_txs)
 
-        txs.sort(key=lambda tx: tx.height_int)
+        txs.sort(key=lambda tx: tx.height)
         self.logger.info(f'User {address = } has {len(txs)} tx ({liquidity_change_only = }).')
         return txs
 
@@ -144,18 +144,18 @@ class TxFetcher(BaseFetcher):
     @staticmethod
     def _estimate_min_max_height(results, deepest_block_height, top_block_height):
         if results and results.txs:
-            deepest_block_height = min(deepest_block_height, min(tx.height_int for tx in results.txs))
-            top_block_height = max(top_block_height, max(tx.height_int for tx in results.txs))
+            deepest_block_height = min(deepest_block_height, min(tx.height for tx in results.txs))
+            top_block_height = max(top_block_height, max(tx.height for tx in results.txs))
         return deepest_block_height, top_block_height
 
     def _update_pending_txs_here(self, this_batch_pending):
         for tx in this_batch_pending:
             if tx and (tx_hash := tx.tx_hash):
-                self.pending_hash_to_height[tx_hash] = tx.height_int
+                self.pending_hash_to_height[tx_hash] = tx.height
 
     def _select_old_pending_txs(self, top_block_height, this_batch_pending):
         block_height_threshold = top_block_height - self.announce_pending_after_blocks
-        pending_old_txs = [tx for tx in this_batch_pending if tx.height_int < block_height_threshold]
+        pending_old_txs = [tx for tx in this_batch_pending if tx.height < block_height_threshold]
         return pending_old_txs
 
     def get_pending_hashes_prior_to(self, block_height):

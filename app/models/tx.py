@@ -264,10 +264,6 @@ class ThorAction:
         return now_ts() - self.date_timestamp
 
     @property
-    def height_int(self):
-        return int(self.height)
-
-    @property
     def tx_hash(self):
         sub_tx_set = self.in_tx or self.out_tx
         if not sub_tx_set:
@@ -403,7 +399,7 @@ class ThorAction:
 
     def __eq__(self, other):
         if isinstance(other, ThorAction):
-            return self.height_int == other.height_int and self.tx_hash == other.tx_hash and self.type == other.type
+            return self.height == other.height and self.tx_hash == other.tx_hash and self.type == other.type
         else:
             return False
 

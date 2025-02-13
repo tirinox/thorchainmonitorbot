@@ -25,7 +25,7 @@ async def continuous_pending_scan(app):
                 if h in block_height:
                     print(f'Alarm! Block height changed for "{h}"!!!')
                 else:
-                    block_height[h] = tx.height_int
+                    block_height[h] = tx.height
 
         succeed = [tx for tx in data if tx.is_success]
         pending = [tx for tx in data if tx.is_pending]
