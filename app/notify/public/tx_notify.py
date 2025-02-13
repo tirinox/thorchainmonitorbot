@@ -250,7 +250,20 @@ class SwapTxNotifier(GenericTxNotifier):
         finally:
             return event
 
+    async def load_extra_tx_information(self, event: EventLargeTransaction):
+        if not event or not event.transaction:
+            self.logger.error('No event or transaction!')
+            return
+
+        tx_id = event.transaction.tx_hash
+        try:
+            event.status = await self.deps.thor_connector.query_tx_status(tx_id)
+        except Exception as e:
+            self.logger.warning(f'Failed to load status for {tx_id}: {e}')
+
     async def _event_transform(self, event: EventLargeTransaction) -> EventLargeTransaction:
+        # for eligible Txs we load extra information
+        await self.load_extra_tx_information(event)
         return await self.adjust_liquidity_fee_through_midgard(event)
 
     def is_tx_suitable(self, tx: ThorAction, min_rune_volume, usd_per_rune, curve_mult=None):

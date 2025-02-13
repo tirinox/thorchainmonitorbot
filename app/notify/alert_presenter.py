@@ -109,9 +109,9 @@ class AlertPresenter(INotified, WithLogger):
         elif isinstance(data, EventPools):
             await self._handle_best_pools(data)
         elif isinstance(data, AlertTradeAccountAction):
-            await self._handle_trace_account_move(data)
+            await self._handle_trade_account_move(data)
         elif isinstance(data, AlertTradeAccountStats):
-            await self._handle_trace_account_summary(data)
+            await self._handle_trade_account_summary(data)
         elif isinstance(data, AlertRunePoolAction):
             await self._handle_runepool_action(data)
         elif isinstance(data, AlertRunepoolStats):
@@ -140,14 +140,6 @@ class AlertPresenter(INotified, WithLogger):
         return await self.name_service.safely_load_thornames_from_address_set(addresses)
 
     # ---- PARTICULARLY ----
-
-    async def _handle_large_tx(self, tx_event: EventLargeTransaction):
-        name_map = await self.load_names(tx_event.transaction.all_addresses)
-
-        await self.broadcaster.broadcast_to_all(
-            BaseLocalization.notification_text_large_single_tx,
-            tx_event, name_map
-        )
 
     async def _handle_rune_transfer(self, transfer: RuneTransfer):
         name_map = await self.load_names([
@@ -206,14 +198,6 @@ class AlertPresenter(INotified, WithLogger):
         await self.broadcaster.broadcast_to_all(_gen, event)
 
     async def _handle_pol(self, event: AlertPOLState):
-        # async def _gen(loc: BaseLocalization, _a: EventPOL):
-        #     pic_gen = POLPictureGenerator(loc.ach, _a)
-        #     pic, pic_name = await pic_gen.get_picture()
-        #     caption = loc.ach.notification_pol_stats(event)
-        #     return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
-        # await self.broadcaster.notify_preconfigured_channels(_gen, event)
-
-        # simple text so far
         await self.broadcaster.broadcast_to_all(
             BaseLocalization.notification_text_pol_stats, event
         )
@@ -251,6 +235,32 @@ class AlertPresenter(INotified, WithLogger):
 
         await self.broadcaster.broadcast_to_all(_gen, event)
 
+    # ----- swaps and other actions -----
+
+    async def _handle_large_tx(self, tx_event: EventLargeTransaction):
+        name_map = await self.load_names(tx_event.transaction.all_addresses)
+
+        if tx_event.is_swap:
+            # post a new infographic
+            await self._handle_swap_finished(tx_event, name_map)
+        else:
+            # old style text notification
+            await self.broadcaster.broadcast_to_all(
+                BaseLocalization.notification_text_large_single_tx,
+                tx_event, name_map
+            )
+
+    async def _handle_swap_finished(self, event: EventLargeTransaction, name_map: NameMap):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_large_single_tx(event, name_map)
+            photo, photo_name = await self.render_swap_finish(loc, event, name_map)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
+        await self.deps.broadcaster.broadcast_to_all(message_gen)
+
     @staticmethod
     def _gen_user_address_for_renderer(name_map, address):
         user_name_thor = name_map.by_address.get(address) if name_map else None
@@ -259,6 +269,17 @@ class AlertPresenter(INotified, WithLogger):
         else:
             # just address
             return shorten_text_middle(address, 6, 4)
+
+    @staticmethod
+    def _get_chain_logo(asset: Asset) -> str:
+        if is_ambiguous_asset(asset):
+            if asset.chain == Chains.BASE:
+                return 'BASE'  # Base has ETH as gas asset, but we wanna display BASE.png here
+            else:
+                # other just use chain's gas asset as logo
+                return str(Asset.gas_asset_from_chain(asset.chain))
+        else:
+            return ''  # no ambiguity
 
     async def render_swap_start(self, loc, data: AlertSwapStart, name_map: NameMap):
         if not self.use_renderer:
@@ -273,16 +294,6 @@ class AlertPresenter(INotified, WithLogger):
         affiliate_name = self.deps.name_service.get_affiliate_name(affiliate_code)
         aff_fee_percent = data.memo.affiliate_fee_bp / THOR_BASIS_POINT_MAX * 100.0
 
-        def _get_chain_logo(asset: Asset) -> str:
-            if is_ambiguous_asset(asset):
-                if asset.chain == Chains.BASE:
-                    return 'BASE'  # Base has ETH as gas asset, but we wanna display BASE.png here
-                else:
-                    # other just use chain's gas asset as logo
-                    return str(Asset.gas_asset_from_chain(asset.chain))
-            else:
-                return ''  # no ambiguity
-
         parameters = {
             "user_name": user_name,
             "source_address": data.from_address,
@@ -291,18 +302,17 @@ class AlertPresenter(INotified, WithLogger):
             "source_asset": str(from_asset),
             "source_asset_logo": str(from_asset.l1_asset),
             "source_asset_name": from_asset.name,
-            "source_chain_logo": _get_chain_logo(from_asset),
+            "source_chain_logo": self._get_chain_logo(from_asset),
 
             "destination_asset": str(to_asset),
             "destination_logo": str(to_asset.l1_asset),
             "destination_asset_name": to_asset.name,
-            "destination_chain_logo": _get_chain_logo(to_asset),
+            "destination_chain_logo": self._get_chain_logo(to_asset),
 
             "source_amount": thor_to_float(data.in_amount),
             "destination_amount": thor_to_float(data.expected_out_amount),
             "volume_usd": data.volume_usd,
 
-            "affiliate": affiliate_code,
             "affiliate_name": affiliate_name,
             "affiliate_fee": aff_fee_percent,
 
@@ -317,9 +327,56 @@ class AlertPresenter(INotified, WithLogger):
         photo_name = 'swap_start.png'
         return photo, photo_name
 
-    async def render_swap_finish(self, loc, data: AlertSwapStart, name_map: NameMap):
-        # todo!
-        return None, None
+    async def render_swap_finish(self, loc, data: EventLargeTransaction, name_map: NameMap):
+        if not self.use_renderer:
+            return None, None
+
+        tx = data.transaction
+        memo = tx.memo
+        user_name = self._gen_user_address_for_renderer(name_map, tx.sender_address)
+        to_user_name = self._gen_user_address_for_renderer(name_map, tx.recipient_address)  # fixme
+
+        from_asset = Asset(data.in_asset)  # fixme
+        to_asset = Asset(data.out_asset)
+
+        affiliate_code = tx.memo.first_affiliate
+        affiliate_name = self.deps.name_service.get_affiliate_name(affiliate_code)
+        aff_fee_percent = tx.memo.affiliate_fee_bp / THOR_BASIS_POINT_MAX * 100.0
+
+        parameters = {
+            "user_name": user_name,
+            "source_address": tx.sender_address,
+            "tx_hash": tx.first_input_tx_hash,
+
+            "source_asset": str(from_asset),
+            "source_asset_logo": str(from_asset.l1_asset),
+            "source_asset_name": from_asset.name,
+            "source_chain_logo": self._get_chain_logo(from_asset),
+
+            "destination_asset": str(to_asset),
+            "destination_logo": str(to_asset.l1_asset),
+            "destination_asset_name": to_asset.name,
+            "destination_chain_logo": self._get_chain_logo(to_asset),
+            "destination_user_name": to_user_name,
+            "tx_hash_out": "",  # todo
+
+            "source_amount": thor_to_float(data.in_amount),
+            "destination_amount": thor_to_float(data.expected_out_amount),
+            "volume_usd": tx.get_usd_volume(data.pool_info.usd_per_rune),
+
+            "affiliate_name": affiliate_name,
+            "affiliate_fee": aff_fee_percent,
+
+            "swap_quantity": tx.ss.quantity,
+            "swap_interval": tx.ss.interval,
+            "total_time_sec": tx.duration,
+
+            "_width": 1200,
+            "_height": 800
+        }
+        photo = await self.renderer.render('swap_finished.jinja2', parameters)
+        photo_name = 'swap_finished.png'
+        return photo, photo_name
 
     async def _handle_streaming_swap_start(self, event: AlertSwapStart):
         name_map = await self.load_names((event.from_address, event.memo.first_affiliate))
@@ -334,13 +391,13 @@ class AlertPresenter(INotified, WithLogger):
 
         await self.deps.broadcaster.broadcast_to_all(message_gen)
 
-    async def _old_handle_streaming_swap_start(self, event: AlertSwapStart):
-        name_map = await self.load_names(event.from_address)
-
-        await self.broadcaster.broadcast_to_all(
-            BaseLocalization.notification_text_streaming_swap_started,
-            event, name_map
-        )
+    # async def _old_handle_streaming_swap_start(self, event: AlertSwapStart):
+    #     name_map = await self.load_names(event.from_address)
+    #
+    #     await self.broadcaster.broadcast_to_all(
+    #         BaseLocalization.notification_text_streaming_swap_started,
+    #         event, name_map
+    #     )
 
     async def _handle_loans(self, event: Union[AlertLoanOpen, AlertLoanRepayment]):
         name_map = await self.load_names(event.loan.owner)
@@ -357,7 +414,6 @@ class AlertPresenter(INotified, WithLogger):
 
     async def _handle_price(self, event: AlertPrice):
         async def price_graph_gen(loc: BaseLocalization):
-            # todo: fix self.deps reference
             graph, graph_name = await price_graph_from_db(self.deps, loc, event.price_graph_period)
             caption = loc.notification_text_price_update(event)
             return BoardMessage.make_photo(graph, caption=caption, photo_file_name=graph_name)
@@ -401,7 +457,7 @@ class AlertPresenter(INotified, WithLogger):
 
         await self.deps.broadcaster.broadcast_to_all(generate_pool_picture, data)
 
-    async def _handle_trace_account_move(self, data: AlertTradeAccountAction):
+    async def _handle_trade_account_move(self, data: AlertTradeAccountAction):
         name_map = await self.load_names([data.actor, data.destination_address])
         await self.deps.broadcaster.broadcast_to_all(
             BaseLocalization.notification_text_trade_account_move,
@@ -409,7 +465,7 @@ class AlertPresenter(INotified, WithLogger):
             name_map
         )
 
-    async def _handle_trace_account_summary(self, data: AlertTradeAccountStats):
+    async def _handle_trade_account_summary(self, data: AlertTradeAccountStats):
         await self.deps.broadcaster.broadcast_to_all(
             BaseLocalization.notification_text_trade_account_summary,
             data,
