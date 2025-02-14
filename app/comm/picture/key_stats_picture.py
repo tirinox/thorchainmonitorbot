@@ -47,15 +47,15 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
             self.r.logo_downloader.get_or_download_logo_cached(NATIVE_RUNE_SYMBOL),
         )
 
-        logo_size = int(self.btc_logo.width * 0.75)
-        self.btc_logo.thumbnail((logo_size, logo_size))
-        self.eth_logo.thumbnail((logo_size, logo_size))
+        logo_size = int(self.btc_logo.width * 0.25)
+        self.btc_logo = self.btc_logo.resize((logo_size, logo_size))
+        self.eth_logo = self.eth_logo.resize((logo_size, logo_size))
 
-        usd_logo_size = int(self.btc_logo.width * 0.66)
+        usd_logo_size = int(self.btc_logo.width * 0.77)
 
-        self.usdc_logo.thumbnail((usd_logo_size, usd_logo_size))
-        self.usdt_logo.thumbnail((usd_logo_size, usd_logo_size))
-        self.rune_logo.thumbnail((logo_size, logo_size))
+        self.usdc_logo = self.usdc_logo.resize((usd_logo_size, usd_logo_size))
+        self.usdt_logo = self.usdt_logo.resize((usd_logo_size, usd_logo_size))
+        self.rune_logo =self.rune_logo.resize((logo_size, logo_size))
 
     @async_wrap
     def _get_picture_sync(self):
