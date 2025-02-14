@@ -1,12 +1,13 @@
+import asyncio
 from typing import List, Optional
 
-from api.aionode.types import ThorSwapperClout
+from api.aionode.types import ThorSwapperClout, thor_to_float
 from jobs.scanner.event_db import EventDatabase
 from lib.config import SubConfig
 from lib.date_utils import parse_timespan_to_seconds, MINUTE
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
-from lib.money import DepthCurve, pretty_dollar, short_dollar
+from lib.money import DepthCurve, pretty_dollar, short_dollar, pretty_money
 from lib.utils import WithLogger
 from models.asset import Asset
 from models.memo import ActionType
@@ -69,6 +70,8 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         large_txs = large_txs[:self.max_tx_per_single_message]
 
         # 5. Pass them down the pipeline
+        for tx in large_txs:
+            self.logger.info(f"Large Tx: {tx}")
         self.logger.info(f"Large Txs count is {len(large_txs)}.")
 
         cap_info = await LiquidityCapNotifier.get_last_cap_from_db(self.deps.db)
@@ -250,21 +253,48 @@ class SwapTxNotifier(GenericTxNotifier):
         finally:
             return event
 
-    async def load_extra_tx_information(self, event: EventLargeTransaction):
+    async def load_extra_tx_details(self, event: EventLargeTransaction):
         if not event or not event.transaction:
             self.logger.error('No event or transaction!')
             return
 
         tx_id = event.transaction.tx_hash
         try:
-            event.status = await self.deps.thor_connector.query_tx_status(tx_id)
+            event.details = await self.deps.thor_connector.query_tx_details(tx_id)
         except Exception as e:
             self.logger.warning(f'Failed to load status for {tx_id}: {e}')
 
+    async def _load_tx_volumes(self, event: EventLargeTransaction):
+        event.usd_volume_input = 0.0
+        event.usd_volume_output = 0.0
+
+        begin_height, end_height = event.begin_height, event.end_height
+        if begin_height > 0:
+            begin_pools = await self.deps.pool_fetcher.load_pools(begin_height)
+            begin_ph = self.deps.price_holder.clone().update_pools(begin_pools)
+            in_tx = event.transaction.first_input_tx
+            in_amt = thor_to_float(in_tx.first_amount)
+            event.usd_volume_input = begin_ph.convert_to_usd(in_amt, in_tx.first_asset)
+
+            self.logger.info(f'Input for {event.transaction.tx_hash}: '
+                             f'({pretty_money(in_amt)} {in_tx.first_asset}) {pretty_dollar(event.usd_volume_input)}')
+
+        if end_height > 0:
+            end_pools = await self.deps.pool_fetcher.load_pools(end_height)
+            end_ph = self.deps.price_holder.clone().update_pools(end_pools)
+            out_tx = event.transaction.recipients_output
+            out_amt = thor_to_float(out_tx.first_amount)
+            event.usd_volume_output = end_ph.convert_to_usd(out_amt, out_tx.first_asset)
+
+            self.logger.info(f'Output for {event.transaction.tx_hash}: '
+                             f'({pretty_money(out_amt)} {out_tx.first_asset}) {pretty_dollar(event.usd_volume_output)}')
+
     async def _event_transform(self, event: EventLargeTransaction) -> EventLargeTransaction:
         # for eligible Txs we load extra information
-        await self.load_extra_tx_information(event)
-        return await self.adjust_liquidity_fee_through_midgard(event)
+        await self.load_extra_tx_details(event)
+        await self._load_tx_volumes(event)
+        await self.adjust_liquidity_fee_through_midgard(event)
+        return event
 
     def is_tx_suitable(self, tx: ThorAction, min_rune_volume, usd_per_rune, curve_mult=None):
         # a) It is interesting if a steaming swap

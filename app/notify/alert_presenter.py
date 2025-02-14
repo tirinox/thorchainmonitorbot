@@ -17,11 +17,13 @@ from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.achievement.ach_list import Achievement
 from jobs.fetch.chain_id import AlertChainIdChange
 from lib.constants import THOR_BLOCKS_PER_MINUTE, thor_to_float, THOR_BASIS_POINT_MAX, Chains
+from lib.date_utils import DAY
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
 from lib.html_renderer import InfographicRendererRPC
 from lib.logs import WithLogger
+from lib.money import format_percent
 from lib.texts import shorten_text_middle
 from lib.utils import namedtuple_to_dict
 from models.asset import Asset, is_ambiguous_asset
@@ -268,7 +270,7 @@ class AlertPresenter(INotified, WithLogger):
             return add_thor_suffix(user_name_thor)
         else:
             # just address
-            return shorten_text_middle(address, 6, 4)
+            return shorten_text_middle(address, 6, 4) if address else ''
 
     @staticmethod
     def _get_chain_logo(asset: Asset) -> str:
@@ -313,6 +315,7 @@ class AlertPresenter(INotified, WithLogger):
             "destination_amount": thor_to_float(data.expected_out_amount),
             "volume_usd": data.volume_usd,
 
+            # todo: support multiple affiliates
             "affiliate_name": affiliate_name,
             "affiliate_fee": aff_fee_percent,
 
@@ -332,44 +335,55 @@ class AlertPresenter(INotified, WithLogger):
             return None, None
 
         tx = data.transaction
-        memo = tx.memo
         user_name = self._gen_user_address_for_renderer(name_map, tx.sender_address)
-        to_user_name = self._gen_user_address_for_renderer(name_map, tx.recipient_address)  # fixme
+        to_user_name = self._gen_user_address_for_renderer(name_map, tx.recipient_address)
 
-        from_asset = Asset(data.in_asset)  # fixme
-        to_asset = Asset(data.out_asset)
+        sent = tx.in_tx[0]
+        received = tx.recipients_output
+        from_asset = Asset(sent.first_asset)
+        to_asset = Asset(received.first_asset)
 
         affiliate_code = tx.memo.first_affiliate
         affiliate_name = self.deps.name_service.get_affiliate_name(affiliate_code)
         aff_fee_percent = tx.memo.affiliate_fee_bp / THOR_BASIS_POINT_MAX * 100.0
 
-        parameters = {
-            "user_name": user_name,
-            "source_address": tx.sender_address,
-            "tx_hash": tx.first_input_tx_hash,
+        duration = data.duration
+        if not (0 < duration < 3 * DAY):
+            self.logger.error(f'Invalid duration for swap: {tx.tx_hash}: {duration} sec.')
+            duration = 0
 
+        parameters = {
+            "tx_hash_in": tx.first_input_tx_hash,
+            "source_user_name": user_name,
+            "source_address": tx.sender_address,
+            "source_amount": thor_to_float(received.first_amount),
             "source_asset": str(from_asset),
             "source_asset_logo": str(from_asset.l1_asset),
             "source_asset_name": from_asset.name,
             "source_chain_logo": self._get_chain_logo(from_asset),
+            # todo: fixme?
+            "source_volume_usd": tx.get_usd_volume(data.pool_info.usd_per_rune),
 
+            "tx_hash_out": tx.recipients_output.tx_id,
+            "destination_user_name": to_user_name,
+            "destination_address": received.address,
+            "destination_amount": thor_to_float(sent.first_amount),
             "destination_asset": str(to_asset),
             "destination_logo": str(to_asset.l1_asset),
             "destination_asset_name": to_asset.name,
             "destination_chain_logo": self._get_chain_logo(to_asset),
-            "destination_user_name": to_user_name,
-            "tx_hash_out": "",  # todo
+            # todo fixme!
+            "destination_volume_usd": tx.get_usd_volume(data.pool_info.usd_per_rune),
 
-            "source_amount": thor_to_float(data.in_amount),
-            "destination_amount": thor_to_float(data.expected_out_amount),
-            "volume_usd": tx.get_usd_volume(data.pool_info.usd_per_rune),
+            "liquidity_fee_percent": tx.liquidity_fee_percent,
 
+            # todo: support multiple affiliates
             "affiliate_name": affiliate_name,
             "affiliate_fee": aff_fee_percent,
 
-            "swap_quantity": tx.ss.quantity,
-            "swap_interval": tx.ss.interval,
-            "total_time_sec": tx.duration,
+            # "swap_quantity": tx.ss.quantity,
+            # "swap_interval": tx.ss.interval,
+            "total_time_sec": duration,
 
             "_width": 1200,
             "_height": 800
