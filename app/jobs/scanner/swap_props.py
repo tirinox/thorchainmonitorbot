@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from datetime import datetime
 from typing import NamedTuple, List, Optional
 
@@ -114,11 +115,9 @@ class SwapProps(NamedTuple):
         return outbounds
 
     def gather_outbounds(self) -> List[ThorSubTx]:
-        results = []
-
         outbounds = self.true_outbounds
         if not outbounds:
-            return results
+            return []
 
         all_are_rune = all(is_rune(ev.amount_asset[1]) for ev in outbounds)
         if all_are_rune:
@@ -126,6 +125,7 @@ class SwapProps(NamedTuple):
         else:
             max_amount = 0
 
+        pre_results = []
         for outbound in outbounds:
             coins = [ThorCoin(*outbound.amount_asset)]
 
@@ -136,9 +136,34 @@ class SwapProps(NamedTuple):
             else:
                 is_affiliate = False
 
-            results.append(ThorSubTx(
+            pre_results.append(ThorSubTx(
                 outbound.to_address, coins, outbound.tx_id,
                 height=outbound.height,
+                is_affiliate=is_affiliate,
+            ))
+
+        results_by_recipient = defaultdict(list)
+        for result in pre_results:
+            results_by_recipient[f'{result.address}-{result.tx_id}'].append(result)
+
+        results = []
+        for out_list in results_by_recipient.values():
+            coins = {}
+            for out_item in out_list:
+                for coin in out_item.coins:
+                    if coin.asset not in coins:
+                        coins[coin.asset] = 0
+                    coins[coin.asset] += coin.amount
+
+            tx_id = out_list[0].tx_id  # same for all
+            address = out_list[0].address  # same for all
+            height = max(ev.height for ev in out_list)
+            is_affiliate = any(ev.is_affiliate for ev in out_list)
+            results.append(ThorSubTx(
+                address,
+                coins=[ThorCoin(amount, asset) for asset, amount in coins.items()],
+                tx_id=tx_id,
+                height=height,
                 is_affiliate=is_affiliate,
             ))
 

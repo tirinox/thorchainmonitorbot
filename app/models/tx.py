@@ -644,19 +644,23 @@ class EventLargeTransaction:
 
     @property
     def begin_height(self):
-        consensus_height = self.details.get('consensus_height') if self.details else 0
-        return consensus_height or self.transaction.height
+        # consensus_height = self.details.get('consensus_height') if self.details else 0
+        # return consensus_height or self.transaction.height
+        return self.transaction.height
 
     @property
     def end_height(self):
-        outbound_height = self.details.get('outbound_height') if self.details else 0
-        outbound_height = outbound_height or self.details.get('finalised_height')
-        return outbound_height or max(tx.height for tx in self.transaction.out_tx)
+        # outbound_height = self.details.get('outbound_height') if self.details else 0
+        # outbound_height = outbound_height or self.details.get('finalised_height')
+        # return outbound_height or max(tx.height for tx in self.transaction.out_tx)
+        return max(tx.height for tx in self.transaction.out_tx)
 
     @property
     def duration(self):
         if self.end_height and self.begin_height:
-            time = (self.end_height - self.begin_height + 1) * THOR_BLOCK_TIME
-            if time < 3 * DAY:
+            time = (self.end_height - self.begin_height) * THOR_BLOCK_TIME
+            if time < 0.1:
+                return THOR_BLOCK_TIME
+            elif time < 3 * DAY:
                 return time
         return self.transaction.duration

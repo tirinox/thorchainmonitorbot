@@ -335,13 +335,13 @@ class AlertPresenter(INotified, WithLogger):
             return None, None
 
         tx = data.transaction
-        user_name = self._gen_user_address_for_renderer(name_map, tx.sender_address)
+        from_user_name = self._gen_user_address_for_renderer(name_map, tx.sender_address)
         to_user_name = self._gen_user_address_for_renderer(name_map, tx.recipient_address)
 
-        sent = tx.in_tx[0]
-        received = tx.recipients_output
-        from_asset = Asset(sent.first_asset)
-        to_asset = Asset(received.first_asset)
+        from_subtx = tx.in_tx[0]
+        to_subtx = tx.recipients_output
+        from_asset = Asset(from_subtx.first_asset)
+        to_asset = Asset(to_subtx.first_asset)
 
         affiliate_code = tx.memo.first_affiliate
         affiliate_name = self.deps.name_service.get_affiliate_name(affiliate_code)
@@ -354,26 +354,24 @@ class AlertPresenter(INotified, WithLogger):
 
         parameters = {
             "tx_hash_in": tx.first_input_tx_hash,
-            "source_user_name": user_name,
+            "source_user_name": from_user_name,
             "source_address": tx.sender_address,
-            "source_amount": thor_to_float(received.first_amount),
+            "source_amount": thor_to_float(from_subtx.first_amount),
             "source_asset": str(from_asset),
             "source_asset_logo": str(from_asset.l1_asset),
             "source_asset_name": from_asset.name,
             "source_chain_logo": self._get_chain_logo(from_asset),
-            # todo: fixme?
-            "source_volume_usd": tx.get_usd_volume(data.pool_info.usd_per_rune),
+            "source_volume_usd": data.usd_volume_input,
 
             "tx_hash_out": tx.recipients_output.tx_id,
             "destination_user_name": to_user_name,
-            "destination_address": received.address,
-            "destination_amount": thor_to_float(sent.first_amount),
+            "destination_address": to_subtx.address,
+            "destination_amount": thor_to_float(to_subtx.first_amount),
             "destination_asset": str(to_asset),
             "destination_logo": str(to_asset.l1_asset),
             "destination_asset_name": to_asset.name,
             "destination_chain_logo": self._get_chain_logo(to_asset),
-            # todo fixme!
-            "destination_volume_usd": tx.get_usd_volume(data.pool_info.usd_per_rune),
+            "destination_volume_usd": data.usd_volume_output,
 
             "liquidity_fee_percent": tx.liquidity_fee_percent,
 

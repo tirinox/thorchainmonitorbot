@@ -276,7 +276,7 @@ class SwapTxNotifier(GenericTxNotifier):
             in_amt = thor_to_float(in_tx.first_amount)
             event.usd_volume_input = begin_ph.convert_to_usd(in_amt, in_tx.first_asset)
 
-            self.logger.info(f'Input for {event.transaction.tx_hash}: '
+            self.logger.info(f'Input for {event.transaction.tx_hash} at #{begin_height}: '
                              f'({pretty_money(in_amt)} {in_tx.first_asset}) {pretty_dollar(event.usd_volume_input)}')
 
         if end_height > 0:
@@ -286,12 +286,12 @@ class SwapTxNotifier(GenericTxNotifier):
             out_amt = thor_to_float(out_tx.first_amount)
             event.usd_volume_output = end_ph.convert_to_usd(out_amt, out_tx.first_asset)
 
-            self.logger.info(f'Output for {event.transaction.tx_hash}: '
+            self.logger.info(f'Output for {event.transaction.tx_hash} at #{end_height}: '
                              f'({pretty_money(out_amt)} {out_tx.first_asset}) {pretty_dollar(event.usd_volume_output)}')
 
     async def _event_transform(self, event: EventLargeTransaction) -> EventLargeTransaction:
         # for eligible Txs we load extra information
-        await self.load_extra_tx_details(event)
+        # await self.load_extra_tx_details(event)
         await self._load_tx_volumes(event)
         await self.adjust_liquidity_fee_through_midgard(event)
         return event

@@ -80,14 +80,14 @@ async def run():
     async with app(brief=True):
         await app.deps.pool_fetcher.run_once()
 
-        await debug_full_pipeline(app)
+        # await debug_full_pipeline(app)
 
-        # await debug_full_pipeline(
-        #     app,
-        #     start=19667693,
-        #     tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
-        #     single_block=True
-        # )
+        await debug_full_pipeline(
+            app,
+            start=19862100,
+            tx_id='1814B99A60D029ECCFF86CC638DD598E07526A706AD93F3198A05DDB6B83E7F4',
+            single_block=True
+        )
 
 
 if __name__ == '__main__':
