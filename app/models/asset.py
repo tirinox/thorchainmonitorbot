@@ -217,7 +217,7 @@ def is_rune(asset: Union[Asset, str]):
 
 def is_ambiguous_asset(asset: Union[str, Asset], among_assets: Iterable[str] = None):
     asset = Asset.from_string(asset)
-    if asset.gas_asset_from_chain(asset.chain) != asset:
+    if asset.gas_asset_from_chain(asset.chain) != asset.l1_asset:
         return True
 
     if among_assets is None:
