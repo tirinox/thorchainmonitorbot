@@ -638,7 +638,8 @@ class TwitterEnglishLocalization(BaseLocalization):
                 if e.source == e.SOURCE_AUTO:
                     text += '[🤖 Auto-solvency ]  '
                 elif e.source == e.SOURCE_ADMIN:
-                    text += '[👩‍💻 Admins ]  '
+                    pass
+                    # text += '[👩‍💻 Admins ]  '
                 elif e.source == e.SOURCE_NODE:
                     text += '[🤝 Nodes voted ]  '
                 elif e.source == e.SOURCE_NODE_PAUSE:

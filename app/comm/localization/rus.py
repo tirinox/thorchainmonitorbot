@@ -1388,7 +1388,8 @@ class RussianLocalization(BaseLocalization):
                 if e.source == e.SOURCE_AUTO:
                     text += bold('[🤖 Автоматика платежеспособности ]  ')
                 elif e.source == e.SOURCE_ADMIN:
-                    text += bold('[👩‍💻 Администраторы ]  ')
+                    # text += bold('[👩‍💻 Администраторы ]  ')
+                    pass  # todo
                 elif e.source == e.SOURCE_NODE:
                     text += bold('[🤝 Голосование нод ]  ')
                 elif e.source == e.SOURCE_NODE_PAUSE:

@@ -1803,7 +1803,8 @@ class BaseLocalization(ABC):  # == English
                 if e.source == e.SOURCE_AUTO:
                     text += bold('[🤖 Automatic solvency checker ]  ')
                 elif e.source == e.SOURCE_ADMIN:
-                    text += bold('[👩‍💻 Admins ]  ')
+                    # text += bold('[👩‍💻 Admins ]  ')
+                    pass  # todo
                 elif e.source == e.SOURCE_NODE:
                     text += bold('[🤝 Nodes voted ]  ')
                 elif e.source == e.SOURCE_NODE_PAUSE:

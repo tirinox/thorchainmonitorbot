@@ -279,6 +279,7 @@ class MimirHolder(INotified, WithLogger):
             elif name in node_mimir_names:
                 source = MimirEntry.SOURCE_NODE
             elif name in overridden_names or name not in const_names:
+                # fixme: this is not correct since the admin keys have been removed
                 source = MimirEntry.SOURCE_ADMIN
             else:
                 source = MimirEntry.SOURCE_CONST
