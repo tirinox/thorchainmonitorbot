@@ -100,6 +100,9 @@ def test_ambiguous_name():
     assert is_ambiguous_asset('ETH.ETH', ['ETH.ETH', 'ARB.ETH'])
     assert not is_ambiguous_asset('ETH.ETH', ['ETH.ETH', 'LTC.LTC', 'DOGE.DOGE'])
 
+    assert not is_ambiguous_asset('ETH~ETH')
+    assert not is_ambiguous_asset('BTC~BTC')
+
 
 @pytest.mark.parametrize('asset_name, chain', [
     ('ETH.ETH', 'ETH'),
