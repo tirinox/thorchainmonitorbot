@@ -23,14 +23,14 @@
 
                 <div class="asset-part">
                     <div class="user-name">
-                        {{ "🤖" if "Arb-Bot" in user_name else "👤" }}
-                        {{ user_name }}
+                        {{ "🤖" if "Arb-Bot" in source_user_name else "👤" }}
+                        {{ source_user_name }}
                     </div>
                     <div class="input-amount">
                         {{ short_money(source_amount) }} {{ source_asset_name }}
                     </div>
                     <div class="usd-volume">
-                        ({{ short_dollar(volume_usd) }})
+                        ({{ short_dollar(source_volume_usd) }})
                     </div>
                 </div>
             </div>
@@ -40,7 +40,7 @@
         <div class="line-box">
             <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
             <div class="above-arrow tx-id-block">
-                {{ shorten_text_middle(tx_hash, 4, 4) }}
+                {{ shorten_text_middle(tx_hash_in, 4, 4) }}
             </div>
         </div>
 
@@ -49,24 +49,23 @@
 
             <div class="arrow-down-holder">
 
+
                 <img src="renderer/static/arrow2-down.png" alt="Arrow down"
-                     class="shadow arrow-down {{ "arrow-aff" if affiliate else "arrow-no-aff" }}">
+                     class="shadow arrow-down {{ "arrow-aff" if affiliate_name else "arrow-no-aff" }}">
 
                 {% include "components/aff-logo.jinja2" %}
-
             </div>
 
         </div>
 
         <div class="line-box">
             <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
-            {% if int(swap_quantity) > 0 %}
-                <div class="above-arrow">
-                    <div class="tx-id-block">
-                        {{ shorten_text_middle(tx_hash_out, 4, 4) }}
-                    </div>
+            <div class="above-arrow tx-id-block">
+                <div class="liquidity-fee-block-2">
+                    Slippage:
+                    <span class="highlight-blue">{{ pretty_money(liquidity_fee_percent) }}%</span>
                 </div>
-            {% endif %}
+            </div>
         </div>
 
         <div id="dest_logo" class="logo-holder">
