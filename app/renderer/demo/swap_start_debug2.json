@@ -16,7 +16,7 @@
         "destination_amount": 684.2336320000001,
         "volume_usd": 689.0684181429261,
 
-        "affiliate_name": null,
+        "affiliate_names": [],
         "affiliate_fee": 0.0,
         "swap_quantity": 7,
         "swap_interval": 1,

@@ -16,7 +16,7 @@
         "destination_amount": 36424.34414077,
         "volume_usd": 59024.21949154267,
 
-        "affiliate_name": "ShapeShift",
+        "affiliate_names": ["ShapeShift"],
         "affiliate_fee": 0.0,
         "swap_quantity": 1440,
         "swap_interval": 10,

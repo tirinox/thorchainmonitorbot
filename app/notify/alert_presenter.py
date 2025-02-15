@@ -292,8 +292,9 @@ class AlertPresenter(INotified, WithLogger):
         from_asset = Asset(data.in_asset)
         to_asset = Asset(data.out_asset)
 
-        affiliate_code = data.memo.first_affiliate
-        affiliate_name = self.deps.name_service.get_affiliate_name(affiliate_code)
+        affiliate_names = [
+            self.deps.name_service.get_affiliate_name(a.address) for a in data.memo.affiliates
+        ]
         aff_fee_percent = data.memo.affiliate_fee_bp / THOR_BASIS_POINT_MAX * 100.0
 
         parameters = {
@@ -316,7 +317,7 @@ class AlertPresenter(INotified, WithLogger):
             "volume_usd": data.volume_usd,
 
             # todo: support multiple affiliates
-            "affiliate_name": affiliate_name,
+            "affiliate_names": affiliate_names,
             "affiliate_fee": aff_fee_percent,
 
             "swap_quantity": data.ss.quantity,
@@ -343,8 +344,9 @@ class AlertPresenter(INotified, WithLogger):
         from_asset = Asset(from_subtx.first_asset)
         to_asset = Asset(to_subtx.first_asset)
 
-        affiliate_code = tx.memo.first_affiliate
-        affiliate_name = self.deps.name_service.get_affiliate_name(affiliate_code)
+        affiliate_names = [
+            self.deps.name_service.get_affiliate_name(a.address) for a in tx.memo.affiliates
+        ]
         aff_fee_percent = tx.memo.affiliate_fee_bp / THOR_BASIS_POINT_MAX * 100.0
 
         duration = data.duration
@@ -375,8 +377,7 @@ class AlertPresenter(INotified, WithLogger):
 
             "liquidity_fee_percent": tx.liquidity_fee_percent,
 
-            # todo: support multiple affiliates
-            "affiliate_name": affiliate_name,
+            "affiliate_names": affiliate_names,
             "affiliate_fee": aff_fee_percent,
 
             # "swap_quantity": tx.ss.quantity,
