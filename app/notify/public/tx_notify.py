@@ -214,6 +214,7 @@ class SwapTxNotifier(GenericTxNotifier):
         self._ss_txs_started = []  # Fill it every tick before is_tx_suitable is called.
         self._ev_db = EventDatabase(deps.db)
         self.swap_start_deduplicator = TxDeduplicator(deps.db, DB_KEY_ANNOUNCED_SS_START)
+        self.dbg_ignore_traders = False
 
     async def _check_if_they_announced_as_started(self, txs: List[ThorAction]):
         if not txs:
@@ -297,6 +298,11 @@ class SwapTxNotifier(GenericTxNotifier):
         return event
 
     def is_tx_suitable(self, tx: ThorAction, min_rune_volume, usd_per_rune, curve_mult=None):
+        # 0) debug mode
+        if self.dbg_ignore_traders and tx.is_trade_asset_involved:
+            self.logger.warning(f'dbg_ignore_traders = True, thus ignoring trader Tx: {tx.tx_hash}')
+            return False
+
         # a) It is interesting if a steaming swap
         if tx.is_streaming:
             if tx.full_volume_in_rune >= self.min_streaming_swap_usd / usd_per_rune:
