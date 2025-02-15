@@ -11,6 +11,21 @@
             background: url("renderer/static/bg2.svg") no-repeat;
             background-position: center -79px;
         }
+
+        .liquidity-fee-block {
+            color: white;
+            font-size: 32px;
+            font-weight: bolder;
+            position: absolute;
+            top: -15%;
+        }
+
+        .liquidity-fee-block-2 {
+            color: white;
+            font-size: 32px;
+            font-weight: bolder;
+        }
+
     </style>
 
     <div class="route-box">
@@ -47,6 +62,11 @@
         <div class="logo-holder">
             <img class="circle-tc-logo tc-glow" src="renderer/static/tc_logo_circle.png?rv=1" alt="THORChain logo">
 
+            <div class="liquidity-fee-block">
+                LP fee
+                <span class="highlight-blue">{{ pretty_money(liquidity_fee_percent) }}%</span>
+            </div>
+
             <div class="arrow-down-holder">
                 <img src="renderer/static/arrow2-down.png" alt="Arrow down"
                      class="shadow arrow-down {{ "arrow-aff" if affiliate_names else "arrow-no-aff" }}">
@@ -59,10 +79,7 @@
         <div class="line-box">
             <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
             <div class="above-arrow tx-id-block">
-                <div class="liquidity-fee-block-2">
-                    Slippage:
-                    <span class="highlight-blue">{{ pretty_money(liquidity_fee_percent) }}%</span>
-                </div>
+
             </div>
         </div>
 

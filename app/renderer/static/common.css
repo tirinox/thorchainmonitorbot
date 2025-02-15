@@ -302,13 +302,6 @@ footer {
     text-align: center;
 }
 
-
-.liquidity-fee-block-2 {
-    color: white;
-    font-size: 32px;
-    font-weight: bolder;
-}
-
 .tx-id-block {
     font-size: 30px;
     font-style: italic;

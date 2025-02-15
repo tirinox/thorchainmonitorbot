@@ -2,12 +2,16 @@ import asyncio
 import logging
 
 from api.w3.aggregator import AggregatorDataExtractor
+from jobs.scanner.block_result import BlockResult
 from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.scan_cache import BlockScannerCached
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_filler import VolumeFillerUpdater
+from lib.delegates import INotified
 from lib.money import DepthCurve
+from lib.texts import sep
+from lib.utils import say
 from notify.public.tx_notify import SwapTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -16,13 +20,29 @@ print(BlockScannerClass, ' <= look!')
 BlockScannerClass = BlockScanner
 
 
+class FindOutbound(INotified):
+    def __init__(self, in_tx_id=None):
+        self.in_tx_id = in_tx_id
+
+    async def on_data(self, sender, block: BlockResult):
+        for ev in block.end_block_events:
+            if ev.type == 'outbound':
+                if ev.attrs['in_tx_id'] == self.in_tx_id:
+                    sep()
+                    print(ev)
+                    await say('Outbound!')
+
+
 async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, ignore_traders=False, from_db=False):
     d = app.deps
 
     # Block scanner: the source of the river
     d.block_scanner = BlockScannerClass(d, last_block=start)
+    d.block_scanner.initial_sleep = 0.1
     d.block_scanner.one_block_per_run = single_block
     d.block_scanner.allow_jumps = True
+
+    d.block_scanner.add_subscriber(FindOutbound(tx_id))
 
     # Just to check stability
     user_counter = UserCounterMiddleware(d)
@@ -83,15 +103,17 @@ async def run():
 
         # await debug_full_pipeline(app, ignore_traders=True)
 
-        # await debug_full_pipeline(
-        #     app,
-        #     start=19862100,
-        #     tx_id='BC9A85952923C9ED6985698756F8E08D6864148FC70C833BB5B9D5542AAFACC0',
-        #     single_block=True
-        # )
+        await debug_full_pipeline(
+            app,
+            # start=19710746,
+            start=19711750,
+            tx_id='0F77D9743C8FE2557A2DBD48E59BBA1CAD9B9B771ED1111AB7E6632EEF1584FA',
+            single_block=False,
+            ignore_traders=True,
+        )
 
-        await debug_full_pipeline(app, from_db=True,
-                                  tx_id='9C9CEF8B92C8998DDC3810D40B1AE313DF20EEA0B2DAD066F0475C7E0E0BB789')
+        # await debug_full_pipeline(app, from_db=True,
+        #                           tx_id='9C9CEF8B92C8998DDC3810D40B1AE313DF20EEA0B2DAD066F0475C7E0E0BB789')
 
 
 if __name__ == '__main__':
