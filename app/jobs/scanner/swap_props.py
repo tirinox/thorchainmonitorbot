@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import NamedTuple, List, Optional
 
 from jobs.scanner.block_result import ThorEvent
-from models.asset import is_rune
+from models.asset import is_rune, is_trade_asset, Asset
 from models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit
 from models.memo import ActionType
@@ -67,8 +67,7 @@ class SwapProps(NamedTuple):
         return (e for e in self.events if isinstance(e, klass))
 
     @property
-    def is_finished(self) -> bool:
-        # surely, it's done if there is any EventScheduledOutbound
+    def _old_is_finished(self) -> bool:
         if any(isinstance(ev, EventScheduledOutbound) for ev in self.events):
             return True
 
@@ -83,6 +82,30 @@ class SwapProps(NamedTuple):
         # if it contains a deposit of trade asset, it's done
         if any(isinstance(ev, EventTradeAccountDeposit) and ev.rune_address for ev in self.events):
             return True
+
+        return False
+
+    @property
+    def is_finished(self) -> bool:
+        if self.is_output_l1_asset:
+            # if output is L1 asset, we wait to outbound
+            if any(isinstance(ev, EventOutbound) and ev.asset == self.attrs.get('out_asset') for ev in self.events):
+                return True
+        else:
+            # if any(isinstance(ev, EventScheduledOutbound) for ev in self.events):
+            #     return True
+
+            # if there is any outbound to my address, except internal outbounds (in the middle of double swap)
+            if any((isinstance(ev, EventOutbound) and ev.to_address == self.from_address) for ev in self.true_outbounds):
+                return True
+
+            # if there is any streaming swap event, it's done
+            if any(isinstance(ev, EventStreamingSwap) for ev in self.events):
+                return True
+
+            # if it contains a deposit of trade asset, it's done
+            if any(isinstance(ev, EventTradeAccountDeposit) and ev.rune_address for ev in self.events):
+                return True
 
         return False
 
@@ -176,6 +199,15 @@ class SwapProps(NamedTuple):
     @property
     def has_swaps(self):
         return any(isinstance(ev, EventSwap) for ev in self.events)
+
+    @property
+    def is_output_trade(self):
+        return is_trade_asset(self.attrs.get('out_asset', ''))
+
+    @property
+    def is_output_l1_asset(self):
+        asset = Asset.from_string(self.attrs.get('out_asset', ''))
+        return not asset.is_trade and not asset.is_synth and not asset.is_virtual and not asset.is_secured
 
     def build_action(self) -> ThorAction:
         attrs = self.attrs

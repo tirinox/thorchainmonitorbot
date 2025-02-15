@@ -34,7 +34,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
     async def on_data(self, sender, block: BlockResult) -> List[ThorAction]:
         # Incoming swap intentions will be recorded in the DB
-        new_swaps = await self.register_new_swaps(block, block.block_no)
+        new_swaps = await self.register_new_swaps(block)
 
         # Swaps and Outs
         interesting_events = list(self.get_events_of_interest(block))
@@ -55,7 +55,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
         return txs
 
-    async def register_new_swaps(self, block, height):
+    async def register_new_swaps(self, block):
         swaps = self._swap_detector.detect_swaps(block)
 
         for swap in swaps:
