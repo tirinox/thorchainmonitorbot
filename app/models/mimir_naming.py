@@ -66,7 +66,7 @@ class MimirNameRules:
 
     def load(self, filename):
         self.rules = self._load_mimir_naming_rules(filename)
-        self._make_words_proper()
+        self.make_words_proper()
 
     @property
     def dict_word_sorted(self):
@@ -78,9 +78,9 @@ class MimirNameRules:
 
     def add_words(self, words):
         self.rules['words'] += words
-        self._make_words_proper()
+        self.make_words_proper()
 
-    def _make_words_proper(self):
+    def make_words_proper(self):
         # upper and strip
         words = [w.strip().upper() for w in self.dict_word_sorted]
         # remove duplicates
