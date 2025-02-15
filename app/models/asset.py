@@ -33,6 +33,7 @@ class Asset:
     is_synth: bool = False
     is_virtual: bool = False
     is_trade: bool = False
+    is_secured: bool = False  # todo
 
     @property
     def valid(self):
@@ -48,6 +49,7 @@ class Asset:
             self.is_synth = a.is_synth
             self.is_virtual = a.is_virtual
             self.is_trade = a.is_trade
+            self.is_secured = a.is_secured
             # don't forget to copy the rest of fields if you add them!
 
     @staticmethod
@@ -93,7 +95,8 @@ class Asset:
             name = str(name).upper()
             tag = str(tag).upper()
             is_virtual = chain == 'THOR' and name != 'RUNE'
-            return cls(chain, name, tag, is_synth, is_virtual, is_trade)
+            is_secured = False  # todo: support secured assets
+            return cls(chain, name, tag, is_synth, is_virtual, is_trade, is_secured=is_secured)
         except ValueError:
             # not enough values to unpack. It's a string like "ETH" or "BTC"
             return cls.gas_asset_from_chain(str(asset).upper())
