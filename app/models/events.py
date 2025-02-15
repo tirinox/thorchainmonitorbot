@@ -46,7 +46,7 @@ class EventSwap(NamedTuple):
             asset=attrs.get('asset', ''),
             memo=attrs.get('memo', ''),
             original=event,
-            height=attrs.get('height', 0),
+            height=event.height
         )
 
 
@@ -79,7 +79,7 @@ class EventStreamingSwap(NamedTuple):
             failed_swaps=expect_string(attrs.get('failed_swaps', b'')),
             failed_swap_reasons=expect_string(attrs.get('failed_swap_reasons', b'')),
             original=event,
-            height=attrs.get('height', 0),
+            height=event.height,
         )
 
     @property
@@ -139,7 +139,7 @@ class EventOutbound(NamedTuple):
             asset=attrs.get('asset', '') or attrs.get('_asset', ''),
             memo=attrs.get('memo', ''),
             original=event,
-            height=attrs.get('height', 0),
+            height=event.height,
         )
 
     @property
@@ -196,7 +196,7 @@ class EventScheduledOutbound(NamedTuple):
             max_gas_amount_0=int(attrs.get('max_gas_amount_0', 0)),
             max_gas_decimals_0=int(attrs.get('max_gas_decimals_0', 0)),
             original=event,
-            height=attrs.get('height', 0),
+            height=event.height,
         )
 
     @property
@@ -234,7 +234,7 @@ class EventLoanOpen(NamedTuple):
             collateral_asset=attrs.get('collateral_asset', ''),
             target_asset=attrs.get('target_asset', ''),
             owner=attrs.get('owner', ''),
-            height=event.height  # fixme!!
+            height=event.height
 
         )
 

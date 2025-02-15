@@ -102,6 +102,10 @@ class SwapProps(NamedTuple):
         return bool(self.memo and self.from_address)
 
     @property
+    def is_completed(self):
+        return self.has_started and self.has_swaps and self.is_finished
+
+    @property
     def true_outbounds(self):
         outbounds = [
             ev for ev in self.events

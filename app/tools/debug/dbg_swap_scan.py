@@ -16,7 +16,7 @@ print(BlockScannerClass, ' <= look!')
 BlockScannerClass = BlockScanner
 
 
-async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
+async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, ignore_traders=False, from_db=False):
     d = app.deps
 
     # Block scanner: the source of the river
@@ -33,11 +33,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     native_action_extractor.dbg_ignore_finished_status = True
 
     if tx_id:
-        native_action_extractor.dbg_open_file(f'../temp/txs/{tx_id}.txt')
         native_action_extractor.dbg_watch_swap_id = tx_id
-
-        # db = native_action_extractor._db
-        # await db.backup('../temp/ev_db_backup_everything.json')
 
     d.block_scanner.add_subscriber(native_action_extractor)
 
@@ -60,13 +56,18 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
     swap_notifier_tx.no_repeat_protection = False
     swap_notifier_tx.curve_mult = 0.0001
+    swap_notifier_tx.dbg_ignore_traders = ignore_traders
 
     swap_notifier_tx.dbg_evaluate_curve_for_pools()
     volume_filler.add_subscriber(swap_notifier_tx)
     swap_notifier_tx.add_subscriber(d.alert_presenter)
 
     # Run all together
-    if single_block:
+    if from_db and tx_id:
+        tx = await native_action_extractor.build_tx_by_id(tx_id)
+        await native_action_extractor.pass_data_to_listeners([tx])
+        await asyncio.sleep(4.0)
+    elif single_block:
         await d.block_scanner.run_once()
         await asyncio.sleep(10.0)
     else:
@@ -80,14 +81,17 @@ async def run():
     async with app(brief=True):
         await app.deps.pool_fetcher.run_once()
 
-        # await debug_full_pipeline(app)
+        # await debug_full_pipeline(app, ignore_traders=True)
 
-        await debug_full_pipeline(
-            app,
-            start=19862100,
-            tx_id='1814B99A60D029ECCFF86CC638DD598E07526A706AD93F3198A05DDB6B83E7F4',
-            single_block=True
-        )
+        # await debug_full_pipeline(
+        #     app,
+        #     start=19862100,
+        #     tx_id='BC9A85952923C9ED6985698756F8E08D6864148FC70C833BB5B9D5542AAFACC0',
+        #     single_block=True
+        # )
+
+        await debug_full_pipeline(app, from_db=True,
+                                  tx_id='9C9CEF8B92C8998DDC3810D40B1AE313DF20EEA0B2DAD066F0475C7E0E0BB789')
 
 
 if __name__ == '__main__':

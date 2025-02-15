@@ -3,12 +3,14 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Optional, NamedTuple
 
+from pyarrow import duration
+
 from api.aionode.types import ThorTxStatus, ThorSwapperClout
 from api.w3.token_record import SwapInOut
 from lib.constants import Chains, thor_to_float, bp_to_float, THOR_BLOCK_TIME
 from lib.date_utils import now_ts, DAY
 from lib.texts import safe_sum
-from .asset import Asset, is_rune, ASSET_TRADE_SEPARATOR
+from .asset import Asset, is_rune, ASSET_TRADE_SEPARATOR, ASSET_SYNTH_SEPARATOR
 from .cap_info import ThorCapInfo
 from .lp_info import LPAddress
 from .memo import ActionType, is_action
@@ -418,12 +420,16 @@ class ThorAction:
         return True
 
     @property
+    def all_assets(self):
+        return set(c.asset for c in self.coins_of())
+
+    @property
     def is_synth_involved(self):
-        for sub_tx in self.all_realms:
-            for c in sub_tx.coins:
-                if '/' in c.asset:
-                    return True
-        return False
+        return any(True for a in self.all_assets if ASSET_SYNTH_SEPARATOR in a)
+
+    @property
+    def is_trade_asset_involved(self):
+        return any(True for a in self.all_assets if ASSET_TRADE_SEPARATOR in a)
 
     @property
     def is_liquidity_type(self):
@@ -614,12 +620,17 @@ class ThorAction:
         return self.meta_swap.liquidity_fee_in_percent(self.full_volume_in_rune)
 
     @property
+    def latest_outbound_height(self):
+        return max(tx.height for tx in self.out_tx)
+
+    @property
     def duration(self) -> float:
         if self.is_success:
             height = self.height
-            latest_outbound_height = max(tx.height for tx in self.out_tx)
-            blocks = latest_outbound_height - height + 1
-            assert blocks >= 0, f'Negative duration: {blocks} blocks of {self.first_input_tx_hash}'
+            latest_outbound_height = self.latest_outbound_height
+            blocks = latest_outbound_height - height
+            if height == latest_outbound_height > 0:
+                blocks = 1  # min 1 block to process
             return blocks * THOR_BLOCK_TIME
         return 0.0
 
@@ -653,14 +664,8 @@ class EventLargeTransaction:
         # outbound_height = self.details.get('outbound_height') if self.details else 0
         # outbound_height = outbound_height or self.details.get('finalised_height')
         # return outbound_height or max(tx.height for tx in self.transaction.out_tx)
-        return max(tx.height for tx in self.transaction.out_tx)
+        return self.transaction.latest_outbound_height
 
     @property
     def duration(self):
-        if self.end_height and self.begin_height:
-            time = (self.end_height - self.begin_height) * THOR_BLOCK_TIME
-            if time < 0.1:
-                return THOR_BLOCK_TIME
-            elif time < 3 * DAY:
-                return time
         return self.transaction.duration

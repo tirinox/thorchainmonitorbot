@@ -147,7 +147,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 given_away = False
 
             # if no swaps, it is full refund
-            if swap_props.has_started and swap_props.has_swaps and swap_props.is_finished and not given_away:
+            if swap_props.is_completed and not given_away:
                 # to ignore it in the future
                 await self._db.write_tx_status_kw(tx_id, status=SwapProps.STATUS_GIVEN_AWAY)
 
@@ -157,6 +157,14 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             self.logger.info(f'Give away {len(results)} Txs.')
 
         return results
+
+    async def build_tx_by_id(self, tx_id):
+        swap_props = await self._db.read_tx_status(tx_id)
+        if not swap_props:
+            raise LookupError(f'Tx {tx_id} not found')
+        if not swap_props.is_completed:
+            raise ValueError(f'Tx {tx_id} is not completed')
+        return swap_props.build_action()
 
     # ------------------------------------ debug and research ---------------------------------------
 
