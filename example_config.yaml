@@ -265,6 +265,7 @@ names:
     v1: Vultisig
     va: Vultisig
     vi: Vultisig
+    wr: THORWallet
     xdf: Ctrl
     zengo: Zengo
     "-_": SwapKit
