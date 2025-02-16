@@ -26,6 +26,34 @@
             font-weight: bolder;
         }
 
+        .arrow-refund {
+            transform: scale(-1, 0.7) translate(0, 10%);
+            width: 200px;
+            filter: brightness(100%) hue-rotate(220deg) saturate(200%) drop-shadow(3px 3px 4px rgba(255, 0, 0, 0.51)) drop-shadow(-3px -3px 4px rgba(255, 76, 76, 0.51));
+            margin: 0;
+            padding: 0;
+        }
+
+        .refund-text {
+            color: #e85555;
+            font-weight: bolder;
+            text-wrap: nowrap;
+            padding-bottom: 10px;
+            display: block;
+        }
+
+        .arrow-lr-squished {
+            transform: scale(1, 0.7) translate(0, -10%);
+            margin: 0;
+            padding: 0;
+        }
+        .arrow-vert-stack {
+            display: flex;
+            width: 200px;
+            flex-direction: column;
+            padding: 0;
+        }
+
     </style>
 
     <div class="route-box">
@@ -53,8 +81,20 @@
         </div>
 
         <div class="line-box">
-            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
+{#            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">#}
+
+            <div class="arrow-vert-stack">
+                {% if refund %}
+                    <img src="renderer/static/arrow2.png" alt="Arrow refund" class="arrow-refund shadow">
+                    <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr arrow-lr-squished shadow">
+                {% else %}
+                    <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
+                {% endif %}
+            </div>
             <div class="above-arrow tx-id-block">
+                {% if refund %}
+                    <span class="refund-text">{{ refund_success_rate }}% refund</span>
+                {% endif %}
 {#                {{ shorten_text_middle(tx_hash_in, 4, 4) }}#}
             </div>
         </div>
