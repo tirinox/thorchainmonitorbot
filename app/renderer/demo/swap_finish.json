@@ -22,7 +22,7 @@
     "destination_chain_logo": "BSC.BNB",
     "destination_volume_usd": 4660923,
 
-    "affiliate_names": ["Vultisig Android"],
+    "affiliate_names": ["Vultisig"],
     "affiliate_fee": 0.5,
 
     "liquidity_fee_percent": 0.222,
