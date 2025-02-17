@@ -87,6 +87,8 @@ class SwapProps(NamedTuple):
 
     @property
     def is_finished(self) -> bool:
+        return self._old_is_finished  # fixme
+
         if self.is_output_l1_asset:
             # if output is L1 asset, we wait to outbound
             if any(isinstance(ev, EventOutbound) and ev.asset == self.attrs.get('out_asset') for ev in self.events):
@@ -154,11 +156,12 @@ class SwapProps(NamedTuple):
 
         pre_results = []
         for outbound in outbounds:
-            coins = [ThorCoin(*outbound.amount_asset)]
+            amount, asset = outbound.amount_asset
+            coins = [ThorCoin(amount, asset)]
 
             if all_are_rune:
-                is_affiliate = int(outbound.amount_asset[0]) != max_amount
-            elif is_rune(outbound.amount_asset[1]):
+                is_affiliate = int(amount) != max_amount
+            elif is_rune(asset):
                 is_affiliate = True
             else:
                 is_affiliate = False
@@ -166,7 +169,7 @@ class SwapProps(NamedTuple):
             pre_results.append(ThorSubTx(
                 outbound.to_address, coins, outbound.tx_id,
                 height=outbound.height,
-                is_affiliate=is_affiliate,
+                is_affiliate=is_affiliate
             ))
 
         results_by_recipient = defaultdict(list)
@@ -186,12 +189,14 @@ class SwapProps(NamedTuple):
             address = out_list[0].address  # same for all
             height = max(ev.height for ev in out_list)
             is_affiliate = any(ev.is_affiliate for ev in out_list)
+            is_refund = any(asset == self.in_coin.asset for asset in coins)
             results.append(ThorSubTx(
                 address,
                 coins=[ThorCoin(amount, asset) for asset, amount in coins.items()],
                 tx_id=tx_id,
                 height=height,
                 is_affiliate=is_affiliate,
+                is_refund=is_refund
             ))
 
         return results
