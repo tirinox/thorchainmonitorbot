@@ -22,10 +22,10 @@
     "destination_chain_logo": "BSC.BNB",
     "destination_volume_usd": 4660923,
 
-    "affiliate_names": ["Vultisig"],
+    "affiliate_names": ["Vultisig", "Swap Kit", "Rango"],
     "affiliate_fee": 0.5,
 
-    "liquidity_fee_percent": 0.015222,
+    "liquidity_fee_percent": 0.222,
 
     "total_time_sec": 8442,
 

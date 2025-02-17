@@ -22,6 +22,31 @@ def is_action(x, y):
 
     return str(x).lower() == str(y).lower()
 
+
+def parse_scientific_int(s):
+    # Check if the string is in scientific notation
+    if 'e' in s or 'E' in s:
+        parts = s.lower().split('e')
+        if len(parts) != 2:
+            raise ValueError(f"Invalid scientific notation format: '{s}'")
+
+        base, exp = parts
+        # Validate base and exponent
+        if not base.lstrip('-').isdigit():
+            raise ValueError(f"Invalid base in scientific notation: '{base}'")
+        if not exp.lstrip('-').isdigit():
+            raise ValueError(f"Invalid exponent in scientific notation: '{exp}'")
+
+        base_int = int(base)
+        exp_int = int(exp)
+        return base_int * (10 ** exp_int)
+
+    # Handle regular integer
+    else:
+        if not s.lstrip('-').isdigit():
+            raise ValueError(f"Invalid integer format: '{s}'")
+        return int(s)
+
 # --- copy from xchainpy2 bellow ---
 
 
@@ -725,6 +750,7 @@ class THORMemo:
 
     @classmethod
     def _int_read(cls, x):
+        # return parse_scientific_int(x)
         x = str(x).lower()
         if 'e' in x:
             # e.g.: 232323e5

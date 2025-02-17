@@ -1,0 +1,36 @@
+{
+    "template_name": "swap_finished.jinja2",
+    "parameters": {
+        "tx_hash_in": "5E2C87A0EE49758CBD30511842A8A9BBB1693C8E51381953489CFFEC57A6FB0B",
+        "source_user_name": "0x473c ... b61e",
+        "source_address": "0x473cc03b72b5f1ecb2746684f1be5fa91f5bb61e",
+        "source_amount": 1.95,
+        "source_asset": "BSC.BNB",
+        "source_asset_logo": "BSC.BNB",
+        "source_asset_name": "BNB",
+        "source_chain_logo": "",
+        "source_volume_usd": 1298.7681648907935,
+        "tx_hash_out": "5E2C87A0EE49758CBD30511842A8A9BBB1693C8E51381953489CFFEC57A6FB0B",
+        "destination_user_name": "bc1quw ... rz93",
+        "destination_address": "bc1quw5gjcyprkylufzh5yz7h7cwkdpvnwthzjrz93",
+        "destination_amount": 0.01316882,
+        "destination_asset": "BTC.BTC",
+        "destination_logo": "BTC.BTC",
+        "destination_asset_name": "BTC",
+        "destination_chain_logo": "",
+        "destination_volume_usd": 1286.0568665660587,
+        "liquidity_fee_percent": 0.16097222472205852,
+        "affiliate_names": [
+            "TrustWallet", "Swap Kit"
+        ],
+        "affiliate_fee": 0.7000000000000001,
+        "total_time_sec": 24.0,
+
+        "refund": true,
+        "refund_rate": 72.3,
+
+        "_width": 1200,
+        "_height": 800
+    },
+    "correlation_id": "b'd7a0cc0394eed792c0df0307'"
+}

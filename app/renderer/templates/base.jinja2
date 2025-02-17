@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ title }}</title>
-    <link rel="stylesheet" href="renderer/static/common.css">
+    <link rel="stylesheet" href="renderer/static/common.css?r={{ range(-100, 100) | random }}">
     <style>
         /* add some adjustments based on template parameters */
         html, body {

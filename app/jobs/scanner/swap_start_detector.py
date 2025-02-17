@@ -32,11 +32,16 @@ class SwapStartDetector(WithLogger):
             return
 
         prices = self.deps.price_holder
+        assert prices, 'PriceHolder is required!'
+        assert prices.pool_info_map, 'PriceHolder must have non-empty pool_info_map!'
 
         if is_rune(memo.asset):
             out_asset_name = NATIVE_RUNE_SYMBOL
         else:
             out_asset_name = prices.pool_fuzzy_first(memo.asset, restore_type=True)
+            if not out_asset_name:
+                out_asset_name = memo.asset
+                self.logger.error(f'{out_asset_name = }: asset not found in the pool list!')
 
         if not out_asset_name:
             self.logger.error(f'{memo.asset}: asset not found!')

@@ -19,7 +19,7 @@
     "destination_amount": 4.222323,
     "volume_usd": 9303345,
 
-    "affiliate_name": "Vultisig Android",
+    "affiliate_names": ["Vultisig"],
     "affiliate_fee": 0.5,
 
     "swap_quantity": 333,

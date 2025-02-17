@@ -2,7 +2,7 @@ import datetime
 import os
 import sys
 from collections import defaultdict
-from typing import List, Optional
+from typing import List
 
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.native_scan import BlockResult
@@ -25,21 +25,16 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         expiration_sec = deps.cfg.as_interval('native_scanner.db.ttl', '3d')
         self._db = EventDatabase(deps.db, expiration_sec=expiration_sec)
 
-        self.dbg_watch_swap_id = None
-        self.dbg_start_observed = False
-        self.dbg_start_time = datetime.datetime.now()
-        self.dbg_swaps = 0
-        self.dbg_file = None
-        self.dbg_ignore_finished_status = False
+        self._dbg_init()
 
     async def on_data(self, sender, block: BlockResult) -> List[ThorAction]:
         # Incoming swap intentions will be recorded in the DB
-        new_swaps = await self.register_new_swaps(block, block.block_no)
+        new_swaps = await self.register_new_swaps(block)
 
-        # Swaps and Outs
+        # Swaps and Outbounds
         interesting_events = list(self.get_events_of_interest(block))
 
-        # To calculate progress and final slip/fees
+        # Write them into the DB
         await self.register_swap_events(block, interesting_events)
 
         # Extract finished TX
@@ -55,7 +50,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
         return txs
 
-    async def register_new_swaps(self, block, height):
+    async def register_new_swaps(self, block):
         swaps = self._swap_detector.detect_swaps(block)
 
         for swap in swaps:
@@ -77,19 +72,23 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 )
 
             # debugging stuff
-            if swap.tx_id == self.dbg_watch_swap_id and not self.dbg_start_observed:
-                self.dbg_print(f'👿 Start watching swap\n')
-                self.dbg_print(swap, '\n\n')
-
-                await say('Found a swap')
-
-                self.dbg_start_observed = True
+            await self.dbg_on_new_swap(swap)
 
         return swaps
 
-    async def register_swap_events(self, block: BlockResult, interesting_events: List[TypeEventSwapAndOut]):
-        boom = False
+    @staticmethod
+    def detect_l1_outbounds(block: BlockResult):
+        """
+        Get L1 outbounds from the block data as the results of MsgObservedTxOut
+        """
+        for tx in block.txs:
+            if not tx.is_success:
+                continue
+            for event in tx.events:
+                if event.type == 'outbound':
+                    yield EventOutbound.from_event(event)
 
+    async def register_swap_events(self, block: BlockResult, interesting_events: List[TypeEventSwapAndOut]):
         for swap_ev in interesting_events:
             if not swap_ev.tx_id:
                 continue
@@ -106,18 +105,14 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
             # boom = await self.dbg_on_swap_events(swap_ev, boom)
 
-    @staticmethod
-    def get_events_of_interest(block: BlockResult) -> List[TypeEventSwapAndOut]:
+    def get_events_of_interest(self, block: BlockResult):
         for ev in block.end_block_events:
             swap_ev = parse_swap_and_out_event(ev)
             if swap_ev:
                 yield swap_ev
 
-    async def find_tx(self, tx_id) -> Optional[ThorAction]:
-        swap_info = await self._db.read_tx_status(tx_id)
-        if swap_info:
-            tx = swap_info.build_action()
-            return tx
+        for outbound in self.detect_l1_outbounds(block):
+            yield outbound
 
     async def detect_swap_finished(self,
                                    block: BlockResult,
@@ -146,17 +141,27 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             if self.dbg_ignore_finished_status:
                 given_away = False
 
-            # if no swaps, it is full refund
-            if swap_props.has_started and swap_props.has_swaps and swap_props.is_finished and not given_away:
-                # to ignore it in the future
+            # Check if the swap is completed and not given away
+            if swap_props.is_completed and not given_away:
+                # Update the status to avoid double processing in the future
                 await self._db.write_tx_status_kw(tx_id, status=SwapProps.STATUS_GIVEN_AWAY)
 
-                results.append(swap_props.build_action())
+                # Build a ThorAction and put it into the results
+                action = swap_props.build_action()
+                results.append(action)
 
         if results:
             self.logger.info(f'Give away {len(results)} Txs.')
 
         return results
+
+    async def build_tx_from_database(self, tx_id):
+        swap_props = await self._db.read_tx_status(tx_id)
+        if not swap_props:
+            raise LookupError(f'Tx {tx_id} not found')
+        if not swap_props.is_completed:
+            raise ValueError(f'Tx {tx_id} is not completed')
+        return swap_props.build_action()
 
     # ------------------------------------ debug and research ---------------------------------------
 
@@ -204,3 +209,20 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 self.dbg_print('Scheduled outbound!\n')
 
         return boom
+
+    async def dbg_on_new_swap(self, swap):
+        if swap.tx_id == self.dbg_watch_swap_id and not self.dbg_start_observed:
+            self.dbg_print(f'👿 Start watching swap\n')
+            self.dbg_print(swap, '\n\n')
+
+            await say('Found a swap')
+
+            self.dbg_start_observed = True
+
+    def _dbg_init(self):
+        self.dbg_watch_swap_id = None
+        self.dbg_start_observed = False
+        self.dbg_start_time = datetime.datetime.now()
+        self.dbg_swaps = 0
+        self.dbg_file = None
+        self.dbg_ignore_finished_status = False

@@ -202,7 +202,7 @@ async def debug_cex_profit_calc(app: LpAppFramework, tx_id):
     d = app.deps
     native_action_extractor = SwapExtractorBlock(d)
 
-    tx = await native_action_extractor.find_tx(tx_id)
+    tx = await native_action_extractor.build_tx_from_database(tx_id)
     if not tx:
         raise Exception(f'TX {tx_id} not found')
 

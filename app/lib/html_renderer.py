@@ -19,9 +19,10 @@ class InfographicRendererRPC(WithLogger):
             try:
                 return await self._render(template_name, parameters)
             except Exception as e:
+                if attempt == self._count - 1:
+                    raise
                 self.logger.error(f'#{attempt}: Failed to render {template_name = }. {e = }')
                 await asyncio.sleep(self._step_timeout)
-        raise ValueError(f'Failed to render {template_name = }')
 
     async def _render(self, template_name: str, parameters: dict):
         correlation_id = str(random_hex())

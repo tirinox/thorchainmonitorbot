@@ -11,6 +11,49 @@
             background: url("renderer/static/bg2.svg") no-repeat;
             background-position: center -79px;
         }
+
+        .liquidity-fee-block {
+            color: white;
+            font-size: 32px;
+            font-weight: bolder;
+            position: absolute;
+            top: -15%;
+        }
+
+        .liquidity-fee-block-2 {
+            color: white;
+            font-size: 32px;
+            font-weight: bolder;
+        }
+
+        .arrow-refund {
+            transform: scale(-1, 0.7) translate(0, 10%);
+            width: 200px;
+            filter: brightness(100%) hue-rotate(220deg) saturate(200%) drop-shadow(3px 3px 4px rgba(255, 0, 0, 0.51)) drop-shadow(-3px -3px 4px rgba(255, 76, 76, 0.51));
+            margin: 0;
+            padding: 0;
+        }
+
+        .refund-text {
+            color: #e85555;
+            font-weight: bolder;
+            text-wrap: nowrap;
+            padding-bottom: 10px;
+            display: block;
+        }
+
+        .arrow-lr-squished {
+            transform: scale(1, 0.7) translate(0, -10%);
+            margin: 0;
+            padding: 0;
+        }
+        .arrow-vert-stack {
+            display: flex;
+            width: 200px;
+            flex-direction: column;
+            padding: 0;
+        }
+
     </style>
 
     <div class="route-box">
@@ -23,16 +66,52 @@
 
                 <div class="asset-part">
                     <div class="user-name">
-                        {{ "🤖" if "Arb-Bot" in user_name else "👤" }}
-                        {{ user_name }}
+                        {{ "🤖" if "Arb-Bot" in source_user_name else "👤" }}
+                        {{ source_user_name }}
                     </div>
                     <div class="input-amount">
                         {{ short_money(source_amount) }} {{ source_asset_name }}
                     </div>
                     <div class="usd-volume">
-                        ({{ short_dollar(volume_usd) }})
+                        ({{ short_dollar(source_volume_usd) }})
                     </div>
                 </div>
+            </div>
+
+        </div>
+
+        <div class="line-box">
+{#            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">#}
+
+            <div class="arrow-vert-stack">
+                {% if refund %}
+                    <img src="renderer/static/arrow2.png" alt="Arrow refund" class="arrow-refund shadow">
+                    <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr arrow-lr-squished shadow">
+                {% else %}
+                    <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
+                {% endif %}
+            </div>
+            <div class="above-arrow tx-id-block">
+                {% if refund %}
+                    <span class="refund-text">{{ pretty_money(refund_rate) }}% refund</span>
+                {% endif %}
+{#                {{ shorten_text_middle(tx_hash_in, 4, 4) }}#}
+            </div>
+        </div>
+
+        <div class="logo-holder">
+            <img class="circle-tc-logo tc-glow" src="renderer/static/tc_logo_circle.png?rv=1" alt="THORChain logo">
+
+            <div class="liquidity-fee-block">
+                LP fee
+                <span class="highlight-blue">{{ pretty_money(round(liquidity_fee_percent, 3)) }}%</span>
+            </div>
+
+            <div class="arrow-down-holder">
+                <img src="renderer/static/arrow2-down.png" alt="Arrow down"
+                     class="shadow arrow-down {{ "arrow-aff" if affiliate_names else "arrow-no-aff" }}">
+
+                {% include "components/aff-logo.jinja2" %}
             </div>
 
         </div>
@@ -40,33 +119,8 @@
         <div class="line-box">
             <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
             <div class="above-arrow tx-id-block">
-                {{ shorten_text_middle(tx_hash, 4, 4) }}
-            </div>
-        </div>
-
-        <div class="logo-holder">
-            <img class="circle-tc-logo tc-glow" src="renderer/static/tc_logo_circle.png?rv=1" alt="THORChain logo">
-
-            <div class="arrow-down-holder">
-
-                <img src="renderer/static/arrow2-down.png" alt="Arrow down"
-                     class="shadow arrow-down {{ "arrow-aff" if affiliate else "arrow-no-aff" }}">
-
-                {% include "components/aff-logo.jinja2" %}
 
             </div>
-
-        </div>
-
-        <div class="line-box">
-            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
-            {% if int(swap_quantity) > 0 %}
-                <div class="above-arrow">
-                    <div class="tx-id-block">
-                        {{ shorten_text_middle(tx_hash_out, 4, 4) }}
-                    </div>
-                </div>
-            {% endif %}
         </div>
 
         <div id="dest_logo" class="logo-holder">
@@ -96,7 +150,6 @@
                     </div>
 
                 </div>
-
             </div>
         </div>
 

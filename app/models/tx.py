@@ -3,12 +3,14 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Optional, NamedTuple
 
+from pyarrow import duration
+
 from api.aionode.types import ThorTxStatus, ThorSwapperClout
 from api.w3.token_record import SwapInOut
-from lib.constants import RUNE_SYMBOL, Chains, thor_to_float, bp_to_float, THOR_BLOCK_TIME
-from lib.date_utils import now_ts
+from lib.constants import Chains, thor_to_float, bp_to_float, THOR_BLOCK_TIME
+from lib.date_utils import now_ts, DAY
 from lib.texts import safe_sum
-from .asset import Asset, is_rune, ASSET_TRADE_SEPARATOR
+from .asset import Asset, is_rune, ASSET_TRADE_SEPARATOR, ASSET_SYNTH_SEPARATOR
 from .cap_info import ThorCapInfo
 from .lp_info import LPAddress
 from .memo import ActionType, is_action
@@ -46,6 +48,7 @@ class ThorSubTx:
     tx_id: str
     height: int = 0
     is_affiliate: bool = False
+    is_refund: bool = False
 
     @classmethod
     def parse(cls, j):
@@ -223,10 +226,6 @@ class ThorAction:
     # extended properties
 
     # for add, withdraw, donate
-    address_rune: str = ''
-    address_asset: str = ''
-    tx_hash_rune: str = ''
-    tx_hash_asset: str = ''
     asset_amount: float = 0.0
     rune_amount: float = 0.0
 
@@ -303,9 +302,17 @@ class ThorAction:
         return self.in_tx[0].address if self.in_tx else None
 
     @property
-    def recipient_address(self):
-        # fixme!
-        return self.out_tx[0].address if self.out_tx else None
+    def recipient_address(self) -> Optional[str]:
+        r = self.recipients_output
+        return r.address if r else None
+
+    @property
+    def recipients_output(self) -> Optional[ThorSubTx]:
+        return next((tx for tx in self.out_tx if not tx.is_affiliate and not tx.is_refund), None)
+
+    @property
+    def has_refund_output(self):
+        return any(True for tx in self.out_tx if tx.is_refund)
 
     @property
     def all_addresses(self):
@@ -418,12 +425,16 @@ class ThorAction:
         return True
 
     @property
+    def all_assets(self):
+        return set(c.asset for c in self.coins_of())
+
+    @property
     def is_synth_involved(self):
-        for sub_tx in self.all_realms:
-            for c in sub_tx.coins:
-                if '/' in c.asset:
-                    return True
-        return False
+        return any(True for a in self.all_assets if ASSET_SYNTH_SEPARATOR in a)
+
+    @property
+    def is_trade_asset_involved(self):
+        return any(True for a in self.all_assets if ASSET_TRADE_SEPARATOR in a)
 
     @property
     def is_liquidity_type(self):
@@ -436,26 +447,10 @@ class ThorAction:
             self.rune_amount = self.sum_of_rune(in_only=True)
             self.asset_amount = self.sum_of_asset(pool, in_only=True)
 
-            rune_sub_tx = self.get_sub_tx(RUNE_SYMBOL, in_only=True)
-            self.address_rune = rune_sub_tx.address if rune_sub_tx else None
-            self.tx_hash_rune = rune_sub_tx.tx_id if rune_sub_tx else None
-
-            asset_sub_tx = self.get_sub_tx(pool, in_only=True)
-            self.address_asset = asset_sub_tx.address if asset_sub_tx else None
-            self.tx_hash_asset = asset_sub_tx.tx_id if asset_sub_tx else None
-
         elif self.is_of_type(ActionType.WITHDRAW):
             pool = self.first_pool_l1  # withdraw always l1 no matter it was savers or normal liquidity
             self.rune_amount = self.sum_of_rune(out_only=True)
             self.asset_amount = self.sum_of_asset(pool, out_only=True)
-
-            sub_tx_rune = self.get_sub_tx(RUNE_SYMBOL, in_only=True)
-            self.address_rune = sub_tx_rune.address if sub_tx_rune else self.in_tx[0].address
-
-            out_sub_tx_rune = self.get_sub_tx(RUNE_SYMBOL, out_only=True)
-            out_sub_tx_asset = self.get_sub_tx(pool, out_only=True)
-            self.tx_hash_rune = out_sub_tx_rune.tx_id if out_sub_tx_rune else None
-            self.tx_hash_asset = out_sub_tx_asset.tx_id if out_sub_tx_asset else None
 
         elif self.is_of_type((ActionType.REFUND, ActionType.SWAP)):
             # only outputs
@@ -552,15 +547,6 @@ class ThorAction:
         return bool(self.dex_info.swap_in) or bool(self.dex_info.swap_out)
 
     @property
-    def is_trade_asset_involved(self):
-        for sub_tx in self.all_realms:
-            for coin in sub_tx.coins:
-                if ASSET_TRADE_SEPARATOR in coin.asset:
-                    return True
-
-        return False
-
-    @property
     def is_streaming(self):
         return bool(self.meta_swap and self.meta_swap.streaming and self.meta_swap.streaming.quantity > 1)
 
@@ -630,12 +616,17 @@ class ThorAction:
         return self.meta_swap.liquidity_fee_in_percent(self.full_volume_in_rune)
 
     @property
+    def latest_outbound_height(self):
+        return max(tx.height for tx in self.out_tx)
+
+    @property
     def duration(self) -> float:
         if self.is_success:
             height = self.height
-            latest_outbound_height = max(tx.height for tx in self.out_tx)
+            latest_outbound_height = self.latest_outbound_height
             blocks = latest_outbound_height - height
-            assert blocks >= 0, f'Negative duration: {blocks} blocks of {self.first_input_tx_hash}'
+            if height == latest_outbound_height > 0:
+                blocks = 1  # min 1 block to process
             return blocks * THOR_BLOCK_TIME
         return 0.0
 
@@ -647,9 +638,30 @@ class EventLargeTransaction:
     pool_info: PoolInfo
     cap_info: Optional[ThorCapInfo] = None
     mimir: Optional[MimirHolder] = None
-    status: Optional[ThorTxStatus] = None
+    details: Optional[dict] = None
     clout: Optional[ThorSwapperClout] = None
+
+    # For swaps
+    usd_volume_input: float = 0.0
+    usd_volume_output: float = 0.0
 
     @property
     def is_swap(self):
         return self.transaction.is_of_type(ActionType.SWAP)
+
+    @property
+    def begin_height(self):
+        # consensus_height = self.details.get('consensus_height') if self.details else 0
+        # return consensus_height or self.transaction.height
+        return self.transaction.height
+
+    @property
+    def end_height(self):
+        # outbound_height = self.details.get('outbound_height') if self.details else 0
+        # outbound_height = outbound_height or self.details.get('finalised_height')
+        # return outbound_height or max(tx.height for tx in self.transaction.out_tx)
+        return self.transaction.latest_outbound_height
+
+    @property
+    def duration(self):
+        return self.transaction.duration
