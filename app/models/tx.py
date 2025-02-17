@@ -48,6 +48,7 @@ class ThorSubTx:
     tx_id: str
     height: int = 0
     is_affiliate: bool = False
+    is_refund: bool = False
 
     @classmethod
     def parse(cls, j):
@@ -307,7 +308,11 @@ class ThorAction:
 
     @property
     def recipients_output(self) -> Optional[ThorSubTx]:
-        return next((tx for tx in self.out_tx if not tx.is_affiliate), None)
+        return next((tx for tx in self.out_tx if not tx.is_affiliate and not tx.is_refund), None)
+
+    @property
+    def has_refund_output(self):
+        return any(True for tx in self.out_tx if tx.is_refund)
 
     @property
     def all_addresses(self):
@@ -540,15 +545,6 @@ class ThorAction:
     @property
     def dex_aggregator_used(self):
         return bool(self.dex_info.swap_in) or bool(self.dex_info.swap_out)
-
-    @property
-    def is_trade_asset_involved(self):
-        for sub_tx in self.all_realms:
-            for coin in sub_tx.coins:
-                if ASSET_TRADE_SEPARATOR in coin.asset:
-                    return True
-
-        return False
 
     @property
     def is_streaming(self):
