@@ -25,7 +25,7 @@
     "affiliate_names": ["Vultisig"],
     "affiliate_fee": 0.5,
 
-    "liquidity_fee_percent": 0.222,
+    "liquidity_fee_percent": 0.015222,
 
     "total_time_sec": 8442,
 
