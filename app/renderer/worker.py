@@ -119,6 +119,8 @@ async def render_just_html(name: str, req: Request):
                 parameters[key] = int(value)
             elif value.replace(".", "", 1).isdigit():
                 parameters[key] = float(value)
+            elif isinstance(parameters.get(key), list):
+                parameters[key] = value.split(",")
             else:
                 parameters[key] = value
 
