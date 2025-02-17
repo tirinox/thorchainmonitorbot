@@ -87,7 +87,7 @@ class SwapProps(NamedTuple):
 
     @property
     def is_finished(self) -> bool:
-        return self._old_is_finished  # fixme
+        # return self._old_is_finished  # fixme
 
         if self.is_output_l1_asset:
             # if output is L1 asset, we wait to outbound

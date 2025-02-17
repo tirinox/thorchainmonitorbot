@@ -92,7 +92,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, i
 
     # Run all together
     if from_db and tx_id:
-        tx = await native_action_extractor.build_tx_by_id(tx_id)
+        tx = await native_action_extractor.build_tx_from_database(tx_id)
         await native_action_extractor.pass_data_to_listeners([tx])
         await asyncio.sleep(4.0)
     elif single_block:
