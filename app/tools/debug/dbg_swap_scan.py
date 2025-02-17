@@ -36,6 +36,14 @@ class FindOutbound(INotified):
 async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, ignore_traders=False, from_db=False):
     d = app.deps
 
+    if start is not None and start < 0:
+        thor = app.deps.last_block_store.thor
+        assert thor > 0
+        start = thor + start
+
+    if start != 0:
+        print('Start from block:', start)
+
     # Block scanner: the source of the river
     d.block_scanner = BlockScannerClass(d, last_block=start)
     d.block_scanner.initial_sleep = 0.1
@@ -99,21 +107,24 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, i
 async def run():
     app = LpAppFramework(log_level=logging.DEBUG)
     async with app(brief=True):
+        await app.deps.last_block_fetcher.run_once()
         await app.deps.pool_fetcher.run_once()
 
-        # await debug_full_pipeline(app, ignore_traders=True)
+        await debug_full_pipeline(app, ignore_traders=True, start=-200)
+
+        # await debug_full_pipeline(
+        #     app,
+        #     # start=19710746,
+        #     start=19711750,
+        #     tx_id='0F77D9743C8FE2557A2DBD48E59BBA1CAD9B9B771ED1111AB7E6632EEF1584FA',
+        #     single_block=False,
+        #     ignore_traders=True,
+        # )
 
         await debug_full_pipeline(
-            app,
-            # start=19710746,
-            start=19711750,
-            tx_id='0F77D9743C8FE2557A2DBD48E59BBA1CAD9B9B771ED1111AB7E6632EEF1584FA',
-            single_block=False,
-            ignore_traders=True,
+            app, from_db=True,
+            tx_id='0F77D9743C8FE2557A2DBD48E59BBA1CAD9B9B771ED1111AB7E6632EEF1584FA'
         )
-
-        # await debug_full_pipeline(app, from_db=True,
-        #                           tx_id='9C9CEF8B92C8998DDC3810D40B1AE313DF20EEA0B2DAD066F0475C7E0E0BB789')
 
 
 if __name__ == '__main__':

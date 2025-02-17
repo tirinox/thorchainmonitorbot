@@ -27,7 +27,7 @@
         "total_time_sec": 24.0,
 
         "refund": true,
-        "refund_success_rate": 72.3,
+        "refund_rate": 72.3,
 
         "_width": 1200,
         "_height": 800

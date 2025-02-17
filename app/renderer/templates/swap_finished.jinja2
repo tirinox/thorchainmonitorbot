@@ -93,7 +93,7 @@
             </div>
             <div class="above-arrow tx-id-block">
                 {% if refund %}
-                    <span class="refund-text">{{ refund_success_rate }}% refund</span>
+                    <span class="refund-text">{{ pretty_money(refund_rate) }}% refund</span>
                 {% endif %}
 {#                {{ shorten_text_middle(tx_hash_in, 4, 4) }}#}
             </div>
@@ -150,7 +150,6 @@
                     </div>
 
                 </div>
-
             </div>
         </div>
 

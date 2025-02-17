@@ -354,6 +354,10 @@ class AlertPresenter(INotified, WithLogger):
             self.logger.error(f'Invalid duration for swap: {tx.tx_hash}: {duration} sec.')
             duration = 0
 
+        refund_rate = 0
+        if tx.meta_swap and tx.meta_swap.streaming:
+            refund_rate = 100.0 * (1.0 - tx.meta_swap.streaming.success_rate)
+
         parameters = {
             "tx_hash_in": tx.first_input_tx_hash,
             "source_user_name": from_user_name,
@@ -383,6 +387,9 @@ class AlertPresenter(INotified, WithLogger):
             # "swap_quantity": tx.ss.quantity,
             # "swap_interval": tx.ss.interval,
             "total_time_sec": duration,
+
+            "refund": tx.has_refund_output,
+            "refund_rate": refund_rate,
 
             "_width": 1200,
             "_height": 800

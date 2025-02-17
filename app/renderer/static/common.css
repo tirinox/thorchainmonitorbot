@@ -132,7 +132,6 @@ footer {
 .arrow-lr {
     width: 200px;
     filter: brightness(190%) hue-rotate(30deg) saturate(200%) drop-shadow(3px 3px 4px rgba(0, 213, 213, 0.51)) drop-shadow(-3px -3px 4px rgba(3, 243, 150, 0.51));
-
     padding: 0;
 }
 
