@@ -121,7 +121,9 @@ class RuneCirculatingSupply(NamedTuple):
 
     @property
     def circulating(self):
-        return self.total - self.bonded - self.reserves_full
+        # return self.total - self.bonded - self.reserves_full
+        # consistent with https://api.ninerealms.com/thorchain/supply/cmc?chain=thor&type=circulating
+        return self.total - self.reserves_full
 
     @property
     def burnt_rune_from_income(self):
