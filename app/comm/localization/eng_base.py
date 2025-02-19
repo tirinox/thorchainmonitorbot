@@ -543,12 +543,11 @@ class BaseLocalization(ABC):  # == English
 
     def format_aggregator(self, a: AmountToken):
         chain = ''
-        if a.token.chain_id == Chains.web3_chain_id(Chains.ETH):
-            chain = Chains.ETH
-        elif a.token.chain_id == Chains.web3_chain_id(Chains.AVAX):
-            chain = Chains.AVAX
-        elif a.token.chain_id == Chains.web3_chain_id(Chains.BSC):
-            chain = Chains.BSC
+
+        for chain in Chains.ALL_EVM:
+            if a.token.chain_id == Chains.web3_chain_id(chain):
+                break
+
         if a.amount > 0:
             return f'{self.format_op_amount(a.amount)} {chain}.{a.token.symbol}'
         else:
@@ -699,58 +698,20 @@ class BaseLocalization(ABC):  # == English
             )
         elif tx.is_of_type(ActionType.SWAP):
             content += self.format_swap_route(tx, usd_per_rune)
-
-            if tx.affiliate_fee > 0:
-                aff_collector = self.name_service.get_affiliate_name(tx.memo.affiliate_address)
-                aff_collector = f'{aff_collector} affiliate fee' if aff_collector else 'Affiliate fee'
-
-                aff_text = f'{aff_collector}: {format_percent(tx.affiliate_fee, 1)}\n'
-            else:
-                aff_text = ''
-
-            # slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
-            liq_fee_pct = tx.liquidity_fee_percent
-            content += (
-                f"\n{aff_text}"
-                f"Liquidity fee: {bold(format_percent(liq_fee_pct)) if liq_fee_pct else self.NA}"
-            )
-
             if tx.is_streaming:
-                duration = tx.meta_swap.streaming.total_duration
-                content += f'\n⏱️ Time elapsed: {self.seconds_human(duration)}.'
-
                 if (success := tx.meta_swap.streaming.success_rate) < 1.0:
                     good = tx.meta_swap.streaming.successful_swaps
                     total = tx.meta_swap.streaming.quantity
                     content += f'\nSuccess rate: {format_percent(success, 1)} ({good}/{total})'
 
-                saved_usd = tx.meta_swap.estimated_savings_vs_cex_usd
+        user_link = self.link_to_address(tx.sender_address, name_map)
+        runescan_url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
+        runescan_link = link(runescan_url, 'Runescan')
 
-                if (saved_usd is not None) and saved_usd > 0.0:
-                    content += f'\n🫰Est. Savings vs CEX: {bold(pretty_dollar(saved_usd))}'
-
-        blockchain_components_str = self._add_input_output_links(
-            tx, name_map, 'Input: ', 'Output: ', 'User: ')
-
-        msg = f"{heading}\n" \
-              f"{blockchain_components_str}\n" \
-              f"{content}"
-
-        # todo! cap info
-        # if cap:
-        #     msg += (
-        #         f"\n\n"
-        #         f"Liquidity cap is {self._cap_progress_bar(cap)} full now.\n"
-        #         f'You can add {code(short_rune(cap.how_much_rune_you_can_lp))} '
-        #         f'({short_dollar(cap.how_much_usd_you_can_lp)}) more.\n'
-        #     )
-
-        # if not tx.any_side_in_tc:
-
-        url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
-        msg += (
-            f"\n"
-            f"📎 {link(url, 'Runescan')}"
+        msg = (
+            f"{heading}\n"
+            f"{content}\n"
+            f"User: {user_link} / {runescan_link}"
         )
 
         return msg.strip()
@@ -784,20 +745,18 @@ class BaseLocalization(ABC):  # == English
 
     def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
-
         tx_link = link(self.url_for_tx_tracker(e.tx_id), 'Track TX')
+        url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, e.tx_id)
+        runescan_link = link(url, 'Runescan')
 
         asset_str = Asset(e.in_asset).pretty_str
         amount_str = self.format_op_amount(e.in_amount_float)
         target_asset_str = Asset(e.out_asset).pretty_str
 
-        url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, e.tx_id)
-        runescan_link = link(url, 'Runescan')
-
         return (
             f'🌊 <b>Streaming swap has started</b>\n'
-            f'User: {user_link} / {tx_link} / {runescan_link}\n'
             f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {bold(target_asset_str)}\n'
+            f'User: {user_link} / {tx_link} / {runescan_link}\n'
         )
 
     # ------- QUEUE -------
@@ -1357,10 +1316,10 @@ class BaseLocalization(ABC):  # == English
         if changes.nodes_activated or changes.nodes_deactivated:
             message += bold('♻️ Node churn is complete') + '\n\n'
 
-        message += self._make_node_list(changes.nodes_added, '🆕 New nodes:', add_status=True)
+        # message += self._make_node_list(changes.nodes_added, '🆕 New nodes:', add_status=True)
         message += self._make_node_list(changes.nodes_activated, '➡️ Nodes that churned in:')
         message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Nodes that churned out:')
-        message += self._make_node_list(changes.nodes_removed, '🗑️ Nodes that disconnected:', add_status=True)
+        # message += self._make_node_list(changes.nodes_removed, '🗑️ Nodes that disconnected:', add_status=True)
 
         if changes.nodes_activated or changes.nodes_deactivated:
             message += self._node_bond_change_after_churn(changes)

@@ -71,6 +71,8 @@ class Chains:
     BSC = 'BSC'
     BASE = 'BASE'
 
+    ALL_EVM = (ETH, BSC, BASE, AVAX)
+
     META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM, BSC, BASE)
 
     @staticmethod
@@ -122,6 +124,7 @@ class Chains:
             return 56
         elif chain == Chains.BASE:
             return 8453
+        return 0
 
 
 class NetworkIdents:

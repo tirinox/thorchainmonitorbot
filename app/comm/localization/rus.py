@@ -499,54 +499,22 @@ class RussianLocalization(BaseLocalization):
         elif tx.is_of_type(ActionType.SWAP):
             content += self.format_swap_route(tx, usd_per_rune)
 
-            content += '\n'
-
-            if tx.affiliate_fee > 0:
-                aff_collector = self.name_service.get_affiliate_name(tx.memo.affiliate_address)
-                aff_collector = f'{aff_collector} комиссия партнера' if aff_collector else 'Партнерская комиссия'
-
-                aff_text = f'{aff_collector}: {format_percent(tx.affiliate_fee, 1)}\n'
-            else:
-                aff_text = ''
-            content += aff_text
-
-            # slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
-            # content += (
-            #     f"\n{aff_text}"
-            #     f"Проскальзывание: {bold(slip_str)}\n"
-            # )
-
-            if tx.liquidity_fee_percent:
-                content += f"Комиссия пулам: {bold(format_percent(tx.liquidity_fee_percent))}"
-
             if tx.is_streaming:
-                duration = tx.meta_swap.streaming.total_duration
-                content += f'\n⏱️ Прошло времени: {self.seconds_human(duration)}.'
-
                 if (success := tx.meta_swap.streaming.success_rate) < 1.0:
                     good = tx.meta_swap.streaming.successful_swaps
                     total = tx.meta_swap.streaming.quantity
                     content += f'\nПроцент успеха: {format_percent(success, 1)} ({good}/{total})'
 
-                saved_usd = tx.meta_swap.estimated_savings_vs_cex_usd
-                if (saved_usd is not None) and saved_usd > 0.0:
-                    content += f'\n🫰Сэкономлено против CEX: {bold(pretty_dollar(saved_usd))}'
+        user_link = self.link_to_address(tx.sender_address, name_map)
+        runescan_url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
+        runescan_link = link(runescan_url, 'Runescan')
 
-        blockchain_components_str = self._add_input_output_links(
-            tx, name_map, 'Входы: ', 'Выходы: ', 'Пользователь: ')
-
-        msg = f"{heading}\n" \
-              f"{blockchain_components_str}\n" \
-              f"{content}"
-
-        # if not tx.any_side_in_tc:
-        url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
-        msg += (
-            f"\n"
-            f"📎 {link(url, 'Runescan')}"
+        msg = (
+            f"{heading}\n"
+            f"{content}\n"
+            f"Пользователь: {user_link} / {runescan_link}\n"
+            f"{self._conditional_announcement()}"
         )
-
-        msg += self._conditional_announcement()
 
         return msg.strip()
 
@@ -1131,10 +1099,10 @@ class RussianLocalization(BaseLocalization):
         if changes.nodes_activated or changes.nodes_deactivated:
             message += bold('♻️ Перемешивание нод завершено') + '\n\n'
 
-        message += self._make_node_list(changes.nodes_added, '🆕 Новые ноды появились:', add_status=True)
+        # message += self._make_node_list(changes.nodes_added, '🆕 Новые ноды появились:', add_status=True)
         message += self._make_node_list(changes.nodes_activated, '➡️ Ноды активированы:')
         message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Ноды деактивированы:')
-        message += self._make_node_list(changes.nodes_removed, '🗑️ Ноды отключились или исчезли:', add_status=True)
+        # message += self._make_node_list(changes.nodes_removed, '🗑️ Ноды отключились или исчезли:', add_status=True)
 
         if changes.nodes_activated or changes.nodes_deactivated:
             message += self._node_bond_change_after_churn(changes)
@@ -1207,15 +1175,15 @@ class RussianLocalization(BaseLocalization):
     def notification_text_version_changed(self, e: AlertVersionChanged):
         msg = bold('💫 Обновление версии протокола THORChain') + '\n\n'
 
-        def version_and_nodes(v, all=False):
-            realm = e.data.nodes_all if all else e.data.active_only_nodes
+        def version_and_nodes(v, _all=False):
+            realm = e.data.nodes_all if _all else e.data.active_only_nodes
             n_nodes = len(e.data.find_nodes_with_version(realm, v))
             return f"{code(v)} ({n_nodes} {plural(n_nodes, 'нода', 'нод')})"
 
         current_active_version = e.data.current_active_version
 
         if e.new_versions:
-            new_version_joined = ', '.join(version_and_nodes(v, all=True) for v in e.new_versions)
+            new_version_joined = ', '.join(version_and_nodes(v, _all=True) for v in e.new_versions)
             msg += f"🆕 Обнаружена новая версия: {new_version_joined}\n\n"
 
             msg += f"⚡️ Активная версия протокола сейчас – {version_and_nodes(current_active_version)}\n" + \
@@ -1472,8 +1440,8 @@ class RussianLocalization(BaseLocalization):
 
     TEXT_NOP_SETTINGS_TITLE = 'Настройте ваши уведомления здесь. Выберите тему для настройки:'
 
-    def text_nop_get_weblink_title(self, link):
-        return f'Ваша ссылка для настройки готова: {link}!\n' \
+    def text_nop_get_weblink_title(self, _link):
+        return f'Ваша ссылка для настройки готова: {_link}!\n' \
                f'Там вы сможете выбрать ноды для мониторинга и настроить уведомления.'
 
     BUTTON_NOP_SETT_OPEN_WEB_LINK = '🌐 Открыть в браузере'
@@ -1505,7 +1473,7 @@ class RussianLocalization(BaseLocalization):
     def text_nop_new_version_enabled(self, is_on):
         en_text = self.text_enabled_disabled(is_on)
         return f'Уведомления о появлении новой версии {bold(en_text)}.\n\n' \
-               f'<i>На следующием шаге вы настроите уведомления об обновлении ваших нод.</i>'
+               f'<i>На следующем шаге вы настроите уведомления об обновлении ваших нод.</i>'
 
     def text_nop_version_up_enabled(self, is_on):
         en_text = self.text_enabled_disabled(is_on)
@@ -1691,7 +1659,7 @@ class RussianLocalization(BaseLocalization):
         emoji = self.cex_flow_emoji(cex_flow)
         period_string = self.format_period(cex_flow.period_sec)
         return (
-            f'🌬️ <b>Rune потоки с централизованнвых бирж последние {period_string}</b>\n'
+            f'🌬️ <b>Rune потоки с централизованных бирж последние {period_string}</b>\n'
             f'➡️ Завели: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
             f'({short_dollar(cex_flow.in_usd)})\n'
             f'⬅️ Вывели: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
@@ -2081,7 +2049,7 @@ class RussianLocalization(BaseLocalization):
 
         return text.strip()
 
-    # ------ Network indentifiers ------
+    # ------ Network identifiers ------
 
     @staticmethod
     def notification_text_chain_id_changed(event: AlertChainIdChange):
@@ -2101,18 +2069,6 @@ class RussianLocalization(BaseLocalization):
             f'Сегодня сожжено {bold(pretty_rune(e.last_24h_burned_rune))} RUNE '
             f'({bold(pretty_dollar(e.last_24h_burned_usd))})'
         )
-
-        # trend = 'Дефляция' if e.deflation_percent > 0 else 'Инфляция'
-        # return (
-        #     f'🔥 <b>Сожжено рун</b>\n\n'
-        #     f'За последние {int(e.tally_days)} дней сожжено: {bold(pretty_rune(e.delta_rune))} '
-        #     f'({ital(pretty_dollar(e.delta_usd))})\n'
-        #     f'Всего сожжено: {bold(pretty_rune(e.total_burned_rune))} '
-        #     f'({ital(pretty_dollar(e.total_burned_usd))})\n'
-        #     f'Сжигается {bold(pretty_percent(e.system_income_burn_percent, signed=False))} от дохода системы, '
-        #     f'примерно {ital(pretty_rune(e.yearly_burn_prediction))} рун будет сожжено за год.\n'
-        #     f'{trend} составляет {bold(pretty_percent(e.deflation_percent, signed=False))}.'
-        # )
 
     # ------ Bond providers alerts ------
 

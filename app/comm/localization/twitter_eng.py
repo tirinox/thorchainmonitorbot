@@ -178,40 +178,19 @@ class TwitterEnglishLocalization(BaseLocalization):
         elif tx.is_of_type(ActionType.SWAP):
             content += self.format_swap_route(tx, usd_per_rune)
 
-            if tx.affiliate_fee > 0:
-                aff_collector = self.name_service.get_affiliate_name(tx.memo.affiliate_address)
-                aff_collector = f'{aff_collector} affiliate fee' if aff_collector else 'Affiliate fee'
-
-                aff_text = f'{aff_collector}: {format_percent(tx.affiliate_fee, 1)}\n'
-            else:
-                aff_text = ''
-
-            liq_fee_pct = tx.liquidity_fee_percent
-            # slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
-            content += (
-                f"\n{aff_text}"
-                f"Liq. fee: {format_percent(liq_fee_pct) if liq_fee_pct else self.NA}"
-            )
-
             if tx.is_streaming:
-                duration = tx.meta_swap.streaming.total_duration
-                content += f'\n⏱️ Time: {self.seconds_human(duration)}.'
-
                 if (success := tx.meta_swap.streaming.success_rate) < 1.0:
                     good = tx.meta_swap.streaming.successful_swaps
                     total = tx.meta_swap.streaming.quantity
                     content += f'\nSuccess rate: {format_percent(success, 1)} ({good}/{total})'
 
-                saved_usd = tx.meta_swap.estimated_savings_vs_cex_usd
-                if (saved_usd is not None) and saved_usd > 0.0:
-                    content += f'\n🫰Est. savings vs CEX: {pretty_dollar(saved_usd)}'
 
         link = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.first_input_tx_hash) \
-            if tx and tx.first_input_tx_hash else ''
+            if tx and tx.tx_hash else ''
 
         msg = f"{heading}\n" \
               f"{content}\n" \
-              f"{link}"
+              f"Runescan: {link}"
 
         return msg.strip()
 
