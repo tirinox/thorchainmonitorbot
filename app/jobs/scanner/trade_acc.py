@@ -46,7 +46,7 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
             return results
 
         if len(tx.messages) != 1:
-            self.logger.warning(f'Tx has abnormal messages count: {len(tx.messages)}')
+            self.logger.warning(f'Tx has abnormal messages count: {len(tx.messages)} tx: {tx.tx_hash}')
             return results
 
         if memo.action == ActionType.TRADE_ACC_WITHDRAW:
