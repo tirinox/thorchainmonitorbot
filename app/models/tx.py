@@ -3,12 +3,10 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Optional, NamedTuple
 
-from pyarrow import duration
-
-from api.aionode.types import ThorTxStatus, ThorSwapperClout
+from api.aionode.types import ThorSwapperClout
 from api.w3.token_record import SwapInOut
 from lib.constants import Chains, thor_to_float, bp_to_float, THOR_BLOCK_TIME
-from lib.date_utils import now_ts, DAY
+from lib.date_utils import now_ts
 from lib.texts import safe_sum
 from .asset import Asset, is_rune, ASSET_TRADE_SEPARATOR, ASSET_SYNTH_SEPARATOR
 from .cap_info import ThorCapInfo
