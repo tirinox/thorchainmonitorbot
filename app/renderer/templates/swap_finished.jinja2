@@ -20,38 +20,44 @@
             top: -15%;
         }
 
-        .liquidity-fee-block-2 {
-            color: white;
-            font-size: 32px;
-            font-weight: bolder;
-        }
-
-        .arrow-refund {
-            transform: scale(-1, 0.7) translate(0, 10%);
-            width: 200px;
-            filter: brightness(100%) hue-rotate(220deg) saturate(200%) drop-shadow(3px 3px 4px rgba(255, 0, 0, 0.51)) drop-shadow(-3px -3px 4px rgba(255, 76, 76, 0.51));
-            margin: 0;
-            padding: 0;
-        }
-
         .refund-text {
             color: #e85555;
             font-weight: bolder;
             text-wrap: nowrap;
-            padding-bottom: 10px;
+            padding-bottom: 0;
             display: block;
+            text-align: center;
+
+            font-size: 30px;
+            font-style: italic;
+            margin-right: 12px;
+        }
+
+        .arrow-refund {
+            width: 200px;
+            filter: brightness(100%) hue-rotate(220deg) saturate(200%) drop-shadow(3px 3px 4px rgba(255, 0, 0, 0.51)) drop-shadow(-3px -3px 4px rgba(255, 76, 76, 0.51));
+            margin: 5px;
+            padding: 0;
+            transform: scale(-1, 1);
         }
 
         .arrow-lr-squished {
-            transform: scale(1, 0.7) translate(0, -10%);
-            margin: 0;
+            margin: 5px;
             padding: 0;
+            transform: scale(1, 1);
         }
+
         .arrow-vert-stack {
             display: flex;
             width: 200px;
             flex-direction: column;
             padding: 0;
+        }
+
+        .streaming-count {
+            font-weight: bolder;
+            font-size: 30px;
+            margin-left: -8px;
         }
 
     </style>
@@ -81,12 +87,20 @@
         </div>
 
         <div class="line-box">
-{#            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">#}
+            {#            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">#}
 
             <div class="arrow-vert-stack">
                 {% if refund %}
-                    <img src="renderer/static/arrow2.png" alt="Arrow refund" class="arrow-refund shadow">
-                    <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr arrow-lr-squished shadow">
+
+                    {% with f=70 * (refund_rate / 100) %}
+                        <img src="renderer/static/arrow2.png" alt="Arrow refund" class="arrow-refund shadow"
+                             style="height: {{ f }}px"
+                        >
+                        <img src="renderer/static/arrow2.png" alt="Arrow right"
+                             class="arrow-lr arrow-lr-squished shadow"
+                             style="height: {{ 70 - f }}px"
+                        >
+                    {% endwith %}
                 {% else %}
                     <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
                 {% endif %}
@@ -95,7 +109,6 @@
                 {% if refund %}
                     <span class="refund-text">{{ pretty_money(refund_rate) }}% refund</span>
                 {% endif %}
-{#                {{ shorten_text_middle(tx_hash_in, 4, 4) }}#}
             </div>
         </div>
 
@@ -118,9 +131,11 @@
 
         <div class="line-box">
             <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
-            <div class="above-arrow tx-id-block">
-
-            </div>
+            {% if streaming_count and streaming_count > 1 %}
+                <div class="above-arrow streaming-count midgard-turqoise">
+                    {{ streaming_count }} subswaps
+                </div>
+            {% endif %}
         </div>
 
         <div id="dest_logo" class="logo-holder">
@@ -148,7 +163,6 @@
                         <img src="renderer/static/time-is-money.png" alt="Time is money..." class="clock">
                         <div class="wait-time" id="wait-time"></div>
                     </div>
-
                 </div>
             </div>
         </div>

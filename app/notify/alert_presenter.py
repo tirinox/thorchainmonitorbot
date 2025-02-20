@@ -386,6 +386,9 @@ class AlertPresenter(INotified, WithLogger):
 
             # "swap_quantity": tx.ss.quantity,
             # "swap_interval": tx.ss.interval,
+
+            "streaming_count": tx.meta_swap.streaming.quantity if tx.meta_swap.streaming else 0,
+
             "total_time_sec": duration,
 
             "refund": tx.has_refund_output,

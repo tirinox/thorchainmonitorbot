@@ -29,6 +29,8 @@
         "refund": true,
         "refund_rate": 72.3,
 
+        "streaming_count": 225,
+
         "_width": 1200,
         "_height": 800
     },
