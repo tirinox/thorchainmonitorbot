@@ -125,20 +125,22 @@ class BaseLocalization(ABC):  # == English
             f"/help – this help page\n"
             f"/start – start/restart the bot\n"
             f"/lang – set the language\n"
-            f"/cap – the current liquidity cap\n"
+            f"/lp – Add/remove wallets to your monitoring list\n"
             f"/price – the current Rune price.\n"
             f"/queue – TX queue info\n"
             f"/nodes – list of THOR Nodes\n"
             f"/stats – THORChain stats\n"
             f"/chains – Connected chains\n"
-            f"/lp – check your LP yield\n"
+            f"/pools – Top liquidity pools\n"
+            f"/mimir – Mimir constants\n"
+            f"/weekly – THORChain weekly stats\n"
             f"<b>⚠️ All notifications are forwarded to {self.alert_channel_name} channel!</b>\n"
             f"🤗 Support and feedback: {CREATOR_TG}."
         )
 
     def welcome_message(self, info: ThorCapInfo):
         return (
-            f"Hello! Here you can find THORChain metrics and review your liquidity results.\n"
+            f"Hello! Here you can find THORChain metrics, monitor your wallets and review your LP results.\n"
             f"The {self.R} price is <code>${info.price:.3f}</code> now.\n"
             f"<b>⚠️ All notifications are forwarded to {self.alert_channel_name} channel!</b>\n"
             f"🤗 Support and feedback: {CREATOR_TG}."

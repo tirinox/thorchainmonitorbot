@@ -84,9 +84,9 @@ class MainMenuDialog(BaseDialog):
             external=True
         )
 
-    @message_handler(commands='cap', state='*')
-    async def cmd_cap(self, message: Message):
-        await self.build_metrics_dialog().show_cap(message)
+    # @message_handler(commands='cap', state='*')
+    # async def cmd_cap(self, message: Message):
+    #     await self.build_metrics_dialog().show_cap(message)
 
     @message_handler(commands='price', state='*')
     async def cmd_price(self, message: Message):
