@@ -539,8 +539,8 @@ class App(WithLogger):
             ssc = SaversStatsNotifier(d)
             ssc.add_subscriber(d.alert_presenter)
 
-            if achievements_enabled:
-                d.saver_stats_fetcher.add_subscriber(achievements)
+            # if achievements_enabled:
+            #     d.saver_stats_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('wallet_counter.enabled', True) and achievements_enabled:  # only used along with achievements
             wallet_counter = AccountNumberFetcher(d)

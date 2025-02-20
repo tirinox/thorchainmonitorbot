@@ -110,20 +110,20 @@ async def run():
         await app.deps.last_block_fetcher.run_once()
         await app.deps.pool_fetcher.run_once()
 
-        await debug_full_pipeline(app, ignore_traders=True, start=-200)
-
+        # await debug_full_pipeline(app, ignore_traders=True, start=-200)
+        #
         # await debug_full_pipeline(
         #     app,
         #     # start=19710746,
-        #     start=19711750,
-        #     tx_id='0F77D9743C8FE2557A2DBD48E59BBA1CAD9B9B771ED1111AB7E6632EEF1584FA',
+        #     start=19952232 - 5,
+        #     tx_id='970008DE50B175B88F97773999D659136108E67BCE982C2B8262E6AEE86EE0C0',
         #     single_block=False,
         #     ignore_traders=True,
         # )
 
         await debug_full_pipeline(
             app, from_db=True,
-            tx_id='0F77D9743C8FE2557A2DBD48E59BBA1CAD9B9B771ED1111AB7E6632EEF1584FA'
+            tx_id='970008DE50B175B88F97773999D659136108E67BCE982C2B8262E6AEE86EE0C0'
         )
 
 

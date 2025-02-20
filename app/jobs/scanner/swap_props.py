@@ -134,7 +134,7 @@ class SwapProps(NamedTuple):
     def true_outbounds(self):
         outbounds = [
             ev for ev in self.events
-            if isinstance(ev, (EventOutbound, EventScheduledOutbound)) and (ev.is_outbound_memo or ev.is_refund_memo)
+            if isinstance(ev, EventOutbound) and (ev.is_outbound_memo or ev.is_refund_memo)
         ]
         # noinspection PyUnresolvedReferences
         outbounds += [
