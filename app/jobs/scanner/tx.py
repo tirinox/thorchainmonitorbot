@@ -116,6 +116,10 @@ class ThorTxMessage(NamedTuple):
             return memo
         return ''
 
+    @property
+    def memo(self):
+        return self.attrs.get('memo', '')
+
     def __repr__(self):
         return f"ThorTxMessage({self.attrs})"
 
@@ -150,7 +154,7 @@ class NativeThorTx(NamedTuple):
     signers: List[ThorSignerInfo]
     messages: List[ThorTxMessage]
     log: str = ''
-    this_memo: str = ''
+    memo: str = ''
 
     @property
     def error_message(self):
@@ -165,8 +169,8 @@ class NativeThorTx(NamedTuple):
         """
         Tries to get memo from inside TXs messages, for instance "/types.MsgObservedTxIn" has memo in txs[].tx.memo
         """
-        if self.this_memo:
-            return self.this_memo
+        if self.memo:
+            return self.memo
 
         for msg in self.messages:
             if memo := msg.deep_memo:
@@ -189,7 +193,7 @@ class NativeThorTx(NamedTuple):
             log=result.get('log', ''),
             original=d,
             signers=signers,
-            this_memo=body.get('memo', ''),
+            memo=body.get('memo', ''),
             messages=messages,
         )
 

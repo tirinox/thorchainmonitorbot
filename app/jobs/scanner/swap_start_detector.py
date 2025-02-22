@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Iterable
 
 from jobs.scanner.native_scan import BlockResult
 from jobs.scanner.tx import NativeThorTx, ThorTxMessage
@@ -97,19 +97,20 @@ class SwapStartDetector(WithLogger):
 
         return results
 
-    def _filter_unique_observed_txs(self, txs: List[NativeThorTx]):
+    def _filter_unique_observed_txs(self, txs: Iterable[NativeThorTx]):
         # Filter only unique MsgObservedTxIn
         hash_to_tx = {}
         for tx in txs:
-            if message_txs := tx.first_message.txs:
-                for observed_tx in message_txs:
-                    if (tx_id := safe_get(observed_tx, 'tx', 'id')) not in hash_to_tx:
-                        hash_to_tx[tx_id] = observed_tx['tx']
-            else:
-                self.logger.error(f'No txs in MsgObservedTxIn: {tx}. Impossible?')
+            if not tx.messages:
+                self.logger.warning(f'No message in {tx.tx_hash}')
+            for message in tx.messages:
+                if message and message.txs:
+                    for observed_tx in message.txs:
+                        if (tx_id := safe_get(observed_tx, 'tx', 'id')) not in hash_to_tx:
+                            hash_to_tx[tx_id] = observed_tx['tx']
         return hash_to_tx
 
-    def handle_observed_txs(self, txs: List[NativeThorTx], height: int):
+    def handle_observed_txs(self, txs: Iterable[NativeThorTx], height: int):
         observed_txs_dicts = self._filter_unique_observed_txs(txs)
 
         for tx_hash, tx in observed_txs_dicts.items():

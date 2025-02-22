@@ -2,7 +2,7 @@ from typing import List
 
 from api.aionode.types import thor_to_float
 from jobs.scanner.block_result import BlockResult
-from jobs.scanner.tx import NativeThorTx
+from jobs.scanner.tx import NativeThorTx, ThorTxMessage
 from lib.db import DB
 from lib.delegates import INotified, WithDelegates
 from lib.logs import WithLogger
@@ -25,12 +25,19 @@ class RunePoolEventDecoder(WithLogger, INotified, WithDelegates):
     async def on_data(self, sender, data: BlockResult):
         all_events = {}
         for tx in data.txs:
+            # RunePool Deposit/Withdraw are MsgDeposit With top-layer Memo: "POOL+/POOL-"
+            if memo_str := tx.memo:
+                if memo_ob := THORMemo.parse_memo(memo_str, no_raise=True):
+                    if is_action(memo_ob.action, (ActionType.RUNEPOOL_ADD, ActionType.RUNEPOOL_WITHDRAW)):
+                        for message in tx.messages:
+                            tx_events = self._convert_tx_to_event(tx, message, memo_ob, data.block_no)
+                            for event in tx_events:
+                                all_events[event.tx_hash] = event
+
             if memo_str := tx.deep_memo:
                 if memo_ob := THORMemo.parse_memo(memo_str, no_raise=True):
                     if is_action(memo_ob.action, (ActionType.RUNEPOOL_ADD, ActionType.RUNEPOOL_WITHDRAW)):
-                        tx_events = self._convert_tx_to_event(tx, memo_ob, data.block_no)
-                        for event in tx_events:
-                            all_events[event.tx_hash] = event
+                        print(f'Found deep memo: {memo_ob}!!!')
 
         # Unique for this block, but may not be unique across the entire blockchain
         unique_events = list(all_events.values())
@@ -41,24 +48,24 @@ class RunePoolEventDecoder(WithLogger, INotified, WithDelegates):
 
         return unique_events
 
-    def _convert_tx_to_event(self, tx: NativeThorTx, memo: THORMemo, height) -> List[AlertRunePoolAction]:
+    def _convert_tx_to_event(self, tx, message: ThorTxMessage, memo: THORMemo, height) -> List[AlertRunePoolAction]:
         results = []
-        if not tx or not tx.first_message:
-            self.logger.error(f'Empty tx or message in RUNE pool tx: {tx}')
+        if message:
+            self.logger.error(f'Empty tx or message in RUNE pool @ #{height}')
             return results
 
-        if tx.first_message.type != tx.first_message.MsgDeposit:
-            self.logger.error(f'Unexpected message type in RUNE pool tx: {tx.first_message}')
+        if message.type != message.MsgDeposit:
+            self.logger.error(f'Unexpected message type in RUNE pool tx: {message} @ #{height}')
             return results
 
         usd_per_rune = self.price_holder.usd_per_rune
 
-        for coin in tx.first_message.coins:
+        for coin in message.coins:
             if not is_rune(asset := coin['asset']):
                 self.logger.error(f'Unexpected asset in RUNE pool tx: {asset}')
                 continue
 
-            actor = tx.first_message['signer']
+            actor = message['signer']
 
             if memo.action == ActionType.RUNEPOOL_WITHDRAW:
                 withdraw_event = next(

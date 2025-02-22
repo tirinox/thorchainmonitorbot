@@ -26,9 +26,6 @@ class RuneTransferDetectorNativeTX(WithLogger):
             return []
         transfers = []
         for tx in txs:
-            # find out memo
-            memo = tx.deep_memo
-
             for message in tx.messages:
                 comment = str(message.type)
                 # todo: test if it works good for /cosmos.bank.v1beta1.MsgSend
@@ -51,7 +48,7 @@ class RuneTransferDetectorNativeTX(WithLogger):
                             is_native=True,
                             asset=asset,
                             comment=comment,
-                            memo=memo,
+                            memo=tx.memo,
                         ))
                 elif message.type == message.MsgDeposit:
                     for coin in message.coins:
@@ -64,7 +61,7 @@ class RuneTransferDetectorNativeTX(WithLogger):
                             is_native=True,
                             asset=coin.get('asset', ''),
                             comment=comment,
-                            memo=memo,
+                            memo=tx.memo,
                         ))
 
         return transfers

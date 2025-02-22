@@ -82,11 +82,9 @@ async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
 async def demo_trade_acc_decode_continuous(app: LpAppFramework, b=0):
     await prepare_once(app)
 
-    # b = 16515624
-
     d = app.deps
     scanner = BlockScanner(d, last_block=b)
-    scanner.one_block_per_run = b > 0
+    # scanner.one_block_per_run = b > 0
 
     dcd = TradeAccEventDecoder(d.price_holder)
     dcd.sleep_period = 60
@@ -98,8 +96,8 @@ async def demo_trade_acc_decode_continuous(app: LpAppFramework, b=0):
     dcd.add_subscriber(nt)
     nt.add_subscriber(d.alert_presenter)
 
-    achievements = AchievementsNotifier(d)
-    dcd.add_subscriber(achievements)
+    # achievements = AchievementsNotifier(d)
+    # dcd.add_subscriber(achievements)
 
     await scanner.run()
     await asyncio.sleep(5.0)
@@ -171,7 +169,7 @@ async def run():
     async with app(brief=True):
         # await demo_trade_balance(app)
         # await demo_decode_trade_acc(app, TX_WITHDRAW_USDC)
-        await demo_decode_trade_acc(app, TX_ID_DEPOSIT_USDC)
+        # await demo_decode_trade_acc(app, TX_ID_DEPOSIT_USDC)
         # sep()
         # await demo_decode_trade_acc(app, TX_ID_WITHDRAWAL)
         # sep()
@@ -182,7 +180,8 @@ async def run():
 
         # await demo_trade_acc_summary_continuous(app)
         # await demo_trade_acc_summary_single(app, reset_cache=False)
-        # await demo_trade_acc_decode_continuous(app, 16515624)
+        # await demo_trade_acc_decode_continuous(app, 19973890)
+        await demo_trade_acc_decode_continuous(app, 19975955)
 
 
 if __name__ == '__main__':

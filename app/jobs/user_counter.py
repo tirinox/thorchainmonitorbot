@@ -27,7 +27,7 @@ class UserCounterMiddleware(INotified, WithLogger):
                     users.add(value)
 
         for tx in data.txs:
-            if msg := tx.first_message:
+            for msg in tx.messages:
                 if msg.type == msg.MsgObservedTxIn:
                     for observed_tx in msg.txs:
                         if observed_tx and observed_tx.get('tx'):

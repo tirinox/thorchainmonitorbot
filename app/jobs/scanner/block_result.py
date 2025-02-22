@@ -1,7 +1,7 @@
 import logging
 import re
 from dataclasses import dataclass, replace
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Iterable
 
 from jobs.scanner.tx import NativeThorTx, ThorEvent
 from lib.date_utils import date_parse_rfc
@@ -52,8 +52,11 @@ class BlockResult:
     def is_behind(self):
         return self.error.last_available_block != 0 and self.block_no < self.error.last_available_block
 
-    def find_tx_by_type(self, msg_type) -> List[NativeThorTx]:
-        return filter(lambda tx: tx.first_message.type == msg_type, self.txs)
+    def find_tx_by_type(self, msg_type) -> Iterable[NativeThorTx]:
+        for tx in self.txs:
+            for message in tx.messages:
+                if message.type == msg_type:
+                    yield tx
 
     @property
     def only_successful(self) -> 'BlockResult':
