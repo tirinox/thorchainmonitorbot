@@ -1,0 +1,8 @@
+{
+  "template_name": "price.jinja2",
+  "parameters": {
+
+    "_width": 1200,
+    "_height": 1000
+  }
+}

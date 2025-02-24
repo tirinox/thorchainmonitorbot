@@ -1,11 +1,9 @@
 import asyncio
 
 from api.aionode.connector import ThorConnector
-
 from comm.picture.price_picture import price_graph_from_db
 from jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
-from lib.constants import NetworkIdents
 from lib.depcont import DepContainer
 from lib.texts import sep
 from models.price import LastPriceHolder
@@ -16,14 +14,6 @@ from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 def set_network(d: DepContainer, network_id: str):
     d.cfg.network_id = network_id
     d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
-
-
-async def demo_thor_pools_caching_mctn(d: DepContainer):
-    set_network(d, NetworkIdents.TESTNET_MULTICHAIN)
-
-    ppf = PoolFetcher(d)
-    pp = await ppf.load_pools(caching=True, height=501)
-    print(pp)
 
 
 async def demo_price_continuously(d: DepContainer):
@@ -109,8 +99,8 @@ async def main():
         # await find_anomaly(app)
         # await demo_cache_blocks(app)
         # await demo_top_pools(app)
-        # await demo_price_graph(app)
-        await debug_load_pools(app)
+        await demo_price_graph(app)
+        # await debug_load_pools(app)
 
 
 if __name__ == '__main__':
