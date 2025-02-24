@@ -83,8 +83,8 @@ class Renderer:
         try:
             template = self.jinja_env.get_template(template_name)
 
-            parameters.setdefault('width', self.default_viewport['width'])
-            parameters.setdefault('height', self.default_viewport['height'])
+            parameters.setdefault('_width', self.default_viewport['width'])
+            parameters.setdefault('_height', self.default_viewport['height'])
 
             rendered_html = template.render(parameters)
 

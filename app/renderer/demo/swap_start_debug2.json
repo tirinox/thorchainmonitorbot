@@ -21,8 +21,8 @@
         "swap_quantity": 7,
         "swap_interval": 1,
         "total_estimated_time_sec": 42,
-        "_width": 1200,
-        "_height": 800
+        "_width": 1280,
+        "_height": 720
     },
     "correlation_id": "b'599b8e69ea38752d4c3a4747'"
 }
