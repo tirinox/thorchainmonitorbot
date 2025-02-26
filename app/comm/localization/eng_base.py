@@ -1298,6 +1298,7 @@ class BaseLocalization(ABC):  # == English
         message = ''
         if title:
             message += ital(title) + "\n"
+        nodes.sort(key=lambda n: n.bond, reverse=True)
         message += join_as_numbered_list(
             (
                 self._format_node_text(node, add_status, extended_info)
@@ -1316,18 +1317,20 @@ class BaseLocalization(ABC):  # == English
         message = ''
 
         if changes.nodes_activated or changes.nodes_deactivated:
-            message += bold('♻️ Node churn is complete') + '\n\n'
-
-        # message += self._make_node_list(changes.nodes_added, '🆕 New nodes:', add_status=True)
-        message += self._make_node_list(changes.nodes_activated, '➡️ Nodes that churned in:')
-        message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Nodes that churned out:')
-        # message += self._make_node_list(changes.nodes_removed, '🗑️ Nodes that disconnected:', add_status=True)
+            message += bold('♻️ Node churn is complete') + '\n'
 
         if changes.nodes_activated or changes.nodes_deactivated:
-            message += self._node_bond_change_after_churn(changes)
+            message += self._node_bond_change_after_churn(changes) + '\n'
 
         if changes.churn_duration:
-            message += f'\nChurn duration: {seconds_human(changes.churn_duration)}'
+            message += f'Churn duration: {seconds_human(changes.churn_duration)}\n'
+
+        message += '\n'
+
+        # message += self._make_node_list(changes.nodes_added, '🆕 New nodes:', add_status=True)
+        message += self._make_node_list(changes.nodes_activated, '➡️ Churned in:')
+        message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Churned out:')
+        # message += self._make_node_list(changes.nodes_removed, '🗑️ Nodes that disconnected:', add_status=True)
 
         return message.strip()
 

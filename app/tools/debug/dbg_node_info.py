@@ -151,7 +151,8 @@ async def node_churn_notification_test(lpgen: LpAppFramework, nodes):
     locs = localizations(lpgen)
 
     churn_in, churn_out = toss_nodes(nodes)
-    changes = NodeSetChanges([], [], churn_in, churn_out, nodes, nodes)
+    changes = NodeSetChanges([], [], churn_in, churn_out, nodes, nodes,
+                             churn_duration=5578)
 
     # await lpgen.send_test_tg_message('------------------------------------')
     for loc in locs:
@@ -410,7 +411,8 @@ async def main():
         # await demo_churn_pipeline(app)
         # await demo_churn_test(app)
         # await demo_churn_simulator(app)
-        await dbg_node_info_bond_provider_parsing(app)
+        # await dbg_node_info_bond_provider_parsing(app)
+        await demo_once(app)
 
 
 if __name__ == "__main__":

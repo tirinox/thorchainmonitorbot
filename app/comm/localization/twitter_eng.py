@@ -465,33 +465,36 @@ class TwitterEnglishLocalization(BaseLocalization):
         def _make_node_list_plain(nodes, title):
             if not nodes:
                 return ''
+            nodes.sort(key=lambda n: n.bond, reverse=True)
             message = ', '.join(_format_node_text_plain(node) for node in nodes if node.node_address)
             return f'{title}\n{message}\n\n'
 
         components = [
-            '♻️ Node churn is complete\n\n'
+            '♻️ Node churn is complete\n'
         ]
+
+        if changes.nodes_activated or changes.nodes_deactivated:
+            components.append(
+                self._node_bond_change_after_churn(changes) + '\n'
+        )
+
+        if changes.churn_duration:
+            components.append(
+                f'Churn duration: {seconds_human(changes.churn_duration)}\n'
+            )
+
+        components.append('\n')
 
         part1 = _make_node_list_plain(changes.nodes_activated, '➡️ Churned in:')
         components.append(part1)
 
         part2 = _make_node_list_plain(changes.nodes_deactivated, '⬅️️ Churned out:')
-
-        # bond
-        if changes.nodes_activated or changes.nodes_deactivated:
-            part2 += self._node_bond_change_after_churn(changes)
         components.append(part2)
 
-        if changes.churn_duration:
-            components.append(
-                f'\nChurn duration: {seconds_human(changes.churn_duration)}'
-            )
-
-        part3 = _make_node_list_plain(changes.nodes_added, '🆕 New nodes:')
-        components.append(part3)
-
-        part4 = _make_node_list_plain(changes.nodes_removed, '🗑️ Nodes disconnected:')
-        components.append(part4)
+        # part3 = _make_node_list_plain(changes.nodes_added, '🆕 New nodes:')
+        # components.append(part3)
+        # part4 = _make_node_list_plain(changes.nodes_removed, '🗑️ Nodes disconnected:')
+        # components.append(part4)
 
         return self.smart_split(components)
 

@@ -1099,18 +1099,20 @@ class RussianLocalization(BaseLocalization):
         message = ''
 
         if changes.nodes_activated or changes.nodes_deactivated:
-            message += bold('♻️ Перемешивание нод завершено') + '\n\n'
+            message += bold('♻️ Перемешивание нод завершено') + '\n'
+
+        if changes.nodes_activated or changes.nodes_deactivated:
+            message += self._node_bond_change_after_churn(changes) + '\n'
+
+        if changes.churn_duration:
+            message += f'Продолжительность: {seconds_human(changes.churn_duration)}\n'
+
+        message += '\n'
 
         # message += self._make_node_list(changes.nodes_added, '🆕 Новые ноды появились:', add_status=True)
         message += self._make_node_list(changes.nodes_activated, '➡️ Ноды активированы:')
         message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Ноды деактивированы:')
         # message += self._make_node_list(changes.nodes_removed, '🗑️ Ноды отключились или исчезли:', add_status=True)
-
-        if changes.nodes_activated or changes.nodes_deactivated:
-            message += self._node_bond_change_after_churn(changes)
-
-        if changes.churn_duration:
-            message += f'\nПродолжительность: {seconds_human(changes.churn_duration)}'
 
         return message.strip()
 
