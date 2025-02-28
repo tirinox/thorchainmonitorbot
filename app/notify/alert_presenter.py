@@ -391,7 +391,7 @@ class AlertPresenter(INotified, WithLogger):
 
             "total_time_sec": duration,
 
-            "refund": tx.has_refund_output,
+            "refund": refund_rate > 1e-3,
             "refund_rate": refund_rate,
 
             "_width": 1280,
