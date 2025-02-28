@@ -123,7 +123,9 @@ async def run():
 
         await debug_full_pipeline(
             app, from_db=True,
-            tx_id='970008DE50B175B88F97773999D659136108E67BCE982C2B8262E6AEE86EE0C0'
+            tx_id='EBE9E8DD73CCC2B144080A6233720E44CDE2C3DDE7D1A0A99D427C485C7D7CC0',
+            # start=20059078 - 10,
+            ignore_traders=True,
         )
 
 

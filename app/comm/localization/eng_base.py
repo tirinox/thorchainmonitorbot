@@ -21,7 +21,7 @@ from lib.money import format_percent, pretty_money, short_address, short_money, 
     RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
 from lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text, underline, \
-    comma_join
+    comma_join, int_to_letter
 from lib.utils import grouper, run_once, identity
 from models.asset import Asset
 from models.cap_info import ThorCapInfo
@@ -1590,38 +1590,53 @@ class BaseLocalization(ABC):  # == English
     TEXT_NODE_MIMIR_VOTING_TITLE = '🏛️ <b>Node-Mimir voting</b>\n\n'
     TEXT_NODE_MIMIR_VOTING_NOTHING_YET = 'No active voting yet.'
 
-    TEXT_NODE_MIMIR_ALREADY_CONSENSUS = ' ✅ already consensus'
+    TEXT_NODE_MIMIR_ALREADY_CONSENSUS = ' ✅'
+
+    TEXT_MIMIR_CURR_VAL = 'Current value'
 
     def _text_mimir_voting_options(self, holder: MimirHolder,
                                    voting: MimirVoting, options,
-                                   triggered_option_value=None):
+                                   triggered_option_value=None,
+                                   current_value=None):
         message = ''
         name = holder.pretty_name(voting.key)
 
         n_options = len(options)
         entry = holder.get_entry(voting.key)
 
+        met_current_value = False
+
         for i, option in enumerate(options, start=1):
-            already_consensus = entry and entry.real_value == option.value and entry.source == entry.SOURCE_NODE
+            if option.value == current_value:
+                met_current_value = True
 
-            pb = self.make_voting_progress_bar(option, voting)
-
-            extra = f' {pb}{self._text_votes_to_pass(option)}' \
-                if not already_consensus else self.TEXT_NODE_MIMIR_ALREADY_CONSENSUS
+            curr_mark, extra = '', ''
+            if entry and entry.real_value == option.value:
+                curr_mark = f' ✅'
+            else:
+                pb = self.make_voting_progress_bar(option, voting)
+                extra = f' {pb}{self._text_votes_to_pass(option)}'
 
             pretty_value = self.format_mimir_value(voting.key, str(option.value), thor_block=holder.last_thor_block)
-            mark = '👏' if option.value == triggered_option_value else ''
-            counter = f"{i}. " if n_options > 1 else ''
+            mark = ' 👏' if option.value == triggered_option_value else ''
+            counter = f"{int_to_letter(i)}. " if n_options > 1 else ''
 
             item_name = name
             percent = format_percent(option.number_votes, voting.active_nodes)
+
             if self.TEXT_DECORATION_ENABLED:
                 pretty_value = code(pretty_value)
                 percent = bold(percent)
                 item_name = bold(name) if i == 1 else name
-            message += f"{counter}{item_name} ➔ {pretty_value}: {percent}" \
+
+            message += f"{counter}{item_name} ➔ {pretty_value}{curr_mark}: {percent}" \
                        f" ({option.number_votes}/{voting.active_nodes}){mark}{extra}\n"
-        return message
+
+        if entry and not met_current_value and current_value is not None:
+            pretty_value = self.format_mimir_value(voting.key, str(current_value), thor_block=holder.last_thor_block)
+            message += f'{self.TEXT_MIMIR_CURR_VAL} of {name}: {pretty_value} ✅\n'
+
+        return message.strip()
 
     def text_node_mimir_voting(self, holder: MimirHolder):
         title = self.TEXT_NODE_MIMIR_VOTING_TITLE
@@ -1649,8 +1664,11 @@ class BaseLocalization(ABC):  # == English
 
         # get up to 3 top options, if there are more options in the voting, add "there are N more..."
         n_options = min(3, len(e.voting.options))
-        message += self._text_mimir_voting_options(e.holder, e.voting, e.voting.top_options[:n_options],
-                                                   e.triggered_option.value if e.triggered_option else None)
+        message += self._text_mimir_voting_options(
+            e.holder, e.voting, e.voting.top_options[:n_options],
+            e.triggered_option.value if e.triggered_option else None,
+            e.current_value
+        )
         return message
 
     @staticmethod
@@ -1660,7 +1678,7 @@ class BaseLocalization(ABC):  # == English
         else:
             # if "voting.min_votes_to_pass" (100% == 66.67%), otherwise use "voting.active_nodes"
             if option.progress > 0.12:
-                return ' ' + progressbar(option.number_votes, voting.min_votes_to_pass, 12)
+                return ' ' + progressbar(option.number_votes, voting.min_votes_to_pass, 16)
             else:
                 return ''
 

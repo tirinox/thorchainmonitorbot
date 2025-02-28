@@ -112,15 +112,15 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
 
                     await self._save_mimir_change_date(change)
 
+        if len(changes) > TOO_MANY_CHANGES:
+            self.deps.emergency.report(self.logger.name, f'Too many Mimir changes: {len(changes)}')
+            return
+
         if fresh_mimir and fresh_mimir.constants:
             await self._save_mimir_state(fresh_mimir.constants, is_node_mimir=False)
             await self._save_mimir_state(node_mimir, is_node_mimir=True)
 
         if changes:
-            if len(changes) > TOO_MANY_CHANGES:
-                self.deps.emergency.report(self.logger.name, f'Too many Mimir changes: {len(changes)}')
-                return
-
             await self.pass_data_to_listeners(AlertMimirChange(
                 changes, self.deps.mimir_const_holder
             ))

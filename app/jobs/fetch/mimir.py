@@ -19,22 +19,22 @@ class ConstMimirFetcher(BaseFetcher):
 
         # step by step
         constants = await thor.query_constants()
-        await asyncio.sleep(self.step_sleep)
-
         if not constants or not constants.constants:
             raise FileNotFoundError('Failed to get Constants data from THORNode')
 
-        mimir = await thor.query_mimir()
         await asyncio.sleep(self.step_sleep)
 
+        mimir = await thor.query_mimir()
         if not mimir or not mimir.constants:
             raise FileNotFoundError('Failed to get Mimir data from THORNode')
 
-        node_mimir = await thor.query_mimir_node_accepted()
         await asyncio.sleep(self.step_sleep)
 
-        if node_mimir is None:
+        accepted_node_mimir = await thor.query_mimir_node_accepted()
+        if accepted_node_mimir is None:
             raise FileNotFoundError('Failed to get Node Mimir data from THOR')
+
+        await asyncio.sleep(self.step_sleep)
 
         votes = await thor.query_mimir_votes()
         await asyncio.sleep(self.step_sleep)
@@ -43,7 +43,7 @@ class ConstMimirFetcher(BaseFetcher):
             raise FileNotFoundError('Failed to get Mimir Votes data from THOR')
 
         return MimirTuple(
-            constants, mimir, node_mimir, votes,
+            constants, mimir, accepted_node_mimir, votes,
             active_nodes=self.deps.node_holder.active_nodes,
             last_thor_block=int(self.deps.last_block_store),
         )

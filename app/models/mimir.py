@@ -40,6 +40,10 @@ class MimirVoting:
 
     SUPER_MAJORITY = 0.66666667
 
+    @property
+    def all_values(self):
+        return list(self.options.keys())
+
     def finalize_calculations(self):
         options = list(self.options.values())
         options.sort(key=operator.attrgetter('number_votes'), reverse=True)
@@ -76,6 +80,8 @@ class MimirVoteManager:
 
         # only active signer is allowed to vote
         active_votes = [vote for vote in all_votes if vote.singer in active_signers]
+        if not active_votes and all_votes:
+            raise ValueError('No active votes found!')
 
         self.votes = active_votes
         self.active_node_count = len(active_nodes)
@@ -181,7 +187,7 @@ class MimirChange(BaseModelMixin):
 class MimirTuple(NamedTuple):
     constants: ThorConstants
     mimir: ThorMimir
-    node_mimir: dict
+    node_mimir: dict  # accepted by nodes
     votes: List[ThorMimirVote]
     active_nodes: List[NodeInfo]
     last_thor_block: int
@@ -323,3 +329,8 @@ class AlertMimirVoting(NamedTuple):
     holder: MimirHolder
     voting: MimirVoting
     triggered_option: MimirVoteOption
+
+    @property
+    def current_value(self):
+        e = self.holder.get_entry(self.voting.key)
+        return e.real_value if e else None

@@ -291,3 +291,17 @@ def find_country_emoji(country_code: str):
 
 def comma_join(*items):
     return ', '.join(item for item in items if str(item).strip())
+
+
+def int_to_letter(n: int) -> str:
+    """Convert an integer to a letter sequence like Excel columns."""
+    if n < 1:
+        raise ValueError("Input must be a positive integer")
+
+    result = []
+    while n > 0:
+        n -= 1  # Adjust for 0-based index
+        result.append(chr(n % 26 + ord('a')))
+        n //= 26
+
+    return ''.join(result[::-1])

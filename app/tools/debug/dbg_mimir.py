@@ -34,22 +34,25 @@ async def demo_mimir_consensus(app: LpAppFramework):
 
 
 async def demo_voting(app: LpAppFramework):
-    mimir_to_test = 'MaxSynthPerAssetDepth'.upper()
+    mimir_to_test = 'CHURNINTERVAL'.upper()
     # mimir_to_test = NEXT_CHAIN_KEY
 
-    voting = app.deps.mimir_const_holder.voting_manager.find_voting(mimir_to_test)
+    mm = app.deps.mimir_const_holder
+    vot_man = mm.voting_manager
+    voting = vot_man.find_voting(mimir_to_test)
     prev_state = await VotingNotifier(app.deps).read_prev_state()
     prev_voting = prev_state.get(voting.key)
     option = next(iter(voting.options.values()))
-    prev_progress = prev_voting.get(str(option.value))  # str(.), that's because JSON keys are strings
+    # prev_progress = prev_voting.get(str(option.value))  # str(.), that's because JSON keys are strings
+
+    mm.get_entry(mimir_to_test).real_value = 1213
 
     # loc: BaseLocalization = app.deps.loc_man.default
-
     for language in (Language.ENGLISH, Language.ENGLISH_TWITTER, Language.RUSSIAN):
         # for language in (Language.ENGLISH_TWITTER,):
         loc: BaseLocalization = app.deps.loc_man[language]
         await app.send_test_tg_message(loc.notification_text_mimir_voting_progress(
-            AlertMimirVoting(app.deps.mimir_const_holder, voting, option)
+            AlertMimirVoting(mm, voting, option)
         ))
 
     # await app.deps.broadcaster.notify_preconfigured_channels(
@@ -199,10 +202,14 @@ async def run():
     app = LpAppFramework()
     await app.prepare(brief=True)
 
+    await app.deps.node_info_fetcher.run_once()
+    await app.deps.mimir_const_fetcher.run_once()
+
     # await demo_cap_test(app)
     # await demo_mimir_consensus(app)
     # await demo_mimir_spam_filter(app, mode=MimirMockChangesFetcher.PAUSE_GLOBAL)
-    await demo_mimir_spam_filter(app, mode=MimirMockChangesFetcher.GENERAL)
+    # await demo_mimir_spam_filter(app, mode=MimirMockChangesFetcher.GENERAL)
+    await demo_voting(app)
 
 
 if __name__ == '__main__':

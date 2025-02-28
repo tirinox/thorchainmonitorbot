@@ -65,6 +65,8 @@ class LpAppFramework(App):
         return self.deps.cfg.get('telegram.bot.token')
 
     async def send_test_tg_message(self, txt, **kwargs):
+        sep()
+        print(f'TG:\n{txt}\n')
         return await telegram_send_message_basic(self.tg_token, TG_TEST_USER, txt, **kwargs)
 
     async def prepare(self, brief=False):
