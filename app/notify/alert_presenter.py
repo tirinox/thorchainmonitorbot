@@ -324,8 +324,8 @@ class AlertPresenter(INotified, WithLogger):
             "swap_interval": data.ss.interval,
             "total_estimated_time_sec": data.expected_total_swap_sec,
 
-            "_width": 1200,
-            "_height": 800
+            "_width": 1280,
+            "_height": 720
         }
         photo = await self.renderer.render('swap_start.jinja2', parameters)
         photo_name = 'swap_start.png'
@@ -394,8 +394,8 @@ class AlertPresenter(INotified, WithLogger):
             "refund": tx.has_refund_output,
             "refund_rate": refund_rate,
 
-            "_width": 1200,
-            "_height": 800
+            "_width": 1280,
+            "_height": 720
         }
         photo = await self.renderer.render('swap_finished.jinja2', parameters)
         photo_name = 'swap_finished.png'
@@ -414,14 +414,6 @@ class AlertPresenter(INotified, WithLogger):
 
         await self.deps.broadcaster.broadcast_to_all(message_gen)
 
-    # async def _old_handle_streaming_swap_start(self, event: AlertSwapStart):
-    #     name_map = await self.load_names(event.from_address)
-    #
-    #     await self.broadcaster.broadcast_to_all(
-    #         BaseLocalization.notification_text_streaming_swap_started,
-    #         event, name_map
-    #     )
-
     async def _handle_loans(self, event: Union[AlertLoanOpen, AlertLoanRepayment]):
         name_map = await self.load_names(event.loan.owner)
 
@@ -435,14 +427,27 @@ class AlertPresenter(INotified, WithLogger):
             event, name_map
         )
 
+    async def render_price_graph(self, loc: BaseLocalization, event: AlertPrice):
+        parameters = {
+
+            "_width": 1200,
+            "_height": 1000
+        }
+        photo = await self.renderer.render('price.jinja2', parameters)
+        photo_name = 'price.png'
+        return photo, photo_name
+
     async def _handle_price(self, event: AlertPrice):
         async def price_graph_gen(loc: BaseLocalization):
-            graph, graph_name = await price_graph_from_db(self.deps, loc, event.price_graph_period)
+            if self.use_renderer:
+                graph, graph_name = await self.render_price_graph(loc, event)
+            else:
+                graph, graph_name = await price_graph_from_db(self.deps, loc, event.price_graph_period)
             caption = loc.notification_text_price_update(event)
             return BoardMessage.make_photo(graph, caption=caption, photo_file_name=graph_name)
 
-        if event.is_ath and event.ath_sticker:
-            await self.broadcaster.broadcast_to_all(BoardMessage(event.ath_sticker, MessageType.STICKER))
+        # if event.is_ath and event.ath_sticker:
+        #     await self.broadcaster.broadcast_to_all(BoardMessage(event.ath_sticker, MessageType.STICKER))
 
         await self.broadcaster.broadcast_to_all(price_graph_gen)
 

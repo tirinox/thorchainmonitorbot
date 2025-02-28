@@ -86,8 +86,8 @@ async def render_html_to_png(browser, html_content, w=1280, h=720):
 
 
 async def render_full_pipeline(template_name, parameters):
-    width = parameters.get('width', 1280)
-    height = parameters.get('height', 720)
+    width = parameters.get('_width', 1280)
+    height = parameters.get('_height', 720)
 
     # Render the template
     try:
