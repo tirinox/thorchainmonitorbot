@@ -99,7 +99,7 @@ async def main():
         # await find_anomaly(app)
         # await demo_cache_blocks(app)
         # await demo_top_pools(app)
-        await demo_price_graph(app)
+        await demo_price_graph(app, fill=True)
         # await debug_load_pools(app)
 
 
