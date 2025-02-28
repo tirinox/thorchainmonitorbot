@@ -61,7 +61,13 @@ def progressbar(x, total, symbol_width=10):
         s = int(round(symbol_width * x / total))
     s = max(0, s)
     s = min(symbol_width, s)
-    return '▰' * s + '▱' * (symbol_width - s)
+    # return '▰' * s + '▱' * (symbol_width - s)
+
+    # ▮▮▮▮▯▯▯▯▯▯▯▯
+    # return '▮' * s + '▯' * (symbol_width - s)
+
+    # ■■□□□□□□□□
+    return '■' * s + '□' * (symbol_width - s)
 
 
 def regroup_joining(n, iterable, sep='\n\n', trim=True):
