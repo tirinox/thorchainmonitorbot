@@ -135,13 +135,6 @@ footer {
     padding: 0;
 }
 
-.arrow-pending {
-    width: 200px;
-    padding: 0;
-    filter: brightness(80%) hue-rotate(30deg) saturate(100%);
-    opacity: 0.9;
-}
-
 .logo-part {
     display: flex;
     justify-content: center;
@@ -197,7 +190,7 @@ footer {
 .time-block-interval {
     transform: translate(-10%);
     display: block;
-    color: #23DCC8;
+    color: #959595;
     text-align: center;
     font-size: 30px;
     width: 240px;
@@ -305,5 +298,6 @@ footer {
     font-size: 30px;
     font-style: italic;
     margin-bottom: 4px;
+    margin-left: -10px;
     color: #23DCC8;
 }
