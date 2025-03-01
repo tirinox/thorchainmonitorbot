@@ -77,7 +77,7 @@ class RuneCirculatingSupply(NamedTuple):
 
     @property
     def in_cex_percent(self):
-        return self.in_cex / self.total * 100
+        return self.in_cex / self.total * 100 if self.total else 0
 
     @property
     def treasury(self):
@@ -89,7 +89,7 @@ class RuneCirculatingSupply(NamedTuple):
 
     @property
     def bonded_percent(self):
-        return self.bonded / self.total * 100
+        return self.bonded / self.total * 100 if self.total else 0
 
     @property
     def pooled(self):
@@ -97,7 +97,7 @@ class RuneCirculatingSupply(NamedTuple):
 
     @property
     def pooled_percent(self):
-        return self.pooled / self.total * 100
+        return self.pooled / self.total * 100 if self.total else 0
 
     @property
     def pol(self):
@@ -105,7 +105,7 @@ class RuneCirculatingSupply(NamedTuple):
 
     @property
     def pol_percent(self):
-        return self.pol / self.total * 100
+        return self.pol / self.total * 100 if self.total else 0
 
     @property
     def runepool(self):
@@ -113,7 +113,7 @@ class RuneCirculatingSupply(NamedTuple):
 
     @property
     def runepool_percent(self):
-        return self.runepool / self.total * 100
+        return self.runepool / self.total * 100 if self.total else 0
 
     @property
     def working(self):
