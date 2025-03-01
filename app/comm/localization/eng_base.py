@@ -558,7 +558,10 @@ class BaseLocalization(ABC):  # == English
     def _get_asset_summary_string(self, tx, in_only=False, out_only=False):
         ends = tx.get_asset_summary(in_only=in_only, out_only=out_only)
         ends = {self.pretty_asset(a): v for a, v in ends.items()}
-        return ', '.join(f"{self.format_op_amount(amount)} {asset}" for asset, amount in ends.items())
+        items = [(asset, amount) for asset, amount in ends.items()]
+        # sort items, so those with "RUNE" in asset are last
+        items.sort(key=lambda x: 'RUNE' in x[0].upper())
+        return ', '.join(f"{self.format_op_amount(amount)} {asset}" for asset, amount in items)
 
     def format_swap_route(self, tx: ThorAction, usd_per_rune):
         input_str = self._get_asset_summary_string(tx, in_only=True)
