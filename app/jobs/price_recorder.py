@@ -1,11 +1,10 @@
-import asyncio
 import random
 
 from redis import ResponseError
 from tqdm import tqdm
 
 from lib.constants import RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX, RUNE_SYMBOL_DET
-from lib.date_utils import DAY, HOUR, MINUTE, convert_to_milliseconds
+from lib.date_utils import DAY, HOUR, convert_to_milliseconds, YEAR
 from lib.db import DB
 from lib.delegates import INotified
 from lib.logs import WithLogger
@@ -57,13 +56,14 @@ class PriceRecorder(WithLogger, INotified):
 
         return pool_prices, cex_prices, det_prices
 
-    async def historical_get_triplet(self):
-        price_1h, price_24h, price_7d = await asyncio.gather(
-            self.pool_price_series.select_average_ago(HOUR, tolerance=MINUTE * 7),
-            self.pool_price_series.select_average_ago(DAY, tolerance=MINUTE * 40),
-            self.pool_price_series.select_average_ago(DAY * 7, tolerance=HOUR * 2)
-        )
-        return price_1h, price_24h, price_7d
+    async def get_historical_price_dict(self, periods=(HOUR, DAY, 7 * DAY, 30 * DAY, YEAR), tolerance_percent=5):
+        prices = {}
+        for period in periods:
+            prices[period] = await self.pool_price_series.select_average_ago(
+                period,
+                tolerance=0.01 * tolerance_percent * period
+            )
+        return prices
 
     async def dbg_fill_rune_price_external(self, price_chart, include_fake_det=False):
         self.logger.warning('fill_rune_price_from_gecko is called!')

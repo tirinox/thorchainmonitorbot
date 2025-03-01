@@ -84,12 +84,12 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, volumes, loc: BaseLo
 
 async def price_graph_from_db(deps: DepContainer, loc: BaseLocalization, period=DAY) -> PictureAndName:
     price_recorder = PriceRecorder(deps.db)
-    prices, det_prices, cex_prices = await price_recorder.get_prices(period)
+    pool_prices, cex_prices, det_prices = await price_recorder.get_prices(period)
 
     volume_recorder = VolumeRecorder(deps)
     volumes = await volume_recorder.get_data_range_ago_n(period, n=VOLUME_N_POINTS)
 
     time_scale_mode = 'time' if period <= DAY else 'date'
 
-    img = await price_graph(prices, det_prices, cex_prices, volumes, loc, time_scale_mode=time_scale_mode)
+    img = await price_graph(pool_prices, det_prices, cex_prices, volumes, loc, time_scale_mode=time_scale_mode)
     return img, f'price-{today_str()}.jpg'

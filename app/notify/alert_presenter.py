@@ -23,7 +23,6 @@ from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
 from lib.html_renderer import InfographicRendererRPC
 from lib.logs import WithLogger
-from lib.money import format_percent
 from lib.texts import shorten_text_middle
 from lib.utils import namedtuple_to_dict
 from models.asset import Asset, is_ambiguous_asset
@@ -46,7 +45,7 @@ from models.transfer import RuneCEXFlow, RuneTransfer
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from notify.broadcast import Broadcaster
-from notify.channel import BoardMessage, MessageType
+from notify.channel import BoardMessage
 from notify.public.chain_notify import AlertChainHalt
 
 
