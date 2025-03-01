@@ -460,13 +460,30 @@ def is_named_tuple_instance(x):
     return all(type(n) == str for n in f)
 
 
-def recursive_asdict(j):
+def add_properties_to_representation(repr, obj):
+    # Add properties dynamically
+    for attr in dir(obj):
+        # Check if it's a property and not private or already in the result
+        if (
+                not attr.startswith("_") and
+                not attr in repr and
+                isinstance(getattr(type(obj), attr, None), property)
+        ):
+            repr[attr] = getattr(obj, attr)
+    return repr
+
+def recursive_asdict(j, add_properties=False):
     if is_named_tuple_instance(j):
-        return {k: recursive_asdict(v) for k, v in j._asdict().items()}
+        fields = {k: recursive_asdict(v, add_properties) for k, v in j._asdict().items()}
+        return add_properties_to_representation(fields, j)
     elif dataclasses.is_dataclass(j):
-        return {k: recursive_asdict(v) for k, v in dataclasses.asdict(j).items()}
-    elif isinstance(j, (list, tuple)):
-        return [recursive_asdict(v) for v in j]
+        fields = {k: recursive_asdict(v, add_properties) for k, v in dataclasses.asdict(j).items()}
+        return add_properties_to_representation(fields, j)
+    elif isinstance(j, (list, tuple, set)):
+        return [recursive_asdict(v, add_properties) for v in j]
+    elif isinstance(j, dict):
+        return {key: recursive_asdict(value, add_properties) for key, value in j.items()}
+
     else:
         return j
 
@@ -566,6 +583,8 @@ def namedtuple_to_dict(obj) -> dict:
     Returns:
         dict: A dictionary representation of the NamedTuple, including fields and properties.
     """
+    # fixme: use recursive_asdict
+
     if not is_named_tuple_instance(obj):
         raise TypeError("Input must be an instance of NamedTuple.")
 

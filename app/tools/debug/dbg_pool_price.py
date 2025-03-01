@@ -1,13 +1,19 @@
 import asyncio
+import dataclasses
+import json
 
 from api.aionode.connector import ThorConnector
 from comm.picture.price_picture import price_graph_from_db
+from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
+from lib.date_utils import DAY
 from lib.depcont import DepContainer
 from lib.texts import sep
+from lib.utils import recursive_asdict
 from models.price import LastPriceHolder
 from notify.public.best_pool_notify import BestPoolsNotifier
+from notify.public.price_notify import PriceNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
@@ -55,13 +61,37 @@ async def demo_top_pools(app: LpAppFramework):
     await fetcher_pool_info.run_once()
 
 
-async def demo_price_graph(app, fill=False):
+async def demo_old_price_graph(app, fill=False):
     if fill:
         await fill_rune_price_from_gecko(app.deps.db, include_fake_det=True)
     loc = app.deps.loc_man.default
     graph, graph_name = await price_graph_from_db(app.deps, loc)
-
     save_and_show_pic(graph, graph_name)
+
+
+async def demo_price_graph(app, fill=False, period=14 * DAY):
+    if fill:
+        await fill_rune_price_from_gecko(app.deps.db, include_fake_det=True)
+
+    await app.deps.pool_fetcher.run_once()
+
+    price_notifier = PriceNotifier(app.deps)
+
+    market_fetcher = RuneMarketInfoFetcher(app.deps)
+    market_info = await market_fetcher.fetch()
+
+    event = await price_notifier.make_event(
+        market_info,
+        ath=False, last_ath=None
+    )
+
+    sep()
+
+    raw_data = recursive_asdict(event, add_properties=True)
+    del raw_data['market_info']['pools']
+
+    print(json.dumps(raw_data, indent=2))
+    sep()
 
 
 async def find_anomaly(app, start=13225800, steps=200):
@@ -99,7 +129,7 @@ async def main():
         # await find_anomaly(app)
         # await demo_cache_blocks(app)
         # await demo_top_pools(app)
-        await demo_price_graph(app, fill=True)
+        await demo_price_graph(app, fill=False)
         # await debug_load_pools(app)
 
 
