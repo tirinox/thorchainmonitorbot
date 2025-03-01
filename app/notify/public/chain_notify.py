@@ -78,7 +78,7 @@ class TradingHaltedNotifier(INotified, WithDelegates, WithLogger):
 
     def _update_global_state(self, chain, is_halted):
         if chain:
-            halted_set = self.deps.halted_chains
+            halted_set = set(self.deps.halted_chains)
 
             if chain in EXCLUDE_CHAINS_FROM_HALTED:
                 is_halted = False  # do not show it
@@ -87,6 +87,8 @@ class TradingHaltedNotifier(INotified, WithDelegates, WithLogger):
                 halted_set.add(chain)
             elif chain in halted_set:
                 halted_set.remove(chain)
+
+            self.deps.halted_chains = list(halted_set)
 
     async def _get_saved_chain_state(self, chain):
         if not chain:

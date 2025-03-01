@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Optional, Set, Dict
+from typing import Optional, Dict, List
 
 import ujson
 from aiohttp import ClientSession, ClientTimeout
@@ -89,7 +89,7 @@ class DepContainer:
     price_holder: LastPriceHolder = field(default_factory=LastPriceHolder)
     queue_holder: QueueInfo = field(default_factory=QueueInfo.error)
     mimir_const_holder: Optional[MimirHolder] = None
-    halted_chains: Set[str] = field(default_factory=set)
+    halted_chains: List[str] = field(default_factory=list)
     chain_info: Dict[str, ThorChainInfo] = field(default_factory=dict)
     node_holder: NodeListHolder = field(default_factory=NodeListHolder)
     net_stats: NetworkStats = field(default_factory=NetworkStats)
