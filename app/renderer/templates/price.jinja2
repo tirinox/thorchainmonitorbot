@@ -4,127 +4,277 @@
     <style>
         #chart-container {
             position: absolute;
-            top: 20%;
+            top: 12%;
             left: 3%;
 
             right: 3%;
-            height: 80%;
-            padding: 20px;
+            bottom: 32%;
+            padding: 10px;
+
             font-family: ThorFontLight, serif;
             font-weight: lighter;
         }
+
+        #price-chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .shadow-box, .indicator-box {
+            border-radius: 22px;
+            background: rgba(52, 51, 51, 0.21);
+            box-shadow: rgb(0, 0, 0, 0.5) 0 0 20px;
+        }
+
+        .indicator-container {
+            position: absolute;
+            bottom: 3.5%;
+            left: 3%;
+            right: 3%;
+            top: 70%;
+
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+        }
+
+        .indicator-box {
+            display: flex;
+            padding: 12px;
+
+            background: rgba(52, 51, 51, 0.21);
+            border-radius: 12px;
+            font-family: ThorFontLight, serif;
+            justify-content: space-between;
+            flex-direction: column;
+            align-items: center;
+            width: auto;
+        }
     </style>
 
-    <script src="renderer/static/js/luxon.min.js"></script>
-    <script src="renderer/static/js/luxon-chartjs-adapter.js"></script>
+    <script src="renderer/static/js/lightweight-charts.standalone.production.js"></script>
 
 
     {% with title="RUNE MARKET DATA" %}
         {% include "components/header.jinja2" %}
     {% endwith %}
 
+
     <div id="chart-container" class="shadow-box">
-        <canvas id="myChart"></canvas>
+        <div id="price-chart"></div>
+    </div>
+
+    <div class="indicator-container">
+        <div class="indicator-box">
+            1
+        </div>
+
+        <div class="indicator-box">
+            2
+        </div>
+
+        <div class="indicator-box">
+            3
+        </div>
+
     </div>
 
 
     <script>
-        const ctx = document.getElementById('myChart').getContext('2d');
+        const INTERVAL = 2 * 60 * 60
+
+        function convertToOHLC(priceData, interval) {
+            // If no interval is provided, treat each data point as a separate candle.
+            if (!interval) {
+                return priceData.map(([time, price]) => ({
+                    open: price,
+                    high: price,
+                    low: price,
+                    close: price,
+                    time: Math.floor(time)  // use the timestamp as is (or convert it as needed)
+                }));
+            }
+
+            // Sort the data by timestamp in ascending order.
+            const sortedData = priceData.slice().sort((a, b) => a[0] - b[0]);
+
+            const ohlcData = [];
+            let currentGroup = null;
+
+            for (let [timestamp, price] of sortedData) {
+                // Determine the start of the group interval (e.g. if interval is 60, group by each minute)
+                const groupTime = Math.floor(timestamp / interval) * interval;
+
+                // If we're in a new group, push the previous one (if it exists) and start a new group.
+                if (!currentGroup || currentGroup.groupTime !== groupTime) {
+                    if (currentGroup) {
+                        ohlcData.push({
+                            open: currentGroup.open,
+                            high: currentGroup.high,
+                            low: currentGroup.low,
+                            close: currentGroup.close,
+                            time: currentGroup.groupTime
+                        });
+                    }
+                    currentGroup = {
+                        groupTime,
+                        open: price,
+                        high: price,
+                        low: price,
+                        close: price
+                    };
+                } else {
+                    // Update the group's OHLC values.
+                    currentGroup.high = Math.max(currentGroup.high, price);
+                    currentGroup.low = Math.min(currentGroup.low, price);
+                    currentGroup.close = price;
+                }
+            }
+
+            // Push the final group.
+            if (currentGroup) {
+                ohlcData.push({
+                    open: currentGroup.open,
+                    high: currentGroup.high,
+                    low: currentGroup.low,
+                    close: currentGroup.close,
+                    time: currentGroup.groupTime
+                });
+            }
+
+            return ohlcData;
+        }
+
+        function aggregateToIntervalAvg(data, interval) {
+            const dailyData = {};
+            data.forEach(([timestamp, price]) => {
+                const dayTimestamp = Math.floor(timestamp / interval) * interval; // Normalize to start of day
+                if (!dailyData[dayTimestamp]) {
+                    dailyData[dayTimestamp] = {sum: 0, count: 0};
+                }
+                dailyData[dayTimestamp].sum += price;
+                dailyData[dayTimestamp].last = price;
+                dailyData[dayTimestamp].count += 1;
+            });
+
+            return Object.keys(dailyData).map(day => ({
+                time: parseInt(day),
+                {#value: dailyData[day].sum / dailyData[day].count // Compute daily average#}
+                value: dailyData[day].last // Compute daily average
+            }));
+        }
 
         const volumes = {{ volumes|safe }};
         const poolPrices = {{ pool_prices|safe }};
         const cexPrices = {{ cex_prices|safe }};
         const detPrices = {{ det_prices|safe }};
 
-        // Function to extract timestamps and values
-        function extractData(data) {
-            return {
-                timestamps: data.map(item => new Date(item[0] * 1000)),
-                values: data.map(item => item[1])
-            };
+        console.log(JSON.stringify(poolPrices.splice(0, 10)));
+
+        const poolOHLC = convertToOHLC(poolPrices, INTERVAL);
+        console.log(poolOHLC);
+
+
+        function convertToLineData(data) {
+            return data.map(([timestamp, price]) => ({
+                time: timestamp,
+                value: price
+            }));
         }
 
-        const poolData = extractData(poolPrices);
-        const cexData = extractData(cexPrices);
-        const detData = extractData(detPrices);
-        const volumeData = {
-            timestamps: volumes.map(item => new Date(item[0] * 1000)),
-            values: volumes.map(item => item[1]['swap'] | 0)
-        };
+        const detLineData = aggregateToIntervalAvg(detPrices, INTERVAL);
+        const cexLineData = aggregateToIntervalAvg(cexPrices, INTERVAL);
 
-        const chartData = {
-            labels: [...new Set([...poolData.timestamps, ...cexData.timestamps, ...detData.timestamps, ...volumeData.timestamps])].sort((a, b) => a - b),
-            datasets: [
-                {
-                    label: 'Pool Prices',
-                    data: poolData.timestamps.map((time, index) => ({x: time, y: poolData.values[index]})),
-                    borderColor: 'blue',
-                    fill: false,
-                    yAxisID: 'y',
-                    pointStyle: false,
-                },
-                {
-                    label: 'CEX Prices',
-                    data: cexData.timestamps.map((time, index) => ({x: time, y: cexData.values[index]})),
-                    borderColor: 'red',
-                    fill: false,
-                    yAxisID: 'y',
-                    pointStyle: false,
-                },
-                {
-                    label: 'DET Prices',
-                    data: detData.timestamps.map((time, index) => ({x: time, y: detData.values[index]})),
-                    borderColor: 'green',
-                    fill: false,
-                    yAxisID: 'y',
-                    pointStyle: false,
-                },
-                {
-                    label: 'Volumes',
-                    data: volumeData.timestamps.map((time, index) => ({x: time, y: volumeData.values[index]})),
-                    backgroundColor: '#f0f0f0',
-                    type: 'bar',
-                    yAxisID: 'y1',
+        function aggregateSwapVolumes(volumes, interval) {
+            const dailyVolumes = {};
+
+            volumes.forEach(([timestamp, volumeObj]) => {
+                const dayTimestamp = Math.floor(timestamp / interval) * interval; // Normalize to day start
+                const swapVolume = volumeObj?.swap || 0; // Use swap value if available, otherwise 0
+
+                if (!dailyVolumes[dayTimestamp]) {
+                    dailyVolumes[dayTimestamp] = 0;
                 }
-            ]
-        };
+                dailyVolumes[dayTimestamp] += swapVolume; // Sum volumes for the same day
+            });
 
-        const config = {
+            return Object.keys(dailyVolumes).map(day => ({
+                time: parseInt(day),
+                value: dailyVolumes[day]
+            }));
+        }
+
+        const volumeData = aggregateSwapVolumes(volumes, INTERVAL);
+
+        const chartOptions = {
+            handleScroll: false, handleScale: false,
+            layout: {
+                textColor: 'white', background: {color: 'transparent'},
+                fontFamily: 'ThorFontLight',
+                fontSize: 20,
+            },
+            grid: {
+                vertLines: {color: '#353535'},
+                horzLines: {color: '#323232'}
+            },
+
+            localization: {
+                locale: 'en',
+            },
+
+            leftPriceScale: {
+                visible: false,
+                borderColor: 'rgba(197, 203, 206, 0.8)',
+                scaleMargins: {
+                    bottom: 0,
+                    top: 0.75,
+                },
+            },
+            rightPriceScale: {
+                scaleMargins: {
+                    bottom: 0.2,
+                    top: 0.2,
+                },
+            },
+        };
+        const chart = LightweightCharts.createChart(document.getElementById('price-chart'), chartOptions);
+
+        const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+            color: 'rgba(0,183,255,0.3)', // Light white for transparency
+            priceScaleId: 'left',
+            priceFormat: {type: 'volume'},
+        });
+        volumeSeries.setData(volumeData);
+
+        const detSeries = chart.addSeries(LightweightCharts.LineSeries, {
+            color: 'rgba(100, 255, 200, 0.9)',
+            lineWidth: 3,
+            lineStyle: LightweightCharts.LineStyle.Dotted,
+        });
+        detSeries.setData(detLineData);
+
+        const barSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+            upColor: '#26a69a',
+            downColor: '#ef5350',
+
+        });
+        barSeries.setData(poolOHLC);
+
+        const cexSeries = chart.addSeries(LightweightCharts.LineSeries, {
+            color: 'rgba(0, 255, 255, 0.5)',
+            lineWidth: 2,
+
+            // dashed line
             type: 'line',
-            data: chartData,
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        type: 'time',
-                        time: {
-                            unit: 'day'
-                        }
-                    },
-                    y: {
-                        type: 'linear',
-                        position: 'left',
-                        title: {
-                            display: true,
-                            text: 'Price'
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        position: 'right',
-                        title: {
-                            display: true,
-                            text: 'Volume'
-                        },
-                        grid: {
-                            drawOnChartArea: false
-                        }
-                    }
-                }
-            }
-        };
+            lineStyle: LightweightCharts.LineStyle.Dotted,
 
-        const myChart = new Chart(ctx, config);
+        });
+        cexSeries.setData(cexLineData);
+
+        chart.timeScale().fitContent();
+
     </script>
 
 {% endblock %}
