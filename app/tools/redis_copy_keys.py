@@ -1,11 +1,11 @@
 """
     Copy subtree from one redis to another
 """
+import os
 import sys
 
-import redis
+import tqdm
 from dotenv import load_dotenv
-import os
 
 from tools.lib.remote_redis import get_redis
 
@@ -28,12 +28,15 @@ def copy_keys(src_redis, dst_redis, pattern):
     :param pattern: Key pattern to match keys to copy
     """
     keys = src_redis.keys(pattern)
-    for key in keys:
+    prints = len(keys) < 100
+    for key in tqdm.tqdm(keys):
         value = src_redis.dump(key)
         ttl = src_redis.ttl(key)
         if value is not None:
             dst_redis.restore(key, ttl if ttl > 0 else 0, value, replace=True)
-        print(f'Copied key: {key}')
+
+        if prints:
+            print(f'Copied key: {key}')
 
 
 def main():
