@@ -1,5 +1,130 @@
 {% extends "base.jinja2" %}
 
 {% block content %}
-    todo!
+    <style>
+        #chart-container {
+            position: absolute;
+            top: 20%;
+            left: 3%;
+
+            right: 3%;
+            height: 80%;
+            padding: 20px;
+            font-family: ThorFontLight, serif;
+            font-weight: lighter;
+        }
+    </style>
+
+    <script src="renderer/static/js/luxon.min.js"></script>
+    <script src="renderer/static/js/luxon-chartjs-adapter.js"></script>
+
+
+    {% with title="RUNE MARKET DATA" %}
+        {% include "components/header.jinja2" %}
+    {% endwith %}
+
+    <div id="chart-container" class="shadow-box">
+        <canvas id="myChart"></canvas>
+    </div>
+
+
+    <script>
+        const ctx = document.getElementById('myChart').getContext('2d');
+
+        const volumes = {{ volumes|safe }};
+        const poolPrices = {{ pool_prices|safe }};
+        const cexPrices = {{ cex_prices|safe }};
+        const detPrices = {{ det_prices|safe }};
+
+        // Function to extract timestamps and values
+        function extractData(data) {
+            return {
+                timestamps: data.map(item => new Date(item[0] * 1000)),
+                values: data.map(item => item[1])
+            };
+        }
+
+        const poolData = extractData(poolPrices);
+        const cexData = extractData(cexPrices);
+        const detData = extractData(detPrices);
+        const volumeData = {
+            timestamps: volumes.map(item => new Date(item[0] * 1000)),
+            values: volumes.map(item => item[1]['swap'] | 0)
+        };
+
+        const chartData = {
+            labels: [...new Set([...poolData.timestamps, ...cexData.timestamps, ...detData.timestamps, ...volumeData.timestamps])].sort((a, b) => a - b),
+            datasets: [
+                {
+                    label: 'Pool Prices',
+                    data: poolData.timestamps.map((time, index) => ({x: time, y: poolData.values[index]})),
+                    borderColor: 'blue',
+                    fill: false,
+                    yAxisID: 'y',
+                    pointStyle: false,
+                },
+                {
+                    label: 'CEX Prices',
+                    data: cexData.timestamps.map((time, index) => ({x: time, y: cexData.values[index]})),
+                    borderColor: 'red',
+                    fill: false,
+                    yAxisID: 'y',
+                    pointStyle: false,
+                },
+                {
+                    label: 'DET Prices',
+                    data: detData.timestamps.map((time, index) => ({x: time, y: detData.values[index]})),
+                    borderColor: 'green',
+                    fill: false,
+                    yAxisID: 'y',
+                    pointStyle: false,
+                },
+                {
+                    label: 'Volumes',
+                    data: volumeData.timestamps.map((time, index) => ({x: time, y: volumeData.values[index]})),
+                    backgroundColor: '#f0f0f0',
+                    type: 'bar',
+                    yAxisID: 'y1',
+                }
+            ]
+        };
+
+        const config = {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day'
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Price'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Volume'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        };
+
+        const myChart = new Chart(ctx, config);
+    </script>
+
 {% endblock %}

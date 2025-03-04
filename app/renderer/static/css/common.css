@@ -1,11 +1,11 @@
 @font-face {
     font-family: ThorFont;
-    src: url(/static/ThorFont.ttf);
+    src: url(/static/fonts/ThorFont.ttf);
 }
 
 @font-face {
     font-family: ThorFontLight;
-    src: url(/static/Exo2-VariableFont_wght.ttf);
+    src: url(/static/fonts/Exo2-VariableFont_wght.ttf);
 }
 
 *,
@@ -258,11 +258,6 @@ footer {
     border-bottom: var(--point-size) solid transparent;
     border-left: calc(var(--point-size) * 2) solid white;
     float: right;
-}
-
-.bg {
-    background: url("renderer/static/bg2.svg") no-repeat;
-    background-position: center -79px;
 }
 
 .route-box {
