@@ -75,6 +75,9 @@ async def dbg_load_latest_price_data_and_save_as_demo(app, fill=False, period=14
         await fill_rune_price_from_gecko(app.deps.db, include_fake_det=True)
 
     await app.deps.pool_fetcher.run_once()
+    await app.deps.fetcher_chain_state.run_once()
+
+    print(f'All chains: {app.deps.chain_info.state_list}')
 
     price_notifier = PriceNotifier(app.deps)
 

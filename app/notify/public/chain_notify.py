@@ -9,8 +9,6 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
 
-EXCLUDE_CHAINS_FROM_HALTED = ('BNB',)
-
 
 class AlertChainHalt(NamedTuple):
     changed_chains: List[ThorChainInfo]
@@ -49,11 +47,6 @@ class TradingHaltedNotifier(INotified, WithDelegates, WithLogger):
 
         changed_chains = []
 
-        # do not show Excluded chains
-        data = {chain: v for chain, v in data.items() if chain not in EXCLUDE_CHAINS_FROM_HALTED}
-
-        self.deps.chain_info = data
-
         for chain, new_info in data.items():
             new_info: ThorChainInfo
             if new_info.is_ok:
@@ -64,7 +57,6 @@ class TradingHaltedNotifier(INotified, WithDelegates, WithLogger):
                             changed_chains.append(new_info)
 
                 await self._save_chain_state(new_info)
-                self._update_global_state(chain, new_info.halted)
 
         if changed_chains:
             await self.pass_data_to_listeners(AlertChainHalt(changed_chains))
@@ -75,20 +67,6 @@ class TradingHaltedNotifier(INotified, WithDelegates, WithLogger):
                 await self._make_spam_control(chain_info.chain).do()
 
     KEY_CHAIN_HALTED = 'Chain:LastInfo'
-
-    def _update_global_state(self, chain, is_halted):
-        if chain:
-            halted_set = set(self.deps.halted_chains)
-
-            if chain in EXCLUDE_CHAINS_FROM_HALTED:
-                is_halted = False  # do not show it
-
-            if is_halted:
-                halted_set.add(chain)
-            elif chain in halted_set:
-                halted_set.remove(chain)
-
-            self.deps.halted_chains = list(halted_set)
 
     async def _get_saved_chain_state(self, chain):
         if not chain:
@@ -108,14 +86,6 @@ class TradingHaltedNotifier(INotified, WithDelegates, WithLogger):
             self.logger.error('empty Chain Info')
             return
 
-        data = json.dumps({
-            'chain': c.chain,
-            'pub_key': c.pub_key,
-            'address': c.address,
-            'router': c.router,
-            'halted': c.halted,
-            'gas_rate': c.gas_rate
-        })
-
+        data = json.dumps(c._asdict())
         db = await self.deps.db.get_redis()
         await db.hset(self.KEY_CHAIN_HALTED, c.chain, data)

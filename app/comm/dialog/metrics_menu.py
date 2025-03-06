@@ -245,7 +245,7 @@ class MetricsDialog(BaseDialog):
             market_info=market_info,
             last_ath=None, is_ath=False,
             btc_pool_rune_price=btc_price,
-            halted_chains=self.deps.halted_chains,
+            chain_state=self.deps.chain_info.state_list,
             price_graph_period=period,
         ))
 
@@ -259,7 +259,7 @@ class MetricsDialog(BaseDialog):
     async def show_chain_info(self, message: Message):
         await self.start_typing(message)
 
-        text = self.loc.text_chain_info(list(self.deps.chain_info.values()))
+        text = self.loc.text_chain_info(list(self.deps.chain_info.state_dict.values()))
         await message.answer(text,
                              disable_web_page_preview=True,
                              disable_notification=True)

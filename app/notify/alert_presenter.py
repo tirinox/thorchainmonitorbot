@@ -24,7 +24,7 @@ from lib.draw_utils import img_to_bio
 from lib.html_renderer import InfographicRendererRPC
 from lib.logs import WithLogger
 from lib.texts import shorten_text_middle
-from lib.utils import namedtuple_to_dict
+from lib.utils import namedtuple_to_dict, recursive_asdict
 from models.asset import Asset, is_ambiguous_asset
 from models.cap_info import AlertLiquidityCap
 from models.circ_supply import EventRuneBurn
@@ -427,10 +427,11 @@ class AlertPresenter(INotified, WithLogger):
         )
 
     async def render_price_graph(self, loc: BaseLocalization, event: AlertPrice):
+        raw_data = recursive_asdict(event, add_properties=True)
         parameters = {
-
+            **raw_data,
             "_width": 1200,
-            "_height": 1000
+            "_height": 1000,
         }
         photo = await self.renderer.render('price.jinja2', parameters)
         photo_name = 'price.png'
@@ -444,9 +445,6 @@ class AlertPresenter(INotified, WithLogger):
                 graph, graph_name = await price_graph_from_db(self.deps, loc, event.price_graph_period)
             caption = loc.notification_text_price_update(event)
             return BoardMessage.make_photo(graph, caption=caption, photo_file_name=graph_name)
-
-        # if event.is_ath and event.ath_sticker:
-        #     await self.broadcaster.broadcast_to_all(BoardMessage(event.ath_sticker, MessageType.STICKER))
 
         await self.broadcaster.broadcast_to_all(price_graph_gen)
 

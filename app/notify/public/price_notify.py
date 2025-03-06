@@ -76,7 +76,7 @@ class PriceNotifier(INotified, WithDelegates, WithLogger):
             btc_pool_rune_price=btc_per_rune,
             is_ath=ath,
             ath_sticker=self._next_ath_sticker(),
-            halted_chains=self.deps.halted_chains,
+            chain_state=self.deps.chain_info.state_list,
             price_graph_period=self.price_graph_period,
         )
 

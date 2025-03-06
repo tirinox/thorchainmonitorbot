@@ -7,12 +7,12 @@ from comm.twitter.text_length import twitter_intelligent_text_splitter, TWITTER_
 from jobs.fetch.chain_id import AlertChainIdChange
 from lib.config import Config
 from lib.constants import Chains, BTC_SYMBOL, ETH_SYMBOL
-from lib.date_utils import now_ts, seconds_human
+from lib.date_utils import seconds_human
 from lib.explorers import get_explorer_url_to_tx
 from lib.money import short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
-    calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune, \
+    short_address, short_money, short_rune, \
     pretty_percent, chart_emoji, pretty_rune
-from lib.texts import x_ses, progressbar, plural, bracketify, up_down_arrow, \
+from lib.texts import progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced, shorten_text
 from models.asset import Asset
 from models.cap_info import ThorCapInfo

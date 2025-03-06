@@ -17,9 +17,9 @@ from lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
 from lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
 from lib.money import format_percent, pretty_money, short_address, short_money, \
-    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, short_dollar, \
+    calc_percent_change, pretty_dollar, short_dollar, \
     RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
-from lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
+from lib.texts import progressbar, link, pre, code, bold, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text, underline, \
     comma_join
 from lib.utils import grouper, run_once, identity
