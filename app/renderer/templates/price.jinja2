@@ -56,7 +56,6 @@
 
     <script src="renderer/static/js/lightweight-charts.standalone.production.js"></script>
 
-
     {% with title="RUNE MARKET DATA" %}
         {% include "components/header.jinja2" %}
     {% endwith %}
@@ -83,7 +82,7 @@
 
 
     <script>
-        const INTERVAL = 2 * 60 * 60
+        const INTERVAL = 2 * 60 * 60  // 2 hours
 
         function convertToOHLC(priceData, interval) {
             // If no interval is provided, treat each data point as a separate candle.
@@ -176,7 +175,6 @@
         const poolOHLC = convertToOHLC(poolPrices, INTERVAL);
         console.log(poolOHLC);
 
-
         function convertToLineData(data) {
             return data.map(([timestamp, price]) => ({
                 time: timestamp,
@@ -203,10 +201,8 @@
             return Object.keys(dailyVolumes).map(day => ({
                 time: parseInt(day),
                 value: dailyVolumes[day]
-            }));
+            })).filter(({value}) => value > 0); // Filter out days with no volume
         }
-
-        const volumeData = aggregateSwapVolumes(volumes, INTERVAL);
 
         const chartOptions = {
             handleScroll: false, handleScale: false,
@@ -225,11 +221,11 @@
             },
 
             leftPriceScale: {
-                visible: false,
+                visible: true,
                 borderColor: 'rgba(197, 203, 206, 0.8)',
                 scaleMargins: {
                     bottom: 0,
-                    top: 0.75,
+                    top: 0.82,
                 },
             },
             rightPriceScale: {
@@ -239,14 +235,28 @@
                 },
             },
         };
+
         const chart = LightweightCharts.createChart(document.getElementById('price-chart'), chartOptions);
 
+        // --- VOLUME SERIES ---
+
         const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
-            color: 'rgba(0,183,255,0.3)', // Light white for transparency
-            priceScaleId: 'left',
+            color: 'rgba(80,240,255,0.3)', // Light white for transparency
+
             priceFormat: {type: 'volume'},
+            // priceScaleId: '',
+            priceScaleId: 'left',
+            priceLineVisible: false,
+            lastValueVisible: false,
+            // title: 'Swap volume',
         });
+
+        const volumeData = aggregateSwapVolumes(volumes, INTERVAL * 2);
+        console.log(`Volume data ->`)
+        console.log(volumeData);
         volumeSeries.setData(volumeData);
+
+        // --- PRICE SERIES ---
 
         const detSeries = chart.addSeries(LightweightCharts.LineSeries, {
             color: 'rgba(100, 255, 200, 0.9)',
@@ -258,13 +268,28 @@
         const barSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
             upColor: '#26a69a',
             downColor: '#ef5350',
-
         });
         barSeries.setData(poolOHLC);
 
+        // decorate the chart with an area series (gradient)
+        const lineData = poolOHLC.map(datapoint => ({
+            time: datapoint.time,
+            value: (datapoint.close + datapoint.open) / 2,
+        }));
+
+        const areaSeries = chart.addSeries(LightweightCharts.AreaSeries, {
+            lastValueVisible: false, // hide the last value marker for this series
+            crosshairMarkerVisible: false, // hide the crosshair marker for this series
+            lineColor: 'transparent', // hide the line
+            topColor: 'rgba(33,110,107,0.3)',
+            bottomColor: 'rgba(33,87,110,0.1)',
+        });
+        // Set the data for the Area Series
+        areaSeries.setData(lineData);
+
         const cexSeries = chart.addSeries(LightweightCharts.LineSeries, {
-            color: 'rgba(0, 255, 255, 0.5)',
-            lineWidth: 2,
+            color: 'rgba(31,255,207,0.5)',
+            lineWidth: 3,
 
             // dashed line
             type: 'line',
@@ -274,6 +299,13 @@
         cexSeries.setData(cexLineData);
 
         chart.timeScale().fitContent();
+
+        // log max timestamps of all series
+        const maxCexPriceTs = cexPrices[cexPrices.length - 1][0];
+        const maxDetPriceTs = detPrices[detPrices.length - 1][0];
+        const maxPoolPriceTs = poolPrices[poolPrices.length - 1][0];
+        const maxVolumeTs = volumes[volumes.length - 1][0];
+        console.log(`Max timestamps: CEX: ${maxCexPriceTs}, DET: ${maxDetPriceTs}, POOL: ${maxPoolPriceTs}, VOLUME: ${maxVolumeTs}`);
 
     </script>
 
