@@ -6,6 +6,10 @@ from api.aionode.types import ThorChainInfo
 
 @dataclass
 class ChainInfoHolder:
+    OK = 'ok'
+    WARNING = 'warning'
+    HALTED = 'halted'
+
     state_dict: Dict[str, ThorChainInfo] = field(default_factory=dict)
 
     @classmethod
@@ -27,6 +31,15 @@ class ChainInfoHolder:
     @property
     def state_list(self):
         return [
-            (chain, info.is_perfect)
+            (chain, self.one_work_chain_state(info))
             for chain, info in self.state_dict.items()
         ]
+
+    @classmethod
+    def one_work_chain_state(cls, info: ThorChainInfo):
+        if info.halted or info.chain_trading_paused or info.global_trading_paused:
+            return cls.HALTED
+        if info.chain_lp_actions_paused:
+            return cls.WARNING
+        else:
+            return cls.OK

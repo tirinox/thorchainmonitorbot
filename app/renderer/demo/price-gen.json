@@ -6711,39 +6711,39 @@
     "chain_state": [
       [
         "AVAX",
-        true
+        "ok"
       ],
       [
         "BASE",
-        true
+        "ok"
       ],
       [
         "BCH",
-        true
+        "ok"
       ],
       [
         "BSC",
-        true
+        "ok"
       ],
       [
         "BTC",
-        false
+        "warning"
       ],
       [
         "DOGE",
-        true
+        "ok"
       ],
       [
         "ETH",
-        true
+        "ok"
       ],
       [
         "GAIA",
-        true
+        "ok"
       ],
       [
         "LTC",
-        true
+        "ok"
       ]
     ],
     "price_graph_period": 604800.0,

@@ -54,7 +54,7 @@
 
         .indicator-container {
             position: absolute;
-            bottom: 3.5%;
+            bottom: 8%;
             left: 3%;
             right: 3%;
             top: 70%;
@@ -77,6 +77,46 @@
             flex-direction: column;
             align-items: center;
             width: auto;
+        }
+
+        .chain-state-container {
+            position: absolute;
+            bottom: 3.6%;
+            left: 4%;
+            display: flex;
+        }
+
+        .chain-state {
+            display: flex;
+            align-items: center; /* Align items vertically */
+        }
+
+        .chain-state-name {
+            color: #bbb;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            margin-right: 30px;
+        }
+
+        .chain-state-status {
+            display: flex;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .ok {
+            background-color: #26a69a;
+        }
+
+        .halted {
+            background-color: #ef5350;
+        }
+
+        .warning {
+            background-color: #FFA500;
         }
     </style>
 
@@ -135,6 +175,15 @@
         <div class="indicator-box">
             5
         </div>
+    </div>
+
+    <div class="chain-state-container">
+        {% for c in chain_state %}
+            <div class="chain-state">
+                <div class="chain-state-status {{ c[1] }}"></div>
+                <div class="chain-state-name">{{ c[0] }}</div>
+            </div>
+        {% endfor %}
     </div>
 
 
@@ -269,8 +318,8 @@
                 fontSize: 20,
             },
             grid: {
-                vertLines: {color: '#353535', visible: false},
-                horzLines: {color: '#323232', visible: false}
+                vertLines: {color: '#353535', visible: true},
+                horzLines: {color: '#323232', visible: true}
             },
 
             localization: {
@@ -320,8 +369,7 @@
         console.log(volumeData);
         volumeSeries.setData(volumeData);
 
-        //
-
+        // trade asset volume
         const volumeSeries2 = chart.addSeries(LightweightCharts.HistogramSeries, {
             color: 'rgba(0, 255, 100, 0.3)', // Light white for transparency
 
@@ -360,15 +408,15 @@
 
             // dashed line
             type: 'line',
-            {#lineStyle: LightweightCharts.LineStyle.Dotted,#}
-
+            lineStyle: LightweightCharts.LineStyle.Dotted,
+            priceLineVisible: false,
         });
         cexSeries.setData(cexLineData);
-
 
         const barSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
             upColor: '#26a69a',
             downColor: '#ef5350',
+            priceLineVisible: false,
         });
         barSeries.setData(poolOHLC);
 

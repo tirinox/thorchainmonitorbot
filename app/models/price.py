@@ -98,7 +98,7 @@ class AlertPrice:
     btc_pool_rune_price: float = 0.0
     is_ath: bool = False
     ath_sticker: str = ''
-    chain_state: List[Tuple[str, bool]] = None
+    chain_state: List[Tuple[str, str]] = None
     price_graph_period: int = 7 * DAY
 
     @property
