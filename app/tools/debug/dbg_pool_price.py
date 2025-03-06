@@ -1,5 +1,4 @@
 import asyncio
-import dataclasses
 import json
 
 from api.aionode.connector import ThorConnector
@@ -69,7 +68,9 @@ async def demo_old_price_graph(app, fill=False):
     save_and_show_pic(graph, graph_name)
 
 
-async def demo_price_graph(app, fill=False, period=14 * DAY):
+async def dbg_load_latest_price_data_and_save_as_demo(app, fill=False, period=14 * DAY):
+    # use: redis_copy_keys.py to copy redis keys from prod to local
+
     if fill:
         await fill_rune_price_from_gecko(app.deps.db, include_fake_det=True)
 
@@ -90,8 +91,24 @@ async def demo_price_graph(app, fill=False, period=14 * DAY):
     raw_data = recursive_asdict(event, add_properties=True)
     del raw_data['market_info']['pools']
 
-    print(json.dumps(raw_data, indent=2))
+    raw_data = {
+        "template_name": "price.jinja2",
+        "parameters": {
+            **raw_data,
+            "_width": 1200,
+            "_height": 1200
+        }
+    }
+
+    json_data = json.dumps(raw_data, indent=2)
     sep()
+    print(json_data)
+    sep()
+
+    demo_file = './renderer/demo/price-gen.json'
+    with open(demo_file, 'w') as f:
+        f.write(json_data)
+        print(f'Saved to {demo_file!r}')
 
 
 async def find_anomaly(app, start=13225800, steps=200):
@@ -129,7 +146,7 @@ async def main():
         # await find_anomaly(app)
         # await demo_cache_blocks(app)
         # await demo_top_pools(app)
-        await demo_price_graph(app, fill=False)
+        await dbg_load_latest_price_data_and_save_as_demo(app, fill=False)
         # await debug_load_pools(app)
 
 
