@@ -108,6 +108,10 @@
                 <div class="legend-color" style="background-color: rgba(80,240,255,0.3)"></div>
                 <div class="legend-text">Pool swap volume</div>
             </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: rgba(13,189,120,0.4)"></div>
+                <div class="legend-text">Trade asset volume</div>
+            </div>
         </div>
     </div>
 
@@ -122,6 +126,14 @@
 
         <div class="indicator-box">
             3
+        </div>
+
+        <div class="indicator-box">
+            4
+        </div>
+
+        <div class="indicator-box">
+            5
         </div>
     </div>
 
@@ -230,12 +242,12 @@
         const detLineData = aggregateToIntervalAvg(detPrices, INTERVAL);
         const cexLineData = aggregateToIntervalAvg(cexPrices, INTERVAL);
 
-        function aggregateSwapVolumes(volumes, interval) {
+        function aggregateSwapVolumes(volumes, interval, key='swap') {
             const dailyVolumes = {};
 
             volumes.forEach(([timestamp, volumeObj]) => {
                 const dayTimestamp = Math.floor(timestamp / interval) * interval; // Normalize to day start
-                const swapVolume = volumeObj?.swap || 0; // Use swap value if available, otherwise 0
+                const swapVolume = volumeObj?.[key] || 0;
 
                 if (!dailyVolumes[dayTimestamp]) {
                     dailyVolumes[dayTimestamp] = 0;
@@ -285,19 +297,20 @@
 
         // --- VOLUME SERIES ---
 
+        const volScale = 0.8;
+
         const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
             color: 'rgba(80,240,255,0.3)', // Light white for transparency
 
             priceFormat: {type: 'volume'},
             priceScaleId: '',
-            {#priceScaleId: 'left',#}
             priceLineVisible: false,
             lastValueVisible: false,
             // title: 'Swap volume',
         });
         volumeSeries.priceScale().applyOptions({
             scaleMargins: {
-                top: 0.85, // highest point of the series will be 70% away from the top
+                top: volScale, // highest point of the series will be 70% away from the top
                 bottom: 0, // lowest point will be at the very bottom.
             },
         })
@@ -306,6 +319,28 @@
         console.log(`Volume data ->`)
         console.log(volumeData);
         volumeSeries.setData(volumeData);
+
+        //
+
+        const volumeSeries2 = chart.addSeries(LightweightCharts.HistogramSeries, {
+            color: 'rgba(0, 255, 100, 0.3)', // Light white for transparency
+
+            priceFormat: {type: 'volume'},
+            priceScaleId: '',
+            {#priceScaleId: 'left',#}
+            priceLineVisible: false,
+            lastValueVisible: false,
+            // title: 'Swap volume',
+        });
+        volumeSeries2.priceScale().applyOptions({
+            scaleMargins: {
+                top: volScale, // highest point of the series will be 70% away from the top
+                bottom: 0, // lowest point will be at the very bottom.
+            },
+        })
+        // mult by 2
+        let volumeData2 = aggregateSwapVolumes(volumes, INTERVAL * 1.5, 'trade_swap');
+        volumeSeries2.setData(volumeData2);
 
         // --- PRICE SERIES ---
 
