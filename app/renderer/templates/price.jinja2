@@ -10,9 +10,35 @@
             right: 3%;
             bottom: 32%;
             padding: 10px;
+            padding-left: 20px;
 
             font-family: ThorFontLight, serif;
             font-weight: lighter;
+        }
+
+        .legend {
+            position: absolute;
+            top: 5%;
+            left: 3%;
+            display: flex;
+        }
+
+        .legend-item {
+            display: flex;
+            margin-right: 20px;
+        }
+
+        .legend-color {
+            width: 27px;
+            height: 25px;
+            margin-right: 10px;
+            border-radius: 5px;
+        }
+
+        .legend-text {
+            color: #bbb;
+            font-size: 20px;
+            font-weight: bolder;
         }
 
         #price-chart {
@@ -63,6 +89,26 @@
 
     <div id="chart-container" class="shadow-box">
         <div id="price-chart"></div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #26a69a"></div>
+                <div class="legend-color" style="background-color: #ef5350"></div>
+                <div class="legend-text">Pool price</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: rgba(0, 204, 255, 0.8)"></div>
+                <div class="legend-text">CEX price</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: rgba(100, 255, 200, 0.9)"></div>
+                <div class="legend-text">Deterministic price</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: rgba(80,240,255,0.3)"></div>
+                <div class="legend-text">Pool swap volume</div>
+            </div>
+        </div>
     </div>
 
     <div class="indicator-container">
@@ -77,7 +123,6 @@
         <div class="indicator-box">
             3
         </div>
-
     </div>
 
 
@@ -160,8 +205,8 @@
 
             return Object.keys(dailyData).map(day => ({
                 time: parseInt(day),
-                {#value: dailyData[day].sum / dailyData[day].count // Compute daily average#}
-                value: dailyData[day].last // Compute daily average
+                value: dailyData[day].sum / dailyData[day].count // Compute daily average
+                //value: dailyData[day].last // Compute daily average
             }));
         }
 
@@ -212,8 +257,8 @@
                 fontSize: 20,
             },
             grid: {
-                vertLines: {color: '#353535'},
-                horzLines: {color: '#323232'}
+                vertLines: {color: '#353535', visible: false},
+                horzLines: {color: '#323232', visible: false}
             },
 
             localization: {
@@ -221,7 +266,7 @@
             },
 
             leftPriceScale: {
-                visible: true,
+                visible: false,
                 borderColor: 'rgba(197, 203, 206, 0.8)',
                 scaleMargins: {
                     bottom: 0,
@@ -244,14 +289,20 @@
             color: 'rgba(80,240,255,0.3)', // Light white for transparency
 
             priceFormat: {type: 'volume'},
-            // priceScaleId: '',
-            priceScaleId: 'left',
+            priceScaleId: '',
+            {#priceScaleId: 'left',#}
             priceLineVisible: false,
             lastValueVisible: false,
             // title: 'Swap volume',
         });
+        volumeSeries.priceScale().applyOptions({
+            scaleMargins: {
+                top: 0.85, // highest point of the series will be 70% away from the top
+                bottom: 0, // lowest point will be at the very bottom.
+            },
+        })
 
-        const volumeData = aggregateSwapVolumes(volumes, INTERVAL * 2);
+        const volumeData = aggregateSwapVolumes(volumes, INTERVAL * 1.5);
         console.log(`Volume data ->`)
         console.log(volumeData);
         volumeSeries.setData(volumeData);
@@ -262,8 +313,23 @@
             color: 'rgba(100, 255, 200, 0.9)',
             lineWidth: 3,
             lineStyle: LightweightCharts.LineStyle.Dotted,
+            priceLineVisible: false,
         });
         detSeries.setData(detLineData);
+
+
+        const cexSeries = chart.addSeries(LightweightCharts.LineSeries, {
+            // 00CCFF
+            color: "rgba(0, 204, 255, 0.8)",
+            lineWidth: 1,
+
+            // dashed line
+            type: 'line',
+            {#lineStyle: LightweightCharts.LineStyle.Dotted,#}
+
+        });
+        cexSeries.setData(cexLineData);
+
 
         const barSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
             upColor: '#26a69a',
@@ -286,17 +352,6 @@
         });
         // Set the data for the Area Series
         areaSeries.setData(lineData);
-
-        const cexSeries = chart.addSeries(LightweightCharts.LineSeries, {
-            color: 'rgba(31,255,207,0.5)',
-            lineWidth: 3,
-
-            // dashed line
-            type: 'line',
-            lineStyle: LightweightCharts.LineStyle.Dotted,
-
-        });
-        cexSeries.setData(cexLineData);
 
         chart.timeScale().fitContent();
 
