@@ -143,14 +143,22 @@ async def debug_load_pools(app: LpAppFramework):
     print(len(pools))
 
 
+async def dbg_save_market_info(app):
+    info = await app.deps.rune_market_fetcher.fetch()
+    sep()
+    print(json.dumps(info, indent=2))
+    sep()
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await find_anomaly(app)
         # await demo_cache_blocks(app)
         # await demo_top_pools(app)
-        await dbg_load_latest_price_data_and_save_as_demo(app, fill=False)
+        # await dbg_load_latest_price_data_and_save_as_demo(app, fill=False)
         # await debug_load_pools(app)
+        await dbg_save_market_info(app)
 
 
 if __name__ == '__main__':

@@ -73,6 +73,7 @@
             background: rgba(52, 51, 51, 0.21);
             border-radius: 12px;
             font-family: ThorFontLight, serif;
+            font-size: 22px;
             justify-content: space-between;
             flex-direction: column;
             align-items: center;
@@ -101,8 +102,9 @@
 
         .chain-state-status {
             display: flex;
-            width: 18px;
-            height: 18px;
+            margin-top: 3px;
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
             margin-right: 10px;
         }
@@ -117,6 +119,14 @@
 
         .warning {
             background-color: #FFA500;
+        }
+
+        .price-box {
+            display: flex;
+            flex-direction: column;
+
+            justify-content: space-around;
+            min-width: 10%;
         }
     </style>
 
@@ -157,24 +167,50 @@
 
     <div class="indicator-container">
         <div class="indicator-box">
-            1
+            <div>RUNE price</div>
+            <div>${{ pretty_money(pool_prices[-1][1]) }}</div>
+            <div>₿ {{ round(btc_pool_rune_price * 1e8) }} sat</div>
+        </div>
+
+        <div class="indicator-box price-box">
+            {% with label='1H', price=market_info.pool_rune_price, old_price=price_1h %}
+                {% include "components/price_delta.jinja2" %}
+            {% endwith %}
+
+            {% with label='24H', price=market_info.pool_rune_price, old_price=price_24h %}
+                {% include "components/price_delta.jinja2" %}
+            {% endwith %}
+
+            {% with label='7D', price=market_info.pool_rune_price, old_price=price_7d %}
+                {% include "components/price_delta.jinja2" %}
+            {% endwith %}
+
+            {% with label='30D', price=market_info.pool_rune_price, old_price=price_30d %}
+                {% include "components/price_delta.jinja2" %}
+            {% endwith %}
+
+            {% with label='1Y', price=market_info.pool_rune_price, old_price=price_1y %}
+                {% include "components/price_delta.jinja2" %}
+            {% endwith %}
         </div>
 
         <div class="indicator-box">
-            2
+            <div>Market cap</div>
+            <div>${{ short_money(market_info.total_supply * market_info.pool_rune_price) }}</div>
+            <div>#{{ market_info.rank }}</div>
+            <div>Total trade volume</div>
+            <div>${{ short_money(market_info.total_trade_volume_usd) }}</div>
         </div>
 
         <div class="indicator-box">
-            3
+            <div>TVL of Non-Rune assets</div>
+            <div>${{ short_money(market_info.tvl_usd) }}</div>
+            <div>Deterministic price</div>
+            <div>${{ pretty_money(market_info.fair_price) }}</div>
+            <div>Speculative multiplier</div>
+            <div>x{{ pretty_money(market_info.pool_rune_price / market_info.fair_price) }}</div>
         </div>
 
-        <div class="indicator-box">
-            4
-        </div>
-
-        <div class="indicator-box">
-            5
-        </div>
     </div>
 
     <div class="chain-state-container">
@@ -291,7 +327,7 @@
         const detLineData = aggregateToIntervalAvg(detPrices, INTERVAL);
         const cexLineData = aggregateToIntervalAvg(cexPrices, INTERVAL);
 
-        function aggregateSwapVolumes(volumes, interval, key='swap') {
+        function aggregateSwapVolumes(volumes, interval, key = 'swap') {
             const dailyVolumes = {};
 
             volumes.forEach(([timestamp, volumeObj]) => {

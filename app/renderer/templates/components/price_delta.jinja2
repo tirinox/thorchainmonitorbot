@@ -1,0 +1,54 @@
+{# Variables: price, old_price, label #}
+
+{% if old_price %}
+
+    <style>
+        .price-delta {
+            display: flex;
+
+            flex-direction: row;
+            flex-wrap: nowrap;
+
+            align-content: space-around;
+        }
+
+        .price-label {
+            display: block;
+            width: 60px;
+
+        }
+
+        .price-change {
+            display: flex;
+            align-items: baseline;
+        }
+
+        .arrow-ud {
+            margin-left: 8px;
+            font-size: 0.91em;
+        }
+
+        .percent {
+        }
+    </style>
+
+    {% set price = price | float %}
+    {% set old_price = old_price | float %}
+    {% set price_change = price - old_price %}
+    {% set percent_change = price_change / old_price * 100 if old_price else -100 %}
+    {% set arrow = 'up' if price_change > 0 else 'down' %}
+    {% set color = 'up-arrow' if price_change > 0 else 'down-arrow' %}
+    {% set percent_change = percent_change | round(2) %}
+    {% set price_change = price_change | round(2) %}
+    {% set arrow_symbol = '▲' if price_change > 0 else '▼' %}
+
+    <div>
+        <div class="price-delta">
+            <div class="price-label">{{ label }}:</div>
+            <div class="price-change {{ color }}">
+                <div class="percent">{{ percent_change }}%</div>
+                <div class="arrow-ud">{{ arrow_symbol }}</div>
+            </div>
+        </div>
+    </div>
+{% endif %}
