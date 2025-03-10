@@ -133,11 +133,9 @@
 
         .price-box {
             display: flex;
-                        flex-direction: column;
-
+            flex-direction: column;
             justify-content: center;
-            gap: 20px;
-
+            align-items: center;
         }
 
         .lb {
@@ -181,6 +179,10 @@
             font-size: 34px;
             font-weight: bolder;
         }
+
+        .m {
+            margin: 7px 0 7px 0;
+        }
     </style>
 
     <script src="renderer/static/js/lightweight-charts.standalone.production.js"></script>
@@ -219,9 +221,9 @@
 
     <div class="indicator-container">
         <div class="indicator-box cbox price-box">
-            <div class="lb lbb">RUNE price</div>
-            <div class="n pr colored">${{ pretty_money(pool_prices[-1][1]) }}</div>
-            <div class="nbtc white">₿ {{ round(btc_pool_rune_price * 1e8) }} sat</div>
+            <div class="lb lbb m">RUNE price</div>
+            <div class="n pr colored m">${{ pretty_money(pool_prices[-1][1]) }}</div>
+            <div class="nbtc white m">₿ {{ round(btc_pool_rune_price * 1e8) }} sat</div>
         </div>
 
         <div class="indicator-box price-delta-box cbox">
@@ -277,7 +279,7 @@
 
     <script>
         const INTERVAL = 60 * 60  // 2 hours
-        const volumeInterval = INTERVAL * 4
+        const volumeInterval = INTERVAL
 
         function convertToOHLC(priceData, interval) {
             // If no interval is provided, treat each data point as a separate candle.
