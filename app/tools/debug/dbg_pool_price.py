@@ -11,6 +11,7 @@ from lib.depcont import DepContainer
 from lib.texts import sep
 from lib.utils import recursive_asdict
 from models.price import LastPriceHolder
+from notify.alert_presenter import AlertPresenter
 from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.price_notify import PriceNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
@@ -68,7 +69,7 @@ async def demo_old_price_graph(app, fill=False):
     save_and_show_pic(graph, graph_name)
 
 
-async def dbg_load_latest_price_data_and_save_as_demo(app, fill=False, period=14 * DAY):
+async def _create_price_alert(app, fill=False):
     # use: redis_copy_keys.py to copy redis keys from prod to local
 
     if fill:
@@ -88,7 +89,11 @@ async def dbg_load_latest_price_data_and_save_as_demo(app, fill=False, period=14
         market_info,
         ath=False, last_ath=None
     )
+    return event
 
+
+async def dbg_load_latest_price_data_and_save_as_demo(app, fill=False):
+    event = await _create_price_alert(app, fill)
     sep()
 
     raw_data = recursive_asdict(event, add_properties=True)
@@ -150,6 +155,14 @@ async def dbg_save_market_info(app):
     sep()
 
 
+async def dbg_new_price_picture(app):
+    event = await _create_price_alert(app)
+
+    ap: AlertPresenter = app.deps.alert_presenter
+    await ap.on_data(None, event)
+    await asyncio.sleep(5.0)
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
@@ -158,7 +171,8 @@ async def main():
         # await demo_top_pools(app)
         # await dbg_load_latest_price_data_and_save_as_demo(app, fill=False)
         # await debug_load_pools(app)
-        await dbg_save_market_info(app)
+        # await dbg_save_market_info(app)
+        await dbg_new_price_picture(app)
 
 
 if __name__ == '__main__':
