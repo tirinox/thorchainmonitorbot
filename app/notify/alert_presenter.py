@@ -431,7 +431,7 @@ class AlertPresenter(INotified, WithLogger):
         parameters = {
             **raw_data,
             "_width": 1200,
-            "_height": 1000,
+            "_height": 1200,
         }
         photo = await self.renderer.render('price.jinja2', parameters)
         photo_name = 'price.png'
