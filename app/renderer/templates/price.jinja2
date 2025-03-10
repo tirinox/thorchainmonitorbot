@@ -46,7 +46,7 @@
             height: 100%;
         }
 
-        .shadow-box, .indicator-box {
+        .shadow-box {
             border-radius: 22px;
             background: rgba(52, 51, 51, 0.21);
             box-shadow: rgb(0, 0, 0, 0.5) 0 0 20px;
@@ -68,23 +68,23 @@
 
         .indicator-box {
             display: flex;
-            padding: 12px;
 
-            background: rgba(52, 51, 51, 0.21);
-            border-radius: 12px;
             font-family: ThorFontLight, serif;
             font-size: 22px;
-            justify-content: space-between;
+            justify-content: space-around;
             flex-direction: column;
             align-items: center;
             width: auto;
         }
 
+
         .chain-state-container {
             position: absolute;
-            bottom: 3.6%;
-            left: 4%;
+            bottom: 4.2%;
+            left: 3%;
+            right: 3%;
             display: flex;
+            justify-content: space-between;
         }
 
         .chain-state {
@@ -128,6 +128,48 @@
             justify-content: space-around;
             min-width: 10%;
         }
+
+        .lb {
+            margin-top: 12px;
+            font-weight: normal;
+            font-size: 20px;
+            color: rgb(179, 179, 179);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .lbb {
+            font-size: 24px;
+        }
+
+        .n {
+            font-weight: bold;
+            font-size: 43px;
+        }
+
+        .pr {
+            font-size: 52px;
+        }
+
+        .colored {
+            color: rgb(40 244 175);
+            filter: drop-shadow(0 0 5px rgb(100, 251, 200, 0.5));
+        }
+
+        .white {
+            color: white;
+            filter: drop-shadow(0 0 3px rgba(166, 244, 222, 0.5));
+        }
+
+        .nbtc {
+            font-size: 38px;
+            font-weight: bolder;
+        }
+
+        .nsec {
+            font-size: 34px;
+            font-weight: bolder;
+        }
     </style>
 
     <script src="renderer/static/js/lightweight-charts.standalone.production.js"></script>
@@ -166,13 +208,13 @@
     </div>
 
     <div class="indicator-container">
-        <div class="indicator-box">
-            <div>RUNE price</div>
-            <div>${{ pretty_money(pool_prices[-1][1]) }}</div>
-            <div>₿ {{ round(btc_pool_rune_price * 1e8) }} sat</div>
+        <div class="indicator-box cbox">
+            <div class="lb lbb">RUNE price</div>
+            <div class="n pr colored">${{ pretty_money(pool_prices[-1][1]) }}</div>
+            <div class="nbtc white">₿ {{ round(btc_pool_rune_price * 1e8) }} sat</div>
         </div>
 
-        <div class="indicator-box price-box">
+        <div class="indicator-box price-box  cbox">
             {% with label='1H', price=market_info.pool_rune_price, old_price=price_1h %}
                 {% include "components/price_delta.jinja2" %}
             {% endwith %}
@@ -194,21 +236,21 @@
             {% endwith %}
         </div>
 
-        <div class="indicator-box">
-            <div>Market cap</div>
-            <div>${{ short_money(market_info.total_supply * market_info.pool_rune_price) }}</div>
-            <div>#{{ market_info.rank }}</div>
-            <div>Total trade volume</div>
-            <div>${{ short_money(market_info.total_trade_volume_usd) }}</div>
+        <div class="indicator-box cbox">
+            <div class="lb lbb">Market cap</div>
+            <div class="n colored">${{ short_money(market_info.total_supply * market_info.pool_rune_price) }}</div>
+            <div class="nsec white">#{{ market_info.rank }}</div>
+            <div class="lb lbb">24H trade volume</div>
+            <div class="nbtc">${{ short_money(market_info.total_trade_volume_usd) }}</div>
         </div>
 
-        <div class="indicator-box">
-            <div>TVL of Non-Rune assets</div>
-            <div>${{ short_money(market_info.tvl_usd) }}</div>
-            <div>Deterministic price</div>
-            <div>${{ pretty_money(market_info.fair_price) }}</div>
-            <div>Speculative multiplier</div>
-            <div>x{{ pretty_money(market_info.pool_rune_price / market_info.fair_price) }}</div>
+        <div class="indicator-box cbox">
+            <div class="lb">TVL of Non-Rune assets</div>
+            <div class="nbtc white">${{ short_money(market_info.tvl_usd) }}</div>
+            <div class="lb">Deterministic price</div>
+            <div class="nbtc colored">${{ pretty_money(market_info.fair_price) }}</div>
+            <div class="lb">Speculative multiplier</div>
+            <div class="nsec white">x{{ pretty_money(market_info.pool_rune_price / market_info.fair_price) }}</div>
         </div>
 
     </div>
