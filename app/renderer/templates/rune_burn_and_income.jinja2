@@ -16,7 +16,7 @@
             left: 3%;
 
             right: 3%;
-            height: 56%;
+            height: 53%;
             {#padding: 0;#}
             padding: 20px;
             font-family: ThorFontLight, serif;
@@ -26,9 +26,10 @@
 
         .indicator-container {
             position: absolute;
-            bottom: 3.5%;
+            bottom: 5%;
             left: 3%;
             right: 3%;
+            height: 18%;
 
             display: flex;
             flex-direction: row;
@@ -102,30 +103,30 @@
 
     <div class="indicator-container">
 
-        <div class="indicator-box">
+        <div class="indicator-box cbox">
             <div class="indicator-value burn-percent">🔥{{ "%.1f"|format(system_income_burn_percent) }} %</div>
             <div class="indicator-label">System Income burn</div>
         </div>
 
-        <div class="indicator-box">
+        <div class="indicator-box cbox">
             <div class="indicator-value"><span class="fire"></span>{{ "%.1f"|format(last_24h_burned_rune) }}ᚱ</div>
             <div class="indicator-subvalue">({{ short_dollar(last_24h_burned_usd) }})</div>
             <div class="indicator-label">burned last 24H</div>
         </div>
 
-        <div class="indicator-box">
+        <div class="indicator-box cbox">
             <div class="indicator-value"><span class="fire"></span>{{ short_rune(prev_max_rune - curr_max_rune) }}</div>
             <div class="indicator-subvalue">({{ short_dollar((prev_max_rune - curr_max_rune) * usd_per_rune) }})</div>
             <div class="indicator-label">burned last {{ tally_days|int }} days</div>
         </div>
 
-        <div class="indicator-box">
+        <div class="indicator-box cbox">
             <div class="indicator-value"><span class="fire"></span> {{ short_rune(total_burned_rune) }}</div>
             <div class="indicator-subvalue">({{ short_dollar(total_burned_usd) }})</div>
             <div class="indicator-label">Total burned</div>
         </div>
 
-        <div class="indicator-box">
+        <div class="indicator-box cbox">
             <div class="indicator-value"><span class="fire fire-over"></span>{{ short_rune(yearly_burn_prediction) }}</div>
             <div class="indicator-subvalue">({{ short_dollar(yearly_burn_prediction * usd_per_rune) }})</div>
             <div class="indicator-label">Prediction for 1 year</div>
