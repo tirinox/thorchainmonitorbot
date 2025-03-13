@@ -40,7 +40,7 @@ from models.transfer import RuneTransfer, RuneCEXFlow
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from .achievements.ach_rus import AchievementsRussianLocalization
-from .eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
+from .eng_base import BaseLocalization, CREATOR_TG
 
 
 class RussianLocalization(BaseLocalization):
@@ -697,11 +697,6 @@ class RussianLocalization(BaseLocalization):
             f"{self.can_add_more_lp_text(info)}\n"
             f"Цена {bold(self.R)} сейчас <code>{info.price:.3f} $</code>.\n"
         )
-
-    def text_leaderboard_info(self):
-        return f"🏆 Доска лучших трейдеров THORChain:\n" \
-               f"\n" \
-               f" 👉 {bold(URL_LEADERBOARD_MCCN)} 👈\n"
 
     def queue_message(self, queue_info: QueueInfo):
         return (

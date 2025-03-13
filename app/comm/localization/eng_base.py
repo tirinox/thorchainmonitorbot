@@ -1,4 +1,5 @@
 import logging
+import random
 from abc import ABC
 from datetime import datetime
 from math import ceil
@@ -55,8 +56,7 @@ CREATOR_TG = '@account1242'
 
 URL_THOR_SWAP = 'https://app.thorswap.finance/'
 
-URL_LEADERBOARD_MCCN = 'https://leaderboard.thornode.org/'
-
+URL_OUR_REF = 'https://app.thorswap.finance/swap?ref=ref'
 
 class BaseLocalization(ABC):  # == English
     def __init__(self, cfg: Config):
@@ -69,6 +69,8 @@ class BaseLocalization(ABC):  # == English
     # ----- WELCOME ------
 
     TEXT_DECORATION_ENABLED = True
+
+    TEXT_REF_CALL = f'⚡ Start {link(URL_OUR_REF, " trading now")}!'
 
     LOADING = '⌛ <i>Loading...</i>'
     LONG_DASH = '–'
@@ -806,6 +808,9 @@ class BaseLocalization(ABC):  # == English
         btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
         message += f"<b>RUNE</b> price is {code(pr_text)} ({btc_price}) now.\n"
 
+        # message += f"{random.randint(0, 1000)}\n"
+
+        message += f'\n{self.TEXT_REF_CALL}'
         return message.rstrip()
 
     # ------- POOL CHURN -------
@@ -935,11 +940,6 @@ class BaseLocalization(ABC):  # == English
             f"{self.can_add_more_lp_text(info)}\n"
             f"The {bold(self.R)} price is <code>${info.price:.3f}</code> now.\n"
         )
-
-    def text_leaderboard_info(self):
-        return f"🏆 Traders leaderboard is here:\n" \
-               f"\n" \
-               f" 👉 {bold(URL_LEADERBOARD_MCCN)} 👈\n"
 
     def queue_message(self, queue_info: QueueInfo):
         return (
