@@ -8,41 +8,9 @@
 
     <style>
         .bg {
-            background: url("renderer/static/bg2.svg") no-repeat;
+            background: url("../static/img/bg2.svg") no-repeat;
             background-position: center -79px;
         }
-
-        .desaturated {
-            filter: grayscale(100%) brightness(80%);
-        }
-
-        .halt-desaturated {
-            filter: brightness(75%) saturate(60%);
-        }
-
-        .logo-wait-overlay {
-            position: absolute;
-            top: -10%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 3em; /* Adjust size as needed */
-            padding: 5px;
-            {#filter: grayscale(100%) brightness(100%);#}
-            filter: hue-rotate(150deg) saturate(120%);
-            {#opacity: 0.2;#}
-        }
-
-        .logo-pending {
-            filter: hue-rotate(24deg);
-        }
-
-        .arrow-pending {
-            width: 200px;
-            padding: 0;
-            filter: brightness(80%) hue-rotate(30deg) saturate(0%);
-            opacity: 0.9;
-        }
-
     </style>
 
     <div class="route-box">
@@ -70,25 +38,19 @@
         </div>
 
         <div class="line-box">
-            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
+            <img src="renderer/static/img/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
             <div class="above-arrow tx-id-block">
                 {{ shorten_text_middle(tx_hash, 4, 4) }}
             </div>
         </div>
 
         <div class="logo-holder">
-
-            <div class="">
-                <div class="logo-pending">
-                    <img class="circle-tc-logo tc-glow" src="renderer/static/tc_logo_circle.png?rv=1" alt="THORChain logo">
-                </div>
-                <div class="logo-wait-overlay">⏳</div>
-            </div>
-
+            <img class="circle-tc-logo tc-glow" src="renderer/static/img/tc_logo_circle.png?rv=1" alt="THORChain logo">
 
             <div class="arrow-down-holder">
-                <img src="renderer/static/arrow2-down.png" alt="Arrow down"
-                     class="shadow arrow-down arrow-no-aff">
+
+                <img src="renderer/static/img/arrow2-down.png" alt="Arrow down"
+                     class="shadow arrow-down {{ "arrow-aff" if affiliate_names else "arrow-no-aff" }}">
 
                 {% include "components/aff-logo.jinja2" %}
 
@@ -97,7 +59,7 @@
         </div>
 
         <div class="line-box">
-            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-pending shadow">
+            <img src="renderer/static/img/arrow2.png" alt="Arrow right" class="arrow-pending shadow">
             {% if int(swap_quantity) > 0 %}
                 <div class="above-arrow">
                     <div class="time-block-interval">
@@ -114,14 +76,12 @@
             <div class="logo-part">
                 {% with asset_name=destination_asset, asset_logo=destination_logo, chain_logo=destination_chain_logo,
                         right=True %}
-                    <div class="halt-desaturated">
-                        {% include "components/asset-logo.jinja2" %}
-                    </div>
+                    {% include "components/asset-logo.jinja2" %}
                 {% endwith %}
 
                 <div class="asset-part">
                     <div class="expected-out-label">Expected output</div>
-                    <div class="output-amount desaturated">
+                    <div class="output-amount">
                         {% if destination_amount %}
                             ≈{{ short_money(destination_amount) }} {{ destination_asset_name }}
                         {% else %}
@@ -130,7 +90,7 @@
                     </div>
 
                     <div class="time-block-flex" id="time-block">
-                        <img src="renderer/static/time-is-money.png" alt="Time is money..." class="clock">
+                        <img src="renderer/static/img/time-is-money.png" alt="Time is money..." class="clock">
                         <div class="wait-time" id="wait-time"></div>
                     </div>
 

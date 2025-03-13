@@ -1,13 +1,12 @@
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Optional, Set, Dict
+from typing import Optional
 
 import ujson
 from aiohttp import ClientSession, ClientTimeout
 
 from api.aionode.connector import ThorConnector
-from api.aionode.types import ThorChainInfo
 from api.midgard.connector import MidgardConnector
 from api.midgard.name_service import NameService
 from comm.telegram.telegram import TelegramBot
@@ -19,6 +18,7 @@ from lib.http_ses import ObservableSession
 from lib.new_feature import NewFeatureManager, Features
 from lib.scheduler import Scheduler
 from lib.settings_manager import SettingsManager
+from models.chains import ChainInfoHolder
 from models.mimir import MimirHolder
 from models.net_stats import NetworkStats
 from models.node_info import NodeListHolder
@@ -53,6 +53,7 @@ class DepContainer:
     node_info_fetcher = None  # type: 'NodeInfoFetcher'
     mimir_const_fetcher = None  # type: 'ConstMimirFetcher'
     last_block_fetcher = None  # type: 'LastBlockFetcher'
+    fetcher_chain_state = None # type: 'ChainStateFetcher'
     saver_stats_fetcher = None
     data_controller = None
     lend_stats_fetcher = None
@@ -89,8 +90,7 @@ class DepContainer:
     price_holder: LastPriceHolder = field(default_factory=LastPriceHolder)
     queue_holder: QueueInfo = field(default_factory=QueueInfo.error)
     mimir_const_holder: Optional[MimirHolder] = None
-    halted_chains: Set[str] = field(default_factory=set)
-    chain_info: Dict[str, ThorChainInfo] = field(default_factory=dict)
+    chain_info: ChainInfoHolder = field(default_factory=ChainInfoHolder)
     node_holder: NodeListHolder = field(default_factory=NodeListHolder)
     net_stats: NetworkStats = field(default_factory=NetworkStats)
     last_block_store = None

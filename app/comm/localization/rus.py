@@ -565,56 +565,11 @@ class RussianLocalization(BaseLocalization):
 
         message = f"{title} | {c_gecko_link}\n\n"
 
-        if p.halted_chains:
-            hc = pre(', '.join(p.halted_chains))
-            message += f"🚨 <code>Торговля по-прежнему остановлена на {hc}.</code>\n\n"
-
         price = p.market_info.pool_rune_price
 
         btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
         pr_text = f"${price:.3f}"
         message += f"Цена <b>RUNE</b> сейчас {code(pr_text)} ({btc_price}).\n"
-
-        fp = p.market_info
-
-        if fp.cex_price > 0.0:
-            message += f"Цена <b>RUNE</b> на централизованной бирже {self.ref_cex_name}: " \
-                       f"{bold(pretty_dollar(fp.cex_price))}.\n"
-
-            div, div_p = fp.divergence_abs, fp.divergence_percent
-            message += f"<b>Расхождение</b> с центр. Биржей: {code(pretty_dollar(div))} ({div_p:.1f}%).\n"
-
-        last_ath = p.last_ath
-        if last_ath is not None and p.is_ath:
-            if isinstance(last_ath.ath_date, float):
-                last_ath_pr = f'{last_ath.ath_price:.2f}'
-            else:
-                last_ath_pr = str(last_ath.ath_price)
-            ago_str = self.format_time_ago(now_ts() - last_ath.ath_date)
-            message += f"Последний ATH был ${pre(last_ath_pr)} ({ago_str}).\n"
-
-        time_combos = zip(
-            ('1ч.', '24ч.', '7дн.'),
-            (p.price_1h, p.price_24h, p.price_7d)
-        )
-        for title, old_price in time_combos:
-            if old_price:
-                pc = calc_percent_change(old_price, price)
-                message += pre(f"{title.rjust(5)}:{adaptive_round_to_str(pc, True).rjust(8)} % "
-                               f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}") + "\n"
-
-        if fp.rank >= 1:
-            message += f"Капитализация: {bold(pretty_dollar(fp.market_cap))} (#{bold(fp.rank)} место)\n"
-
-        if fp.total_trade_volume_usd > 0:
-            message += f"Объем торгов сегодня: {bold(pretty_dollar(fp.total_trade_volume_usd))}.\n"
-
-        message += '\n'
-
-        if fp.tvl_usd >= 1:
-            message += (f"TVL (не-RUNE активов): ${bold(pretty_money(fp.tvl_usd))}\n"
-                        f"Детерминистическая цена: {code(pretty_money(fp.fair_price, prefix='$'))}\n"
-                        f"Спекулятивый множитель: {pre(x_ses(fp.fair_price, price))}\n")
 
         return message.rstrip()
 

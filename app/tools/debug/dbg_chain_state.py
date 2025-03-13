@@ -14,6 +14,8 @@ async def show_chain_state_once(app):
     fetcher_chain_state = ChainStateFetcher(app.deps)
     data = await fetcher_chain_state.fetch()
     print(data)
+    sep()
+    print(app.deps.chain_info.state_list)
 
 
 class NaughtyChainStateFetcher(ChainStateFetcher):
@@ -50,7 +52,8 @@ async def demo_chain_halt_notifications(app):
 async def main():
     app = LpAppFramework(log_level=logging.WARNING)
     async with app(brief=True):
-        await demo_chain_halt_notifications(app)
+        # await demo_chain_halt_notifications(app)
+        await show_chain_state_once(app)
 
 
 if __name__ == '__main__':

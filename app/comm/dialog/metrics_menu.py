@@ -3,6 +3,13 @@ from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
 from comm.localization.manager import BaseLocalization
+from comm.picture.block_height_picture import block_speed_chart
+from comm.picture.key_stats_picture import KeyStatsPictureGenerator
+from comm.picture.nodes_pictures import NodePictureGenerator
+from comm.picture.pools_picture import PoolPictureGenerator
+from comm.picture.queue_picture import queue_graph
+from comm.picture.savers_picture import SaversPictureGenerator
+from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.fetch.node_info import NodeInfoFetcher
 from lib.constants import THOR_BLOCKS_PER_MINUTE
@@ -11,7 +18,6 @@ from lib.draw_utils import img_to_bio
 from lib.texts import kbd
 from models.net_stats import AlertNetworkStats
 from models.node_info import NodeInfo
-from models.price import AlertPrice
 from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.block_notify import BlockHeightNotifier
 from notify.public.burn_notify import BurnNotifier
@@ -21,15 +27,6 @@ from notify.public.price_notify import PriceNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
 from notify.public.transfer_notify import RuneMoveNotifier
 from .base import BaseDialog, message_handler
-from comm.picture.block_height_picture import block_speed_chart
-from comm.picture.key_stats_picture import KeyStatsPictureGenerator
-from comm.picture.nodes_pictures import NodePictureGenerator
-from comm.picture.pools_picture import PoolPictureGenerator
-from comm.picture.price_picture import price_graph_from_db
-from comm.picture.queue_picture import queue_graph
-from comm.picture.savers_picture import SaversPictureGenerator
-from comm.picture.supply_picture import SupplyPictureGenerator
-from ..picture.burn_picture import rune_burn_graph
 
 
 class MetricsStates(StatesGroup):
@@ -228,29 +225,22 @@ class MetricsDialog(BaseDialog):
             return
 
         pn = PriceNotifier(self.deps)
-        price_1h, price_24h, price_7d = await pn.historical_get_triplet()
-        market_info.pool_rune_price = self.deps.price_holder.usd_per_rune
-        btc_price = self.deps.price_holder.btc_per_rune
+        pn.price_graph_period = period or pn.price_graph_period
+        alert = await pn.make_event(
+            market_info,
+            ath=False, last_ath=None
+        )
 
-        price_text = self.loc.notification_text_price_update(AlertPrice(
-            price_1h, price_24h, price_7d,
-            market_info=market_info,
-            last_ath=None, is_ath=False,
-            btc_pool_rune_price=btc_price,
-            halted_chains=self.deps.halted_chains
-        ))
+        price_text = self.loc.notification_text_price_update(alert)
 
-        graph, graph_name = await price_graph_from_db(self.deps, self.loc, period=period)
-        await message.answer_photo(img_to_bio(graph, graph_name),
+        graph, graph_name = await self.deps.alert_presenter.render_price_graph(self.loc, alert)
+        await message.answer_photo(img_to_bio(graph, graph_name), caption=price_text,
                                    disable_notification=True)
-        await message.answer(price_text,
-                             disable_web_page_preview=True,
-                             disable_notification=True)
 
     async def show_chain_info(self, message: Message):
         await self.start_typing(message)
 
-        text = self.loc.text_chain_info(list(self.deps.chain_info.values()))
+        text = self.loc.text_chain_info(list(self.deps.chain_info.state_dict.values()))
         await message.answer(text,
                              disable_web_page_preview=True,
                              disable_notification=True)

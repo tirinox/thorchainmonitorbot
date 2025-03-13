@@ -7,12 +7,12 @@ from comm.twitter.text_length import twitter_intelligent_text_splitter, TWITTER_
 from jobs.fetch.chain_id import AlertChainIdChange
 from lib.config import Config
 from lib.constants import Chains, BTC_SYMBOL, ETH_SYMBOL
-from lib.date_utils import now_ts, seconds_human
+from lib.date_utils import seconds_human
 from lib.explorers import get_explorer_url_to_tx
 from lib.money import short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
-    calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune, \
+    short_address, short_money, short_rune, \
     pretty_percent, chart_emoji, pretty_rune
-from lib.texts import x_ses, progressbar, plural, bracketify, up_down_arrow, \
+from lib.texts import progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced, shorten_text
 from models.asset import Asset
 from models.cap_info import ThorCapInfo
@@ -225,50 +225,13 @@ class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_price_update(self, p: AlertPrice):
         message = '🚀 New all-time high!\n' if p.is_ath else ''
 
-        # if halted_chains:
-        #     hc = ', '.join(halted_chains)
-        #     message += f"🚨 Trading is still halted on {hc}.\n"
-
         price = p.market_info.pool_rune_price
 
         btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
         message += f"$RUNE price is now ${price:.3f} ({btc_price}).\n"
 
-        fp = p.market_info
-
-        if fp.cex_price > 0.0:
-            message += f"{self.ref_cex_pair} {self.ref_cex_name}: {pretty_dollar(fp.cex_price)}\n"
-
-            div, div_p = fp.divergence_abs, fp.divergence_percent
-            exclamation = self._exclamation_sign(div_p, ref=10)
-            message += f"Divergence: {div_p:.1f}%{exclamation}\n"
-
-        last_ath = p.last_ath
-        if last_ath is not None and p.is_ath:
-            last_ath_pr = f'{last_ath.ath_price:.2f}'
-            ago_str = self.format_time_ago(now_ts() - last_ath.ath_date)
-            message += f"Last ATH: ${last_ath_pr} ({ago_str}).\n"
-
-        time_combos = zip(
-            ('1h', '24h', '7d'),
-            (p.price_1h, p.price_24h, p.price_7d)
-        )
-        for title, old_price in time_combos:
-            if old_price:
-                pc = calc_percent_change(old_price, price)
-                message += f"{title.rjust(4)}: {adaptive_round_to_str(pc, True)}% " \
-                           f"{emoji_for_percent_change(pc)}\n"
-
-        if fp.rank >= 1:
-            message += f"Mrkt. cap: {short_dollar(fp.market_cap)} (#{fp.rank})\n"
-
-        if fp.total_trade_volume_usd > 0:
-            message += f'24h vol.: {short_dollar(fp.total_trade_volume_usd)}\n'
-
-        if fp.tvl_usd >= 1:
-            message += (
-                f"Det. price: {pretty_dollar(fp.fair_price)}\n"
-                f"Spec. mult.: {x_ses(fp.fair_price, price)}\n")
+        c_gecko_url = 'https://www.coingecko.com/en/coins/thorchain'
+        message += f"Coingecko: {c_gecko_url}\n"
 
         return message.rstrip()
 

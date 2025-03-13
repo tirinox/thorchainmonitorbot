@@ -8,7 +8,7 @@
 
     <style>
         .bg {
-            background: url("renderer/static/bg2.svg") no-repeat;
+            background: url("../static/img/bg2.svg") no-repeat;
             background-position: center -79px;
         }
 
@@ -86,22 +86,21 @@
         </div>
 
         <div class="line-box">
-            {#            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">#}
 
             <div class="arrow-vert-stack">
                 {% if refund %}
 
                     {% with f=70 * (refund_rate / 100) %}
-                        <img src="renderer/static/arrow2.png" alt="Arrow refund" class="arrow-refund shadow"
+                        <img src="renderer/static/img/arrow2.png" alt="Arrow refund" class="arrow-refund shadow"
                              style="height: {{ f }}px"
                         >
-                        <img src="renderer/static/arrow2.png" alt="Arrow right"
+                        <img src="renderer/static/img/arrow2.png" alt="Arrow right"
                              class="arrow-lr arrow-lr-squished shadow"
                              style="height: {{ 70 - f }}px"
                         >
                     {% endwith %}
                 {% else %}
-                    <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
+                    <img src="renderer/static/img/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
                 {% endif %}
             </div>
             <div class="above-arrow tx-id-block">
@@ -112,7 +111,7 @@
         </div>
 
         <div class="logo-holder">
-            <img class="circle-tc-logo tc-glow" src="renderer/static/tc_logo_circle.png?rv=1" alt="THORChain logo">
+            <img class="circle-tc-logo tc-glow" src="renderer/static/img/tc_logo_circle.png?rv=1" alt="THORChain logo">
 
             <div class="liquidity-fee-block">
                 LP fee
@@ -120,7 +119,7 @@
             </div>
 
             <div class="arrow-down-holder">
-                <img src="renderer/static/arrow2-down.png" alt="Arrow down"
+                <img src="renderer/static/img/arrow2-down.png" alt="Arrow down"
                      class="shadow arrow-down {{ "arrow-aff" if affiliate_names else "arrow-no-aff" }}">
 
                 {% include "components/aff-logo.jinja2" %}
@@ -129,7 +128,7 @@
         </div>
 
         <div class="line-box">
-            <img src="renderer/static/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
+            <img src="renderer/static/img/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
             {% if streaming_count and streaming_count > 1 %}
                 <div class="above-arrow streaming-count midgard-turqoise">
                     {{ streaming_count }} subswaps
@@ -159,7 +158,7 @@
                     </div>
 
                     <div class="time-block-flex" id="time-block">
-                        <img src="renderer/static/time-is-money.png" alt="Time is money..." class="clock">
+                        <img src="renderer/static/img/time-is-money.png" alt="Time is money..." class="clock">
                         <div class="wait-time" id="wait-time"></div>
                     </div>
                 </div>

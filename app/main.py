@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 
 from api.aionode.connector import ThorConnector
 from api.midgard.connector import MidgardConnector
@@ -22,7 +21,6 @@ from jobs.fetch.cap import CapInfoFetcher
 from jobs.fetch.chain_id import ChainIdFetcher
 from jobs.fetch.chains import ChainStateFetcher
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
-from jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from jobs.fetch.key_stats import KeyStatsFetcher
 from jobs.fetch.last_block import LastBlockFetcher
 from jobs.fetch.lending_stats import LendingStatsFetcher
@@ -127,6 +125,8 @@ class App(WithLogger):
         d.rune_market_fetcher = RuneMarketInfoFetcher(d)
         d.trade_acc_fetcher = TradeAccountFetcher(d)
 
+        d.fetcher_chain_state = ChainStateFetcher(d)
+
         self._init_settings()
         self._init_messaging()
 
@@ -214,9 +214,6 @@ class App(WithLogger):
     async def _preloading(self):
         d = self.deps
         await self._some_sleep()
-
-        if 'REPLACE_RUNE_TIMESERIES_WITH_GECKOS' in os.environ:
-            await fill_rune_price_from_gecko(d.db)
 
         self.logger.info('Loading procedure start.')
 
@@ -502,11 +499,10 @@ class App(WithLogger):
             tasks.append(mdg_pool_fetcher)
 
         if d.cfg.get('chain_halt_state.enabled', True):
-            fetcher_chain_state = ChainStateFetcher(d)
             notifier_trade_halt = TradingHaltedNotifier(d)
-            fetcher_chain_state.add_subscriber(notifier_trade_halt)
+            d.fetcher_chain_state.add_subscriber(notifier_trade_halt)
             notifier_trade_halt.add_subscriber(d.alert_presenter)
-            tasks.append(fetcher_chain_state)
+            tasks.append(d.fetcher_chain_state)
 
         if d.cfg.get('constants.mimir_change.enabled', True):
             notifier_mimir_change = MimirChangedNotifier(d)

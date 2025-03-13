@@ -1,11 +1,11 @@
 import copy
 import logging
 from dataclasses import dataclass, field
-from typing import List, Optional, Set, NamedTuple
+from typing import List, Optional, NamedTuple, Tuple
 
 from lib.config import Config
 from lib.constants import BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float, RUNE_IDEAL_SUPPLY
-from lib.date_utils import now_ts, DAY
+from lib.date_utils import now_ts, DAY, HOUR, YEAR
 from lib.delegates import INotified
 from lib.money import weighted_mean
 from lib.texts import fuzzy_search
@@ -86,18 +86,59 @@ class PriceATH(BaseModelMixin):
         return price > REAL_REGISTERED_ATH and price > self.ath_price
 
 
+class Prices(NamedTuple):
+    # todo
+    pool: float
+    cex: float
+    in_btc: float
+    fair: float
+    market_cap: float
+    market_rank: int
+    tvl_non_rune: float
+
+    @property
+    def spec_mult(self):
+        return self.pool / self.fair
+
+
 @dataclass
 class AlertPrice:
-    price_1h: float = 0.0
-    price_24h: float = 0.0
-    price_7d: float = 0.0
+    hist_prices: dict
+    pool_prices: List[Tuple[float, float]]
+    cex_prices: List[Tuple[float, float]]
+    det_prices: List[Tuple[float, float]]
+    volumes: List[Tuple[float, dict]]
     market_info: RuneMarketInfo = field(default_factory=RuneMarketInfo)
     last_ath: Optional[PriceATH] = None
     btc_pool_rune_price: float = 0.0
     is_ath: bool = False
     ath_sticker: str = ''
-    halted_chains: Set[str] = None
+    chain_state: List[Tuple[str, str]] = None
     price_graph_period: int = 7 * DAY
+
+    @property
+    def cex_price(self):
+        return self.market_info.cex_price
+
+    @property
+    def price_1h(self):
+        return self.hist_prices.get(HOUR)
+
+    @property
+    def price_24h(self):
+        return self.hist_prices.get(DAY)
+
+    @property
+    def price_7d(self):
+        return self.hist_prices.get(7 * DAY)
+
+    @property
+    def price_30d(self):
+        return self.hist_prices.get(30 * DAY)
+
+    @property
+    def price_1y(self):
+        return self.hist_prices.get(YEAR)
 
 
 class LastPriceHolder(INotified):
@@ -131,7 +172,7 @@ class LastPriceHolder(INotified):
         return self.calculate_rune_price(self.stable_coins, pool_map)
 
     @staticmethod
-    def calculate_rune_price(stable_coins, pool_map: PoolInfoMap) -> float:
+    def calculate_rune_price(stable_coins, pool_map: PoolInfoMap) -> Optional[float]:
         prices, weights = [], []
         stable_coins = stable_coins
         for stable_symbol in stable_coins:

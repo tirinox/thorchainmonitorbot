@@ -1,11 +1,11 @@
 @font-face {
     font-family: ThorFont;
-    src: url(/static/ThorFont.ttf);
+    src: url(/static/fonts/ThorFont.ttf);
 }
 
 @font-face {
     font-family: ThorFontLight;
-    src: url(/static/Exo2-VariableFont_wght.ttf);
+    src: url(/static/fonts/Exo2-VariableFont_wght.ttf);
 }
 
 *,
@@ -76,6 +76,9 @@ p {
 }
 
 .header-box {
+    position: absolute;
+    left: 0;
+    top: 0;
     display: flex;
     align-items: center;
     padding: 20px;
@@ -102,11 +105,12 @@ footer {
     position: absolute;
     bottom: 0;
     width: 100%;
-    text-align: right;
-    padding: 5px 8px 5px 5px;
+    text-align: center;
+    padding: 3px 8px 3px 3px;
     font-size: 19px;
-    color: #394151;
-    font-style: italic;
+    color: #25272c;
+    /*font-style: italic;*/
+    letter-spacing: 4px;
 }
 
 .flex {
@@ -253,11 +257,6 @@ footer {
     float: right;
 }
 
-.bg {
-    background: url("renderer/static/bg2.svg") no-repeat;
-    background-position: center -79px;
-}
-
 .route-box {
     position: absolute;
     left: 11%;
@@ -300,4 +299,19 @@ footer {
     margin-bottom: 4px;
     margin-left: -10px;
     color: #23DCC8;
+}
+
+.up-arrow {
+    color: #26a69a;
+}
+
+.down-arrow {
+    color: #ef5350;
+}
+
+.cbox {
+    padding: 12px 20px 12px 20px;
+    border-radius: 18px;
+    background: rgba(52, 51, 51, 0.21);
+    box-shadow: rgb(0, 0, 0, 0.5) 0 0 20px;
 }
