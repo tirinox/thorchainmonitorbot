@@ -70,7 +70,7 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_DECORATION_ENABLED = True
 
-    TEXT_REF_CALL = f'⚡ Start {link(URL_OUR_REF, " trading now")}!'
+    TEXT_REF_CALL = f'Start {link(URL_OUR_REF, "trading now")} ⚡!'
 
     LOADING = '⌛ <i>Loading...</i>'
     LONG_DASH = '–'
