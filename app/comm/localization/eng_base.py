@@ -1858,7 +1858,7 @@ class BaseLocalization(ABC):  # == English
         else:
             text += '🟢'
 
-        mon_link = 'https://thorchain.network/'
+        mon_link = 'https://thornode.network/nodes'
         text += f'\n\nRealtime monitoring: {link(mon_link, mon_link)}'
 
         return text
