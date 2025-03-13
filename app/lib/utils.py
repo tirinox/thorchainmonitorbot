@@ -472,6 +472,7 @@ def add_properties_to_representation(repr, obj):
             repr[attr] = getattr(obj, attr)
     return repr
 
+
 def recursive_asdict(j, add_properties=False):
     if is_named_tuple_instance(j):
         fields = {k: recursive_asdict(v, add_properties) for k, v in j._asdict().items()}
@@ -616,3 +617,26 @@ def hit_every(key: str, n: int) -> bool:
         g[key] = 0
         return True
     return False
+
+
+def shorten_json(data):
+    if isinstance(data, list):
+        if len(data) > 4:
+            return [
+                shorten_json(data[0]),
+                shorten_json(data[1]),
+                [f"{len(data) - 3} items more..."],
+                shorten_json(data[-1]),
+            ]
+        else:
+            return [shorten_json(item) for item in data]
+    elif isinstance(data, dict):
+        if all(isinstance(v, dict) for v in data.values()) and len(data) > 4:
+            keys = list(data.keys())
+            shortened_dict = {k: shorten_json(data[k]) for k in (keys[:2] + [keys[-1]])}
+            shortened_dict[""] = f"{len(data) - 3} keys more..."
+            return shortened_dict
+        else:
+            return {k: shorten_json(v) for k, v in data.items()}
+    else:
+        return data
