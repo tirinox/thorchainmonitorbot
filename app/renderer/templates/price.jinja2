@@ -2,13 +2,21 @@
 
 {% block content %}
     <style>
-        #chart-container {
+        .pd__container {
+            display: flex;
             position: absolute;
             top: 12%;
             left: 3%;
-
             right: 3%;
-            bottom: 34%;
+            bottom: 5%;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #chart-container {
+            width: 100%;
+            height: 70%;
+
             padding: 10px;
             padding-left: 20px;
 
@@ -54,18 +62,13 @@
         }
 
         .indicator-container {
-            position: absolute;
-            bottom: 9%;
-            left: 3%;
-            right: 3%;
-            top: 68%;
-
+            margin-top: 2%;
+            width: 100%;
             display: flex;
             flex-direction: row;
             align-items: stretch;
             flex-wrap: nowrap;
             justify-content: space-between;
-            {#gap: 20px;#}
         }
 
         .indicator-box {
@@ -80,10 +83,8 @@
         }
 
         .chain-state-container {
-            position: absolute;
-            bottom: 3%;
-            left: 3%;
-            right: 3%;
+            margin-top: 2%;
+            width: 100%;
             display: flex;
             justify-content: space-between;
         }
@@ -116,6 +117,12 @@
 
         .halted {
             background-color: #ef5350;
+            /* fire red shadow */
+
+        }
+
+        .halted-text {
+            color: #ef5350;
         }
 
         .warning {
@@ -191,91 +198,93 @@
         {% include "components/header.jinja2" %}
     {% endwith %}
 
+    <div class="pd__container">
 
-    <div id="chart-container" class="shadow-box">
-        <div class="legend">
-            <div class="legend-item">
-                <div class="legend-color" style="background-color: #26a69a"></div>
-                <div class="legend-color" style="background-color: #ef5350"></div>
-                <div class="legend-text">Pool price</div>
+        <div id="chart-container" class="chart-container shadow-box">
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #26a69a"></div>
+                    <div class="legend-color" style="background-color: #ef5350"></div>
+                    <div class="legend-text">Pool price</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgb(0, 163, 204)"></div>
+                    <div class="legend-text">CEX price</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgb(90, 229, 180)"></div>
+                    <div class="legend-text">Deterministic price</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgb(24, 72, 76)"></div>
+                    <div class="legend-text">Pool swap volume</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgb(5, 76, 48)"></div>
+                    <div class="legend-text">Trade asset volume</div>
+                </div>
             </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background-color: rgb(0, 163, 204)"></div>
-                <div class="legend-text">CEX price</div>
+            <div id="price-chart"></div>
+        </div>
+
+        <div class="chain-state-container cbox">
+            {% for c in chain_state %}
+                <div class="chain-state  ">
+                    <div class="chain-state-status {{ c[1] }}"></div>
+                    <div class="chain-state-name {{ "halted-text" if c[1] == 'halted' else '' }}">{{ c[0] }}</div>
+                </div>
+            {% endfor %}
+        </div>
+
+
+        <div class="indicator-container">
+            <div class="indicator-box cbox price-box">
+                <div class="lb lbb m">RUNE price</div>
+                <div class="n pr colored m">${{ pretty_money(pool_prices[-1][1]) }}</div>
+                <div class="nbtc white m">₿ {{ round(btc_pool_rune_price * 1e8) }} sat</div>
             </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background-color: rgb(90, 229, 180)"></div>
-                <div class="legend-text">Deterministic price</div>
+
+            <div class="indicator-box price-delta-box cbox">
+                {% with label='1H', price=market_info.pool_rune_price, old_price=price_1h %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
+
+                {% with label='24H', price=market_info.pool_rune_price, old_price=price_24h %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
+
+                {% with label='7D', price=market_info.pool_rune_price, old_price=price_7d %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
+
+                {% with label='30D', price=market_info.pool_rune_price, old_price=price_30d %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
+
+                {% with label='1Y', price=market_info.pool_rune_price, old_price=price_1y %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
             </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background-color: rgb(24, 72, 76)"></div>
-                <div class="legend-text">Pool swap volume</div>
+
+            <div class="indicator-box cbox">
+                <div class="lb lbb">Market cap</div>
+                <div class="n colored">${{ short_money(market_info.total_supply * market_info.pool_rune_price) }}</div>
+                <div class="nsec white">#{{ market_info.rank }}</div>
+                <div class="lb lbb">24H trade volume</div>
+                <div class="nbtc">${{ short_money(market_info.total_trade_volume_usd) }}</div>
             </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background-color: rgb(5, 76, 48)"></div>
-                <div class="legend-text">Trade asset volume</div>
+
+            <div class="indicator-box cbox">
+                <div class="lb">TVL of Non-Rune assets</div>
+                <div class="nbtc white">${{ short_money(market_info.tvl_usd) }}</div>
+                <div class="lb">Deterministic price</div>
+                <div class="nbtc colored">${{ pretty_money(market_info.fair_price) }}</div>
+                <div class="lb">Speculative multiplier</div>
+                <div class="nsec white">x{{ pretty_money(market_info.pool_rune_price / market_info.fair_price) }}</div>
             </div>
         </div>
-        <div id="price-chart"></div>
+
     </div>
-
-    <div class="indicator-container">
-        <div class="indicator-box cbox price-box">
-            <div class="lb lbb m">RUNE price</div>
-            <div class="n pr colored m">${{ pretty_money(pool_prices[-1][1]) }}</div>
-            <div class="nbtc white m">₿ {{ round(btc_pool_rune_price * 1e8) }} sat</div>
-        </div>
-
-        <div class="indicator-box price-delta-box cbox">
-            {% with label='1H', price=market_info.pool_rune_price, old_price=price_1h %}
-                {% include "components/price_delta.jinja2" %}
-            {% endwith %}
-
-            {% with label='24H', price=market_info.pool_rune_price, old_price=price_24h %}
-                {% include "components/price_delta.jinja2" %}
-            {% endwith %}
-
-            {% with label='7D', price=market_info.pool_rune_price, old_price=price_7d %}
-                {% include "components/price_delta.jinja2" %}
-            {% endwith %}
-
-            {% with label='30D', price=market_info.pool_rune_price, old_price=price_30d %}
-                {% include "components/price_delta.jinja2" %}
-            {% endwith %}
-
-            {% with label='1Y', price=market_info.pool_rune_price, old_price=price_1y %}
-                {% include "components/price_delta.jinja2" %}
-            {% endwith %}
-        </div>
-
-        <div class="indicator-box cbox">
-            <div class="lb lbb">Market cap</div>
-            <div class="n colored">${{ short_money(market_info.total_supply * market_info.pool_rune_price) }}</div>
-            <div class="nsec white">#{{ market_info.rank }}</div>
-            <div class="lb lbb">24H trade volume</div>
-            <div class="nbtc">${{ short_money(market_info.total_trade_volume_usd) }}</div>
-        </div>
-
-        <div class="indicator-box cbox">
-            <div class="lb">TVL of Non-Rune assets</div>
-            <div class="nbtc white">${{ short_money(market_info.tvl_usd) }}</div>
-            <div class="lb">Deterministic price</div>
-            <div class="nbtc colored">${{ pretty_money(market_info.fair_price) }}</div>
-            <div class="lb">Speculative multiplier</div>
-            <div class="nsec white">x{{ pretty_money(market_info.pool_rune_price / market_info.fair_price) }}</div>
-        </div>
-
-    </div>
-
-    <div class="chain-state-container cbox">
-        {% for c in chain_state %}
-            <div class="chain-state">
-                <div class="chain-state-status {{ c[1] }}"></div>
-                <div class="chain-state-name">{{ c[0] }}</div>
-            </div>
-        {% endfor %}
-    </div>
-
 
     <script>
         const INTERVAL = 60 * 60  // 2 hours
