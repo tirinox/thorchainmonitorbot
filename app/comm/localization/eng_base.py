@@ -208,7 +208,7 @@ class BaseLocalization(ABC):  # == English
     @staticmethod
     def text_subscribed_to_lp(period):
         next_ts = now_ts() + period
-        next_date = datetime.utcfromtimestamp(next_ts).strftime('%Y-%m-%d %H:%M:%S')
+        next_date = datetime.fromtimestamp(next_ts).strftime('%Y-%m-%d %H:%M:%S')
         next_date += ' UTC'
         return f'🔔 <b>Congratulations!</b> You have successfully subscribed.\n' \
                f'The next update will come to you on {ital(next_date)}.'
@@ -2831,7 +2831,7 @@ class BaseLocalization(ABC):  # == English
         else:
             return '', '', '', ''
 
-    # ------ Network indentifiers ------
+    # ------ Network identifiers ------
 
     @staticmethod
     def notification_text_chain_id_changed(event: AlertChainIdChange):

@@ -13,9 +13,9 @@ from lib.date_utils import format_time_ago, seconds_human, now_ts
 from lib.explorers import get_explorer_url_to_address, get_ip_info_link, get_explorer_url_to_tx, get_thoryield_address
 from lib.money import pretty_dollar, pretty_money, short_address, short_money, short_dollar, format_percent, \
     RAIDO_GLYPH, short_rune, pretty_percent, \
-    chart_emoji, pretty_rune
+    chart_emoji, pretty_rune, emoji_for_percent_change, adaptive_round_to_str, calc_percent_change
 from lib.texts import bold, link, code, ital, pre, progressbar, bracketify, \
-    up_down_arrow, plural, shorten_text, cut_long_text, underline
+    up_down_arrow, plural, shorten_text, cut_long_text, underline, x_ses
 from lib.utils import grouper, translate, hit_every
 from models.asset import Asset
 from models.cap_info import ThorCapInfo
