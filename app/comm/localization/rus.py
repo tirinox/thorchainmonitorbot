@@ -11,10 +11,10 @@ from lib.config import Config
 from lib.constants import Chains, LOAN_MARKER, ThorRealms
 from lib.date_utils import format_time_ago, seconds_human, now_ts
 from lib.explorers import get_explorer_url_to_address, get_ip_info_link, get_explorer_url_to_tx, get_thoryield_address
-from lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
+from lib.money import pretty_dollar, pretty_money, short_address, short_money, short_dollar, format_percent, \
+    RAIDO_GLYPH, short_rune, pretty_percent, \
     chart_emoji, pretty_rune
-from lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
+from lib.texts import bold, link, code, ital, pre, progressbar, bracketify, \
     up_down_arrow, plural, shorten_text, cut_long_text, underline
 from lib.utils import grouper, translate, hit_every
 from models.asset import Asset
@@ -382,7 +382,7 @@ class RussianLocalization(BaseLocalization):
             f'Сейчас в пулах <i>{short_rune(cap.pooled_rune)} {self.R}</i> из '
             f"<i>{pretty_money(cap.cap)} {self.R}</i> максимально возможных.\n"
             f"{self._cap_progress_bar(cap)}\n"
-            f'🤲🏻 Вы можеще еще добавить {bold(short_rune(cap.how_much_rune_you_can_lp))} {self.R} '
+            f'🤲🏻 Вы можете еще добавить {bold(short_rune(cap.how_much_rune_you_can_lp))} {self.R} '
             f'или {bold(pretty_dollar(cap.how_much_usd_you_can_lp))}.\n👉🏻 {self.thor_site()}'
         )
 
@@ -706,7 +706,7 @@ class RussianLocalization(BaseLocalization):
             f"🖖 {bold(title)}\n"
             f"Цена Руны (на биржах): {code(pretty_dollar(e.info.cex_price))}\n"
             f"Взвешенная цена Руны в пулах: {code(pretty_dollar(e.info.pool_rune_price))}\n"
-            f"<b>Расхождение</b> цены THORChain и биржы: {code(pretty_dollar(div))} ({div_p:.1f}%)."
+            f"<b>Расхождение</b> цены THORChain и биржи: {code(pretty_dollar(div))} ({div_p:.1f}%)."
         )
 
         return text
@@ -716,7 +716,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_S_FINANCIAL = '💱 Финансовые'
     BUTTON_METR_S_NET_OP = '🔩 Работа сети'
 
-    BUTTON_METR_CAP = '✋ Кап ливкидности'
+    BUTTON_METR_CAP = '✋ Кап ликвидности'
     BUTTON_METR_PRICE = f'💲 {BaseLocalization.R} инфо о цене'
     BUTTON_METR_QUEUE = f'👥 Очередь'
     BUTTON_METR_STATS = f'📊 Статистика'
@@ -744,7 +744,7 @@ class RussianLocalization(BaseLocalization):
         )
 
     def text_leaderboard_info(self):
-        return f"🏆 Доска лушчих трейдеров THORChain:\n" \
+        return f"🏆 Доска лучших трейдеров THORChain:\n" \
                f"\n" \
                f" 👉 {bold(URL_LEADERBOARD_MCCN)} 👈\n"
 
@@ -775,7 +775,7 @@ class RussianLocalization(BaseLocalization):
     TEXT_AVA_ERR_INVALID = '⚠️ Фото неправильного формата!'
     TEXT_AVA_ERR_NO_PIC = '⚠️ Не удалось загрузить твое фото из профиля!'
     TEXT_AVA_READY = '🥳 <b>Твой THORChain аватар готов!</b> ' \
-                     'Скачай это фото и установи его в Телеграм и социальных сетях.'
+                     'Скачай это фото и установи его в Telegram и социальных сетях.'
 
     BUTTON_AVA_FROM_MY_USERPIC = '😀 Из фото профиля'
 
@@ -1248,7 +1248,7 @@ class RussianLocalization(BaseLocalization):
     MIMIR_DISABLED = 'ВЫКЛЮЧЕНО'
     MIMIR_YES = 'ДА'
     MIMIR_NO = 'НЕТ'
-    MIMIR_UNDEFINED = 'неопределено'
+    MIMIR_UNDEFINED = 'не определено'
     MIMIR_LAST_CHANGE = 'Последнее изменение'
     MIMIR_UNKNOWN_CHAIN = 'Неизв. сеть'
 
@@ -1425,11 +1425,14 @@ class RussianLocalization(BaseLocalization):
         else:
             text += '🟢'
 
+        mon_link = 'https://thornode.network/nodes'
+        text += f'\n\nМониторинг реальном времени: {link(mon_link, mon_link)}'
+
         return text
 
     TEXT_NOP_MANAGE_LIST_TITLE = \
         'Вы добавили <b>{n}</b> нод в ваш список слежения. ' \
-        'Вы можете убрать ноды из списка слежения, нажав на кпонки снизу.'
+        'Вы можете убрать ноды из списка слежения, нажав на кнопки снизу.'
 
     TEXT_NOP_ADD_INSTRUCTIONS = '🤓 Если вам уже известны адреса интересующих вас нод, ' \
                                 f'пожалуйста, отправьте мне их списком через сообщение. ' \
@@ -1695,7 +1698,7 @@ class RussianLocalization(BaseLocalization):
             f'🏊‍ RUNEPool: {pre(short_rune(sp.runepool))} ({format_percent(sp.runepool_percent)}).\n'
             f'⚡️ POL: {pre(short_rune(sp.pol))} ({format_percent(sp.pol_percent)}).\n'
             f'🔒 Бонды нод: {pre(short_rune(sp.bonded))} ({format_percent(sp.bonded_percent)}).\n'
-            f'🏦 Биржы: {pre(short_rune(sp.in_cex))} ({format_percent(sp.in_cex_percent)}).\n'
+            f'🏦 Биржи: {pre(short_rune(sp.in_cex))} ({format_percent(sp.in_cex_percent)}).\n'
             f'💰 Сокровищница имеет {pre(short_rune(sp.treasury))}.'
         )
 
@@ -1854,7 +1857,7 @@ class RussianLocalization(BaseLocalization):
         top_asset_str = top_asset_str or '-'
 
         return (
-            f'🤹🏻‍♂️ <b>DEX использовние последние {period_str}</b>\n\n'
+            f'🤹🏻‍♂️ <b>DEX использование последние {period_str}</b>\n\n'
             f'→ Обмен внутрь: {self.format_dex_entry(r.swap_ins, r)}\n'
             f'← Обмен наружу: {self.format_dex_entry(r.swap_outs, r)}\n'
             f'∑ В сумме: {self.format_dex_entry(r.total, r)}\n\n'
