@@ -13,9 +13,9 @@ from lib.date_utils import format_time_ago, seconds_human, now_ts
 from lib.explorers import get_explorer_url_to_address, get_ip_info_link, get_explorer_url_to_tx, get_thoryield_address
 from lib.money import pretty_dollar, pretty_money, short_address, short_money, short_dollar, format_percent, \
     RAIDO_GLYPH, short_rune, pretty_percent, \
-    chart_emoji, pretty_rune, emoji_for_percent_change, adaptive_round_to_str, calc_percent_change
+    chart_emoji, pretty_rune
 from lib.texts import bold, link, code, ital, pre, progressbar, bracketify, \
-    up_down_arrow, plural, shorten_text, cut_long_text, underline, x_ses
+    up_down_arrow, plural, shorten_text, cut_long_text, underline
 from lib.utils import grouper, translate, hit_every
 from models.asset import Asset
 from models.cap_info import ThorCapInfo
@@ -173,7 +173,7 @@ class RussianLocalization(BaseLocalization):
     @staticmethod
     def text_subscribed_to_lp(period):
         next_ts = now_ts() + period
-        next_date = datetime.utcfromtimestamp(next_ts).strftime('%d.%m.%Y %H:%M:%S')
+        next_date = datetime.fromtimestamp(next_ts).strftime('%d.%m.%Y %H:%M:%S')
         next_date += ' UTC'
         return f'🔔 <b>Поздравляем!</b> Вы подписались на уведомления о доходности по данной позиции.\n' \
                f'Ближайшее обновление поступит вам {ital(next_date)}.'
@@ -338,7 +338,7 @@ class RussianLocalization(BaseLocalization):
         today = datetime.now().strftime('%d.%m.%Y')
         return f'Сегодня: {today}'
 
-    TEXT_LP_NO_LOAN_FOR_THIS_ADDRESS = '📪 <i>На этом адресе нет заёмов в пуле {pool}.</i>'
+    TEXT_LP_NO_LOAN_FOR_THIS_ADDRESS = '📪 <i>На этом адресе нет займов в пуле {pool}.</i>'
 
     # ----- CAP ------
 
@@ -355,7 +355,7 @@ class RussianLocalization(BaseLocalization):
         up = old.cap < new.cap
         verb = "подрос" if up else "упал"
         arrow = '⬆️' if up else '⚠️ ⬇️'
-        call = "Ай-да запулим еще!\n" if up else ''
+        call = "Ай-да добавим еще!\n" if up else ''
         return (
             f'{arrow} <b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n'
             f'Сейчас в пулы помещено <b>{pretty_money(new.pooled_rune)}</b> {self.R}.\n'
@@ -390,7 +390,7 @@ class RussianLocalization(BaseLocalization):
 
     PRICE_GRAPH_TITLE = f'THORChain {RAIDO_GLYPH}une цена'
     PRICE_GRAPH_LEGEND_DET_PRICE = 'Детерминистская цена'
-    PRICE_GRAPH_LEGEND_ACTUAL_PRICE = 'Цена в пухал'
+    PRICE_GRAPH_LEGEND_ACTUAL_PRICE = 'Цена в пулах'
     PRICE_GRAPH_LEGEND_CEX_PRICE = f'Цена на бирже'
     PRICE_GRAPH_VOLUME_SWAP_NORMAL = 'Объем обменов'
     PRICE_GRAPH_VOLUME_SWAP_SYNTH = 'Объем синтетиков'
