@@ -460,13 +460,31 @@ def is_named_tuple_instance(x):
     return all(type(n) == str for n in f)
 
 
-def recursive_asdict(j):
+def add_properties_to_representation(repr, obj):
+    # Add properties dynamically
+    for attr in dir(obj):
+        # Check if it's a property and not private or already in the result
+        if (
+                not attr.startswith("_") and
+                not attr in repr and
+                isinstance(getattr(type(obj), attr, None), property)
+        ):
+            repr[attr] = getattr(obj, attr)
+    return repr
+
+
+def recursive_asdict(j, add_properties=False):
     if is_named_tuple_instance(j):
-        return {k: recursive_asdict(v) for k, v in j._asdict().items()}
+        fields = {k: recursive_asdict(v, add_properties) for k, v in j._asdict().items()}
+        return add_properties_to_representation(fields, j)
     elif dataclasses.is_dataclass(j):
-        return {k: recursive_asdict(v) for k, v in dataclasses.asdict(j).items()}
-    elif isinstance(j, (list, tuple)):
-        return [recursive_asdict(v) for v in j]
+        fields = {k: recursive_asdict(v, add_properties) for k, v in dataclasses.asdict(j).items()}
+        return add_properties_to_representation(fields, j)
+    elif isinstance(j, (list, tuple, set)):
+        return [recursive_asdict(v, add_properties) for v in j]
+    elif isinstance(j, dict):
+        return {key: recursive_asdict(value, add_properties) for key, value in j.items()}
+
     else:
         return j
 
@@ -566,6 +584,8 @@ def namedtuple_to_dict(obj) -> dict:
     Returns:
         dict: A dictionary representation of the NamedTuple, including fields and properties.
     """
+    # fixme: use recursive_asdict
+
     if not is_named_tuple_instance(obj):
         raise TypeError("Input must be an instance of NamedTuple.")
 
@@ -597,3 +617,26 @@ def hit_every(key: str, n: int) -> bool:
         g[key] = 0
         return True
     return False
+
+
+def shorten_json(data):
+    if isinstance(data, list):
+        if len(data) > 4:
+            return [
+                shorten_json(data[0]),
+                shorten_json(data[1]),
+                [f"{len(data) - 3} items more..."],
+                shorten_json(data[-1]),
+            ]
+        else:
+            return [shorten_json(item) for item in data]
+    elif isinstance(data, dict):
+        if all(isinstance(v, dict) for v in data.values()) and len(data) > 4:
+            keys = list(data.keys())
+            shortened_dict = {k: shorten_json(data[k]) for k in (keys[:2] + [keys[-1]])}
+            shortened_dict[""] = f"{len(data) - 3} keys more..."
+            return shortened_dict
+        else:
+            return {k: shorten_json(v) for k, v in data.items()}
+    else:
+        return data

@@ -4,6 +4,7 @@ from api.aionode.types import ThorChainInfo
 from jobs.fetch.base import BaseFetcher
 from lib.date_utils import parse_timespan_to_seconds
 from lib.depcont import DepContainer
+from models.chains import ChainInfoHolder
 
 
 class ChainStateFetcher(BaseFetcher):
@@ -13,4 +14,5 @@ class ChainStateFetcher(BaseFetcher):
 
     async def fetch(self) -> Dict[str, ThorChainInfo]:
         chain_info = await self.deps.thor_connector.query_chain_info()
+        self.deps.chain_info = ChainInfoHolder.from_list(chain_info)
         return chain_info

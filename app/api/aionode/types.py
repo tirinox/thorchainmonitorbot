@@ -272,6 +272,10 @@ class ThorChainInfo(NamedTuple):
     def is_ok(self):
         return self.chain and self.pub_key and self.address
 
+    @property
+    def is_perfect(self):
+        return self.is_ok and not self.chain_lp_actions_paused and not self.chain_trading_paused and not self.halted
+
     @classmethod
     def from_json(cls, j):
         return cls(

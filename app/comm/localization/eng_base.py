@@ -1,4 +1,5 @@
 import logging
+import random
 from abc import ABC
 from datetime import datetime
 from math import ceil
@@ -17,9 +18,9 @@ from lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
 from lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
 from lib.money import format_percent, pretty_money, short_address, short_money, \
-    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, short_dollar, \
+    calc_percent_change, pretty_dollar, short_dollar, \
     RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
-from lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
+from lib.texts import progressbar, link, pre, code, bold, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text, underline, \
     comma_join, int_to_letter
 from lib.utils import grouper, run_once, identity
@@ -55,8 +56,7 @@ CREATOR_TG = '@account1242'
 
 URL_THOR_SWAP = 'https://app.thorswap.finance/'
 
-URL_LEADERBOARD_MCCN = 'https://leaderboard.thornode.org/'
-
+URL_OUR_REF = 'https://app.thorswap.finance/swap?ref=ref'
 
 class BaseLocalization(ABC):  # == English
     def __init__(self, cfg: Config):
@@ -69,6 +69,8 @@ class BaseLocalization(ABC):  # == English
     # ----- WELCOME ------
 
     TEXT_DECORATION_ENABLED = True
+
+    TEXT_REF_CALL = f'Start {link(URL_OUR_REF, "trading now")} ⚡!'
 
     LOADING = '⌛ <i>Loading...</i>'
     LONG_DASH = '–'
@@ -208,7 +210,7 @@ class BaseLocalization(ABC):  # == English
     @staticmethod
     def text_subscribed_to_lp(period):
         next_ts = now_ts() + period
-        next_date = datetime.utcfromtimestamp(next_ts).strftime('%Y-%m-%d %H:%M:%S')
+        next_date = datetime.fromtimestamp(next_ts).strftime('%Y-%m-%d %H:%M:%S')
         next_date += ' UTC'
         return f'🔔 <b>Congratulations!</b> You have successfully subscribed.\n' \
                f'The next update will come to you on {ital(next_date)}.'
@@ -800,56 +802,15 @@ class BaseLocalization(ABC):  # == English
 
         message = f"{title} | {c_gecko_link}\n\n"
 
-        if p.halted_chains:
-            hc = pre(', '.join(p.halted_chains))
-            message += f"🚨 <code>Trading is still halted on {hc}.</code>\n\n"
-
         price = p.market_info.pool_rune_price
 
         pr_text = f"${price:.3f}"
         btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
         message += f"<b>RUNE</b> price is {code(pr_text)} ({btc_price}) now.\n"
 
-        fp = p.market_info
+        # message += f"{random.randint(0, 1000)}\n"
 
-        if fp.cex_price > 0.0:
-            message += f"<b>RUNE</b> price at {self.ref_cex_name} (CEX) is {code(pretty_dollar(fp.cex_price))} " \
-                       f"({self.ref_cex_pair} market).\n"
-
-            div, div_p = fp.divergence_abs, fp.divergence_percent
-            exclamation = self._exclamation_sign(div_p, ref=10)
-            message += f"<b>Divergence</b> vs CEX is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation}).\n"
-
-        last_ath = p.last_ath
-        if last_ath is not None and p.is_ath:
-            last_ath_pr = f'{last_ath.ath_price:.2f}'
-            ago_str = self.format_time_ago(now_ts() - last_ath.ath_date)
-            message += f"Last ATH was ${pre(last_ath_pr)} ({ago_str}).\n"
-
-        time_combos = zip(
-            ('1h', '24h', '7d'),
-            (p.price_1h, p.price_24h, p.price_7d)
-        )
-        for title, old_price in time_combos:
-            if old_price:
-                pc = calc_percent_change(old_price, price)
-                message += code(f"{title.rjust(4)}:{adaptive_round_to_str(pc, True).rjust(8)} % "
-                                f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}") + "\n"
-
-        if fp.rank >= 1:
-            message += f"Coin market cap is {bold(short_dollar(fp.market_cap))} (#{bold(fp.rank)})\n"
-
-        if fp.total_trade_volume_usd > 0:
-            message += f"Total trading volume is {bold(short_dollar(fp.total_trade_volume_usd))}\n"
-
-        message += '\n'
-
-        if fp.tvl_usd >= 1:
-            det_link = link(self.DET_PRICE_HELP_PAGE, 'deterministic price')
-            message += (f"TVL of non-RUNE assets: {bold(short_dollar(fp.tvl_usd))}\n"
-                        f"So {det_link} of RUNE is {code(pretty_dollar(fp.fair_price))}\n"
-                        f"Speculative multiplier is {pre(x_ses(fp.fair_price, price))}\n")
-
+        message += f'\n{self.TEXT_REF_CALL}'
         return message.rstrip()
 
     # ------- POOL CHURN -------
@@ -979,11 +940,6 @@ class BaseLocalization(ABC):  # == English
             f"{self.can_add_more_lp_text(info)}\n"
             f"The {bold(self.R)} price is <code>${info.price:.3f}</code> now.\n"
         )
-
-    def text_leaderboard_info(self):
-        return f"🏆 Traders leaderboard is here:\n" \
-               f"\n" \
-               f" 👉 {bold(URL_LEADERBOARD_MCCN)} 👈\n"
 
     def queue_message(self, queue_info: QueueInfo):
         return (
@@ -1858,7 +1814,7 @@ class BaseLocalization(ABC):  # == English
         else:
             text += '🟢'
 
-        mon_link = 'https://thorchain.network/'
+        mon_link = 'https://thornode.network/nodes'
         text += f'\n\nRealtime monitoring: {link(mon_link, mon_link)}'
 
         return text
@@ -2831,7 +2787,7 @@ class BaseLocalization(ABC):  # == English
         else:
             return '', '', '', ''
 
-    # ------ Network indentifiers ------
+    # ------ Network identifiers ------
 
     @staticmethod
     def notification_text_chain_id_changed(event: AlertChainIdChange):

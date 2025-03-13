@@ -1,6 +1,7 @@
+from comm.picture.price_picture import VOLUME_N_POINTS
 from jobs.price_recorder import PriceRecorder
 from lib.cooldown import Cooldown
-from lib.date_utils import parse_timespan_to_seconds, now_ts
+from lib.date_utils import parse_timespan_to_seconds, now_ts, HOUR
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.money import pretty_money, calc_percent_change
@@ -45,11 +46,11 @@ class PriceNotifier(INotified, WithDelegates, WithLogger):
 
     # -----
 
-    async def historical_get_triplet(self):
+    async def get_historical_price_dict(self):
         """
-        Returns 3 pool prices: price_1h, price_24h, price_7d
+        Returns 5 pool prices: price_1h, price_24h, price_7d, price_30d, price_1y
         """
-        return await self.price_recorder.historical_get_triplet()
+        return await self.price_recorder.get_historical_price_dict()
 
     def _next_ath_sticker(self):
         try:
@@ -57,28 +58,37 @@ class PriceNotifier(INotified, WithDelegates, WithLogger):
         except (StopIteration, TypeError, ValueError):
             return ''
 
-    async def do_notify_price_table(self, market_info, hist_prices, ath, last_ath=None):
+    async def make_event(self, market_info, ath, last_ath=None):
         btc_per_rune = self.deps.price_holder.btc_per_rune
-        p_1h, p_24h, p_7d = hist_prices
 
-        price_alert = AlertPrice(
-            p_1h, p_24h, p_7d,
-            market_info,
-            last_ath,
-            btc_per_rune,
+        hist_prices = await self.get_historical_price_dict()
+        pool_prices, cex_prices, det_prices = await self.price_recorder.get_prices(self.price_graph_period)
+        volumes = await self.deps.volume_recorder.get_data_range_ago_n(self.price_graph_period, n=VOLUME_N_POINTS)
+
+        return AlertPrice(
+            hist_prices=hist_prices,
+            pool_prices=pool_prices,
+            cex_prices=cex_prices,
+            det_prices=det_prices,
+            volumes=volumes,
+            market_info=market_info,
+            last_ath=last_ath,
+            btc_pool_rune_price=btc_per_rune,
             is_ath=ath,
             ath_sticker=self._next_ath_sticker(),
-            halted_chains=self.deps.halted_chains,
+            chain_state=self.deps.chain_info.state_list,
             price_graph_period=self.price_graph_period,
         )
 
+    async def do_notify_price_table(self, market_info, ath, last_ath=None):
+        price_alert = await self.make_event(market_info, ath, last_ath)
         await self.pass_data_to_listeners(price_alert)
 
     async def handle_new_price(self, market_info: RuneMarketInfo):
-        hist_prices = await self.historical_get_triplet()
+        hist_prices = await self.get_historical_price_dict()
         price = market_info.pool_rune_price
 
-        price_1h = hist_prices[0]
+        price_1h = hist_prices[HOUR]
         send_it = False
         if price_1h:
             percent_change = calc_percent_change(price_1h, price)
@@ -99,7 +109,7 @@ class PriceNotifier(INotified, WithDelegates, WithLogger):
 
         if send_it:
             await self._cd_price_regular.do()
-            await self.do_notify_price_table(market_info, hist_prices, ath=False)
+            await self.do_notify_price_table(market_info, ath=False)
 
     async def get_prev_ath(self) -> PriceATH:
         try:
@@ -133,9 +143,8 @@ class PriceNotifier(INotified, WithDelegates, WithLogger):
                 await self._cd_price_ath.do()
                 await self._cd_price_rise.do()  # prevent 2 notifications
 
-                hist_prices = await self.historical_get_triplet()
                 await self._cd_price_regular.do()
-                await self.do_notify_price_table(market_info, hist_prices, ath=True, last_ath=last_ath)
+                await self.do_notify_price_table(market_info, ath=True, last_ath=last_ath)
                 return True
 
         return False

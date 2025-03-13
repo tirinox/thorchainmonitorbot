@@ -1,0 +1,550 @@
+{% extends "base.jinja2" %}
+
+{% block content %}
+    <style>
+        .pd__container {
+            display: flex;
+            position: absolute;
+            top: 12%;
+            left: 3%;
+            right: 3%;
+            bottom: 5%;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #chart-container {
+            width: 100%;
+            height: 70%;
+
+            padding: 10px;
+            padding-left: 20px;
+
+            font-family: ThorFontLight, serif;
+            font-weight: lighter;
+        }
+
+        .legend {
+            position: absolute;
+            top: 5%;
+            left: 3%;
+            display: flex;
+            z-index: 100;
+        }
+
+        .legend-item {
+            display: flex;
+            margin-right: 20px;
+        }
+
+        .legend-color {
+            width: 27px;
+            height: 25px;
+            margin-right: 10px;
+            border-radius: 5px;
+        }
+
+        .legend-text {
+            color: #bbb;
+            font-size: 20px;
+            font-weight: bolder;
+        }
+
+        #price-chart {
+            width: 100%;
+            height: 100%;
+        }
+
+        .shadow-box {
+            border-radius: 22px;
+            background: rgba(52, 51, 51, 0.21);
+            box-shadow: rgb(0, 0, 0, 0.5) 0 0 20px;
+        }
+
+        .indicator-container {
+            margin-top: 2%;
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+        }
+
+        .indicator-box {
+            display: flex;
+
+            font-family: ThorFontLight, serif;
+            font-size: 22px;
+            justify-content: space-around;
+            flex-direction: column;
+            align-items: center;
+            width: auto;
+        }
+
+        .chain-state-container {
+            margin-top: 2%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .chain-state {
+            display: flex;
+            align-items: center; /* Align items vertically */
+        }
+
+        .chain-state-name {
+            color: #bbb;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            margin-right: 30px;
+        }
+
+        .chain-state-status {
+            display: flex;
+            margin-top: 3px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .ok {
+            background-color: #26a69a;
+        }
+
+        .halted {
+            background-color: #ef5350;
+            /* fire red shadow */
+
+        }
+
+        .halted-text {
+            color: #ef5350;
+        }
+
+        .warning {
+            background-color: #FFA500;
+        }
+
+        .price-delta-box {
+            display: flex;
+            flex-direction: column;
+
+            justify-content: space-around;
+            min-width: 10%;
+            padding-right: 14px;
+        }
+
+        .price-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .lb {
+            margin-top: 12px;
+            font-weight: normal;
+            font-size: 20px;
+            color: rgb(179, 179, 179);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .lbb {
+            font-size: 24px;
+        }
+
+        .n {
+            font-weight: bold;
+            font-size: 43px;
+        }
+
+        .pr {
+            font-size: 52px;
+        }
+
+        .colored {
+            color: rgb(40 244 175);
+            filter: drop-shadow(0 0 5px rgb(100, 251, 200, 0.5));
+        }
+
+        .white {
+            color: white;
+            filter: drop-shadow(0 0 3px rgba(166, 244, 222, 0.5));
+        }
+
+        .nbtc {
+            font-size: 38px;
+            font-weight: bolder;
+        }
+
+        .nsec {
+            font-size: 34px;
+            font-weight: bolder;
+        }
+
+        .m {
+            margin: 7px 0 7px 0;
+        }
+    </style>
+
+    <script src="renderer/static/js/lightweight-charts.standalone.production.js"></script>
+
+    {% with title="RUNE MARKET DATA" %}
+        {% include "components/header.jinja2" %}
+    {% endwith %}
+
+    <div class="pd__container">
+
+        <div id="chart-container" class="chart-container shadow-box">
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #26a69a"></div>
+                    <div class="legend-color" style="background-color: #ef5350"></div>
+                    <div class="legend-text">Pool price</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgb(0, 163, 204)"></div>
+                    <div class="legend-text">CEX price</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgb(90, 229, 180)"></div>
+                    <div class="legend-text">Deterministic price</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgb(24, 72, 76)"></div>
+                    <div class="legend-text">Pool swap volume</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: rgb(5, 76, 48)"></div>
+                    <div class="legend-text">Trade asset volume</div>
+                </div>
+            </div>
+            <div id="price-chart"></div>
+        </div>
+
+        <div class="chain-state-container cbox">
+            {% for c in chain_state %}
+                <div class="chain-state  ">
+                    <div class="chain-state-status {{ c[1] }}"></div>
+                    <div class="chain-state-name {{ "halted-text" if c[1] == 'halted' else '' }}">{{ c[0] }}</div>
+                </div>
+            {% endfor %}
+        </div>
+
+
+        <div class="indicator-container">
+            <div class="indicator-box cbox price-box">
+                <div class="lb lbb m">RUNE price</div>
+                <div class="n pr colored m">${{ pretty_money(pool_prices[-1][1]) }}</div>
+                <div class="nbtc white m">₿ {{ round(btc_pool_rune_price * 1e8) }} sat</div>
+            </div>
+
+            <div class="indicator-box price-delta-box cbox">
+                {% with label='1H', price=market_info.pool_rune_price, old_price=price_1h %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
+
+                {% with label='24H', price=market_info.pool_rune_price, old_price=price_24h %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
+
+                {% with label='7D', price=market_info.pool_rune_price, old_price=price_7d %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
+
+                {% with label='30D', price=market_info.pool_rune_price, old_price=price_30d %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
+
+                {% with label='1Y', price=market_info.pool_rune_price, old_price=price_1y %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
+            </div>
+
+            <div class="indicator-box cbox">
+                <div class="lb lbb">Market cap</div>
+                <div class="n colored">${{ short_money(market_info.total_supply * market_info.pool_rune_price) }}</div>
+                <div class="nsec white">#{{ market_info.rank }}</div>
+                <div class="lb lbb">24H trade volume</div>
+                <div class="nbtc">${{ short_money(market_info.total_trade_volume_usd) }}</div>
+            </div>
+
+            <div class="indicator-box cbox">
+                <div class="lb">TVL of Non-Rune assets</div>
+                <div class="nbtc white">${{ short_money(market_info.tvl_usd) }}</div>
+                <div class="lb">Deterministic price</div>
+                <div class="nbtc colored">${{ pretty_money(market_info.fair_price) }}</div>
+                <div class="lb">Speculative multiplier</div>
+                <div class="nsec white">x{{ pretty_money(market_info.pool_rune_price / market_info.fair_price) }}</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const INTERVAL = 60 * 60  // 2 hours
+        const volumeInterval = INTERVAL
+
+        function convertToOHLC(priceData, interval) {
+            // If no interval is provided, treat each data point as a separate candle.
+            if (!interval) {
+                return priceData.map(([time, price]) => ({
+                    open: price,
+                    high: price,
+                    low: price,
+                    close: price,
+                    time: Math.floor(time)  // use the timestamp as is (or convert it as needed)
+                }));
+            }
+
+            // Sort the data by timestamp in ascending order.
+            const sortedData = priceData.slice().sort((a, b) => a[0] - b[0]);
+
+            const ohlcData = [];
+            let currentGroup = null;
+
+            for (let [timestamp, price] of sortedData) {
+                // Determine the start of the group interval (e.g. if interval is 60, group by each minute)
+                const groupTime = Math.floor(timestamp / interval) * interval;
+
+                // If we're in a new group, push the previous one (if it exists) and start a new group.
+                if (!currentGroup || currentGroup.groupTime !== groupTime) {
+                    if (currentGroup) {
+                        ohlcData.push({
+                            open: currentGroup.open,
+                            high: currentGroup.high,
+                            low: currentGroup.low,
+                            close: currentGroup.close,
+                            time: currentGroup.groupTime
+                        });
+                    }
+                    currentGroup = {
+                        groupTime,
+                        open: price,
+                        high: price,
+                        low: price,
+                        close: price
+                    };
+                } else {
+                    // Update the group's OHLC values.
+                    currentGroup.high = Math.max(currentGroup.high, price);
+                    currentGroup.low = Math.min(currentGroup.low, price);
+                    currentGroup.close = price;
+                }
+            }
+
+            // Push the final group.
+            if (currentGroup) {
+                ohlcData.push({
+                    open: currentGroup.open,
+                    high: currentGroup.high,
+                    low: currentGroup.low,
+                    close: currentGroup.close,
+                    time: currentGroup.groupTime
+                });
+            }
+
+            return ohlcData;
+        }
+
+        function aggregateToIntervalAvg(data, interval) {
+            const dailyData = {};
+            data.forEach(([timestamp, price]) => {
+                const dayTimestamp = Math.floor(timestamp / interval) * interval; // Normalize to start of day
+                if (!dailyData[dayTimestamp]) {
+                    dailyData[dayTimestamp] = {sum: 0, count: 0};
+                }
+                dailyData[dayTimestamp].sum += price;
+                dailyData[dayTimestamp].last = price;
+                dailyData[dayTimestamp].count += 1;
+            });
+
+            return Object.keys(dailyData).map(day => ({
+                time: parseInt(day),
+                value: dailyData[day].sum / dailyData[day].count // Compute daily average
+                //value: dailyData[day].last // Compute daily average
+            }));
+        }
+
+        const volumes = {{ volumes|safe }};
+        const poolPrices = {{ pool_prices|safe }};
+        const cexPrices = {{ cex_prices|safe }};
+        const detPrices = {{ det_prices|safe }};
+
+        console.log(JSON.stringify(poolPrices.splice(0, 10)));
+
+        const poolOHLC = convertToOHLC(poolPrices, INTERVAL);
+        console.log(poolOHLC);
+
+        function convertToLineData(data) {
+            return data.map(([timestamp, price]) => ({
+                time: timestamp,
+                value: price
+            }));
+        }
+
+        const detLineData = aggregateToIntervalAvg(detPrices, INTERVAL);
+        const cexLineData = aggregateToIntervalAvg(cexPrices, INTERVAL);
+
+        function aggregateSwapVolumes(volumes, interval, key = 'swap') {
+            const dailyVolumes = {};
+
+            volumes.forEach(([timestamp, volumeObj]) => {
+                const dayTimestamp = Math.floor(timestamp / interval) * interval; // Normalize to day start
+                const swapVolume = volumeObj?.[key] || 0;
+
+                if (!dailyVolumes[dayTimestamp]) {
+                    dailyVolumes[dayTimestamp] = 0;
+                }
+                dailyVolumes[dayTimestamp] += swapVolume; // Sum volumes for the same day
+            });
+
+            return Object.keys(dailyVolumes).map(day => ({
+                time: parseInt(day),
+                value: dailyVolumes[day]
+            })).filter(({value}) => value > 0); // Filter out days with no volume
+        }
+
+        const chartOptions = {
+            handleScroll: false, handleScale: false,
+            layout: {
+                textColor: 'white', background: {color: 'transparent'},
+                fontFamily: 'ThorFontLight',
+                fontSize: 20,
+            },
+            grid: {
+                vertLines: {color: '#353535', visible: true},
+                horzLines: {color: '#323232', visible: true}
+            },
+
+            localization: {
+                locale: 'en',
+            },
+
+            leftPriceScale: {
+                visible: false,
+                borderColor: 'rgba(197, 203, 206, 0.8)',
+                scaleMargins: {
+                    bottom: 0,
+                    top: 0.82,
+                },
+            },
+            rightPriceScale: {
+                scaleMargins: {
+                    bottom: 0.2,
+                    top: 0.2,
+                },
+            },
+        };
+
+        const chart = LightweightCharts.createChart(document.getElementById('price-chart'), chartOptions);
+
+        // --- VOLUME SERIES ---
+
+        const volScale = 0.8;
+
+        const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+            color: 'rgba(80,240,255,0.3)', // Light white for transparency
+
+            priceFormat: {type: 'volume'},
+            priceScaleId: '',
+            priceLineVisible: false,
+            lastValueVisible: false,
+            // title: 'Swap volume',
+        });
+        volumeSeries.priceScale().applyOptions({
+            scaleMargins: {
+                top: volScale, // highest point of the series will be 70% away from the top
+                bottom: 0, // lowest point will be at the very bottom.
+            },
+        })
+
+        const volumeData = aggregateSwapVolumes(volumes, volumeInterval);
+        console.log(`Volume data ->`)
+        console.log(volumeData);
+        volumeSeries.setData(volumeData);
+
+        // trade asset volume
+        const volumeSeries2 = chart.addSeries(LightweightCharts.HistogramSeries, {
+            color: 'rgba(0, 255, 100, 0.3)', // Light white for transparency
+
+            priceFormat: {type: 'volume'},
+            priceScaleId: '',
+            {#priceScaleId: 'left',#}
+            priceLineVisible: false,
+            lastValueVisible: false,
+            // title: 'Swap volume',
+        });
+        volumeSeries2.priceScale().applyOptions({
+            scaleMargins: {
+                top: volScale, // highest point of the series will be 70% away from the top
+                bottom: 0, // lowest point will be at the very bottom.
+            },
+        })
+        // mult by 2
+        let volumeData2 = aggregateSwapVolumes(volumes, volumeInterval, 'trade_swap');
+        volumeSeries2.setData(volumeData2);
+
+        // --- PRICE SERIES ---
+
+        const detSeries = chart.addSeries(LightweightCharts.LineSeries, {
+            color: 'rgba(100, 255, 200, 0.9)',
+            lineWidth: 3,
+            lineStyle: LightweightCharts.LineStyle.Dotted,
+            priceLineVisible: false,
+        });
+        detSeries.setData(detLineData);
+
+
+        const cexSeries = chart.addSeries(LightweightCharts.LineSeries, {
+            // 00CCFF
+            color: "rgba(0, 204, 255, 0.8)",
+            lineWidth: 1,
+
+            // dashed line
+            type: 'line',
+            lineStyle: LightweightCharts.LineStyle.Dotted,
+            priceLineVisible: false,
+        });
+        cexSeries.setData(cexLineData);
+
+        const barSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+            upColor: '#26a69a',
+            downColor: '#ef5350',
+            priceLineVisible: false,
+        });
+        barSeries.setData(poolOHLC);
+
+        // decorate the chart with an area series (gradient)
+        const lineData = poolOHLC.map(datapoint => ({
+            time: datapoint.time,
+            value: (datapoint.close + datapoint.open) / 2,
+        }));
+
+        const areaSeries = chart.addSeries(LightweightCharts.AreaSeries, {
+            lastValueVisible: false, // hide the last value marker for this series
+            crosshairMarkerVisible: false, // hide the crosshair marker for this series
+            lineColor: 'transparent', // hide the line
+            topColor: 'rgba(33,110,107,0.3)',
+            bottomColor: 'rgba(33,87,110,0.1)',
+        });
+        // Set the data for the Area Series
+        areaSeries.setData(lineData);
+
+        chart.timeScale().fitContent();
+
+        // log max timestamps of all series
+        const maxCexPriceTs = cexPrices[cexPrices.length - 1][0];
+        const maxDetPriceTs = detPrices[detPrices.length - 1][0];
+        const maxPoolPriceTs = poolPrices[poolPrices.length - 1][0];
+        const maxVolumeTs = volumes[volumes.length - 1][0];
+        console.log(`Max timestamps: CEX: ${maxCexPriceTs}, DET: ${maxDetPriceTs}, POOL: ${maxPoolPriceTs}, VOLUME: ${maxVolumeTs}`);
+
+    </script>
+
+{% endblock %}

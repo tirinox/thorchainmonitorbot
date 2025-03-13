@@ -11,10 +11,10 @@ from lib.config import Config
 from lib.constants import Chains, LOAN_MARKER, ThorRealms
 from lib.date_utils import format_time_ago, seconds_human, now_ts
 from lib.explorers import get_explorer_url_to_address, get_ip_info_link, get_explorer_url_to_tx, get_thoryield_address
-from lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
+from lib.money import pretty_dollar, pretty_money, short_address, short_money, short_dollar, format_percent, \
+    RAIDO_GLYPH, short_rune, pretty_percent, \
     chart_emoji, pretty_rune
-from lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
+from lib.texts import bold, link, code, ital, pre, progressbar, bracketify, \
     up_down_arrow, plural, shorten_text, cut_long_text, underline
 from lib.utils import grouper, translate, hit_every
 from models.asset import Asset
@@ -40,7 +40,7 @@ from models.transfer import RuneTransfer, RuneCEXFlow
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from .achievements.ach_rus import AchievementsRussianLocalization
-from .eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
+from .eng_base import BaseLocalization, CREATOR_TG
 
 
 class RussianLocalization(BaseLocalization):
@@ -173,7 +173,7 @@ class RussianLocalization(BaseLocalization):
     @staticmethod
     def text_subscribed_to_lp(period):
         next_ts = now_ts() + period
-        next_date = datetime.utcfromtimestamp(next_ts).strftime('%d.%m.%Y %H:%M:%S')
+        next_date = datetime.fromtimestamp(next_ts).strftime('%d.%m.%Y %H:%M:%S')
         next_date += ' UTC'
         return f'🔔 <b>Поздравляем!</b> Вы подписались на уведомления о доходности по данной позиции.\n' \
                f'Ближайшее обновление поступит вам {ital(next_date)}.'
@@ -338,7 +338,7 @@ class RussianLocalization(BaseLocalization):
         today = datetime.now().strftime('%d.%m.%Y')
         return f'Сегодня: {today}'
 
-    TEXT_LP_NO_LOAN_FOR_THIS_ADDRESS = '📪 <i>На этом адресе нет заёмов в пуле {pool}.</i>'
+    TEXT_LP_NO_LOAN_FOR_THIS_ADDRESS = '📪 <i>На этом адресе нет займов в пуле {pool}.</i>'
 
     # ----- CAP ------
 
@@ -355,7 +355,7 @@ class RussianLocalization(BaseLocalization):
         up = old.cap < new.cap
         verb = "подрос" if up else "упал"
         arrow = '⬆️' if up else '⚠️ ⬇️'
-        call = "Ай-да запулим еще!\n" if up else ''
+        call = "Ай-да добавим еще!\n" if up else ''
         return (
             f'{arrow} <b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n'
             f'Сейчас в пулы помещено <b>{pretty_money(new.pooled_rune)}</b> {self.R}.\n'
@@ -382,7 +382,7 @@ class RussianLocalization(BaseLocalization):
             f'Сейчас в пулах <i>{short_rune(cap.pooled_rune)} {self.R}</i> из '
             f"<i>{pretty_money(cap.cap)} {self.R}</i> максимально возможных.\n"
             f"{self._cap_progress_bar(cap)}\n"
-            f'🤲🏻 Вы можеще еще добавить {bold(short_rune(cap.how_much_rune_you_can_lp))} {self.R} '
+            f'🤲🏻 Вы можете еще добавить {bold(short_rune(cap.how_much_rune_you_can_lp))} {self.R} '
             f'или {bold(pretty_dollar(cap.how_much_usd_you_can_lp))}.\n👉🏻 {self.thor_site()}'
         )
 
@@ -390,7 +390,7 @@ class RussianLocalization(BaseLocalization):
 
     PRICE_GRAPH_TITLE = f'THORChain {RAIDO_GLYPH}une цена'
     PRICE_GRAPH_LEGEND_DET_PRICE = 'Детерминистская цена'
-    PRICE_GRAPH_LEGEND_ACTUAL_PRICE = 'Цена в пухал'
+    PRICE_GRAPH_LEGEND_ACTUAL_PRICE = 'Цена в пулах'
     PRICE_GRAPH_LEGEND_CEX_PRICE = f'Цена на бирже'
     PRICE_GRAPH_VOLUME_SWAP_NORMAL = 'Объем обменов'
     PRICE_GRAPH_VOLUME_SWAP_SYNTH = 'Объем синтетиков'
@@ -565,56 +565,11 @@ class RussianLocalization(BaseLocalization):
 
         message = f"{title} | {c_gecko_link}\n\n"
 
-        if p.halted_chains:
-            hc = pre(', '.join(p.halted_chains))
-            message += f"🚨 <code>Торговля по-прежнему остановлена на {hc}.</code>\n\n"
-
         price = p.market_info.pool_rune_price
 
         btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
         pr_text = f"${price:.3f}"
         message += f"Цена <b>RUNE</b> сейчас {code(pr_text)} ({btc_price}).\n"
-
-        fp = p.market_info
-
-        if fp.cex_price > 0.0:
-            message += f"Цена <b>RUNE</b> на централизованной бирже {self.ref_cex_name}: " \
-                       f"{bold(pretty_dollar(fp.cex_price))}.\n"
-
-            div, div_p = fp.divergence_abs, fp.divergence_percent
-            message += f"<b>Расхождение</b> с центр. Биржей: {code(pretty_dollar(div))} ({div_p:.1f}%).\n"
-
-        last_ath = p.last_ath
-        if last_ath is not None and p.is_ath:
-            if isinstance(last_ath.ath_date, float):
-                last_ath_pr = f'{last_ath.ath_price:.2f}'
-            else:
-                last_ath_pr = str(last_ath.ath_price)
-            ago_str = self.format_time_ago(now_ts() - last_ath.ath_date)
-            message += f"Последний ATH был ${pre(last_ath_pr)} ({ago_str}).\n"
-
-        time_combos = zip(
-            ('1ч.', '24ч.', '7дн.'),
-            (p.price_1h, p.price_24h, p.price_7d)
-        )
-        for title, old_price in time_combos:
-            if old_price:
-                pc = calc_percent_change(old_price, price)
-                message += pre(f"{title.rjust(5)}:{adaptive_round_to_str(pc, True).rjust(8)} % "
-                               f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}") + "\n"
-
-        if fp.rank >= 1:
-            message += f"Капитализация: {bold(pretty_dollar(fp.market_cap))} (#{bold(fp.rank)} место)\n"
-
-        if fp.total_trade_volume_usd > 0:
-            message += f"Объем торгов сегодня: {bold(pretty_dollar(fp.total_trade_volume_usd))}.\n"
-
-        message += '\n'
-
-        if fp.tvl_usd >= 1:
-            message += (f"TVL (не-RUNE активов): ${bold(pretty_money(fp.tvl_usd))}\n"
-                        f"Детерминистическая цена: {code(pretty_money(fp.fair_price, prefix='$'))}\n"
-                        f"Спекулятивый множитель: {pre(x_ses(fp.fair_price, price))}\n")
 
         return message.rstrip()
 
@@ -706,7 +661,7 @@ class RussianLocalization(BaseLocalization):
             f"🖖 {bold(title)}\n"
             f"Цена Руны (на биржах): {code(pretty_dollar(e.info.cex_price))}\n"
             f"Взвешенная цена Руны в пулах: {code(pretty_dollar(e.info.pool_rune_price))}\n"
-            f"<b>Расхождение</b> цены THORChain и биржы: {code(pretty_dollar(div))} ({div_p:.1f}%)."
+            f"<b>Расхождение</b> цены THORChain и биржи: {code(pretty_dollar(div))} ({div_p:.1f}%)."
         )
 
         return text
@@ -716,7 +671,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_S_FINANCIAL = '💱 Финансовые'
     BUTTON_METR_S_NET_OP = '🔩 Работа сети'
 
-    BUTTON_METR_CAP = '✋ Кап ливкидности'
+    BUTTON_METR_CAP = '✋ Кап ликвидности'
     BUTTON_METR_PRICE = f'💲 {BaseLocalization.R} инфо о цене'
     BUTTON_METR_QUEUE = f'👥 Очередь'
     BUTTON_METR_STATS = f'📊 Статистика'
@@ -742,11 +697,6 @@ class RussianLocalization(BaseLocalization):
             f"{self.can_add_more_lp_text(info)}\n"
             f"Цена {bold(self.R)} сейчас <code>{info.price:.3f} $</code>.\n"
         )
-
-    def text_leaderboard_info(self):
-        return f"🏆 Доска лушчих трейдеров THORChain:\n" \
-               f"\n" \
-               f" 👉 {bold(URL_LEADERBOARD_MCCN)} 👈\n"
 
     def queue_message(self, queue_info: QueueInfo):
         return (
@@ -775,7 +725,7 @@ class RussianLocalization(BaseLocalization):
     TEXT_AVA_ERR_INVALID = '⚠️ Фото неправильного формата!'
     TEXT_AVA_ERR_NO_PIC = '⚠️ Не удалось загрузить твое фото из профиля!'
     TEXT_AVA_READY = '🥳 <b>Твой THORChain аватар готов!</b> ' \
-                     'Скачай это фото и установи его в Телеграм и социальных сетях.'
+                     'Скачай это фото и установи его в Telegram и социальных сетях.'
 
     BUTTON_AVA_FROM_MY_USERPIC = '😀 Из фото профиля'
 
@@ -1248,7 +1198,7 @@ class RussianLocalization(BaseLocalization):
     MIMIR_DISABLED = 'ВЫКЛЮЧЕНО'
     MIMIR_YES = 'ДА'
     MIMIR_NO = 'НЕТ'
-    MIMIR_UNDEFINED = 'неопределено'
+    MIMIR_UNDEFINED = 'не определено'
     MIMIR_LAST_CHANGE = 'Последнее изменение'
     MIMIR_UNKNOWN_CHAIN = 'Неизв. сеть'
 
@@ -1425,11 +1375,14 @@ class RussianLocalization(BaseLocalization):
         else:
             text += '🟢'
 
+        mon_link = 'https://thornode.network/nodes'
+        text += f'\n\nМониторинг реальном времени: {link(mon_link, mon_link)}'
+
         return text
 
     TEXT_NOP_MANAGE_LIST_TITLE = \
         'Вы добавили <b>{n}</b> нод в ваш список слежения. ' \
-        'Вы можете убрать ноды из списка слежения, нажав на кпонки снизу.'
+        'Вы можете убрать ноды из списка слежения, нажав на кнопки снизу.'
 
     TEXT_NOP_ADD_INSTRUCTIONS = '🤓 Если вам уже известны адреса интересующих вас нод, ' \
                                 f'пожалуйста, отправьте мне их списком через сообщение. ' \
@@ -1695,7 +1648,7 @@ class RussianLocalization(BaseLocalization):
             f'🏊‍ RUNEPool: {pre(short_rune(sp.runepool))} ({format_percent(sp.runepool_percent)}).\n'
             f'⚡️ POL: {pre(short_rune(sp.pol))} ({format_percent(sp.pol_percent)}).\n'
             f'🔒 Бонды нод: {pre(short_rune(sp.bonded))} ({format_percent(sp.bonded_percent)}).\n'
-            f'🏦 Биржы: {pre(short_rune(sp.in_cex))} ({format_percent(sp.in_cex_percent)}).\n'
+            f'🏦 Биржи: {pre(short_rune(sp.in_cex))} ({format_percent(sp.in_cex_percent)}).\n'
             f'💰 Сокровищница имеет {pre(short_rune(sp.treasury))}.'
         )
 
@@ -1854,7 +1807,7 @@ class RussianLocalization(BaseLocalization):
         top_asset_str = top_asset_str or '-'
 
         return (
-            f'🤹🏻‍♂️ <b>DEX использовние последние {period_str}</b>\n\n'
+            f'🤹🏻‍♂️ <b>DEX использование последние {period_str}</b>\n\n'
             f'→ Обмен внутрь: {self.format_dex_entry(r.swap_ins, r)}\n'
             f'← Обмен наружу: {self.format_dex_entry(r.swap_outs, r)}\n'
             f'∑ В сумме: {self.format_dex_entry(r.total, r)}\n\n'

@@ -46,7 +46,7 @@ class Broadcaster(WithLogger):
         all_channels = self.channels + subscribed_channels
 
         self.logger.info(f'Total channels: {len(all_channels)}: '
-                         f'predefined – ({len(self.channels)}) and subscribed – ({len(subscribed_channels)})')
+                         f'predefined – ({len(self.channels)}) and subscribed – ({len(subscribed_channels)}), {f}')
 
         loc_man: LocalizationManager = self.deps.loc_man
         user_lang_map = {
@@ -172,7 +172,7 @@ class Broadcaster(WithLogger):
 
     async def broadcast_to(self, channels: List[ChannelDescriptor], message, delay=0.075, **kwargs) -> int:
         if now_ts() < self._skip_all_before:
-            self.logger.info('Skip message.')
+            self.logger.warning('Skip message.')
             return 0
 
         async with self._broadcast_lock:

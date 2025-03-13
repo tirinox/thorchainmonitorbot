@@ -1,0 +1,66 @@
+{# Variables: price, old_price, label #}
+
+
+
+    <style>
+        .price-delta {
+            display: flex;
+
+            flex-direction: row;
+            flex-wrap: nowrap;
+
+            justify-content: space-between;
+            font-size: 28px;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .price-label {
+            display: block;
+            font-weight: normal;
+            color: rgb(202, 202, 202);
+        }
+
+        .price-change {
+            margin-left: 20px;
+            display: flex;
+            align-items: baseline;
+            font-weight: bolder;
+        }
+
+        .arrow-ud {
+            margin-left: 3px;
+            font-size: 0.91em;
+        }
+
+        .percent {
+        }
+
+        .pd__gray {
+            color: #c5c5c5;
+        }
+    </style>
+
+{% if old_price %}
+    {% set price = price | float %}
+    {% set old_price = old_price | float %}
+    {% set price_change = price - old_price %}
+    {% set percent_change = price_change / old_price * 100 if old_price else -100 %}
+    {% set arrow = 'up' if price_change > 0 else 'down' %}
+    {% set color = 'up-arrow' if price_change > 0 else 'down-arrow' %}
+    {% set percent_change = percent_change | round(2) %}
+    {% set price_change = price_change | round(2) %}
+    {% set arrow_symbol = '▲' if price_change > 0 else '▼' %}
+{% else %}
+    {% set arrow_symbol = '' %}
+    {% set percent_change = 'N/A' %}
+    {% set color = 'pd__gray' %}
+{% endif %}
+        <div class="price-delta">
+            <div class="price-label">{{ label }}:</div>
+            <div class="price-change {{ color }}">
+                <div class="percent">{{ percent_change }}%</div>
+                <div class="arrow-ud">{{ arrow_symbol }}</div>
+            </div>
+        </div>
