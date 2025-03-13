@@ -163,6 +163,19 @@ async def dbg_new_price_picture(app):
     await asyncio.sleep(5.0)
 
 
+async def dbg_price_picture_continiously(app):
+    await app.deps.pool_fetcher.run_once()
+
+    mf: RuneMarketInfoFetcher = app.deps.rune_market_fetcher
+
+    price_notifier = PriceNotifier(app.deps)
+    mf.add_subscriber(price_notifier)
+
+    price_notifier.add_subscriber(app.deps.alert_presenter)
+
+    await mf.run()
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
@@ -172,7 +185,8 @@ async def main():
         # await dbg_load_latest_price_data_and_save_as_demo(app, fill=False)
         # await debug_load_pools(app)
         # await dbg_save_market_info(app)
-        await dbg_new_price_picture(app)
+        # await dbg_new_price_picture(app)
+        await dbg_price_picture_continiously(app)
 
 
 if __name__ == '__main__':
