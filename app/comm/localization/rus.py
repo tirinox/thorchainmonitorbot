@@ -40,13 +40,18 @@ from models.transfer import RuneTransfer, RuneCEXFlow
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from .achievements.ach_rus import AchievementsRussianLocalization
-from .eng_base import BaseLocalization, CREATOR_TG
+from .eng_base import BaseLocalization, CREATOR_TG, URL_OUR_REF
 
 
 class RussianLocalization(BaseLocalization):
     def __init__(self, cfg: Config):
         super().__init__(cfg)
         self.ach = AchievementsRussianLocalization()
+
+    TEXT_REF_CALL = f'Начни {link(URL_OUR_REF, "торговать сейчас")} ⚡!'
+
+    COIN_GECKO_URL = ("https://www.coingecko.com/ru/"
+                      "%D0%9A%D1%80%D0%B8%D0%BF%D1%82%D0%BE%D0%B2%D0%B0%D0%BB%D1%8E%D1%82%D1%8B/thorchain")
 
     LOADING = '⌛ <i>Загрузка...</i>'
     SUCCESS = '✅ Успех!'
@@ -559,9 +564,7 @@ class RussianLocalization(BaseLocalization):
     def notification_text_price_update(self, p: AlertPrice):
         title = bold('Обновление цены') if not p.is_ath else bold('🚀 Достигнуть новый исторический максимум!')
 
-        c_gecko_url = 'https://www.coingecko.com/ru/' \
-                      '%D0%9A%D1%80%D0%B8%D0%BF%D1%82%D0%BE%D0%B2%D0%B0%D0%BB%D1%8E%D1%82%D1%8B/thorchain'
-        c_gecko_link = link(c_gecko_url, 'RUNE')
+        c_gecko_link = link(self.COIN_GECKO_URL, 'RUNE')
 
         message = f"{title} | {c_gecko_link}\n\n"
 
@@ -570,6 +573,8 @@ class RussianLocalization(BaseLocalization):
         btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
         pr_text = f"${price:.3f}"
         message += f"Цена <b>RUNE</b> сейчас {code(pr_text)} ({btc_price}).\n"
+
+        message += f'\n{self.TEXT_REF_CALL}'
 
         return message.rstrip()
 

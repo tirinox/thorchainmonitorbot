@@ -35,7 +35,7 @@ from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from notify.channel import MESSAGE_SEPARATOR
 from .achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
-from .eng_base import BaseLocalization
+from .eng_base import BaseLocalization, URL_OUR_REF
 
 
 class TwitterEnglishLocalization(BaseLocalization):
@@ -45,6 +45,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         self.twitter_max_len = cfg.get('twitter.max_length', TWITTER_LIMIT_CHARACTERS)
 
     TEXT_DECORATION_ENABLED = False
+
+    TEXT_REF_CALL = f'Start trading now 👉 {URL_OUR_REF} ⚡!'
 
     def smart_split(self, parts):
         parts = twitter_intelligent_text_splitter(parts, self.twitter_max_len)
@@ -227,11 +229,9 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         price = p.market_info.pool_rune_price
 
-        btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
-        message += f"$RUNE price is now ${price:.3f} ({btc_price}).\n"
-
-        c_gecko_url = 'https://www.coingecko.com/en/coins/thorchain'
-        message += f"Coingecko: {c_gecko_url}\n"
+        message += f"The price of $RUNE is now ${price:.3f} (₿{p.btc_pool_rune_price:.8f}).\n"
+        message += f'{self.TEXT_REF_CALL}\n'
+        message += f"Track it on CoinGecko: {self.COIN_GECKO_URL}"
 
         return message.rstrip()
 

@@ -70,7 +70,8 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_DECORATION_ENABLED = True
 
-    TEXT_REF_CALL = f'Start {link(URL_OUR_REF, "trading now")} ⚡!'
+    TEXT_REF_CALL = f'Start 👉{link(URL_OUR_REF, "trading now")} ⚡!'
+    COIN_GECKO_URL = "https://www.coingecko.com/en/coins/thorchain"
 
     LOADING = '⌛ <i>Loading...</i>'
     LONG_DASH = '–'
@@ -797,20 +798,14 @@ class BaseLocalization(ABC):  # == English
     def notification_text_price_update(self, p: AlertPrice):
         title = bold('Price update') if not p.is_ath else bold('🚀 A new all-time high has been achieved!')
 
-        c_gecko_url = 'https://www.coingecko.com/en/coins/thorchain'
-        c_gecko_link = link(c_gecko_url, 'RUNE')
+        message = f"{title} | {link(self.COIN_GECKO_URL, 'RUNE')}\n\n"
 
-        message = f"{title} | {c_gecko_link}\n\n"
-
-        price = p.market_info.pool_rune_price
-
-        pr_text = f"${price:.3f}"
-        btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
+        pr_text = f"${p.market_info.pool_rune_price:.3f}"
+        btc_price = f"₿{p.btc_pool_rune_price:.8f}"
         message += f"<b>RUNE</b> price is {code(pr_text)} ({btc_price}) now.\n"
 
-        # message += f"{random.randint(0, 1000)}\n"
-
         message += f'\n{self.TEXT_REF_CALL}'
+
         return message.rstrip()
 
     # ------- POOL CHURN -------
