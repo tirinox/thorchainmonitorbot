@@ -48,7 +48,7 @@ class RussianLocalization(BaseLocalization):
         super().__init__(cfg)
         self.ach = AchievementsRussianLocalization()
 
-    TEXT_REF_CALL = f'Начни {link(URL_OUR_REF, "торговать сейчас")} ⚡!'
+    TEXT_REF_CALL = f'Начни 👉 {link(URL_OUR_REF, "торговать сейчас")} ⚡!'
 
     COIN_GECKO_URL = ("https://www.coingecko.com/ru/"
                       "%D0%9A%D1%80%D0%B8%D0%BF%D1%82%D0%BE%D0%B2%D0%B0%D0%BB%D1%8E%D1%82%D1%8B/thorchain")
