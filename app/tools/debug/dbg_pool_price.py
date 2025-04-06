@@ -6,7 +6,6 @@ from comm.picture.price_picture import price_graph_from_db
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
-from lib.date_utils import DAY
 from lib.depcont import DepContainer
 from lib.texts import sep
 from lib.utils import recursive_asdict

@@ -1,5 +1,4 @@
 import logging
-import random
 from abc import ABC
 from datetime import datetime
 from math import ceil
