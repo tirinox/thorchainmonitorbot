@@ -3,7 +3,7 @@ import re
 from dataclasses import dataclass, replace
 from typing import List, NamedTuple, Iterable
 
-from jobs.scanner.tx import NativeThorTx, ThorEvent
+from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorObservedTx
 from lib.date_utils import date_parse_rfc
 from lib.utils import safe_get
 
@@ -90,3 +90,15 @@ class BlockResult:
     @property
     def all_event_types(self):
         return set(ev.type for ev in self.end_block_events)
+
+    @property
+    def all_observed_tx_in(self) -> List[ThorObservedTx]:
+        observed_txs = {}
+        for tx in self.txs:
+            for message in tx.messages:
+                if message.type == message.MsgObservedTxIn:
+                    for tx in message.txs:
+                        observed_txs[tx['id']] = tx
+        return [
+            ThorObservedTx.from_dict(d) for d in observed_txs.values()
+        ]

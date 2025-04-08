@@ -37,6 +37,7 @@ from jobs.node_churn import NodeChurnDetector
 from jobs.price_recorder import PriceRecorder
 from jobs.scanner.loan_extractor import LoanExtractorBlock
 from jobs.scanner.native_scan import BlockScanner
+from jobs.scanner.ruji_switch import RujiSwitchEventDecoder
 from jobs.scanner.runepool import RunePoolEventDecoder
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.scanner.swap_routes import SwapRouteRecorder
@@ -86,6 +87,7 @@ from notify.public.pool_churn_notify import PoolChurnNotifier
 from notify.public.price_div_notify import PriceDivergenceNotifier
 from notify.public.price_notify import PriceNotifier
 from notify.public.queue_notify import QueueNotifier, QueueStoreMetrics
+from notify.public.ruji_switch import RujiSwitchTxNotifier
 from notify.public.runepool_notify import RunePoolTransactionNotifier, RunepoolStatsNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
 from notify.public.savers_stats_notify import SaversStatsNotifier
@@ -636,6 +638,16 @@ class App(WithLogger):
             chain_id_notifier.add_subscriber(d.alert_presenter)
             chain_id_job.add_subscriber(chain_id_notifier)
 
+        if d.cfg.get('rujira.enabled', True):
+            if d.cfg.get('rujira.switch.enabled', True):
+                ruji_switch_decoder = RujiSwitchEventDecoder(d.db, d.price_holder)
+                d.block_scanner.add_subscriber(ruji_switch_decoder)
+
+                ruji_switch_notifier = RujiSwitchTxNotifier(d)
+                ruji_switch_notifier.add_subscriber(ruji_switch_decoder)
+
+                ruji_switch_notifier.add_subscriber(d.alert_presenter)
+
         # -------- SCHEDULER --------
 
         scheduler_cfg = d.cfg.get('personal.scheduler')
@@ -717,7 +729,6 @@ class App(WithLogger):
         except Exception as e:
             self.logger.exception(f'{e!r}', exc_info=True)
             self.die()
-        # await asyncio.gather(*(task.run() for task in tasks))
 
     async def _debug_command(self):
         await self._print_curves()

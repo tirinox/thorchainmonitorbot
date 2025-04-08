@@ -655,7 +655,6 @@ runepool:
     cooldown_capacity: 5  # how many times accept an event before trigger cooldown
 
   summary:
-
     enabled: true
     cooldown: 1d
     tally_period: 1d
@@ -671,3 +670,10 @@ chain_id:
   fetch_period: 1m
   cooldown: 1d
   confidence_window_size: 14
+
+
+rujira:  # (!) new
+  enabled: true
+
+  switch:
+    enabled: true

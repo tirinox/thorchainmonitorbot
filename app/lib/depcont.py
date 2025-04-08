@@ -32,7 +32,7 @@ from notify.channel import Messengers
 class DepContainer:
     cfg: Optional[Config] = None
     db: Optional[DB] = None
-    loop: Optional[asyncio.BaseEventLoop] = None
+    loop: Optional[asyncio.AbstractEventLoop] = None
     loc_man = None  # type: 'LocalizationManager'
     broadcaster = None  # type: 'Broadcaster'
     alert_presenter = None
