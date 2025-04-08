@@ -47,6 +47,7 @@ def parse_scientific_int(s):
             raise ValueError(f"Invalid integer format: '{s}'")
         return int(s)
 
+
 # --- copy from xchainpy2 bellow ---
 
 
@@ -87,6 +88,8 @@ class ActionType(Enum):
     TRADE_ACC_DEPOSIT = 'trade+'
     TRADE_ACC_WITHDRAW = 'trade-'
 
+    SWITCH = 'switch'
+
     UNKNOWN = '_unknown_'
 
 
@@ -121,6 +124,7 @@ MEMO_ACTION_TABLE = {
     "trade-": ActionType.TRADE_ACC_WITHDRAW,
     "pool+": ActionType.RUNEPOOL_ADD,
     "pool-": ActionType.RUNEPOOL_WITHDRAW,
+    "switch": ActionType.SWITCH,
     # "migrate": TxMigrate,
     # "ragnarok": TxRagnarok,
     # "consolidate": TxConsolidate,
@@ -386,6 +390,12 @@ class THORMemo:
                 affiliates=cls._parse_affiliates(affiliate, affiliate_fee_bp)
             )
 
+        elif tx_type == ActionType.SWITCH:
+            destination_address = ith(components, 1, '')
+            return cls.switch(
+                destination_address=destination_address,
+            )
+
         else:
             # todo: limit order, register memo, etc.
             if no_raise:
@@ -489,6 +499,9 @@ class THORMemo:
 
         elif self.action == ActionType.RUNEPOOL_WITHDRAW:
             memo = f'POOL-:{self.withdraw_portion_bp}:{self._affiliate_part}'
+
+        elif self.action == ActionType.SWITCH:
+            return f'SWITCH:{self.dest_address}'
 
         else:
             raise NotImplementedError(f"Can not build memo for {self.action}")
@@ -680,6 +693,10 @@ class THORMemo:
             withdraw_portion_bp=bp,
             affiliates=cls._form_affiliates(affiliate_address, affiliate_fee_bp, affiliates),
         )
+
+    @classmethod
+    def switch(cls, destination_address):
+        return cls(ActionType.SWITCH, destination_address)
 
     # Utils:
 
