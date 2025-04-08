@@ -70,14 +70,14 @@ class AffiliateRecorder(WithLogger, INotified):
         pass  # todo
 
     async def on_data(self, sender, data: BlockResult):
-        for tx in data.txs:
-            try:
-                if memo := tx.deep_memo:
-                    memo_obj = THORMemo.parse_memo(memo)
-                    if memo_obj and memo_obj.affiliate_address:
-                        await self._process_aff_tx(tx, memo_obj)
-            except Exception as e:
-                self.logger.error(f'Error {e!r} processing tx: {tx.tx_hash} at block #{data.block_no}')
+        # for tx in data.txs:
+        #     try:
+        #         if memo := tx.deep_memo:
+        #             memo_obj = THORMemo.parse_memo(memo)
+        #             if memo_obj and memo_obj.affiliate_address:
+        #                 await self._process_aff_tx(tx, memo_obj)
+        #     except Exception as e:
+        #         self.logger.error(f'Error {e!r} processing tx: {tx.tx_hash} at block #{data.block_no}')
 
         # Sometimes we need to clear old dates
         await self.clear_old_events(self.days_to_keep)

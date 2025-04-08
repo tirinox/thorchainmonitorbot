@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from api.aionode.types import ThorTradeUnits, ThorBalances, ThorCoin
+from api.aionode.types import ThorTradeUnits, ThorBalances, ThorCoinDec
 from jobs.fetch.base import BaseFetcher
 from jobs.volume_recorder import TxCountRecorder, VolumeRecorder, TxCountStats
 from lib.constants import RUNE_DECIMALS
@@ -29,7 +29,7 @@ class TradeAccountFetcher(BaseFetcher):
         balances = await self.deps.thor_connector.query_balance(address)
         return balances
 
-    async def get_trade_account_balance(self, address: str) -> List[ThorCoin]:
+    async def get_trade_account_balance(self, address: str) -> List[ThorCoinDec]:
         """
         Get only trade account balances for the given address
         """
@@ -37,7 +37,7 @@ class TradeAccountFetcher(BaseFetcher):
         trade_accounts = await self.deps.thor_connector.query_trade_account(address)
         if trade_accounts:
             for trade_account in trade_accounts:
-                balances.append(ThorCoin(
+                balances.append(ThorCoinDec(
                     trade_account.asset,
                     trade_account.units,
                     RUNE_DECIMALS

@@ -1,5 +1,6 @@
 from typing import NamedTuple, List, Optional
 
+from api.aionode.types import ThorCoinDec
 from jobs.scanner.util import thor_decode_amount_field, pubkey_to_thor_address
 from lib.utils import safe_get
 
@@ -107,16 +108,6 @@ class ThorTxMessage(NamedTuple):
         return cls(d)
 
     @property
-    def deep_memo(self):
-        if 'txs' in self.attrs:
-            for tx in self.attrs['txs']:
-                if memo := safe_get(tx, 'tx', 'memo'):
-                    return memo
-        elif memo := self.attrs.get('memo'):
-            return memo
-        return ''
-
-    @property
     def memo(self):
         return self.attrs.get('memo', '')
 
@@ -125,6 +116,47 @@ class ThorTxMessage(NamedTuple):
 
     def __str__(self):
         return f"ThorTxMessage({self.attrs})"
+
+
+class ThorObservedTx(NamedTuple):
+    tx_id: str
+    chain: str
+    from_address: str
+    to_address: str
+    coins: List[ThorCoinDec]
+    gas: List[ThorCoinDec]
+    memo: str
+    status: str
+    out_hashes: List[str]
+    block_height: int
+    finalise_height: int
+    aggregator: str
+    aggregator_target: str
+    aggregator_target_limit: Optional[int] = None
+
+    @classmethod
+    def from_dict(cls, d):
+        tx = d.get('tx', {})
+        return cls(
+            tx_id=tx.get('id'),
+            chain=tx.get('chain'),
+            from_address=tx.get('from_address'),
+            to_address=tx.get('to_address'),
+            coins=[
+                ThorCoinDec.from_json(j) for j in tx.get('coins', [])
+            ],
+            gas=[
+                ThorCoinDec.from_json(j) for j in tx.get('gas', [])
+            ],
+            memo=tx.get('memo'),
+            status=d.get('status', ''),
+            out_hashes=d.get('out_hashes', []),
+            block_height=d.get('block_height', 0),
+            finalise_height=d.get('finalise_height', 0),
+            aggregator=d.get('aggregator', ''),
+            aggregator_target=d.get('aggregator_target', ''),
+            aggregator_target_limit=d.get('aggregator_target_limit'),
+        )
 
 
 class ThorSignerInfo(NamedTuple):
@@ -163,19 +195,6 @@ class NativeThorTx(NamedTuple):
     @property
     def first_signer_address(self):
         return self.signers[0].address if self.signers else None
-
-    @property
-    def deep_memo(self):
-        """
-        Tries to get memo from inside TXs messages, for instance "/types.MsgObservedTxIn" has memo in txs[].tx.memo
-        """
-        if self.memo:
-            return self.memo
-
-        for msg in self.messages:
-            if memo := msg.deep_memo:
-                return memo
-        return ''
 
     @classmethod
     def from_dict(cls, d, height):

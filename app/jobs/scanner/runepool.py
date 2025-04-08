@@ -34,11 +34,6 @@ class RunePoolEventDecoder(WithLogger, INotified, WithDelegates):
                             for event in tx_events:
                                 all_events[event.tx_hash] = event
 
-            if memo_str := tx.deep_memo:
-                if memo_ob := THORMemo.parse_memo(memo_str, no_raise=True):
-                    if is_action(memo_ob.action, (ActionType.RUNEPOOL_ADD, ActionType.RUNEPOOL_WITHDRAW)):
-                        print(f'Found deep memo: {memo_ob}!!!')
-
         # Unique for this block, but may not be unique across the entire blockchain
         unique_events = list(all_events.values())
 

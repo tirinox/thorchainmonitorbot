@@ -295,7 +295,7 @@ class ThorChainInfo(NamedTuple):
         )
 
 
-class ThorCoin(NamedTuple):
+class ThorCoinDec(NamedTuple):
     asset: str = ''
     amount: int = 0
     decimals: int = 18
@@ -348,7 +348,7 @@ class ThorAddress(NamedTuple):
 class ThorVault(NamedTuple):
     block_height: int = 0
     pub_key: str = ''
-    coins: List[ThorCoin] = None
+    coins: List[ThorCoinDec] = None
     type: str = ''
     status: str = ''
     status_since: int = 0
@@ -376,7 +376,7 @@ class ThorVault(NamedTuple):
         return cls(
             block_height=int(j.get('block_height', 0)),
             pub_key=j.get('pub_key', ''),
-            coins=[ThorCoin.from_json(coin) for coin in j.get('coins', [])],
+            coins=[ThorCoinDec.from_json(coin) for coin in j.get('coins', [])],
             type=j.get('type', ''),
             status=j.get('status', ''),
             status_since=int(j.get('status_since', 0)),
@@ -394,7 +394,7 @@ RUNE = 'rune'
 
 class ThorBalances(NamedTuple):
     height: int
-    assets: List[ThorCoin]
+    assets: List[ThorCoinDec]
     address: str
 
     @property
@@ -413,7 +413,7 @@ class ThorBalances(NamedTuple):
         return cls(
             height=0,
             assets=[
-                ThorCoin.from_json_bank(item) for item in j.get('balances')
+                ThorCoinDec.from_json_bank(item) for item in j.get('balances')
             ],
             address=address
         )
