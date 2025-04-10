@@ -1,10 +1,11 @@
 from decimal import Decimal
-from typing import NamedTuple, Dict
+from typing import NamedTuple, Dict, Optional
 
 from api.aionode.wasm import WasmContract
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.utils import a_result_cached
+from models.asset import Asset
 
 
 def ruji_parse_timestamp(timestamp: str) -> float:
@@ -61,18 +62,31 @@ class MergeStatus(NamedTuple):
 
 
 class MergeContract(WasmContract):
-    async def config(self):
-        data = await self.query_contract({"config": {}})
-        return MergeConfig.from_dict(data)
+    def __init__(self, thor_connector, contract_address):
+        super().__init__(thor_connector, contract_address)
+        self.config: Optional[MergeConfig] = None
+        self.status: Optional[MergeStatus] = None
+        self.price = 0.0
 
-    async def status(self):
+    async def load_config(self):
+        data = await self.query_contract({"config": {}})
+        self.config = MergeConfig.from_dict(data)
+        return self.config
+
+    async def load_status(self):
         data = await self.query_contract({"status": {}})
-        return MergeStatus.from_dict(data)
+        self.status = MergeStatus.from_dict(data)
+        return self.status
+
+    def set_price(self, price: float):
+        self.price = price
+
+    def __repr__(self):
+        return f'MergeContract({self.contract_address}, {self.config.merge_denom}, {self.price})'
 
 
 class MergeSystem(NamedTuple):
-    configs: Dict[str, MergeConfig]
-    statuses: Dict[str, MergeStatus]
+    contracts: Dict[str, MergeContract]
 
     RUJI_MERGE_CONTRACTS = [
         "thor1yyca08xqdgvjz0psg56z67ejh9xms6l436u8y58m82npdqqhmmtqrsjrgh",
@@ -83,39 +97,42 @@ class MergeSystem(NamedTuple):
         "thor1ltd0maxmte3xf4zshta9j5djrq9cl692ctsp9u5q0p9wss0f5lms7us4yf"
     ]
 
-    def find_config_and_status_by_denom(self, denom: str):
+    def find_contract_by_denom(self, denom: str):
         denom = denom.lower()
         return next((
-            (self.configs[contract], self.statuses[contract]) for contract, config in self.configs.items()
-            if config.merge_denom.lower() == denom
+            contract for address, contract in self.contracts.items()
+            if contract.config.merge_denom.lower() == denom
         ), None)
 
     @property
     def all_denoms(self):
-        return set(cfg.merge_denom for cfg in self.configs.values())
+        return set(cfg.config.merge_denom for cfg in self.contracts.values())
+
+    def set_prices(self, prices):
+        for contract in self.contracts.values():
+            ticker = Asset.from_string(contract.config.merge_denom)
+            price = prices.get(ticker.name)
+            contract.set_price(price)
 
 
 class RujiMergeStatsFetcher(WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.contracts = [
-            MergeContract(deps.thor_connector, contract)
-            for contract in MergeSystem.RUJI_MERGE_CONTRACTS
-        ]
+        self.system = MergeSystem({
+            address: MergeContract(deps.thor_connector, address)
+            for address in MergeSystem.RUJI_MERGE_CONTRACTS
+        })
 
     async def fetch(self):
-        configs = {}
-        statuses = {}
-        for contract in self.contracts:
-            config = await contract.config()
-            status = await contract.status()
-            self.logger.info(f"Config: {config}")
-            self.logger.info(f"Status: {status}")
-            configs[contract.contract_address] = config
-            statuses[contract.contract_address] = status
+        for contract in self.system.contracts.values():
+            await contract.load_config()
+            await contract.load_status()
 
-        return MergeSystem(configs, statuses)
+        prices = await self.get_prices_usd_from_gecko()
+        self.system.set_prices(prices)
+
+        return self.system
 
     @a_result_cached(ttl=120.0)
     async def get_prices_usd_from_gecko(self):
@@ -136,9 +153,13 @@ class RujiMergeStatsFetcher(WithLogger):
             if response.status == 200:
                 data = await response.json()
                 prices = {coin: data.get(coin_ids[coin], {}).get("usd") for coin in coin_ids}
+
+                # Check for missing prices and set defaults
                 if not prices.get("NSTK"):
                     self.logger.warning(f"No NSTK price for {coin_ids}. Using last known hardcoded value")
                     prices["NSTK"] = 0.01253
+                prices["RKUJI"] = prices["KUJI"]
+
                 return prices
             else:
                 raise Exception(f"Failed to fetch data. Status code: {response.status}")

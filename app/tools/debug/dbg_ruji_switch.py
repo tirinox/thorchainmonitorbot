@@ -36,17 +36,24 @@ async def dbg_switch_event_continuous(app: LpAppFramework, force_start_block=Non
         await d.block_scanner.run()
 
 
-async def dbg_mering_coin_gecko_prices(app):
+async def dbg_merging_coin_gecko_prices(app):
     f = RujiMergeStatsFetcher(app.deps)
     prices = await f.get_prices_usd_from_gecko()
     print(prices)
+
+
+async def dbg_get_merge_status(app):
+    f = RujiMergeStatsFetcher(app.deps)
+    data = await f.fetch()
+    print(data)
 
 
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await dbg_switch_event_continuous(app, force_start_block=20639864)
-        await dbg_mering_coin_gecko_prices(app)
+        # await dbg_mering_coin_gecko_prices(app)
+        await dbg_get_merge_status(app)
 
 
 if __name__ == '__main__':
