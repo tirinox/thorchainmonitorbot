@@ -5,8 +5,8 @@ from typing import NamedTuple, List, Optional
 
 from jobs.scanner.block_result import ThorEvent
 from models.asset import is_rune, is_trade_asset, Asset
-from models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
-    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit
+from models.events import EventSwap, EventStreamingSwap, EventOutbound, parse_swap_and_out_event, TypeEventSwapAndOut, \
+    EventTradeAccountDeposit
 from models.memo import ActionType
 from models.memo import THORMemo
 from models.s_swap import StreamingSwap
@@ -65,25 +65,6 @@ class SwapProps(NamedTuple):
 
     def find_events(self, klass):
         return (e for e in self.events if isinstance(e, klass))
-
-    @property
-    def _old_is_finished(self) -> bool:
-        if any(isinstance(ev, EventScheduledOutbound) for ev in self.events):
-            return True
-
-        # if there is any outbound to my address, except internal outbounds (in the middle of double swap)
-        if any((isinstance(ev, EventOutbound) and ev.to_address == self.from_address) for ev in self.true_outbounds):
-            return True
-
-        # if there is any streaming swap event, it's done
-        if any(isinstance(ev, EventStreamingSwap) for ev in self.events):
-            return True
-
-        # if it contains a deposit of trade asset, it's done
-        if any(isinstance(ev, EventTradeAccountDeposit) and ev.rune_address for ev in self.events):
-            return True
-
-        return False
 
     @property
     def is_finished(self) -> bool:

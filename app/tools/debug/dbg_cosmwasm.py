@@ -29,9 +29,9 @@ async def dbg_query_merge_contract(app):
     sep()
 
     merge_contract = MergeContract(thor, contract.contract_address)
-    config = await merge_contract.config()
+    config = await merge_contract.load_config()
     print(f"Config: {config}")
-    status = await merge_contract.status()
+    status = await merge_contract.load_status()
     print(f"Status: {status}")
 
 

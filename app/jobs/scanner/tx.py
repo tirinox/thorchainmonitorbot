@@ -244,3 +244,6 @@ class NativeThorTx(NamedTuple):
     @property
     def first_message(self) -> Optional[ThorTxMessage]:
         return self.messages[0] if self.messages else None
+
+    def find_events_by_type(self, ev_type):
+        return [e for e in self.events if e.type == ev_type]

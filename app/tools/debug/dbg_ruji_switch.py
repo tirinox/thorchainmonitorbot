@@ -1,9 +1,9 @@
 import asyncio
 
 from jobs.fetch.ruji_merge import RujiMergeStatsFetcher
+from jobs.ruji_merge import RujiMergeTracker
 from jobs.scanner.native_scan import BlockScanner
-from jobs.scanner.ruji_switch import RujiSwitchEventDecoder
-from tools.lib.lp_common import LpAppFramework, Receiver
+from tools.lib.lp_common import LpAppFramework
 
 
 async def dbg_switch_event_continuous(app: LpAppFramework, force_start_block=None, catch_up=0, one_block=False):
@@ -15,13 +15,10 @@ async def dbg_switch_event_continuous(app: LpAppFramework, force_start_block=Non
     d.last_block_fetcher.add_subscriber(d.last_block_store)
     await d.last_block_fetcher.run_once()
 
-    # AffiliateRecorder
-    # d.affiliate_recorder = AffiliateRecorder(d)
-    # d.block_scanner.add_subscriber(d.affiliate_recorder)
-    ruji_switch_decoder = RujiSwitchEventDecoder(d.db, d.price_holder)
-    d.block_scanner.add_subscriber(ruji_switch_decoder)
+    ruji_merge_tracker = RujiMergeTracker(d)
+    d.block_scanner.add_subscriber(ruji_merge_tracker)
 
-    ruji_switch_decoder.add_subscriber(Receiver("switch"))
+    # ruji_switch_decoder.add_subscriber(Receiver("switch"))
 
     if catch_up > 0:
         await d.block_scanner.ensure_last_block()
@@ -51,9 +48,9 @@ async def dbg_get_merge_status(app):
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        # await dbg_switch_event_continuous(app, force_start_block=20639864)
+        await dbg_switch_event_continuous(app, force_start_block=20639916)
         # await dbg_mering_coin_gecko_prices(app)
-        await dbg_get_merge_status(app)
+        # await dbg_get_merge_status(app)
 
 
 if __name__ == '__main__':
