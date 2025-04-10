@@ -2,6 +2,7 @@ from decimal import Decimal
 from typing import NamedTuple, Dict, Optional
 
 from api.aionode.wasm import WasmContract
+from lib.date_utils import now_ts
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.utils import a_result_cached
@@ -66,7 +67,7 @@ class MergeContract(WasmContract):
         super().__init__(thor_connector, contract_address)
         self.config: Optional[MergeConfig] = None
         self.status: Optional[MergeStatus] = None
-        self.price = 0.0
+        self.price_usd = 0.0
 
     async def load_config(self):
         data = await self.query_contract({"config": {}})
@@ -79,10 +80,19 @@ class MergeContract(WasmContract):
         return self.status
 
     def set_price(self, price: float):
-        self.price = price
+        self.price_usd = price
 
     def __repr__(self):
-        return f'MergeContract({self.contract_address}, {self.config.merge_denom}, {self.price})'
+        return (
+            f'MergeContract({self.contract_address}, 1 = {self.config.merge_denom} = ${self.price_usd:.4f},'
+            f'1 RUJI = ${self.price_usd_per_ruji:.4f})'
+        )
+
+    @property
+    def price_usd_per_ruji(self):
+        merge_ratio = float(self.config.merge_ratio(now_ts()))
+        # 1 denom -> merge_ratio RUJI
+        return self.price_usd / merge_ratio
 
 
 class MergeSystem(NamedTuple):
@@ -141,7 +151,7 @@ class RujiMergeStatsFetcher(WithLogger):
             "LVN": "levana-protocol",
             "KUJI": "kujira",
             "FUZN": "fuzion",
-            "WINK": "wink",
+            "WINK": "winkhub",
             "NSTK": "unstake"
         }
         params = {
@@ -156,7 +166,7 @@ class RujiMergeStatsFetcher(WithLogger):
 
                 # Check for missing prices and set defaults
                 if not prices.get("NSTK"):
-                    self.logger.warning(f"No NSTK price for {coin_ids}. Using last known hardcoded value")
+                    self.logger.warning(f"No NSTK price. Using last known hardcoded value")
                     prices["NSTK"] = 0.01253
                 prices["RKUJI"] = prices["KUJI"]
 
