@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urlencode
 
 from api.aionode.connector import ThorConnector
 import base64
@@ -18,3 +19,25 @@ class WasmContract:
         url = self.url(f"smart/{query_b64}")
         result = await self._connector.query_raw(url)
         return result
+
+
+class WasmCodeManager:
+    def __init__(self, connector: ThorConnector):
+        self._connector = connector
+
+    async def get_code_list(self, pg_limit=100, pg_key=None):
+        base_url = '/cosmwasm/wasm/v1/code'
+        params = {}
+
+        if pg_key is not None:
+            params['pagination.key'] = pg_key
+        if pg_limit is not None:
+            params['pagination.limit'] = pg_limit
+
+        query_string = urlencode(params)
+        url = f"{base_url}?{query_string}" if query_string else base_url
+
+        return await self._connector.query_raw(url)
+
+    async def get_contract_of_code_id(self, code_id):
+        return await self._connector.query_raw(f'/cosmwasm/wasm/v1/code/{code_id}/contracts')
