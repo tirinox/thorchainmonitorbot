@@ -2,6 +2,9 @@ import asyncio
 import logging
 
 from api.aionode.wasm import WasmContract, WasmCodeManager
+from jobs.fetch.ruji_merge import MergeContract, RujiMergeStatsFetcher
+from lib.date_utils import now_ts
+from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -23,11 +26,32 @@ async def dbg_query_merge_contract(app):
     status = await contract.query_contract({"status": {}})
     print(f"Status: {status}")
 
+    sep()
+
+    merge_contract = MergeContract(thor, contract.contract_address)
+    config = await merge_contract.config()
+    print(f"Config: {config}")
+    status = await merge_contract.status()
+    print(f"Status: {status}")
+
+
+async def dbg_merge_program(app):
+    f = RujiMergeStatsFetcher(app.deps)
+    system = await f.fetch()
+    print(system)
+    sep()
+    print(f'All denoms are {system.all_denoms}')
+
+    for d in system.all_denoms:
+        config, _ = system.find_config_and_status_by_denom(d)
+        print(f"{d}: merge_ratio = {config.merge_ratio(now_ts())}")
+
 
 async def main():
     app = LpAppFramework(log_level=logging.DEBUG)
     async with app(brief=True):
-        await dbg_query_merge_contract(app)
+        # await dbg_query_merge_contract(app)
+        await dbg_merge_program(app)
 
 
 if __name__ == '__main__':

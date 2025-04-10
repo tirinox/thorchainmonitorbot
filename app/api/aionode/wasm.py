@@ -6,12 +6,12 @@ import base64
 
 
 class WasmContract:
-    def __init__(self, connector: ThorConnector, contract: str):
+    def __init__(self, connector: ThorConnector, contract_address: str):
         self._connector = connector
-        self.contract = contract
+        self.contract_address = contract_address
 
     def url(self, sub_path: str) -> str:
-        return f'/cosmwasm/wasm/v1/contract/{self.contract}/{sub_path}'
+        return f'/cosmwasm/wasm/v1/contract/{self.contract_address}/{sub_path}'
 
     async def query_contract(self, query: dict) -> dict:
         # base64 encode
