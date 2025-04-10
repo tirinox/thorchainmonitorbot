@@ -69,10 +69,15 @@ class ThorTxMessage(NamedTuple):
     MsgDeposit = '/types.MsgDeposit'
     MsgSend = '/types.MsgSend'
     MsgSendCosmos = '/cosmos.bank.v1beta1.MsgSend'
+    MsgExecuteContract = '/cosmwasm.wasm.v1.MsgExecuteContract'
 
     @property
     def is_send(self):
         return self.type == self.MsgSend or self.type == self.MsgSendCosmos
+
+    @property
+    def is_contract(self):
+        return self.type == self.MsgExecuteContract
 
     @property
     def txs(self) -> List[dict]:
@@ -116,6 +121,12 @@ class ThorTxMessage(NamedTuple):
 
     def __str__(self):
         return f"ThorTxMessage({self.attrs})"
+
+    def contract_message(self):
+        return self['msg'] if self.is_contract else None
+
+    def contact_funds(self):
+        return self.attrs.get('funds', []) if self.is_contract else None
 
 
 class ThorObservedTx(NamedTuple):

@@ -97,8 +97,8 @@ class BlockResult:
         for tx in self.txs:
             for message in tx.messages:
                 if message.type == message.MsgObservedTxIn:
-                    for tx in message.txs:
-                        observed_txs[tx['id']] = tx
+                    for inner_tx in message.txs:
+                        observed_txs[inner_tx['id']] = inner_tx
         return [
             ThorObservedTx.from_dict(d) for d in observed_txs.values()
         ]
