@@ -4,6 +4,7 @@ from typing import NamedTuple, Dict
 from api.aionode.wasm import WasmContract
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
+from lib.utils import a_result_cached
 
 
 def ruji_parse_timestamp(timestamp: str) -> float:
@@ -115,3 +116,29 @@ class RujiMergeStatsFetcher(WithLogger):
             statuses[contract.contract_address] = status
 
         return MergeSystem(configs, statuses)
+
+    @a_result_cached(ttl=120.0)
+    async def get_prices_usd_from_gecko(self):
+        url = "https://api.coingecko.com/api/v3/simple/price"
+        coin_ids = {
+            "LVN": "levana-protocol",
+            "KUJI": "kujira",
+            "FUZN": "fuzion",
+            "WINK": "wink",
+            "NSTK": "unstake"
+        }
+        params = {
+            "ids": ",".join(coin_ids.values()),
+            "vs_currencies": "usd"
+        }
+
+        async with self.deps.session.get(url, params=params) as response:
+            if response.status == 200:
+                data = await response.json()
+                prices = {coin: data.get(coin_ids[coin], {}).get("usd") for coin in coin_ids}
+                if not prices.get("NSTK"):
+                    self.logger.warning(f"No NSTK price for {coin_ids}. Using last known hardcoded value")
+                    prices["NSTK"] = 0.01253
+                return prices
+            else:
+                raise Exception(f"Failed to fetch data. Status code: {response.status}")
