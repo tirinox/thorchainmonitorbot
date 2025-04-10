@@ -122,11 +122,17 @@ class ThorTxMessage(NamedTuple):
     def __str__(self):
         return f"ThorTxMessage({self.attrs})"
 
+    @property
     def contract_message(self):
         return self['msg'] if self.is_contract else None
 
-    def contact_funds(self):
+    @property
+    def contract_funds(self):
         return self.attrs.get('funds', []) if self.is_contract else None
+
+    @property
+    def contract_address(self):
+        return self.attrs.get('contract', None) if self.is_contract else None
 
 
 class ThorObservedTx(NamedTuple):

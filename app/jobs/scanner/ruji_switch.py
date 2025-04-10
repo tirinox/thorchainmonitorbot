@@ -24,3 +24,16 @@ class RujiSwitchEventDecoder(WithLogger, INotified, WithDelegates):
         for sw in switch_txs:
             # EventRujiSwitch
             await self.pass_data_to_listeners(sw)
+
+
+class CosmwasmExecuteDecoder(WithLogger, INotified, WithDelegates):
+    def __init__(self, db: DB, contract_whitelist):
+        super().__init__()
+        self.redis = db.redis
+        self.contract_whitelist = contract_whitelist
+
+    async def on_data(self, sender, data: BlockResult):
+        for tx in data.txs:
+            for message in tx.messages:
+                if message.is_contract and message.contract_address in self.contract_whitelist:
+                    await self.pass_data_to_listeners(message)
