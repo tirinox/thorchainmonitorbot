@@ -15,6 +15,7 @@ class EventRujiMerge(NamedTuple):
     asset: str
     rate: float
     decay_factor: float
+    timestamp: int
 
     @classmethod
     def from_dict(cls, d):
@@ -27,6 +28,7 @@ class EventRujiMerge(NamedTuple):
             asset=d['asset'],
             rate=float(d['rate']),
             decay_factor=float(d['decay_factor']),
+            timestamp=int(d.get('timestamp', 0)),
         )
 
     def to_dict(self):

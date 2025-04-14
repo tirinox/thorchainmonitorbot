@@ -204,6 +204,7 @@ class NativeThorTx(NamedTuple):
     messages: List[ThorTxMessage]
     log: str = ''
     memo: str = ''
+    timestamp: int = 0
 
     @property
     def error_message(self):
@@ -214,7 +215,7 @@ class NativeThorTx(NamedTuple):
         return self.signers[0].address if self.signers else None
 
     @classmethod
-    def from_dict(cls, d, height):
+    def from_dict(cls, d, height, timestamp=0):
         result = d.get('result', {})
         tx = d.get('tx', {})
         signers_raw = safe_get(tx, 'auth_info', 'signer_infos')
@@ -231,6 +232,7 @@ class NativeThorTx(NamedTuple):
             signers=signers,
             memo=body.get('memo', ''),
             messages=messages,
+            timestamp=timestamp,
         )
 
     @property

@@ -72,11 +72,11 @@ class BlockResult:
         if err := is_block_error(block_results_raw):
             return BlockResult(block_no, txs=[], end_block_events=[], begin_block_events=[], error=err, timestamp=0)
 
-        txs = [NativeThorTx.from_dict(tx, block_no) for tx in block_results_raw.get('txs', [])]
+        ts = date_parse_rfc(safe_get(block_results_raw, 'header', 'time')).timestamp()
+
+        txs = [NativeThorTx.from_dict(tx, block_no, ts) for tx in block_results_raw.get('txs', [])]
         begin_block_events = [ThorEvent.from_dict(e, block_no) for e in block_results_raw.get('begin_block_events', [])]
         end_block_events = [ThorEvent.from_dict(e, block_no) for e in block_results_raw.get('end_block_events', [])]
-
-        ts = date_parse_rfc(safe_get(block_results_raw, 'header', 'time')).timestamp()
 
         return cls(
             block_no=block_no,

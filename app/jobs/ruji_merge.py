@@ -7,7 +7,6 @@ from jobs.fetch.ruji_merge import RujiMergeStatsFetcher
 from jobs.scanner.block_result import BlockResult
 from jobs.scanner.tx import NativeThorTx
 from jobs.scanner.wasm_execute import CosmwasmExecuteDecoder
-from lib.date_utils import now_ts_utc
 from lib.delegates import WithDelegates, INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -67,6 +66,7 @@ class RujiMergeTracker(WithDelegates, INotified, WithLogger):
             asset=asset,
             rate=rate,
             decay_factor=round(decay_factor, 5),
+            timestamp=tx.timestamp,
         )
 
     @a_result_cached(ttl=120)
@@ -83,15 +83,20 @@ class RujiMergeTracker(WithDelegates, INotified, WithLogger):
         return [self.tx_to_merge_event(tx, system) for tx in txs if tx.is_success]
 
     async def _store_event(self, ev: EventRujiMerge):
-        await self.deps.db.redis.hset(self.key(now_ts_utc()), ev.tx_id, json.dumps(ev.to_dict()))
+        await self.deps.db.redis.hset(self.key(ev.timestamp), ev.tx_id, json.dumps(ev.to_dict()))
 
     async def get_all_events_from_db(self, now: float):
         r = await self.deps.db.get_redis()
         key = self.key(now)
         data = await r.hgetall(key)
-        return [EventRujiMerge.from_dict(json.loads(v.decode())) for k, v in data.items()]
+        return [EventRujiMerge.from_dict(json.loads(v)) for k, v in data.items()]
 
     async def on_data(self, sender, block: BlockResult):
         events = await self.get_events_from_block(block)
         for ev in events:
             await self._store_event(ev)
+
+    async def get_top_events_from_db(self, now: float, limit=10):
+        events = await self.get_all_events_from_db(now)
+        events.sort(key=lambda x: x.volume_usd, reverse=True)
+        return events[:limit]
