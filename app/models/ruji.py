@@ -1,4 +1,3 @@
-from decimal import Decimal
 from typing import NamedTuple, Dict, Optional, List
 
 from api.aionode.wasm import WasmContract
@@ -59,29 +58,29 @@ class MergeConfig(NamedTuple):
             decay_ends_at=ruji_parse_timestamp(data['decay_ends_at']),
         )
 
-    def decay_factor(self, now: float) -> Decimal:
+    def decay_factor(self, now: float) -> float:
         if now <= self.decay_starts_at:
-            return Decimal('1')
+            return 1.0
         if now > self.decay_ends_at:
-            return Decimal('0')
-        remaining = Decimal(self.decay_ends_at) - Decimal(now)
-        duration = Decimal(self.decay_ends_at) - Decimal(self.decay_starts_at)
+            return 0.0
+        remaining = float(self.decay_ends_at) - float(now)
+        duration = float(self.decay_ends_at) - float(self.decay_starts_at)
         return remaining / duration
 
-    def merge_ratio(self, now: float) -> Decimal:
+    def merge_ratio(self, now: float) -> float:
         factor = self.decay_factor(now)
         return self.max_rate * factor
 
     @property
     def max_rate(self):
-        return Decimal(self.ruji_allocation) / Decimal(self.merge_supply)
+        return float(self.ruji_allocation) / float(self.merge_supply)
 
     def calculate_decay(self, amount_in, amount_out):
         # Calculate the decay factor based on the amount_in and amount_out
         if amount_in <= 0 or amount_out <= 0:
-            return Decimal('0')
+            return 0.0
 
-        rate = Decimal(amount_out) / Decimal(amount_in)
+        rate = float(amount_out) / float(amount_in)
         decay_factor = rate / self.max_rate
         return decay_factor
 

@@ -12,14 +12,14 @@
             "ruji_allocation": 372461900000000,
             "decay_starts_at": 1746403200.0,
             "decay_ends_at": 1775347200.0,
-            "max_rate": "Decimal not JSON-serializable"
+            "max_rate": 0.3724619
           },
           "status": {
-            "merged": 181865799764700,
-            "shares": 67738081324516,
-            "size": 67738081325379
+            "merged": 181866029591500,
+            "shares": 67738166926242,
+            "size": 67738166927105
           },
-          "price_usd": 0.247687
+          "price_usd": 0.246985
         },
         "thor1yw4xvtc43me9scqfr2jr2gzvcxd3a9y4eq7gaukreugw2yd2f8tsz3392y": {
           "contract_address": "thor1yw4xvtc43me9scqfr2jr2gzvcxd3a9y4eq7gaukreugw2yd2f8tsz3392y",
@@ -30,14 +30,14 @@
             "ruji_allocation": 142708400000000,
             "decay_starts_at": 1746403200.0,
             "decay_ends_at": 1775347200.0,
-            "max_rate": "Decimal not JSON-serializable"
+            "max_rate": 0.020682376811594204
           },
           "status": {
             "merged": 991167126024200,
             "shares": 20499691982977,
             "size": 20499691983697
           },
-          "price_usd": 0.01176029
+          "price_usd": 0.01164926
         },
         "thor1suhgf5svhu4usrurvxzlgn54ksxmn8gljarjtxqnapv8kjnp4nrsw5xx2d": {
           "contract_address": "thor1suhgf5svhu4usrurvxzlgn54ksxmn8gljarjtxqnapv8kjnp4nrsw5xx2d",
@@ -48,14 +48,14 @@
             "ruji_allocation": 155931700000000,
             "decay_starts_at": 1746403200.0,
             "decay_ends_at": 1775347200.0,
-            "max_rate": "Decimal not JSON-serializable"
+            "max_rate": 0.009079545054362316
           },
           "status": {
             "merged": 1551370883642200,
             "shares": 14085741833062,
             "size": 14085741834055
           },
-          "price_usd": 0.00623228
+          "price_usd": 0.00623822
         },
         "thor14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s3p2nzy": {
           "contract_address": "thor14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s3p2nzy",
@@ -66,14 +66,14 @@
             "ruji_allocation": 4184468200000000,
             "decay_starts_at": 1746403200.0,
             "decay_ends_at": 1775347200.0,
-            "max_rate": "Decimal not JSON-serializable"
+            "max_rate": 0.37246188594235824
           },
           "status": {
-            "merged": 1732358053148500,
-            "shares": 645237347504015,
-            "size": 645237347603121
+            "merged": 1737172037835000,
+            "shares": 647030373318969,
+            "size": 647030373418353
           },
-          "price_usd": 0.247687
+          "price_usd": 0.246985
         },
         "thor1cnuw3f076wgdyahssdkd0g3nr96ckq8cwa2mh029fn5mgf2fmcmsmam5ck": {
           "contract_address": "thor1cnuw3f076wgdyahssdkd0g3nr96ckq8cwa2mh029fn5mgf2fmcmsmam5ck",
@@ -84,7 +84,7 @@
             "ruji_allocation": 144429800000000,
             "decay_starts_at": 1746403200.0,
             "decay_ends_at": 1775347200.0,
-            "max_rate": "Decimal not JSON-serializable"
+            "max_rate": 0.02221996923076923
           },
           "status": {
             "merged": 0,
@@ -102,19 +102,41 @@
             "ruji_allocation": 500000000000000,
             "decay_starts_at": 1746403200.0,
             "decay_ends_at": 1775347200.0,
-            "max_rate": "Decimal not JSON-serializable"
+            "max_rate": 0.0071915712644568955
           },
           "status": {
             "merged": 14047800329624000,
             "shares": 101025757177992,
             "size": 101025757179351
           },
-          "price_usd": 0.00385585
+          "price_usd": 0.00386052
         }
       },
       "all_denoms": "set not JSON-serializable"
     },
     "top_txs": [
+      {
+        "tx_id": "640B40A451F39DEB80881CECD367D8732618783697B6B81835C497D3DCD5F432",
+        "height": 20697067,
+        "from_address": "thor1fhr5s6awg0dud2g9pcm36xqgpxzr3lj0kr2zy8",
+        "volume_usd": 10603.232783,
+        "amount": 42809.0,
+        "asset": "THOR.KUJI",
+        "rate": 0.3724618858849775,
+        "decay_factor": 1.0,
+        "timestamp": 1744617853
+      },
+      {
+        "tx_id": "22393930D7C45D3A154B6013C571B9068C9D0BCC744B39DC91E626A0BA128CDF",
+        "height": 20696949,
+        "from_address": "thor1crkvzk048lmm0w9gz2rd8g5j7myf98ypeghl90",
+        "volume_usd": 6288.77293,
+        "amount": 25390.0,
+        "asset": "THOR.KUJI",
+        "rate": 0.3724618858846002,
+        "decay_factor": 1.0,
+        "timestamp": 1744617125
+      },
       {
         "tx_id": "6FCD6727D0A6D9C482EA3306A0093AEAF7698AA1BA6368FC9CF62539AB64E86A",
         "height": 20697754,
@@ -147,6 +169,17 @@
         "rate": 0.37246188588420504,
         "decay_factor": 1.0,
         "timestamp": 1744620313
+      },
+      {
+        "tx_id": "DBF5D6CD8B2803B8E80D9F3138DBC6C367CF2766AD4EC0E1FBF0483556EDD4D3",
+        "height": 20696920,
+        "from_address": "thor1vmm6cle3cc5e4nqtlkx6djh89pln6wg8qxdcyv",
+        "volume_usd": 1270.059578571322,
+        "amount": 5127.679606,
+        "asset": "THOR.KUJI",
+        "rate": 0.37246188588211104,
+        "decay_factor": 1.0,
+        "timestamp": 1744616945
       },
       {
         "tx_id": "5B3FA58ADD3C91BD031C038FD404E9F175C9686F4B68B2617EF3B8534CC5A5F6",
@@ -191,39 +224,6 @@
         "rate": 0.3724618858776632,
         "decay_factor": 1.0,
         "timestamp": 1744622314
-      },
-      {
-        "tx_id": "32E9B6C2133213C3A15139245DC40108C61555B8972840C0AE847DDFB8462386",
-        "height": 20696304,
-        "from_address": "thor1kfpy3nduwyjgtm6sanfl4yu9jrh9vhdpkgy99g",
-        "volume_usd": 327.16463999999996,
-        "amount": 1320.0,
-        "asset": "THOR.KUJI",
-        "rate": 0.3724618858787879,
-        "decay_factor": 1.0,
-        "timestamp": 1744613128
-      },
-      {
-        "tx_id": "80DA0E3AE08E775A21D7CE27EAE1E04FE4D99C870D9092C87A1890FC64A9EC12",
-        "height": 20697728,
-        "from_address": "thor1wrqk3m09z0gc03nl270vqpf2hss4tavxjlp9ys",
-        "volume_usd": 248.551,
-        "amount": 1000.0,
-        "asset": "THOR.KUJI",
-        "rate": 0.37246188588,
-        "decay_factor": 1.0,
-        "timestamp": 1744621939
-      },
-      {
-        "tx_id": "1678D365952CD896946D590274B2728853C35EE04E5E1702A14C1F6E6E01041A",
-        "height": 20639916,
-        "from_address": "thor15jul5qveh9urtgdmyhpvuuyekpgtmvgvefwwgv",
-        "volume_usd": 118.48903639999999,
-        "amount": 476.2,
-        "asset": "THOR.KUJI",
-        "rate": 0.3724618858672826,
-        "decay_factor": 1.0,
-        "timestamp": 0
       }
     ],
     "_width": 1280,
