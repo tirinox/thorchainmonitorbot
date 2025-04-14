@@ -26,6 +26,7 @@ from models.net_stats import AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo
 from models.pool_info import EventPools, PoolChanges, PoolInfo
 from models.price import RuneMarketInfo, AlertPrice, AlertPriceDiverge
+from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
 from models.savers import AlertSaverStats
@@ -185,7 +186,6 @@ class TwitterEnglishLocalization(BaseLocalization):
                     good = tx.meta_swap.streaming.successful_swaps
                     total = tx.meta_swap.streaming.quantity
                     content += f'\nSuccess rate: {format_percent(success, 1)} ({good}/{total})'
-
 
         link = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.first_input_tx_hash) \
             if tx and tx.tx_hash else ''
@@ -439,7 +439,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         if changes.nodes_activated or changes.nodes_deactivated:
             components.append(
                 self._node_bond_change_after_churn(changes) + '\n'
-        )
+            )
 
         if changes.churn_duration:
             components.append(
@@ -1003,3 +1003,9 @@ class TwitterEnglishLocalization(BaseLocalization):
         #     f"approximately {pretty_rune(e.yearly_burn_prediction)} Runes will be burned in a year.\n"
         #     f"{trend} is {pretty_percent(e.deflation_percent, signed=False)}."
         # )
+
+    @staticmethod
+    def notification_rujira_merge_stats(e: AlertRujiraMergeStats):
+        return (
+            f'RUJIRA Merge stats'
+        )

@@ -41,6 +41,7 @@ from models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent,
 from models.pool_info import PoolInfo, PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge, LastPriceHolder
 from models.queue import QueueInfo
+from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
 from models.savers import how_much_savings_you_can_add, AlertSaverStats
@@ -2813,6 +2814,12 @@ class BaseLocalization(ABC):  # == English
         # )
 
     TEXT_BURN_NO_DATA = '😩 Sorry. We have not gotten any data for burned Rune yet.'
+
+    @staticmethod
+    def notification_rujira_merge_stats(e: AlertRujiraMergeStats):
+        return (
+            f'RUJIRA Merge stats'
+        )
 
     # ------ Bond providers alerts ------
 

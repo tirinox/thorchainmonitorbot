@@ -32,6 +32,7 @@ from models.node_info import NodeSetChanges, NodeInfo, NodeEvent, EventDataSlash
 from models.pool_info import PoolInfo, PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.queue import QueueInfo
+from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
 from models.savers import AlertSaverStats
@@ -2032,6 +2033,12 @@ class RussianLocalization(BaseLocalization):
         return (
             f'Сегодня сожжено {bold(pretty_rune(e.last_24h_burned_rune))} RUNE '
             f'({bold(pretty_dollar(e.last_24h_burned_usd))})'
+        )
+
+    @staticmethod
+    def notification_rujira_merge_stats(e: AlertRujiraMergeStats):
+        return (
+            f'RUJIRA Статистика слияния'
         )
 
     # ------ Bond providers alerts ------

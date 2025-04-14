@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import NamedTuple, Dict, Optional
+from typing import NamedTuple, Dict, Optional, List
 
 from api.aionode.wasm import WasmContract
 from lib.date_utils import now_ts
@@ -133,6 +133,14 @@ class MergeContract(WasmContract):
         # 1 [denom] -> merge_ratio RUJI
         return self.price_usd / merge_ratio
 
+    def to_dict(self):
+        return {
+            "contract_address": self.contract_address,
+            "config": self.config if self.config else None,
+            "status": self.status if self.status else None,
+            "price_usd": self.price_usd
+        }
+
 
 class MergeSystem(NamedTuple):
     contracts: Dict[str, MergeContract]
@@ -162,3 +170,8 @@ class MergeSystem(NamedTuple):
             ticker = Asset.from_string(contract.config.merge_denom)
             price = prices.get(ticker.name)
             contract.set_price(price)
+
+
+class AlertRujiraMergeStats(NamedTuple):
+    merge: MergeSystem
+    top_txs: List[EventRujiMerge]

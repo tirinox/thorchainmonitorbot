@@ -36,6 +36,7 @@ from models.node_info import AlertNodeChurn
 from models.pool_info import PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.queue import AlertQueue
+from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunepoolStats
 from models.runepool import AlertRunePoolAction
 from models.s_swap import AlertSwapStart
@@ -133,6 +134,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_liquidity_cap(data)
         elif isinstance(data, EventRuneBurn):
             await self._handle_rune_burn(data)
+        elif isinstance(data, AlertRujiraMergeStats):
+            await self._handle_rujira_merge_stats(data)
 
     async def load_names(self, addresses) -> NameMap:
         if isinstance(addresses, str):
@@ -572,6 +575,21 @@ class AlertPresenter(INotified, WithLogger):
         async def message_gen(loc: BaseLocalization):
             text = loc.notification_rune_burn(data)
             photo, photo_name = await self.render_rune_burn_graph(loc, data)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
+        await self.deps.broadcaster.broadcast_to_all(message_gen)
+
+    async def render_rujira_merge_graph(self, loc, data: AlertRujiraMergeStats):
+        photo = await self.renderer.render('rujira_merge.jinja2', namedtuple_to_dict(data))
+        return photo, 'rujira_merge.png'
+
+    async def _handle_rujira_merge_stats(self, data: AlertRujiraMergeStats):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_rujira_merge_stats(data)
+            photo, photo_name = await self.render_rujira_merge_graph(loc, data)
             if photo is not None:
                 return BoardMessage.make_photo(photo, text, photo_name)
             else:

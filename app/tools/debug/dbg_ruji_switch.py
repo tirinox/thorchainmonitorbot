@@ -1,11 +1,21 @@
 import asyncio
+import json
 
 from jobs.fetch.ruji_merge import RujiMergeStatsFetcher
 from jobs.ruji_merge import RujiMergeTracker
 from jobs.scanner.native_scan import BlockScanner
 from lib.date_utils import now_ts
 from lib.texts import sep
+from lib.utils import namedtuple_to_dict
+from models.ruji import AlertRujiraMergeStats
 from tools.lib.lp_common import LpAppFramework
+
+
+def print_top_merges(top_txs):
+    sep('top merge')
+    for place, tx in enumerate(top_txs, start=1):
+        print(f"#{place}: {tx.amount} {tx.asset} {tx.tx_id} ({tx.from_address}) {tx.volume_usd:.2f} USD")
+    sep()
 
 
 async def dbg_switch_event_continuous(app: LpAppFramework, force_start_block=None, catch_up=0, one_block=False):
@@ -22,12 +32,8 @@ async def dbg_switch_event_continuous(app: LpAppFramework, force_start_block=Non
 
     # ruji_switch_decoder.add_subscriber(Receiver("switch"))
 
-    sep('top merge')
     top_txs = await ruji_merge_tracker.get_top_events_from_db(now_ts(), 5)
-    for place, tx in enumerate(top_txs, start=1):
-        print(f"#{place}: {tx.amount} {tx.asset} {tx.tx_id} ({tx.from_address}) {tx.volume_usd:.2f} USD")
-    sep()
-    input("Press Enter to continue...")
+    print_top_merges(top_txs)
 
     if catch_up > 0:
         await d.block_scanner.ensure_last_block()
@@ -49,19 +55,29 @@ async def dbg_merging_coin_gecko_prices(app):
 
 
 async def dbg_get_merge_status(app):
-    f = RujiMergeStatsFetcher(app.deps)
-    data = await f.fetch()
-    print(data)
+    ruji_merge_tracker = RujiMergeTracker(app.deps)
+
+    merge_stats = await ruji_merge_tracker.get_merge_system()
+    top_txs = await ruji_merge_tracker.get_top_events_from_db(now_ts(), 10)
+
+    sep("Stats")
+    print(merge_stats)
+    print_top_merges(top_txs)
+
+    sep()
+    alert = AlertRujiraMergeStats(merge_stats, top_txs)
+    print(json.dumps(namedtuple_to_dict(alert), indent=4))
+    sep()
 
 
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await dbg_switch_event_continuous(app, force_start_block=20639916)
-
-        await dbg_switch_event_continuous(app, force_start_block=20698109 - 1000)
+        await dbg_get_merge_status(app)
+        await dbg_switch_event_continuous(app, force_start_block=20698109 - 1200)
         # await dbg_mering_coin_gecko_prices(app)
-        # await dbg_get_merge_status(app)
+        #
 
 
 if __name__ == '__main__':

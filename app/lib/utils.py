@@ -577,30 +577,64 @@ async def gather_in_batches(tasks: List[Awaitable[Any]], batch_size: int) -> Lis
 def namedtuple_to_dict(obj) -> dict:
     """
     Converts a NamedTuple instance to a dictionary including its fields and properties.
+    For each field or property, if the value is not JSON serializable,
+    it is replaced with a string like "<TypeName> not JSON-serializable".
 
     Args:
         obj (NamedTuple): The NamedTuple instance to convert.
 
     Returns:
-        dict: A dictionary representation of the NamedTuple, including fields and properties.
+        dict: A dictionary representation of the NamedTuple, with non-serializable
+              objects replaced by a descriptive string.
     """
-    # fixme: use recursive_asdict
 
+    # Check that the object is a NamedTuple instance.
     if not is_named_tuple_instance(obj):
         raise TypeError("Input must be an instance of NamedTuple.")
 
-    # Get fields using _asdict()
+    # Helper to check JSON serialization ability
+    def is_json_serializable(value):
+        try:
+            json.dumps(value)
+            return True
+        except (TypeError, OverflowError):
+            return False
+
+    # Helper to recursively convert values
+    def convert_value(value):
+        if is_named_tuple_instance(value):
+            return namedtuple_to_dict(value)
+        elif isinstance(value, dict):
+            # Recursively process each key/value in the dictionary.
+            return {key: convert_value(val) for key, val in value.items()}
+        elif isinstance(value, (list, tuple)):
+            # Process items in lists/tuples.
+            return [convert_value(item) for item in value]
+        else:
+            # For non-iterable values, check if they are JSON serializable.
+            if is_json_serializable(value):
+                return value
+            elif hasattr(value, 'to_dict'):
+                # If the object has a to_dict method, call it.
+                return convert_value(value.to_dict())
+            else:
+                # Replace non-serializable object with a descriptive string.
+                return f"{type(value).__name__} not JSON-serializable"
+
+    # Convert the NamedTuple to a dictionary using _asdict()
     result = obj._asdict()
 
-    # Add properties dynamically
+    # Add any properties that are not already in the result.
     for attr in dir(obj):
-        # Check if it's a property and not private or already in the result
         if (
                 not attr.startswith("_") and
-                not attr in result and
+                attr not in result and
                 isinstance(getattr(type(obj), attr, None), property)
         ):
             result[attr] = getattr(obj, attr)
+
+    # Recursively check every value in the dictionary for JSON serializability.
+    result = {key: convert_value(value) for key, value in result.items()}
 
     return result
 
