@@ -1,6 +1,20 @@
 {% extends "base.jinja2" %}
 
 {% block content %}
-    <h1>Rujira merge</h1>
-    <p>Stats</p>
+    <style>
+
+    </style>
+
+    {% with title="RUJIRA MERGE STATS" %}
+        {% include "components/rujira/header.jinja2" %}
+    {% endwith %}
+
+    <div class="main-container">
+        <p>{{ top_txs }}</p>
+    </div>
+
+
+    <script>
+        let topTxs = {{ top_txs|safe }};
+    </script>
 {% endblock %}

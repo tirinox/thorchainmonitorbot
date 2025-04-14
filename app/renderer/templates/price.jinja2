@@ -2,16 +2,6 @@
 
 {% block content %}
     <style>
-        .pd__container {
-            display: flex;
-            position: absolute;
-            top: 12%;
-            left: 3%;
-            right: 3%;
-            bottom: 5%;
-            flex-direction: column;
-            align-items: center;
-        }
 
         #chart-container {
             width: 100%;
@@ -198,8 +188,7 @@
         {% include "components/header.jinja2" %}
     {% endwith %}
 
-    <div class="pd__container">
-
+    <div class="main-container">
         <div id="chart-container" class="chart-container shadow-box">
             <div class="legend">
                 <div class="legend-item">
