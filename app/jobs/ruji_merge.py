@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from api.aionode.types import thor_to_float
@@ -21,11 +21,26 @@ class RujiMergeTracker(WithDelegates, INotified, WithLogger):
         self.decoder = CosmwasmExecuteDecoder(MergeSystem.RUJI_MERGE_CONTRACTS)
         self.stats_fetcher = RujiMergeStatsFetcher(deps)
 
+    async def on_data(self, sender, block: BlockResult):
+        events = await self.get_events_from_block(block)
+        for ev in events:
+            await self._store_event(ev)
+
+    @a_result_cached(ttl=120)
+    async def get_merge_system(self):
+        return await self.stats_fetcher.fetch()
+
     DB_PREFIX = "Rujira:Merge:Tracker"
 
     def key(self, now: float):
         dt = datetime.fromtimestamp(now)
         return f'{self.DB_PREFIX}:{dt.strftime("%Y-%m-%d")}'
+
+    def keys_for_days(self, now: float, days_back: int):
+        dt = datetime.fromtimestamp(now)
+        return [
+            self.key((dt - timedelta(days=d)).timestamp()) for d in range(days_back, -1, -1)
+        ]
 
     async def clear(self):
         r = await self.deps.db.get_redis()
@@ -69,10 +84,6 @@ class RujiMergeTracker(WithDelegates, INotified, WithLogger):
             timestamp=tx.timestamp,
         )
 
-    @a_result_cached(ttl=120)
-    async def get_merge_system(self):
-        return await self.stats_fetcher.fetch()
-
     async def get_events_from_block(self, block: BlockResult):
         txs = list(self.decoder.decode(block))
         system = await self.get_merge_system()
@@ -85,18 +96,16 @@ class RujiMergeTracker(WithDelegates, INotified, WithLogger):
     async def _store_event(self, ev: EventRujiMerge):
         await self.deps.db.redis.hset(self.key(ev.timestamp), ev.tx_id, json.dumps(ev.to_dict()))
 
-    async def get_all_events_from_db(self, now: float):
+    async def get_all_events_from_db(self, now: float, days_back: int = 0):
         r = await self.deps.db.get_redis()
-        key = self.key(now)
-        data = await r.hgetall(key)
-        return [EventRujiMerge.from_dict(json.loads(v)) for k, v in data.items()]
+        keys = self.keys_for_days(now, days_back)
+        results = []
+        for key in keys:
+            data = await r.hgetall(key)
+            results.extend(EventRujiMerge.from_dict(json.loads(v)) for k, v in data.items())
+        return results
 
-    async def on_data(self, sender, block: BlockResult):
-        events = await self.get_events_from_block(block)
-        for ev in events:
-            await self._store_event(ev)
-
-    async def get_top_events_from_db(self, now: float, limit=10):
-        events = await self.get_all_events_from_db(now)
+    async def get_top_events_from_db(self, now: float, days_back: int, limit=10):
+        events = await self.get_all_events_from_db(now, days_back)
         events.sort(key=lambda x: x.volume_usd, reverse=True)
         return events[:limit]

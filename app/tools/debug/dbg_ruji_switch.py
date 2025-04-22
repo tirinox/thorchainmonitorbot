@@ -32,7 +32,7 @@ async def dbg_switch_event_continuous(app: LpAppFramework, force_start_block=Non
 
     # ruji_switch_decoder.add_subscriber(Receiver("switch"))
 
-    top_txs = await ruji_merge_tracker.get_top_events_from_db(now_ts(), 5)
+    top_txs = await ruji_merge_tracker.get_top_events_from_db(now_ts(), 7, limit=10)
     print_top_merges(top_txs)
 
     if catch_up > 0:
@@ -75,7 +75,7 @@ async def run():
     async with app(brief=True):
         # await dbg_switch_event_continuous(app, force_start_block=20639916)
         await dbg_get_merge_status(app)
-        # await dbg_switch_event_continuous(app, force_start_block=20698109 - 1200)
+        # await dbg_switch_event_continuous(app, force_start_block=20811047 - 5200)
         # await dbg_mering_coin_gecko_prices(app)
 
 
