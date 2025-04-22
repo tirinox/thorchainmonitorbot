@@ -1,0 +1,29 @@
+<style>
+    .merge_tx__cont {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        border: 1px solid #444;
+        border-radius: 6px;
+        padding: 2px;
+    }
+
+    .merge_tx__logo {
+        width: 28px;
+        height: 28px;
+        margin-right: 3px;
+    }
+</style>
+
+<div class="merge_tx__cont">
+
+    <img class="merge_tx__logo" src="renderer/static/img/{{ tx['asset'] }}.png" alt="{{ tx['asset'] }} logo">
+
+    <div>
+        {{ short_money(tx['amount']) }} {{ tx['asset'] }}
+    </div>
+
+    <span>From: {{ shorten_text_middle(tx['from_address'], 5, 4) }}</span>
+    <span>${{ short_money(tx['volume_usd']) }}</span>
+</div>

@@ -8,13 +8,13 @@ class RujiMergeStatsFetcher(WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.system = MergeSystem({
-            address: MergeContract(deps.thor_connector, address)
+        self.system = MergeSystem([
+            MergeContract(deps.thor_connector, address)
             for address in MergeSystem.RUJI_MERGE_CONTRACTS
-        })
+        ])
 
     async def fetch(self):
-        for contract in self.system.contracts.values():
+        for contract in self.system.contracts:
             await contract.load_config()
             await contract.load_status()
 

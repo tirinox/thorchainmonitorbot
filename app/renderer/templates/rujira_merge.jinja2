@@ -2,17 +2,74 @@
 
 {% block content %}
     <style>
+        .pane {
+            display: flex;
+            width: 50%;
+            flex-direction: column;
+        }
 
+        .pane {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .flex-container {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .merge-asset {
+            display: flex;
+        }
+
+        .tx_list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
     </style>
 
     {% with title="RUJIRA MERGE STATS" %}
         {% include "components/rujira/header.jinja2" %}
     {% endwith %}
 
-    <div class="main-container">
-        <p>{{ top_txs }}</p>
-    </div>
+    <div class="main-container flex-container">
 
+        <div class="pane">
+            {% for contract in merge['contracts'] %}
+                {% with cfg = contract['config'], st = contract['status'] %}
+                    {% with asset = cfg['merge_denom'].upper() %}
+                        <div class="merge-asset">
+                            {% with progress = st['merged'] / cfg['merge_supply'] %}
+                                {% include "components/rujira/progress-bar.jinja2" %}
+                                <h3>{{ asset }}</h3>
+                                <div>
+                                    <span>Supply: {{ short_money(cfg['merge_supply'] * 1e-8) }}</span>
+                                    <span>Merged: {{ short_money(st['merged'] * 1e-8) }}</span>
+                                    <span>Progress: {{ short_money(progress * 100) }}%</span>
+                                </div>
+                            {% endwith %}
+
+                        </div>
+                    {% endwith %}
+
+                {% endwith %}
+            {% endfor %}
+
+        </div>
+        <!-- LAST TRANSACTIONS -->
+
+        <div class="pane">
+            <h3>Last transactions</h3>
+            <div class="tx_list">
+                {% for tx in top_txs[:10] %}
+                    {% include "components/rujira/merge-tx.jinja2" %}
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
 
     <script>
         let topTxs = {{ top_txs|safe }};

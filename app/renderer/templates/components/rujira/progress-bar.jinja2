@@ -1,0 +1,52 @@
+<style>
+    .pb__cont {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        margin: 4px;
+    }
+
+    .pb__graph {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+        fill: none;
+        overflow: visible;
+        stroke-width: 5;
+        stroke-linecap: round;
+        stroke-dasharray: 0 999;
+    }
+
+    .pb__graph > circle:nth-child(1) {
+        stroke: #71909f;
+        opacity: 0.25;
+    }
+
+    .pb__graph > circle:last-child {
+        stroke: #d615eb;
+        -webkit-filter: drop-shadow(0px 0px 4px #d615eb);
+        filter: drop-shadow(0px 0px 4px #d615eb);
+    }
+
+    .pb__img {
+        display: block;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 74%;
+        height: 74%;
+    }
+
+</style>
+
+<div class="pb__cont">
+    <svg class="pb__graph" viewBox="0 0 100 100" fill="none">
+        <circle cx="50" cy="50" r="45" stroke-dasharray="282.7433388230814 999"></circle>
+        <circle cx="50" cy="50" r="45" stroke-dasharray="{{ progress * 282.74 }} 999"></circle>
+    </svg>
+    <img src="renderer/static/img/{{ asset }}.png" alt="{{ asset }} logo" class="pb__img">
+</div>

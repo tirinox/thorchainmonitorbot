@@ -142,13 +142,13 @@ class MergeContract(WasmContract):
 
 
 class MergeSystem(NamedTuple):
-    contracts: Dict[str, MergeContract]
+    contracts: List[MergeContract]
 
     RUJI_MERGE_CONTRACTS = [
-        "thor1yyca08xqdgvjz0psg56z67ejh9xms6l436u8y58m82npdqqhmmtqrsjrgh",
-        "thor1yw4xvtc43me9scqfr2jr2gzvcxd3a9y4eq7gaukreugw2yd2f8tsz3392y",
-        "thor1suhgf5svhu4usrurvxzlgn54ksxmn8gljarjtxqnapv8kjnp4nrsw5xx2d",
         "thor14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s3p2nzy",
+        "thor1yyca08xqdgvjz0psg56z67ejh9xms6l436u8y58m82npdqqhmmtqrsjrgh",
+        "thor1suhgf5svhu4usrurvxzlgn54ksxmn8gljarjtxqnapv8kjnp4nrsw5xx2d",
+        "thor1yw4xvtc43me9scqfr2jr2gzvcxd3a9y4eq7gaukreugw2yd2f8tsz3392y",
         "thor1cnuw3f076wgdyahssdkd0g3nr96ckq8cwa2mh029fn5mgf2fmcmsmam5ck",
         "thor1ltd0maxmte3xf4zshta9j5djrq9cl692ctsp9u5q0p9wss0f5lms7us4yf"
     ]
@@ -156,16 +156,16 @@ class MergeSystem(NamedTuple):
     def find_contract_by_denom(self, denom: str):
         denom = denom.lower()
         return next((
-            contract for address, contract in self.contracts.items()
+            contract for _, contract in self.contracts
             if contract.config.merge_denom.lower() == denom
         ), None)
 
     @property
     def all_denoms(self):
-        return set(cfg.config.merge_denom for cfg in self.contracts.values())
+        return set(cfg.config.merge_denom for cfg in self.contracts)
 
     def set_prices(self, prices):
-        for contract in self.contracts.values():
+        for contract in self.contracts:
             ticker = Asset.from_string(contract.config.merge_denom)
             price = prices.get(ticker.name)
             contract.set_price(price)

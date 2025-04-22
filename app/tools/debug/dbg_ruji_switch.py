@@ -75,9 +75,8 @@ async def run():
     async with app(brief=True):
         # await dbg_switch_event_continuous(app, force_start_block=20639916)
         await dbg_get_merge_status(app)
-        await dbg_switch_event_continuous(app, force_start_block=20698109 - 1200)
+        # await dbg_switch_event_continuous(app, force_start_block=20698109 - 1200)
         # await dbg_mering_coin_gecko_prices(app)
-        #
 
 
 if __name__ == '__main__':
