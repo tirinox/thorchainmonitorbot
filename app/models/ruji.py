@@ -1,4 +1,4 @@
-from typing import NamedTuple, Dict, Optional, List
+from typing import NamedTuple, Optional, List
 
 from api.aionode.wasm import WasmContract
 from lib.date_utils import now_ts
@@ -156,7 +156,7 @@ class MergeSystem(NamedTuple):
     def find_contract_by_denom(self, denom: str):
         denom = denom.lower()
         return next((
-            contract for _, contract in self.contracts
+            contract for contract in self.contracts
             if contract.config.merge_denom.lower() == denom
         ), None)
 
