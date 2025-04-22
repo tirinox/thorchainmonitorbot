@@ -672,8 +672,9 @@ chain_id:
   confidence_window_size: 14
 
 
-rujira:  # (!) new
+rujira: # (!) new
   enabled: true
 
-  switch:
+  merge:
     enabled: true
+    period: 1d

@@ -30,11 +30,13 @@ from jobs.fetch.node_info import NodeInfoFetcher
 from jobs.fetch.pol import RunePoolFetcher
 from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from jobs.fetch.queue import QueueFetcher
+from jobs.fetch.ruji_merge import RujiMergeStatsFetcher
 from jobs.fetch.savers_vnx import SaversStatsFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.tx import TxFetcher
 from jobs.node_churn import NodeChurnDetector
 from jobs.price_recorder import PriceRecorder
+from jobs.ruji_merge import RujiMergeTracker
 from jobs.scanner.loan_extractor import LoanExtractorBlock
 from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.runepool import RunePoolEventDecoder
@@ -86,6 +88,7 @@ from notify.public.pool_churn_notify import PoolChurnNotifier
 from notify.public.price_div_notify import PriceDivergenceNotifier
 from notify.public.price_notify import PriceNotifier
 from notify.public.queue_notify import QueueNotifier, QueueStoreMetrics
+from notify.public.ruji_merge_stats import RujiMergeStatsTxNotifier
 from notify.public.runepool_notify import RunePoolTransactionNotifier, RunepoolStatsNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
 from notify.public.savers_stats_notify import SaversStatsNotifier
@@ -637,15 +640,16 @@ class App(WithLogger):
             chain_id_job.add_subscriber(chain_id_notifier)
 
         if d.cfg.get('rujira.enabled', True):
-            if d.cfg.get('rujira.switch.enabled', True):
-                pass  # todo
-                # ruji_switch_decoder = RujiSwitchEventDecoder(d.db, d.price_holder)
-                # d.block_scanner.add_subscriber(ruji_switch_decoder)
-                #
-                # ruji_switch_notifier = RujiSwitchTxNotifier(d)
-                # ruji_switch_notifier.add_subscriber(ruji_switch_decoder)
-                #
-                # ruji_switch_notifier.add_subscriber(d.alert_presenter)
+            if d.cfg.get('rujira.merge.enabled', True):
+                # Record Merge txs real-time
+                ruji_merge_tracker = RujiMergeTracker(d)
+                d.block_scanner.add_subscriber(ruji_merge_tracker)
+
+                ruji_stats_fetcher = RujiMergeStatsFetcher(d)
+                tasks.append(ruji_stats_fetcher)
+
+                notifier_ruji_merge = RujiMergeStatsTxNotifier(d)
+                notifier_ruji_merge.add_subscriber(d.alert_presenter)
 
         # -------- SCHEDULER --------
 
