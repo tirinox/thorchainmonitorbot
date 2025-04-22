@@ -20,6 +20,14 @@ class WasmContract:
         result = await self._connector.query_raw(url)
         return result
 
+    @property
+    def connector(self) -> ThorConnector:
+        return self._connector
+
+    @connector.setter
+    def connector(self, value: ThorConnector):
+        self._connector = value
+
 
 class WasmCodeManager:
     def __init__(self, connector: ThorConnector):

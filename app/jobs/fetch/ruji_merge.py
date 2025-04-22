@@ -1,12 +1,13 @@
+from jobs.fetch.base import BaseFetcher
 from lib.depcont import DepContainer
-from lib.logs import WithLogger
 from lib.utils import a_result_cached
 from models.ruji import MergeSystem, MergeContract
 
 
-class RujiMergeStatsFetcher(WithLogger):
+class RujiMergeStatsFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
-        super().__init__()
+        sleep_period = deps.cfg.as_interval("rujira.merge.period", "10m")
+        super().__init__(deps, sleep_period=sleep_period)
         self.deps = deps
         self.system = MergeSystem([
             MergeContract(deps.thor_connector, address)
@@ -15,6 +16,7 @@ class RujiMergeStatsFetcher(WithLogger):
 
     async def fetch(self):
         for contract in self.system.contracts:
+            contract.connector = self.deps.thor_connector
             await contract.load_config()
             await contract.load_status()
 
