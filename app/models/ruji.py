@@ -9,6 +9,7 @@ class EventRujiMerge(NamedTuple):
     tx_id: str
     height: int
     from_address: str
+    from_address_name: str
     volume_usd: float
     amount: float
     asset: str
@@ -22,6 +23,7 @@ class EventRujiMerge(NamedTuple):
             tx_id=d['tx_id'],
             height=int(d['height']),
             from_address=d['from_address'],
+            from_address_name=d.get('from_address_name', ''),
             volume_usd=float(d['volume_usd']),
             amount=float(d['amount']),
             asset=d['asset'],
@@ -32,6 +34,10 @@ class EventRujiMerge(NamedTuple):
 
     def to_dict(self):
         return self._asdict()
+
+    @property
+    def expected_output(self):
+        return self.rate * self.amount
 
 
 def ruji_parse_timestamp(timestamp: str) -> float:
@@ -74,6 +80,10 @@ class MergeConfig(NamedTuple):
     @property
     def max_rate(self):
         return float(self.ruji_allocation) / float(self.merge_supply)
+
+    @property
+    def current_rate(self):
+        return self.merge_ratio(now_ts())
 
     def calculate_decay(self, amount_in, amount_out):
         # Calculate the decay factor based on the amount_in and amount_out
@@ -162,7 +172,7 @@ class MergeSystem(NamedTuple):
 
     @property
     def all_denoms(self):
-        return set(cfg.config.merge_denom for cfg in self.contracts)
+        return list(set(cfg.config.merge_denom for cfg in self.contracts))
 
     def set_prices(self, prices):
         for contract in self.contracts:
@@ -170,7 +180,25 @@ class MergeSystem(NamedTuple):
             price = prices.get(ticker.name)
             contract.set_price(price)
 
+    @property
+    def decay_staring_in_sec(self):
+        if not self.contracts:
+            return 0
+        c = self.contracts[0].config
+        return int(now_ts() - c.decay_starts_at)
+
 
 class AlertRujiraMergeStats(NamedTuple):
     merge: MergeSystem
     top_txs: List[EventRujiMerge]
+    top_txs_days_back: int = 0
+
+    @property
+    def addresses(self):
+        return [tx.from_address for tx in self.top_txs]
+
+    def update_names(self, name_map):
+        for i in range(len(self.top_txs)):
+            tx = self.top_txs[i]
+            if name := name_map.get(tx.from_address):
+                self.top_txs[i] = tx._replace(from_address_name=name)

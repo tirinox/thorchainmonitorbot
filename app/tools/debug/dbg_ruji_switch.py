@@ -58,15 +58,16 @@ async def dbg_merging_coin_gecko_prices(app):
 async def dbg_get_merge_status(app):
     ruji_merge_tracker = RujiMergeTracker(app.deps)
 
+    top_txs_days_back = 10
     merge_stats = await ruji_merge_tracker.get_merge_system()
-    top_txs = await ruji_merge_tracker.get_top_events_from_db(now_ts(), 10)
+    top_txs = await ruji_merge_tracker.get_top_events_from_db(now_ts(), top_txs_days_back)
 
     sep("Stats")
     print(merge_stats)
     print_top_merges(top_txs)
 
     sep()
-    alert = AlertRujiraMergeStats(merge_stats, top_txs)
+    alert = AlertRujiraMergeStats(merge_stats, top_txs, top_txs_days_back=top_txs_days_back)
     print(json.dumps(namedtuple_to_dict(alert), indent=4))
     sep()
 
@@ -75,8 +76,10 @@ async def demo_ruji_stats_continuous(app):
     d = app.deps
 
     ruji_stats_fetcher = RujiMergeStatsFetcher(d)
+    ruji_stats_fetcher.initial_sleep = 0
 
     notifier_ruji_merge = RujiMergeStatsTxNotifier(d)
+    notifier_ruji_merge.stats_days_back = 7
     notifier_ruji_merge.add_subscriber(d.alert_presenter)
     ruji_stats_fetcher.add_subscriber(notifier_ruji_merge)
 
@@ -87,10 +90,10 @@ async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await dbg_switch_event_continuous(app, force_start_block=20639916)
-        # await dbg_get_merge_status(app)
+        await dbg_get_merge_status(app)
         # await dbg_switch_event_continuous(app, force_start_block=20811047 - 5200)
         # await dbg_mering_coin_gecko_prices(app)
-        await demo_ruji_stats_continuous(app)
+        # await demo_ruji_stats_continuous(app)
 
 
 if __name__ == '__main__':

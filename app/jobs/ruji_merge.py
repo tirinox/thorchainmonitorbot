@@ -76,6 +76,7 @@ class RujiMergeTracker(WithDelegates, INotified, WithLogger):
             tx_id=tx.tx_hash,
             height=tx.height,
             from_address=tx.first_signer_address,
+            from_address_name=tx.first_signer_address,
             volume_usd=volume_usd,
             amount=amount,
             asset=asset,
