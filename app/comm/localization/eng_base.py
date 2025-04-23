@@ -2818,7 +2818,8 @@ class BaseLocalization(ABC):  # == English
     @staticmethod
     def notification_rujira_merge_stats(e: AlertRujiraMergeStats):
         return (
-            f'RUJIRA Merge stats $RUJI'
+            f'RUJIRA Merge stats $RUJI\n'
+            f'https://rujira.network/merge/'
         )
 
     # ------ Bond providers alerts ------
