@@ -650,6 +650,7 @@ class App(WithLogger):
 
                 notifier_ruji_merge = RujiMergeStatsTxNotifier(d)
                 notifier_ruji_merge.add_subscriber(d.alert_presenter)
+                ruji_stats_fetcher.add_subscriber(notifier_ruji_merge)
 
         # -------- SCHEDULER --------
 

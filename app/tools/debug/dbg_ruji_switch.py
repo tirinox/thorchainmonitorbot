@@ -8,6 +8,7 @@ from lib.date_utils import now_ts
 from lib.texts import sep
 from lib.utils import namedtuple_to_dict
 from models.ruji import AlertRujiraMergeStats
+from notify.public.ruji_merge_stats import RujiMergeStatsTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -70,13 +71,26 @@ async def dbg_get_merge_status(app):
     sep()
 
 
+async def demo_ruji_stats_continuous(app):
+    d = app.deps
+
+    ruji_stats_fetcher = RujiMergeStatsFetcher(d)
+
+    notifier_ruji_merge = RujiMergeStatsTxNotifier(d)
+    notifier_ruji_merge.add_subscriber(d.alert_presenter)
+    ruji_stats_fetcher.add_subscriber(notifier_ruji_merge)
+
+    await ruji_stats_fetcher.run()
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await dbg_switch_event_continuous(app, force_start_block=20639916)
-        await dbg_get_merge_status(app)
+        # await dbg_get_merge_status(app)
         # await dbg_switch_event_continuous(app, force_start_block=20811047 - 5200)
         # await dbg_mering_coin_gecko_prices(app)
+        await demo_ruji_stats_continuous(app)
 
 
 if __name__ == '__main__':
