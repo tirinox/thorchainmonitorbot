@@ -37,6 +37,13 @@ class NameMap(NamedTuple):
         self.by_name[name] = (n := make_virtual_thor_name(address, name))
         self.by_address[address] = n
 
+    def get(self, item, default=None):
+        thor_name = self.by_address.get(str(item).strip(), None)
+        return thor_name.name if thor_name else default
+
+    def __contains__(self, item):
+        return self.get(item) is not None
+
 
 # ThorName: address[owner] -> many of [name] -> many of [address (thor + chains)]
 # Here we basically don't care about owners of ThorNames.

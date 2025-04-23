@@ -587,6 +587,13 @@ class AlertPresenter(INotified, WithLogger):
         return photo, 'rujira_merge.png'
 
     async def _handle_rujira_merge_stats(self, data: AlertRujiraMergeStats):
+        names = await self.load_names(data.addresses)
+
+        try:
+            data.update_names(names)
+        except Exception as e:
+            self.logger.exception(f'Failed to load names for merge: {e}', stack_info=True)
+
         async def message_gen(loc: BaseLocalization):
             text = loc.notification_rujira_merge_stats(data)
             photo, photo_name = await self.render_rujira_merge_graph(loc, data)
