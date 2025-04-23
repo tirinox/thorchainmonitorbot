@@ -1,12 +1,12 @@
 <style>
     .merge_tx__cont {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
-        font-size: 14px;
-        border: 1px solid #444;
+        font-size: 21px;
         border-radius: 6px;
-        padding: 2px;
+        padding: 7px;
+        gap: 10px;
     }
 
     .merge_tx__logo {
@@ -14,16 +14,48 @@
         height: 28px;
         margin-right: 3px;
     }
+
+    .merge_tx__user {
+        font-size: 20px;
+        opacity: 0.75;
+        flex-grow: 1;
+    }
+
+    .merge_tx__amount {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .merge_tx__volume {
+        font-size: 18px;
+    }
+
+    .merge_tx__expect {
+        font-size: 25px;
+        font-weight: bolder;
+    }
 </style>
 
 <div class="merge_tx__cont">
 
     <img class="merge_tx__logo" src="renderer/static/img/{{ tx['asset'] }}.png" alt="{{ tx['asset'] }} logo">
 
-    <div>
-        {{ short_money(tx['amount']) }} {{ tx['asset'] }}
+    <div class="merge_tx__amount">
+        <div>
+            <strong>{{ short_money(tx['amount']) }}</strong> {{ tx['asset'].replace('THOR.', '') }}
+        </div>
+        <div class="merge_tx__volume fade-color">(${{ short_money(tx['volume_usd']) }})</div>
+        <div>→</div>
+        <div class="merge_tx__expect">
+            <strong>{{ short_money(tx['expected_output']) }}</strong> RUJI
+        </div>
+
     </div>
 
-    <span>From: {{ shorten_text_middle(tx['from_address'], 5, 4) }}</span>
-    <span>${{ short_money(tx['volume_usd']) }}</span>
+    <div class="merge_tx__user">
+        👤 {{ tx['from_address_name'] or shorten_text_middle(tx['from_address'], 5, 4) }}
+    </div>
+
 </div>

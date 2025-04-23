@@ -1,0 +1,66 @@
+<style>
+    .merge-asset-cont {
+        gap: 0;
+        font-size: 18px;
+    }
+
+    .ml {
+        margin-left: 20px;
+    }
+
+    .ml-xl {
+        margin-left: 40px;
+    }
+
+    .alloc-block {
+        min-width: 130px;
+    }
+
+    .alloc {
+        font-weight: bold;
+        font-size: 25px;
+    }
+
+    .merged-block {
+        min-width: 140px;
+    }
+
+</style>
+
+{% with cfg = contract['config'], st = contract['status'] %}
+    {% with asset = cfg['merge_denom'].upper() %}
+        <div class="flex merge-asset-cont">
+            {% with progress = st['merged'] / cfg['merge_supply'] %}
+                {% include "components/rujira/progress-bar.jinja2" %}
+
+                <div class="flex dir-c ml alloc-block">
+                    <div class="fade-color">Allocation</div>
+                    <div class="alloc">{{ short_money(cfg['ruji_allocation'] * 1e-8) }} RUJI</div>
+                    <div class="fade-color">for max {{ short_money(cfg['merge_supply'] * 1e-8) }}</div>
+                </div>
+
+                <div class="flex dir-c ml merged-block">
+                    <div class="fade-color">Merged</div>
+                    <div class="alloc">{{ short_money(st['merged'] * 1e-8) }} {{ asset.replace('THOR.', '') }}</div>
+                    <div class="color-teal">{{ short_money(progress * 100) }}%</div>
+                </div>
+
+                <div class="flex dir-c ml-xl">
+                    <div class="fade-color">Current Rate</div>
+                    <div class="alloc">
+                        {{ short_money(cfg['current_rate']) }}
+                    </div>
+                    <div class="fade-color">
+                        from {{ short_money(cfg['max_rate']) }}
+                    </div>
+                </div>
+
+                {#                <div class="flex dir-c">#}
+                {#                    <span>Supply: {{ short_money(cfg['merge_supply'] * 1e-8) }}</span>#}
+                {#                    <span>Merged: {{ short_money(st['merged'] * 1e-8) }}</span>#}
+                {#                    <span>Progress: {{ short_money(progress * 100) }}%</span>#}
+                {#                </div>#}
+            {% endwith %}
+        </div>
+    {% endwith %}
+{% endwith %}

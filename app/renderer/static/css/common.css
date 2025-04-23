@@ -121,6 +121,13 @@ footer {
     display: flex;
 }
 
+.dir-c {
+    flex-direction: column;
+}
+
+.dir-r {
+    flex-direction: row;
+}
 
 .logo-holder {
     display: flex;

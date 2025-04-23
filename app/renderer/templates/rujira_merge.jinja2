@@ -1,32 +1,50 @@
 {% extends "base.jinja2" %}
 
+{% block extra_head %}
+	<link rel="stylesheet" href="renderer/static/css/rujira.css?r={{ range(-100, 100) | random }}">
+{% endblock %}
+
 {% block content %}
+
     <style>
         .pane {
-            display: flex;
-            width: 50%;
-            flex-direction: column;
-        }
-
-        .pane {
+            padding: 0;
+            margin: 0;
             width: 50%;
             display: flex;
             flex-direction: column;
+            height: 100%;
+
+            {#outline: 2px solid #222;#}
+            {#border-radius: 20px;#}
         }
 
-        .flex-container {
+        .merge-container {
             display: flex;
             flex-direction: row;
+            gap: 40px;
         }
 
-        .merge-asset {
-            display: flex;
-        }
-
-        .tx_list {
+        .tx-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 6px;
+            margin-top: -12px;
+        }
+
+        .decay-block {
+            margin-top: 10px;
+            font-size: 18px;
+            color: #c5c5c5;
+        }
+
+        #decay-date {
+            font-weight: bold;
+        }
+
+        .header-top-recent-txs {
+            font-size: 30px;
+            margin-bottom: 20px;
         }
     </style>
 
@@ -34,44 +52,45 @@
         {% include "components/rujira/header.jinja2" %}
     {% endwith %}
 
-    <div class="main-container flex-container">
+    <div class="main-container merge-container">
 
-        <div class="pane">
-            {% for contract in merge['contracts'] %}
-                {% with cfg = contract['config'], st = contract['status'] %}
-                    {% with asset = cfg['merge_denom'].upper() %}
-                        <div class="merge-asset">
-                            {% with progress = st['merged'] / cfg['merge_supply'] %}
-                                {% include "components/rujira/progress-bar.jinja2" %}
-                                <h3>{{ asset }}</h3>
-                                <div>
-                                    <span>Supply: {{ short_money(cfg['merge_supply'] * 1e-8) }}</span>
-                                    <span>Merged: {{ short_money(st['merged'] * 1e-8) }}</span>
-                                    <span>Progress: {{ short_money(progress * 100) }}%</span>
-                                </div>
-                            {% endwith %}
-
-                        </div>
-                    {% endwith %}
-
-                {% endwith %}
-            {% endfor %}
-
-        </div>
-        <!-- LAST TRANSACTIONS -->
-
-        <div class="pane">
-            <h3>Last transactions</h3>
-            <div class="tx_list">
-                {% for tx in top_txs[:10] %}
-                    {% include "components/rujira/merge-tx.jinja2" %}
+            <div class="pane">
+                {% for contract in merge['contracts'] %}
+                    {% include "components/rujira/merge-block.jinja2" %}
                 {% endfor %}
             </div>
-        </div>
+
+            <!-- LAST TRANSACTIONS -->
+            <div class="pane">
+                <div class="header-top-recent-txs fade-color">
+                    Top Transactions 24H
+                </div>
+                <div class="tx-list">
+                    {% for tx in top_txs[:9] %}
+                        {% include "components/rujira/merge-tx.jinja2" %}
+                    {% endfor %}
+                </div>
+
+                <div class="decay-block">
+                    Decay Starting In... <span id="decay-date"></span>
+                </div>
+
+            </div>
 
     </div>
 
+    <script src="renderer/static/js/helpers.js"></script>
+
     <script>
         let topTxs = {{ top_txs|safe }};
+        let contracts = {{ merge['contracts']|safe }};
+        const decayTimestamp = contracts[0].config.decay_starts_at
+        const decayInSeconds = (new Date(decayTimestamp * 1000) - new Date()) / 1000;
+
+        if(decayInSeconds > 0) {
+            document.getElementById("decay-date").innerHTML = secondsToDaysHours(decayInSeconds)
+        }
+        // todo! change label text if decay started
+
     </script>
 {% endblock %}
