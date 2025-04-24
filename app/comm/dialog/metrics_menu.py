@@ -12,12 +12,14 @@ from comm.picture.savers_picture import SaversPictureGenerator
 from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.fetch.node_info import NodeInfoFetcher
+from jobs.ruji_merge import RujiMergeTracker
 from lib.constants import THOR_BLOCKS_PER_MINUTE
 from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from lib.draw_utils import img_to_bio
 from lib.texts import kbd
 from models.net_stats import AlertNetworkStats
 from models.node_info import NodeInfo
+from models.ruji import AlertRujiraMergeStats
 from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.block_notify import BlockHeightNotifier
 from notify.public.burn_notify import BurnNotifier
@@ -396,6 +398,18 @@ class MetricsDialog(BaseDialog):
 
         text = self.loc.notification_rune_burn(event)
         photo, photo_name = await self.deps.alert_presenter.render_rune_burn_graph(self.loc, event)
+        await message.answer_photo(img_to_bio(photo, photo_name), caption=text, disable_notification=True)
+
+    async def show_rujira_merge_stats(self, message: Message):
+        await self.start_typing(message)
+
+        ruji_merge_tracker = RujiMergeTracker(self.deps)
+        merge = await ruji_merge_tracker.get_merge_system()
+        top_txs = await ruji_merge_tracker.get_top_events_from_db(now_ts(), 1)
+        event = AlertRujiraMergeStats(merge, top_txs, 1)
+
+        text = self.loc.notification_rujira_merge_stats(event)
+        photo, photo_name = await self.deps.alert_presenter.render_rujira_merge_graph(None, event)
         await message.answer_photo(img_to_bio(photo, photo_name), caption=text, disable_notification=True)
 
     # ---- Ask for duration (universal)

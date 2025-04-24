@@ -179,6 +179,10 @@ class MainMenuDialog(BaseDialog):
     async def cmd_rune_burn(self, message: Message):
         await self.build_metrics_dialog().show_rune_burned(message)
 
+    @message_handler(commands='rujimerge', state='*')
+    async def cmd_ruji_merge(self, message: Message):
+        await self.build_metrics_dialog().show_rujira_merge_stats(message)
+
     @message_handler(filters.RegexpCommandsFilter(regexp_commands=[r'^/unsub_.*']), state='*')
     async def on_unsubscribe_command(self, message: Message):
         # Commands like /unsub_sMth1
