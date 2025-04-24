@@ -1,7 +1,7 @@
 {% extends "base.jinja2" %}
 
 {% block extra_head %}
-	<link rel="stylesheet" href="renderer/static/css/rujira.css?r={{ range(-100, 100) | random }}">
+    <link rel="stylesheet" href="renderer/static/css/rujira.css?r={{ range(-100, 100) | random }}">
 {% endblock %}
 
 {% block content %}
@@ -15,8 +15,7 @@
             flex-direction: column;
             height: 100%;
 
-            {#outline: 2px solid #222;#}
-            {#border-radius: 20px;#}
+        {#outline: 2px solid #222;#}{#border-radius: 20px;#}
         }
 
         .merge-container {
@@ -25,17 +24,28 @@
             gap: 40px;
         }
 
+        .recent-txs-pane {
+            margin-top: -10px;
+        }
+
         .tx-list {
             display: flex;
             flex-direction: column;
             gap: 6px;
-            margin-top: -12px;
         }
 
         .decay-block {
-            margin-top: 10px;
-            font-size: 18px;
-            color: #c5c5c5;
+            margin: 0;
+            position: absolute;
+            right: 9%;
+            top: 6%;
+            font-size: 24px;
+            padding: 14px 20px 14px 20px;
+
+            {#outline: 2px solid  rgba(200, 200, 200, 0.5);#}
+            background: rgba(197, 197, 197, 0.1);
+
+            border-radius: 20px;
         }
 
         #decay-date {
@@ -43,8 +53,13 @@
         }
 
         .header-top-recent-txs {
+            width: 100%;
+            text-align: left;
             font-size: 30px;
-            margin-bottom: 20px;
+            letter-spacing: 8px;
+            margin-bottom: 18px;
+            color: #c5c5c5;
+
         }
     </style>
 
@@ -54,30 +69,33 @@
 
     <div class="main-container merge-container">
 
-            <div class="pane">
-                {% for contract in merge['contracts'] %}
-                    {% include "components/rujira/merge-block.jinja2" %}
+        <div class="pane">
+            {% for contract in merge['contracts'] %}
+                {% include "components/rujira/merge-block.jinja2" %}
+            {% endfor %}
+        </div>
+
+        <!-- LAST TRANSACTIONS -->
+        <div class="pane recent-txs-pane">
+            <div class="header-top-recent-txs">
+                TOP MERGES 24H
+            </div>
+            <div class="tx-list">
+                {% for tx in top_txs[:9] %}
+                    {% include "components/rujira/merge-tx.jinja2" %}
                 {% endfor %}
             </div>
 
-            <!-- LAST TRANSACTIONS -->
-            <div class="pane">
-                <div class="header-top-recent-txs fade-color">
-                    Top Transactions 24H
-                </div>
-                <div class="tx-list">
-                    {% for tx in top_txs[:9] %}
-                        {% include "components/rujira/merge-tx.jinja2" %}
-                    {% endfor %}
-                </div>
 
-                <div class="decay-block">
-                    Decay Starting In... <span id="decay-date"></span>
-                </div>
-
-            </div>
+        </div>
 
     </div>
+
+    <div class="decay-block fade-color">
+        <span>Decay Starting In...</span>
+        <span id="decay-date"></span>
+    </div>
+
 
     <script src="renderer/static/js/helpers.js"></script>
 
@@ -87,7 +105,7 @@
         const decayTimestamp = contracts[0].config.decay_starts_at
         const decayInSeconds = (new Date(decayTimestamp * 1000) - new Date()) / 1000;
 
-        if(decayInSeconds > 0) {
+        if (decayInSeconds > 0) {
             document.getElementById("decay-date").innerHTML = secondsToDaysHours(decayInSeconds)
         }
         // todo! change label text if decay started
