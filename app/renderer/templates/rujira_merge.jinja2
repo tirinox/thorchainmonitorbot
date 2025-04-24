@@ -22,6 +22,7 @@
             display: flex;
             flex-direction: row;
             gap: 40px;
+            margin-top: 14px;
         }
 
         .recent-txs-pane {
@@ -78,7 +79,7 @@
         <!-- LAST TRANSACTIONS -->
         <div class="pane recent-txs-pane">
             <div class="header-top-recent-txs">
-                TOP MERGES 24H
+                TOP TRANSACTIONS 24H
             </div>
             <div class="tx-list">
                 {% for tx in top_txs[:9] %}

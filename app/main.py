@@ -648,9 +648,10 @@ class App(WithLogger):
                 ruji_stats_fetcher = RujiMergeStatsFetcher(d)
                 tasks.append(ruji_stats_fetcher)
 
-                notifier_ruji_merge = RujiMergeStatsTxNotifier(d)
-                notifier_ruji_merge.add_subscriber(d.alert_presenter)
-                ruji_stats_fetcher.add_subscriber(notifier_ruji_merge)
+                if d.cfg.get('rujira.merge.notification.enabled', True):
+                    notifier_ruji_merge = RujiMergeStatsTxNotifier(d)
+                    notifier_ruji_merge.add_subscriber(d.alert_presenter)
+                    ruji_stats_fetcher.add_subscriber(notifier_ruji_merge)
 
         # -------- SCHEDULER --------
 

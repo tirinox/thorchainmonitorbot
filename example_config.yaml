@@ -678,3 +678,5 @@ rujira: # (!) new
   merge:
     enabled: true
     period: 1d
+    notification:
+      enabled: false
