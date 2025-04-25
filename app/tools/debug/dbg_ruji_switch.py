@@ -90,11 +90,11 @@ async def demo_ruji_stats_continuous(app):
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        # await dbg_switch_event_continuous(app, force_start_block=20639916)
+        await dbg_switch_event_continuous(app, force_start_block=20852630, one_block=True)
         # await dbg_get_merge_status(app)
-        await dbg_switch_event_continuous(app, force_start_block=20852470 - int(DAY / THOR_BLOCK_TIME))
+        # await dbg_switch_event_continuous(app, force_start_block=20852470 - int(DAY / THOR_BLOCK_TIME))
         # await dbg_mering_coin_gecko_prices(app)
-        await demo_ruji_stats_continuous(app)
+        # await demo_ruji_stats_continuous(app)
 
 
 if __name__ == '__main__':
