@@ -1,3 +1,4 @@
+
 import asyncio
 import logging
 from contextlib import suppress
@@ -27,17 +28,32 @@ class TwitterBot(WithLogger):
         consumer_secret = keys.as_str('consumer_secret')
         access_token = keys.as_str('access_token')
         access_token_secret = keys.as_str('access_token_secret')
-        assert consumer_key and consumer_secret and access_token and access_token_secret
+
+        client_id = keys.as_str('client_id')
+        client_secret = keys.as_str('client_secret')
+
+        bearer_token = keys.as_str('bearer_token')
+
+        # assert consumer_key and consumer_secret and access_token and access_token_secret
 
         self.max_length = cfg.as_int('twitter.max_length', TWITTER_LIMIT_CHARACTERS)
         self.logger.info(f'TwitterBot is allowed to post {self.max_length} characters.')
 
+        # a) bearer. does not work for us
         # self.auth = tweepy.OAuth2BearerHandler(bearer_token)
+        # self.api = tweepy.API(self.auth)
+        # self.client = tweepy.Client(bearer_token=bearer_token)
+
+        # b)
         self.auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
         self.auth.set_access_token(access_token, access_token_secret)
+        # self.auth = tweepy.OAuth2UserHandler(client_id=client_id, client_secret=client_secret)
         self.api = tweepy.API(self.auth)
-        self.client = tweepy.Client(consumer_key=consumer_key, consumer_secret=consumer_secret,
-                                    access_token=access_token, access_token_secret=access_token_secret)
+
+        self.client = tweepy.Client(
+            consumer_key=consumer_key, consumer_secret=consumer_secret,
+            access_token=access_token, access_token_secret=access_token_secret
+        )
 
         self.emergency: Optional[EmergencyReport] = None
 

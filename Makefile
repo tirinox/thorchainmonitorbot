@@ -155,3 +155,14 @@ renderer-up: # Launch the HTML renderer image
 .PHONY: renderer-dev
 renderer-dev: # Launch the HTML renderer image in development mode
 	cd app && uvicorn renderer.worker:app --port 8404 --reload
+
+
+.PHONY: auth-twitter
+auth_twitter: # Authenticate your Twitter handle to be managed by the bot.
+	cd app && PYTHONPATH=. python tools/auth_twitter.py
+
+
+.PHONY: auth-twitter-docker
+auth_twitter_docker: # Authenticate your Twitter handle to be managed by the bot (with Docker, without Python env)
+	docker build -f Dockerfile-twitter-auth -t thor_bot_twitter_auth .
+	docker run -it -v ./app:/app -v ./config.yaml:/config/config.yaml thor_bot_twitter_auth
