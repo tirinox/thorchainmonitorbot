@@ -9,6 +9,7 @@ from lib.date_utils import now_ts, DAY
 from lib.texts import sep
 from lib.utils import namedtuple_to_dict
 from models.ruji import AlertRujiraMergeStats
+from notify.channel import BoardMessage, MessageType
 from notify.public.ruji_merge_stats import RujiMergeStatsTxNotifier
 from tools.lib.lp_common import LpAppFramework, Receiver
 
@@ -87,14 +88,27 @@ async def demo_ruji_stats_continuous(app):
     await ruji_stats_fetcher.run()
 
 
+async def demo_send_merge_stats_pic_once(app):
+    ruji_merge_tracker = RujiMergeTracker(app.deps)
+    merge = await ruji_merge_tracker.get_merge_system()
+    top_txs = await ruji_merge_tracker.get_top_events_from_db(now_ts(), 1)
+    event = AlertRujiraMergeStats(merge, top_txs, 1)
+
+    text = app.deps.loc_man.default.notification_rujira_merge_stats(event)
+    photo, photo_name = await app.deps.alert_presenter.render_rujira_merge_graph(None, event)
+
+    await app.deps.broadcaster.broadcast_to_all(BoardMessage.make_photo(photo, text, photo_name))
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        await dbg_switch_event_continuous(app, force_start_block=20852630, one_block=True)
-        # await dbg_get_merge_status(app)
+        # await dbg_switch_event_continuous(app, force_start_block=20852630, one_block=True)
+        await dbg_get_merge_status(app)
         # await dbg_switch_event_continuous(app, force_start_block=20852470 - int(DAY / THOR_BLOCK_TIME))
         # await dbg_mering_coin_gecko_prices(app)
         # await demo_ruji_stats_continuous(app)
+        # await demo_send_merge_stats_pic_once(app)
 
 
 if __name__ == '__main__':

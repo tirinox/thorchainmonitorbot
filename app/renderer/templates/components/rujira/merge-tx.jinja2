@@ -3,9 +3,8 @@
         display: flex;
         justify-content: flex-start;
         align-items: center;
-        font-size: 21px;
-        {#outline: 2px solid #222;#}
-        border-radius: 6px;
+        font-size: 24px;
+    {#outline: 2px solid #222;#} border-radius: 6px;
         padding: 7px;
         gap: 10px;
     }
@@ -30,7 +29,7 @@
     }
 
     .merge_tx__volume {
-        font-size: 18px;
+        font-size: 22px;
     }
 
     .merge_tx__expect {
@@ -56,7 +55,7 @@
     </div>
 
     <div class="merge_tx__user">
-        👤 {{ tx['from_address_name'] or shorten_text_middle(tx['from_address'], 5, 4) }}
+        👤 {{ tx['from_address_name'] if tx['from_address_name'] != tx['from_address'] else shorten_text_middle(tx['from_address'], 5, 4) }}
     </div>
 
 </div>
