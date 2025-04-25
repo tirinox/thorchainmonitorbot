@@ -4,12 +4,13 @@ import json
 from jobs.fetch.ruji_merge import RujiMergeStatsFetcher
 from jobs.ruji_merge import RujiMergeTracker
 from jobs.scanner.native_scan import BlockScanner
-from lib.date_utils import now_ts
+from lib.constants import THOR_BLOCK_TIME
+from lib.date_utils import now_ts, DAY
 from lib.texts import sep
 from lib.utils import namedtuple_to_dict
 from models.ruji import AlertRujiraMergeStats
 from notify.public.ruji_merge_stats import RujiMergeStatsTxNotifier
-from tools.lib.lp_common import LpAppFramework
+from tools.lib.lp_common import LpAppFramework, Receiver
 
 
 def print_top_merges(top_txs):
@@ -31,7 +32,7 @@ async def dbg_switch_event_continuous(app: LpAppFramework, force_start_block=Non
     ruji_merge_tracker = RujiMergeTracker(d)
     d.block_scanner.add_subscriber(ruji_merge_tracker)
 
-    # ruji_switch_decoder.add_subscriber(Receiver("switch"))
+    ruji_merge_tracker.add_subscriber(Receiver("Ruji merge"))
 
     top_txs = await ruji_merge_tracker.get_top_events_from_db(now_ts(), 7, limit=10)
     print_top_merges(top_txs)
@@ -91,7 +92,7 @@ async def run():
     async with app(brief=True):
         # await dbg_switch_event_continuous(app, force_start_block=20639916)
         # await dbg_get_merge_status(app)
-        # await dbg_switch_event_continuous(app, force_start_block=20811047 - 5200)
+        await dbg_switch_event_continuous(app, force_start_block=20852470 - int(DAY / THOR_BLOCK_TIME))
         # await dbg_mering_coin_gecko_prices(app)
         await demo_ruji_stats_continuous(app)
 

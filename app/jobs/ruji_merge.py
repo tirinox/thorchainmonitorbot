@@ -25,6 +25,7 @@ class RujiMergeTracker(WithDelegates, INotified, WithLogger):
         events = await self.get_events_from_block(block)
         for ev in events:
             await self._store_event(ev)
+            await self.pass_data_to_listeners(ev)
 
     @a_result_cached(ttl=120)
     async def get_merge_system(self):
