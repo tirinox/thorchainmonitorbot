@@ -139,7 +139,7 @@ async def main():
         await demo_picture(lp_app)
         # await demo_load(lp_app)
         # await debug_locked_value(lp_app)
-        await debug_fs_aff_collectors(lp_app)
+        # await debug_fs_aff_collectors(lp_app)
         # await debug_earnings(lp_app)
 
 

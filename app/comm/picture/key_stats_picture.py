@@ -318,12 +318,11 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         )
 
         if metric == TxMetricType.SWAP:
-            # we must subtract synth and trade swap metrics from total swaps
-            prev_synth, curr_synth = self.get_swap_info_prev_curr(attr_name, TxMetricType.SWAP_SYNTH)
+            # we must subtract trade swap metrics from total swaps
             prev_trade, curr_trade = self.get_swap_info_prev_curr(attr_name, TxMetricType.TRADE_SWAP)
             return (
-                prev_total - prev_synth - prev_trade,
-                curr_total - curr_synth - curr_trade
+                prev_total - prev_trade,
+                curr_total - curr_trade
             )
         else:
             return prev_total, curr_total
@@ -334,22 +333,19 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         # Using this distribution, we calculate the actual trading volumes of different assets.
         total_usd_volume, prev_total_usd_volume = self.event.usd_volume_curr_prev
         dist = self.event.swap_type_distribution
-        n, s, t = (
+        n, t = (
             dist.get(TxMetricType.SWAP, 0.0),
-            dist.get(TxMetricType.SWAP_SYNTH, 0.0),
             dist.get(TxMetricType.TRADE_SWAP, 0.0),
         )
 
         curr_vol_normal = total_usd_volume * n
-        curr_vol_synth = total_usd_volume * s
         curr_vol_trade = total_usd_volume * t
         prev_vol_normal = prev_total_usd_volume * n
-        prev_vol_synth = prev_total_usd_volume * s
         prev_vol_trade = prev_total_usd_volume * t
 
         return (
-            (curr_vol_normal, curr_vol_synth, curr_vol_trade),
-            (prev_vol_normal, prev_vol_synth, prev_vol_trade),
+            (curr_vol_normal, curr_vol_trade),
+            (prev_vol_normal, prev_vol_trade),
         )
 
     def _draw_swap_stats_block(self, draw, x, y):
@@ -367,25 +363,19 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         y += 150
 
-        # Old way: recorded volumes
-        # prev_vol_synth, curr_vol_synth = self.get_swap_info_prev_curr(TxMetricType.SWAP_SYNTH, is_count=False)
-        # prev_vol_trade, curr_vol_trade = self.get_swap_info_prev_curr(TxMetricType.TRADE_SWAP, is_count=False)
-        # prev_vol_normal, curr_vol_normal = self.get_swap_info_prev_curr(TxMetricType.SWAP, is_count=False)
-
         (
-            (curr_vol_normal, curr_vol_synth, curr_vol_trade),
-            (prev_vol_normal, prev_vol_synth, prev_vol_trade),
+            (curr_vol_normal, curr_vol_trade),
+            (prev_vol_normal, prev_vol_trade),
         ) = self.get_volumes_by_asset_type()
 
-        prev_count_synth, curr_count_synth = self.get_swap_info_prev_curr(TxMetricType.SWAP_SYNTH, is_count=True)
         prev_count_trade, curr_count_trade = self.get_swap_info_prev_curr(TxMetricType.TRADE_SWAP, is_count=True)
         prev_count_normal, curr_count_normal = self.get_swap_info_prev_curr(TxMetricType.SWAP, is_count=True)
 
-        palette = [TC_YGGDRASIL_GREEN, TC_MIDGARD_TURQOISE, TC_LIGHTNING_BLUE]
+        palette = [TC_YGGDRASIL_GREEN, TC_LIGHTNING_BLUE]
         distribution_bar_chart(
             draw,
-            # values=[swap_n_normal, swap_n_synth, swap_n_trade],
-            values=[curr_vol_normal, curr_vol_synth, curr_vol_trade],
+            # values=[swap_n_normal, swap_n_trade],
+            values=[curr_vol_normal, curr_vol_trade],
             x=x, y=y, width=BAR_WIDTH, height=BAR_HEIGHT,
             palette=palette,
             gap=6,
@@ -398,12 +388,10 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         font = self.r.fonts.get_font_bold(32)
 
         x_normal = x
-        x_synth = x + BAR_WIDTH // 2
         x_trade = x + BAR_WIDTH
 
         draw.text((x_normal, y), loc.TEXT_PIC_STATS_NORMAL, fill=palette[0], font=font, anchor='ls')
-        draw.text((x_synth, y), loc.TEXT_PIC_STATS_SYNTH, fill=palette[1], font=font, anchor='ms')
-        draw.text((x_trade, y), loc.TEXT_PIC_STATS_TRADE, fill=palette[2], font=font, anchor='rs')
+        draw.text((x_trade, y), loc.TEXT_PIC_STATS_TRADE, fill=palette[1], font=font, anchor='rs')
 
         font_small_n = self.r.fonts.get_font(24)
         coin_font = self.r.fonts.get_font_bold(40)
@@ -415,23 +403,18 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         draw.text((x_normal, y), f'{short_money(curr_count_normal, integer=True)} txs', font=font_tx_count,
                   anchor='ls',
                   fill=palette[0])
-        draw.text((x_synth, y), f'{short_money(curr_count_synth, integer=True)} txs', font=font_tx_count,
-                  anchor='ms',
-                  fill=palette[1])
         draw.text((x_trade, y), f'{short_money(curr_count_trade, integer=True)} txs', font=font_tx_count,
                   anchor='rs',
-                  fill=palette[2])
+                  fill=palette[1])
 
         # ---- TX VOLUME FIGURES ----
 
         y += 44
         draw.text((x_normal, y), short_dollar(curr_vol_normal), font=coin_font, fill=palette[0], anchor='ls')
-        draw.text((x_synth, y), short_dollar(curr_vol_synth), font=coin_font, fill=palette[1], anchor='ms')
-        draw.text((x_trade, y), short_dollar(curr_vol_trade), font=coin_font, fill=palette[2], anchor='rs')
+        draw.text((x_trade, y), short_dollar(curr_vol_trade), font=coin_font, fill=palette[1], anchor='rs')
 
         # ---- TX VOLUME CHANGE ----
 
         y += 32
-        self.draw_text_change(prev_vol_synth, curr_vol_synth, draw, x_synth, y, font_small_n, anchor='ms')
         self.draw_text_change(prev_vol_normal, curr_vol_normal, draw, x_normal, y, font_small_n, anchor='ls')
         self.draw_text_change(prev_vol_trade, curr_vol_trade, draw, x_trade, y, font_small_n, anchor='rs')
