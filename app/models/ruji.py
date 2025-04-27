@@ -201,4 +201,6 @@ class AlertRujiraMergeStats(NamedTuple):
         for i in range(len(self.top_txs)):
             tx = self.top_txs[i]
             if name := name_map.get(tx.from_address):
+                # if not name.lower().endswith(".thor"):
+                #     name = f"{name}.thor"
                 self.top_txs[i] = tx._replace(from_address_name=name)

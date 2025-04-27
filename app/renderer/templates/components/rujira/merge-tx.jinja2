@@ -55,7 +55,9 @@
     </div>
 
     <div class="merge_tx__user">
-        👤 {{ tx['from_address_name'] if tx['from_address_name'] != tx['from_address'] else shorten_text_middle(tx['from_address'], 5, 4) }}
+        {% with n = tx['from_address_name'], a = tx['from_address']  %}
+            👤 {{ n if n != a and n else shorten_text_middle(a, 5, 4) }}
+        {% endwith %}
     </div>
 
 </div>
