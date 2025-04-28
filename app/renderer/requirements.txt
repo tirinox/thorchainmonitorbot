@@ -5,3 +5,4 @@ fastapi
 uvicorn[standard]
 aiofiles
 colorama
+python-json-logger>=3.0.0

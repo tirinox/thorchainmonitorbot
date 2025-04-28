@@ -1,5 +1,4 @@
 import asyncio
-import logging
 
 from api.aionode.connector import ThorConnector
 from api.midgard.connector import MidgardConnector
@@ -53,11 +52,10 @@ from lib.date_utils import parse_timespan_to_seconds
 from lib.db import DB
 from lib.depcont import DepContainer
 from lib.emergency import EmergencyReport
-from lib.logs import WithLogger
+from lib.logs import WithLogger, setup_logs_from_config
 from lib.money import DepthCurve
 from lib.scheduler import Scheduler
 from lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
-from lib.utils import setup_logs
 from models.memo import ActionType
 from models.mimir import MimirHolder
 from models.mimir_naming import MIMIR_DICT_FILENAME
@@ -150,14 +148,10 @@ class App(WithLogger):
                 traces_sample_rate=1.0
             )
 
-        log_level = log_level or d.cfg.get_pure('log_level', logging.INFO)
-        colorful_logs = d.cfg.get('colorful_logs', False)
-        setup_logs(log_level, colorful=colorful_logs)
+        setup_logs_from_config(d.cfg)
         self.logger.info('-' * 100)
-        self.logger.info(f"Log level: {log_level}")
-
-        # todo: ART logo
         self.logger.info(f'Starting THORChainMonitoringBot for "{d.cfg.network_id}".')
+        self.logger.info(f"Log level: {log_level}")
 
         d.loop = asyncio.get_event_loop()
         d.db = DB(d.loop)

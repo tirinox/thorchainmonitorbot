@@ -35,3 +35,4 @@ uvicorn
 uvloop>=0.17.0
 web3>=6.0.0
 websockets
+python-json-logger>=3.0.0

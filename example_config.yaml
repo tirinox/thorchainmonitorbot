@@ -1,14 +1,18 @@
 # THORChain monitoring bot configuration file
 # Rename it to "config.yaml"
 
-log_level: INFO
-colorful_logs: false
+logs: # (!) new
+  level: INFO
+
+  # style: normal | json | colorful
+  style: json
+
 
 sleep_before_start: 3
 startup_step_delay: 3.0
 
 
-infographic_renderer:  # (!) new
+infographic_renderer: # (!) new
   use_html_renderer: true
   renderer_url: "http://renderer:8404/render"
 

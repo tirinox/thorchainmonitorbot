@@ -18,8 +18,9 @@ from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.db import DB
 from lib.depcont import DepContainer
 from lib.geo_ip import GeoIPManager
+from lib.logs import setup_logs_from_config
 from lib.settings_manager import SettingsManager
-from lib.utils import setup_logs, recursive_asdict
+from lib.utils import recursive_asdict
 from models.node_watchers import NodeWatcherStorage
 
 
@@ -30,8 +31,7 @@ class AppSettingsAPI:
         d = self.deps = DepContainer()
         d.cfg = Config()
 
-        self.log_level = d.cfg.get_pure('log_level', logging.INFO)
-        setup_logs(self.log_level)
+        self.log_level = setup_logs_from_config(d.cfg)
 
         logging.info(f'Starting Web API for THORChain monitoring bot @ "{d.cfg.network_id}".')
 
