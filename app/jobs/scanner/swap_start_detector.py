@@ -4,7 +4,8 @@ from jobs.scanner.native_scan import BlockResult
 from jobs.scanner.tx import NativeThorTx, ThorTxMessage
 from lib.constants import NATIVE_RUNE_SYMBOL, thor_to_float
 from lib.depcont import DepContainer
-from lib.utils import WithLogger, safe_get
+from lib.logs import WithLogger
+from lib.utils import safe_get
 from models.asset import Asset, is_rune
 from models.memo import ActionType
 from models.memo import THORMemo

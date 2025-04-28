@@ -3,7 +3,7 @@ from typing import List
 
 from lib.date_utils import MINUTE, parse_timespan_to_seconds
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.node_info import NodeEvent, NodeEventType, EventDataSlash, NodeInfo
 from models.time_series import TimeSeries
 from .helpers import BaseChangeTracker, NodeOpSetting, STANDARD_INTERVALS

@@ -16,9 +16,8 @@ from aiohttp.helpers import sentinel
 from aiohttp.typedefs import StrOrURL, LooseCookies, LooseHeaders, JSONEncoder
 
 from lib.date_utils import now_ts
-from lib.logs import class_logger
+from lib.logs import WithLogger, class_logger
 from lib.lru import LRUCache, WindowAverage, RPSCounter
-from lib.utils import WithLogger
 
 WINDOW_SIZE_TO_AVERAGE = 100
 MAX_CACHE_SIZE = 1000

@@ -3,7 +3,7 @@ from typing import List
 from jobs.fetch.node_info import NodeInfoFetcher
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.node_db import NodeStateDatabase
 from models.node_info import NodeSetChanges, NodeInfo
 

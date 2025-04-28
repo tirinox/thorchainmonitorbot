@@ -6,7 +6,7 @@ import ujson
 import websockets
 
 from lib.texts import shorten_text
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 
 
 class WSClient(WithLogger, abc.ABC):

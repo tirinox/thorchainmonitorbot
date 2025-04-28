@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import os
 import random
 
@@ -10,7 +9,7 @@ from jobs.fetch.node_info import NodeInfoFetcher
 from lib.date_utils import now_ts, DAY, HOUR
 from lib.draw_utils import make_donut_chart
 from lib.geo_ip import GeoIPManager
-from lib.utils import setup_logs, load_pickle, save_pickle
+from lib.utils import load_pickle, save_pickle
 from models.node_info import NetworkNodeIpInfo, NodeStatsItem
 from notify.public.node_churn_notify import NodeChurnNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
@@ -175,5 +174,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    setup_logs(logging.INFO)
     asyncio.run(main())

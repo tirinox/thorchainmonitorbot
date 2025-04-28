@@ -9,7 +9,7 @@ from aiogram.utils import exceptions, executor
 from lib.config import Config
 from lib.db import DB
 from lib.texts import shorten_text
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from notify.channel import MessageType, CHANNEL_INACTIVE, BoardMessage
 
 TG_TEST_USER = 192398802

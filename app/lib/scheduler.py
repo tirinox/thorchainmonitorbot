@@ -4,7 +4,7 @@ from redis.asyncio import Redis
 
 from lib.date_utils import now_ts, DAY
 from lib.delegates import WithDelegates
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 
 
 class Scheduler(WithLogger, WithDelegates):

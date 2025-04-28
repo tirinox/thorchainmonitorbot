@@ -1,4 +1,3 @@
-import asyncio
 from typing import List, Optional
 
 from api.aionode.types import ThorSwapperClout, thor_to_float
@@ -7,8 +6,8 @@ from lib.config import SubConfig
 from lib.date_utils import parse_timespan_to_seconds, MINUTE
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
+from lib.logs import WithLogger
 from lib.money import DepthCurve, pretty_dollar, short_dollar, pretty_money
-from lib.utils import WithLogger
 from models.asset import Asset
 from models.memo import ActionType
 from models.tx import ThorAction, EventLargeTransaction

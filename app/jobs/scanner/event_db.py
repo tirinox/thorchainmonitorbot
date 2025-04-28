@@ -6,7 +6,7 @@ from redis.asyncio import Redis
 from jobs.scanner.swap_props import SwapProps
 from lib.date_utils import DAY
 from lib.db import DB
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 
 
 class EventDatabase(WithLogger):

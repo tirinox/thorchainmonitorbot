@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import random
 from collections import Counter
 from copy import copy
@@ -16,7 +15,6 @@ from jobs.fetch.node_info import NodeInfoFetcher
 from jobs.node_churn import NodeChurnDetector
 from lib.depcont import DepContainer
 from lib.texts import sep
-from lib.utils import setup_logs
 from models.node_db import NodeStateDatabase
 from models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
@@ -416,5 +414,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    setup_logs(logging.INFO)
     asyncio.run(main())

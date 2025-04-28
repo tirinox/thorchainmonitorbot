@@ -6,7 +6,7 @@ from lib.active_users import DailyActiveUserCounter
 from lib.date_utils import HOUR, now_ts
 from lib.delegates import INotified
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.memo import ActionType
 from models.runepool import AlertRunePoolAction
 from models.trade_acc import AlertTradeAccountAction

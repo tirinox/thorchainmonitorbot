@@ -9,8 +9,9 @@ from lib.constants import thor_to_float
 from lib.date_utils import MINUTE
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
+from lib.logs import WithLogger
 from lib.money import pretty_dollar
-from lib.utils import WithLogger, get_ttl_hash
+from lib.utils import get_ttl_hash
 from models.asset import Asset
 from models.tx import ThorAction
 
@@ -193,9 +194,12 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
             self.logger.error(f'Error! {e!r}. Skipping this TX')
 
             with suppress(Exception):
-                self.deps.emergency.report('ProfitVsCEX',
-                                           txs=', '.join([tx.tx_hash for tx in data]),
-                                           error=repr(e))
+                self.deps.emergency.report(
+                    'ProfitVsCEX',
+                    message='Error in profit vs CEX calculation',
+                    txs=', '.join([tx.tx_hash for tx in txs]),
+                    error=repr(e)
+                )
 
     async def on_data(self, sender, data):
         if self.is_enabled:

@@ -3,11 +3,12 @@ import asyncio
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.native_scan import BlockResult
 from jobs.scanner.swap_start_detector import SwapStartDetector
-from lib.constants import float_to_thor, THOR_BLOCK_TIME
+from lib.constants import THOR_BLOCK_TIME
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
+from lib.logs import WithLogger
 from lib.money import pretty_dollar
-from lib.utils import WithLogger, safe_get
+from lib.utils import safe_get
 from models.asset import Asset
 from models.s_swap import AlertSwapStart
 from notify.dup_stop import TxDeduplicator

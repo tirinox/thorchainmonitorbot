@@ -3,7 +3,7 @@ from typing import Optional
 
 from lib.date_utils import now_ts
 from lib.db import DB
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from .ach_list import Achievement
 
 

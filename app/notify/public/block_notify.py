@@ -8,7 +8,7 @@ from lib.cooldown import Cooldown, CooldownBiTrigger, INFINITE_TIME
 from lib.date_utils import DAY, parse_timespan_to_seconds, now_ts, format_time_ago_short, MINUTE
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.last_block import BlockProduceState, EventBlockSpeed
 from models.time_series import TimeSeries
 

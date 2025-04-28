@@ -13,7 +13,7 @@ from lib.date_utils import now_ts, MINUTE
 from lib.db import DB
 from lib.delegates import WithDelegates
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 
 UNPAUSE_AFTER = 5 * MINUTE
 

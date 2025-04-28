@@ -7,8 +7,9 @@ from comm.localization.manager import LocalizationManager
 from lib.date_utils import now_ts, parse_timespan_to_seconds
 from lib.delegates import INotified
 from lib.depcont import DepContainer
+from lib.logs import WithLogger
 from lib.settings_manager import SettingsManager, SettingsContext
-from lib.utils import WithLogger, grouper
+from lib.utils import grouper
 from models.node_info import NodeSetChanges, NodeEvent, NodeEventType
 from models.node_watchers import NodeWatcherStorage
 from notify.broadcast import ChannelDescriptor

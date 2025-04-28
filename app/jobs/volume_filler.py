@@ -3,7 +3,7 @@ from typing import List
 from jobs.fetch.pool_price import PoolFetcher
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.tx import ThorAction
 
 

@@ -6,7 +6,7 @@ from typing import NamedTuple
 from aiogram import Bot
 from aiogram.types import ParseMode
 
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 
 
 class ReportedEvent(NamedTuple):

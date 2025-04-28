@@ -9,7 +9,7 @@ except ImportError:
 from markdownify import markdownify
 
 from lib.config import Config
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from notify.channel import MessageType, BoardMessage
 
 

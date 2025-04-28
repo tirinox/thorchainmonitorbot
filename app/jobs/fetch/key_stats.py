@@ -13,8 +13,8 @@ from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
-from models.earnings_history import EarningsInterval, EarningHistoryResponse
+from lib.logs import WithLogger
+from models.earnings_history import EarningHistoryResponse
 from models.key_stats_model import AlertKeyStats, KeyStats, LockedValue, AffiliateCollectors
 from models.vol_n import TxCountStats
 

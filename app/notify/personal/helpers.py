@@ -1,7 +1,7 @@
 from typing import List, Any, Tuple, Optional
 
 from lib.date_utils import now_ts
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.node_info import NodeEvent, MapAddressToPrevAndCurrNode, NodeSetChanges
 from .user_data import UserDataCache
 

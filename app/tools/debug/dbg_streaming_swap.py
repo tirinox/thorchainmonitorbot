@@ -17,7 +17,7 @@ from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_filler import VolumeFillerUpdater
 from lib.money import DepthCurve
 from lib.texts import sep
-from lib.utils import setup_logs, save_pickle, load_pickle
+from lib.utils import save_pickle, load_pickle
 from models.asset import Asset, AssetRUNE
 from models.memo import ActionType, THORMemo
 from models.pool_info import parse_thor_pools
@@ -379,8 +379,6 @@ async def run():
         print('start!')
 
         await app.deps.pool_fetcher.run_once()
-
-        setup_logs(logging.DEBUG)
 
         await dbg_spam_any_active_swap_start(app, post=True, refresh=True)
 

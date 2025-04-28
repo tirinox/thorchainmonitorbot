@@ -7,7 +7,8 @@ from lib.config import Config
 from lib.constants import Chains
 from lib.date_utils import parse_timespan_to_seconds
 from lib.db import DB
-from lib.utils import WithLogger, keys_to_lower, filter_none_values
+from lib.logs import WithLogger
+from lib.utils import keys_to_lower, filter_none_values
 from models.memo import THORMemo
 from models.name import ThorName, make_virtual_thor_name, ThorNameAlias
 from models.node_info import NodeListHolder
@@ -100,14 +101,14 @@ class NameService(WithLogger):
 
     async def lookup_name_by_address(self, address: str) -> Optional[ThorName]:
         if not address:
-            return
+            return None
 
         local_results = self._cache.lookup_name_by_address_local(address)
         if local_results:
             return local_results
 
         if not self._thorname_enabled:
-            return
+            return None
 
         names = await self._cache.load_name_list(address)
         if names is None:
@@ -115,7 +116,7 @@ class NameService(WithLogger):
             await self._cache.save_name_list(address, names)
 
         if not names:
-            return
+            return None
 
         # todo: find a ThorName locally or pick any of this list
         name = names[0]
@@ -142,7 +143,7 @@ class NameService(WithLogger):
             return known_name
 
         if not self._thorname_enabled:
-            return
+            return None
 
         if forced or not (thorname := await self._cache.load_thor_name(name)):
             thorname = await self._api.thorname_lookup(name)
@@ -252,11 +253,11 @@ class THORNameCache:
 
     async def load_thor_name(self, name: str) -> Optional[ThorName]:
         if not name:
-            return
+            return None
 
         data = await self.db.redis.get(self._key_thorname_to_addresses(name))
         if not data:
-            return
+            return None
 
         try:
             if data == self.NO_VALUE:
@@ -264,7 +265,7 @@ class THORNameCache:
             else:
                 return ThorName.from_json(data)
         except (TypeError, struct.error):
-            return
+            return None
 
     async def clear_cache_for_name(self, name: str):
         await self.db.redis.delete(self._key_thorname_to_addresses(name))
@@ -328,7 +329,7 @@ class LocalWalletNameDB:
 
     async def get_wallet_local_name(self, address: str) -> Optional[str]:
         if not address or not self.user_id:
-            return
+            return None
         return await self.db.redis.hget(self.db_key, address)
 
     async def delete_wallet_local_name(self, address: str):

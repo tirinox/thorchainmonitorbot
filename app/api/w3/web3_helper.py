@@ -7,7 +7,8 @@ from web3.types import TxData, TxReceipt
 from lib.cache import Cache
 from lib.config import Config
 from lib.db import DB
-from lib.utils import WithLogger, async_wrap
+from lib.logs import WithLogger
+from lib.utils import async_wrap
 
 
 class Web3Helper(WithLogger):

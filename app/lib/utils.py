@@ -21,10 +21,6 @@ from typing import Iterable, List, Any, Awaitable
 from urllib.parse import urlparse, urlunparse
 
 from lib.date_utils import today_str
-from lib.logs import setup_logs, WithLogger
-
-# noinspection PyStatementEffect
-setup_logs, WithLogger
 
 
 def most_common_and_other(values: list, max_categories, other_str='Others'):

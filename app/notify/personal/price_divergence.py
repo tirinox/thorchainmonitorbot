@@ -4,7 +4,7 @@ from lib.date_utils import parse_timespan_to_seconds
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.settings_manager import SettingsManager, SettingsContext
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.node_watchers import AlertWatchers
 from models.price import RuneMarketInfo
 from notify.channel import ChannelDescriptor, BoardMessage

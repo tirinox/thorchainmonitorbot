@@ -1,7 +1,7 @@
 from typing import List
 
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.node_info import NodeEvent, NodeEventType
 from .helpers import BaseChangeTracker, NodeOpSetting
 

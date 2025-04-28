@@ -7,7 +7,7 @@ from lib.constants import Chains
 from lib.delegates import WithDelegates, INotified
 from lib.depcont import DepContainer
 from lib.texts import shorten_text
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.asset import Asset
 from models.memo import ActionType
 from models.tx import ThorAction, ThorSubTx

@@ -7,7 +7,7 @@ from api.midgard.parser import get_parser_by_network_id
 from lib.constants import THOR_BLOCK_TIME
 from lib.date_utils import day_to_key, days_ago_noon, date_parse_rfc
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 
 
 class DateToBlockMapper(WithLogger):

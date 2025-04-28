@@ -10,7 +10,8 @@ from jobs.scanner.swap_props import SwapProps
 from jobs.scanner.swap_start_detector import SwapStartDetector
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
-from lib.utils import WithLogger, hash_of_string_repr, say
+from lib.logs import WithLogger
+from lib.utils import hash_of_string_repr, say
 from models.events import EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit, EventSwap
 from models.tx import ThorAction

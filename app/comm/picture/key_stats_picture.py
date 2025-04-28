@@ -8,7 +8,7 @@ from comm.picture.common import BasePictureGenerator
 from comm.picture.resources import Resources
 from lib.constants import BTC_SYMBOL, ETH_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL, NATIVE_RUNE_SYMBOL
 from lib.draw_utils import paste_image_masked, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
-    COLOR_OF_PROFIT, font_estimate_size, distribution_bar_chart, TC_MIDGARD_TURQOISE
+    COLOR_OF_PROFIT, font_estimate_size, distribution_bar_chart
 from lib.money import pretty_money, short_dollar, format_percent, short_money, RAIDO_GLYPH
 from lib.texts import bracketify
 from lib.utils import async_wrap

@@ -2,7 +2,7 @@ from lib.cooldown import Cooldown
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.money import short_dollar
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.savers import AlertSaverStats
 
 

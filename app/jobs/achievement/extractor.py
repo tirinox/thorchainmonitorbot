@@ -5,7 +5,8 @@ from jobs.fetch.account_number import AccountNumberFetcher
 from lib.constants import THORCHAIN_BIRTHDAY
 from lib.date_utils import full_years_old_ts
 from lib.depcont import DepContainer
-from lib.utils import is_list_of_type, WithLogger
+from lib.logs import WithLogger
+from lib.utils import is_list_of_type
 from models.asset import Asset
 from models.key_stats_model import AlertKeyStats
 from models.loans import LendingStats, AlertLoanOpen

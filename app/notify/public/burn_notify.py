@@ -8,7 +8,7 @@ from lib.cooldown import Cooldown
 from lib.date_utils import now_ts, DAY, ts_event_points_to_pandas
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.circ_supply import EventRuneBurn
 from models.mimir import MimirTuple
 from models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY, MIMIR_KEY_SYSTEM_INCOME_BURN_RATE

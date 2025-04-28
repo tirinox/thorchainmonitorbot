@@ -1,8 +1,7 @@
 import asyncio
-import json
 
 from lib.logs import WithLogger
-from lib.utils import random_hex, shorten_json
+from lib.utils import random_hex
 
 
 class InfographicRendererRPC(WithLogger):
@@ -34,7 +33,7 @@ class InfographicRendererRPC(WithLogger):
         }
 
         async with self.deps.session.post(self.url, json=message) as response:
-            self.logger.info(f'Rendering {template_name = }, JSON = {json.dumps(shorten_json(message), indent=4)}')
+            self.logger.info(f'Rendering {template_name = }')
             if response.status != 200:
                 raise ValueError(f'Failed to render. Code: {response.status}. {message = }')
 

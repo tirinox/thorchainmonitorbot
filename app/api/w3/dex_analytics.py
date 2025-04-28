@@ -5,7 +5,7 @@ from typing import List, NamedTuple, Dict
 from lib.date_utils import DAY
 from lib.delegates import INotified
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.time_series import TimeSeries
 from models.tx import ThorAction
 from .token_record import AmountToken

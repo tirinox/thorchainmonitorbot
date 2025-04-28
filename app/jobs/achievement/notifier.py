@@ -1,7 +1,7 @@
 from lib.cooldown import Cooldown
 from lib.delegates import WithDelegates, INotified
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from .extractor import AchievementsExtractor
 from .tracker import AchievementsTracker
 

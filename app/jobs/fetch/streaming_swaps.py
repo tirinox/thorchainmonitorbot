@@ -4,7 +4,7 @@ from jobs.fetch.base import BaseFetcher
 from lib.constants import Chains, float_to_thor, thor_to_float, THOR_BLOCK_TIME, bp_to_float
 from lib.date_utils import parse_timespan_to_seconds
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.asset import Asset, AssetRUNE
 from models.s_swap import StreamingSwap
 

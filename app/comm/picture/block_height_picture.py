@@ -13,6 +13,7 @@ LINE_COLOR_EXPECTED = '#61B7CF'
 
 async def block_speed_chart(
         last_points, loc: BaseLocalization, normal_bpm=10, time_scale_mode='date') -> PictureAndName:
+    # noinspection PyUnresolvedReferences
     return await block_speed_chart_sync(last_points, loc, normal_bpm, time_scale_mode)
 
 

@@ -1,9 +1,7 @@
 import asyncio
-import logging
 import random
 
 from lib.date_utils import now_ts
-from lib.utils import setup_logs
 from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
@@ -40,5 +38,4 @@ async def run():
 
 
 if __name__ == '__main__':
-    setup_logs(logging.DEBUG)
     asyncio.run(run())

@@ -13,7 +13,7 @@ from lib.config import Config
 from lib.db import DB
 from lib.draw_utils import img_to_bio
 from lib.settings_manager import SettingsManager
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from notify.channel import Messengers, CHANNEL_INACTIVE, MessageType, BoardMessage
 from notify.personal.helpers import NodeOpSetting
 

@@ -5,7 +5,7 @@ from lib.cooldown import Cooldown
 from lib.date_utils import parse_timespan_to_seconds
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.mimir import MimirVoteManager, MimirVoteOption, MimirVoting, AlertMimirVoting, MimirTuple
 
 

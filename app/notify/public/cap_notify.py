@@ -3,7 +3,8 @@ import json
 from lib.db import DB
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
-from lib.utils import make_stickers_iterator, WithLogger
+from lib.logs import WithLogger
+from lib.utils import make_stickers_iterator
 from models.cap_info import ThorCapInfo, AlertLiquidityCap
 
 

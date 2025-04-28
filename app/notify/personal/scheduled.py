@@ -10,9 +10,10 @@ from lib.db_one2one import OneToOne
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
+from lib.logs import WithLogger
 from lib.scheduler import Scheduler
 from lib.settings_manager import SettingsManager
-from lib.utils import WithLogger, generate_random_code
+from lib.utils import generate_random_code
 from notify.channel import BoardMessage, ChannelDescriptor
 
 

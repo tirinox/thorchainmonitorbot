@@ -4,7 +4,8 @@ from lib.config import Config
 from lib.db import DB
 from lib.db_one2one import OneToOne
 from lib.delegates import INotified, WithDelegates
-from lib.utils import random_hex, WithLogger
+from lib.logs import WithLogger
+from lib.utils import random_hex
 from models.node_watchers import AlertWatchers
 from notify.channel import Messengers, ChannelDescriptor
 from notify.personal.helpers import NodeOpSetting, GeneralSettings

@@ -37,6 +37,18 @@ class BoardMessage:
     def get_bio(self):
         return img_to_bio(self.photo, self.photo_file_name)
 
+    def __repr__(self):
+        extra_tag = ''
+        if self.photo:
+            if hasattr(self.photo, 'width'):
+                photo_size = f"{self.photo.width}x{self.photo.height}"
+            elif isinstance(self.photo, bytes):
+                photo_size = f"{len(self.photo)} bytes"
+            else:
+                photo_size = f"unknown size"
+            extra_tag += f', with {self.photo_file_name!r} ({photo_size})'
+        return f'BoardMessage({self.text!r}{extra_tag})'
+
 
 class Messengers:
     TELEGRAM = 'telegram'

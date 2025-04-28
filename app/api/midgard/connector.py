@@ -6,7 +6,7 @@ from api.aionode.nodeclient import ThorNodeClient
 from api.midgard.parser import MidgardParserV2, TxParseResult
 from api.midgard.urlgen import free_url_gen
 from lib.constants import HTTP_CLIENT_ID
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.earnings_history import EarningHistoryResponse
 from models.pool_info import PoolInfoMap
 from models.pool_member import PoolMemberDetails

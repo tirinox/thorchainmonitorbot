@@ -156,10 +156,6 @@ async def load_dex_txs(app: LpAppFramework):
     dex_analytics = DexAnalyticsCollector(d)
     vf.add_subscriber(dex_analytics)
 
-    for tx_hash in tx_hashes:
-        r = await fetcher_tx.fetch_one_batch(0, tx_hash)
-        await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
-
 
 async def demo_find_aff(app: LpAppFramework):
     d = app.deps

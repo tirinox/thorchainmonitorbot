@@ -7,7 +7,7 @@ from jobs.scanner.tx import NativeThorTx
 from lib.constants import thor_to_float, DEFAULT_RESERVE_ADDRESS, BOND_MODULE, DEFAULT_RUNE_FEE, \
     RUNE_DENOM, RUNE_SYMBOL, NATIVE_RUNE_SYMBOL
 from lib.delegates import WithDelegates, INotified
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.asset import is_rune
 from models.transfer import RuneTransfer
 

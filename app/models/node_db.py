@@ -3,7 +3,7 @@ from dataclasses import asdict
 from typing import List
 
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from .node_info import NodeInfo
 
 

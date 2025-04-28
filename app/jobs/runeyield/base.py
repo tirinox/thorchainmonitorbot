@@ -2,7 +2,7 @@ from abc import abstractmethod
 from typing import List, NamedTuple, Dict
 
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
 from models.pool_member import PoolMemberDetails
 

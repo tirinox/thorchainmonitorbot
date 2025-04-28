@@ -4,7 +4,7 @@ from typing import Optional
 from lib.cooldown import Cooldown
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.loans import LendingStats, AlertLendingStats, BorrowerPool
 
 

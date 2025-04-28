@@ -7,7 +7,8 @@ from redis.asyncio import Redis
 from lib.cooldown import Cooldown
 from lib.date_utils import parse_timespan_to_seconds
 from lib.depcont import DepContainer
-from lib.utils import parallel_run_in_groups, WithLogger
+from lib.logs import WithLogger
+from lib.utils import parallel_run_in_groups
 
 
 class GeoIPManager(WithLogger):

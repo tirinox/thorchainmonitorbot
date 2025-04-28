@@ -13,7 +13,7 @@ from lib.date_utils import DAY
 from lib.depcont import DepContainer
 from lib.money import distort_randomly
 from lib.texts import up_down_arrow
-from lib.utils import setup_logs, load_pickle, save_pickle
+from lib.utils import load_pickle, save_pickle
 from models.net_stats import NetworkStats, AlertNetworkStats
 from models.pool_info import PoolInfoMap, parse_thor_pools
 from notify.public.stats_notify import NetworkStatsNotifier
@@ -182,5 +182,4 @@ async def main():
 
 if __name__ == "__main__":
     # demo_upd()
-    setup_logs(logging.INFO)
     asyncio.run(main())

@@ -4,7 +4,7 @@ from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.native_scan import BlockResult
 from lib.delegates import WithDelegates, INotified
 from lib.depcont import DepContainer
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.events import parse_swap_and_out_event, EventLoanOpen, EventLoanRepayment
 from models.loans import AlertLoanOpen, AlertLoanRepayment
 

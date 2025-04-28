@@ -7,12 +7,13 @@ from typing import Optional
 import tweepy
 from ratelimit import limits
 
+from lib.logs import WithLogger
 from .text_length import TWITTER_LIMIT_CHARACTERS, twitter_text_length, twitter_cut_text
 from lib.config import Config
 from lib.date_utils import DAY
 from lib.draw_utils import img_to_bio
 from lib.emergency import EmergencyReport
-from lib.utils import random_hex, WithLogger
+from lib.utils import random_hex
 from notify.channel import MessageType, BoardMessage, MESSAGE_SEPARATOR
 
 

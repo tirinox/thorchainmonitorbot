@@ -5,8 +5,9 @@ from collections import defaultdict
 
 from lib.delegates import INotified
 from lib.depcont import DepContainer
+from lib.logs import WithLogger
 from lib.settings_manager import SettingsManager, SettingsContext
-from lib.utils import WithLogger, grouper
+from lib.utils import grouper
 from notify.channel import ChannelDescriptor, BoardMessage
 
 

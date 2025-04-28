@@ -8,7 +8,7 @@ from lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from lib.depcont import DepContainer
 from lib.rate_limit import RateLimitCooldown
 from lib.texts import shorten_text
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from notify.channel import Messengers, ChannelDescriptor, CHANNEL_INACTIVE, BoardMessage
 
 

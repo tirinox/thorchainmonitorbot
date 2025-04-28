@@ -3,8 +3,9 @@ from typing import Optional, Union, List
 from jobs.scanner.event_db import EventDatabase
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
+from lib.logs import WithLogger
 from lib.money import DepthCurve
-from lib.utils import WithLogger, hash_of_string_repr
+from lib.utils import hash_of_string_repr
 from models.loans import AlertLoanRepayment, AlertLoanOpen
 from notify.dup_stop import TxDeduplicator
 

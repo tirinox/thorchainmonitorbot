@@ -7,7 +7,7 @@ from api.maya import MayaConnector
 from api.midgard.connector import MidgardConnector
 from lib.constants import thor_to_float, RUNE_DENOM, \
     THOR_ADDRESS_DICT, ThorRealms, TREASURY_LP_ADDRESS
-from lib.utils import WithLogger
+from lib.logs import WithLogger
 from models.circ_supply import RuneCirculatingSupply, RuneHoldEntry
 from models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY
 

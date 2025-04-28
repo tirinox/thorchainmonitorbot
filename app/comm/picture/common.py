@@ -7,9 +7,10 @@ import PIL.Image
 from comm.localization.manager import BaseLocalization
 from lib.date_utils import today_str
 from lib.draw_utils import TC_WHITE, font_estimate_size, result_color
+from lib.logs import WithLogger
 from lib.money import calc_percent_change, short_money
 from lib.texts import bracketify
-from lib.utils import async_wrap, WithLogger
+from lib.utils import async_wrap
 
 PictureAndName = Tuple[Optional[PIL.Image.Image], str]
 
@@ -41,7 +42,7 @@ class BasePictureGenerator(WithLogger, abc.ABC):
 
     @async_wrap
     def _get_picture_sync(self):
-        return None
+        raise NotImplementedError
 
     @classmethod
     def text_and_change(cls, old_v, new_v, draw, x, y, text, font_main, font_second, fill='#fff',

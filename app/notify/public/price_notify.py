@@ -4,8 +4,9 @@ from lib.cooldown import Cooldown
 from lib.date_utils import parse_timespan_to_seconds, now_ts, HOUR
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
+from lib.logs import WithLogger
 from lib.money import pretty_money, calc_percent_change
-from lib.utils import make_stickers_iterator, WithLogger
+from lib.utils import make_stickers_iterator
 from models.price import RuneMarketInfo, AlertPrice, PriceATH
 
 
