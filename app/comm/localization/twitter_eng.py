@@ -586,7 +586,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                     pass
                     # text += '[👩‍💻 Admins ]  '
                 elif e.source == e.SOURCE_NODE:
-                    text += '[🤝 Nodes voted ]  '
+                    text += '[🤝 Node Consensus Reached ]  '
                 elif e.source == e.SOURCE_NODE_PAUSE:
                     text += '[⏸️] '
                 elif e.source == e.SOURCE_NODE_CEASED:

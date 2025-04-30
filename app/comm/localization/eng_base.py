@@ -1742,7 +1742,7 @@ class BaseLocalization(ABC):  # == English
                     # text += bold('[👩‍💻 Admins ]  ')
                     pass  # todo
                 elif e.source == e.SOURCE_NODE:
-                    text += bold('[🤝 Nodes voted ]  ')
+                    text += bold('[🤝 Node Consensus Reached ]  ')
                 elif e.source == e.SOURCE_NODE_PAUSE:
                     text += bold('[⏸️] ')
                 elif e.source == e.SOURCE_NODE_CEASED:
