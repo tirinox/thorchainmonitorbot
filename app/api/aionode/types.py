@@ -199,7 +199,7 @@ class ThorPool(NamedTuple):
             loan_collateral=int(j.get('loan_collateral', 0)),
             loan_cr=int(j.get('loan_cr', 0)),
             derived_depth_bps=int(j.get('derived_depth_bps', 0)),
-            asset_tor_price=int(j.get('asset_tor_price', 0)),  # usd price of asset (TOR)
+            asset_tor_price=int(j.get('asset_tor_price', 0) or 0),  # usd price of asset (TOR)
         )
 
     @property
