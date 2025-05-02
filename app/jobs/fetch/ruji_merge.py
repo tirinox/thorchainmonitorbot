@@ -1,5 +1,6 @@
 from jobs.fetch.base import BaseFetcher
 from lib.depcont import DepContainer
+from lib.money import short_dollar
 from lib.utils import a_result_cached
 from models.ruji import MergeSystem, MergeContract
 
@@ -47,8 +48,8 @@ class RujiMergeStatsFetcher(BaseFetcher):
 
                 # Check for missing prices and set defaults
                 if not prices.get("NSTK"):
-                    self.logger.warning(f"No NSTK price. Using last known hardcoded value")
-                    prices["NSTK"] = 0.01253
+                    p = prices["NSTK"] = 0.01568
+                    self.logger.warning(f"No NSTK price. Using last known hardcoded value: {short_dollar(p)}")
                 prices["RKUJI"] = prices["KUJI"]
 
                 return prices
