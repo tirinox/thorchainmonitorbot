@@ -18,22 +18,20 @@ class UserCounterMiddleware(INotified, WithLogger):
         'from', 'to', 'sender', 'recipient'
     ]
 
-    def get_unique_users(self, data: BlockResult):
+    def get_unique_users(self, block: BlockResult):
         users = set()
-        for ev in data.end_block_events:
+
+        # Collecting users from end_block_events
+        for ev in block.end_block_events:
             for field in self.USER_FIELDS:
                 value = ev.attrs.get(field)
                 if value and value:
                     users.add(value)
 
-        for tx in data.txs:
-            for msg in tx.messages:
-                if msg.type == msg.MsgObservedTxIn:
-                    for observed_tx in msg.txs:
-                        if observed_tx and observed_tx.get('tx'):
-                            user = observed_tx['tx'].get('from_address')
-                            if user:
-                                users.add(user)
+        # Collecting users from observed_txs
+        observed_txs = block.all_observed_tx_in
+        for tx in observed_txs:
+            users.add(tx.from_address)
 
         users -= self._excluded_addresses
         return users
