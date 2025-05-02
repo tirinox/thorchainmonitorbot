@@ -60,7 +60,7 @@ class RunePoolEventDecoder(WithLogger, INotified, WithDelegates):
                 self.logger.error(f'Unexpected asset in RUNE pool tx: {asset}')
                 continue
 
-            actor = message['signer']
+            actor = message.attrs['signer']
 
             if memo.action == ActionType.RUNEPOOL_WITHDRAW:
                 withdraw_event = next(
