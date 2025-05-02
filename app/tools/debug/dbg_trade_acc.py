@@ -2,7 +2,6 @@ import asyncio
 import pprint
 
 from comm.localization.eng_base import BaseLocalization
-from jobs.achievement.notifier import AchievementsNotifier
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.trade_acc import TradeAccEventDecoder
@@ -92,6 +91,8 @@ async def demo_trade_acc_decode_continuous(app: LpAppFramework, b=0):
     scanner.add_subscriber(dcd)
 
     nt = TradeAccTransactionNotifier(d)
+    nt.cd.max_times = 1000
+    await nt.reset()
     nt.min_usd_amount = 0.0
     dcd.add_subscriber(nt)
     nt.add_subscriber(d.alert_presenter)
@@ -181,7 +182,7 @@ async def run():
         # await demo_trade_acc_summary_continuous(app)
         # await demo_trade_acc_summary_single(app, reset_cache=False)
         # await demo_trade_acc_decode_continuous(app, 19973890)
-        await demo_trade_acc_decode_continuous(app, 19975955)
+        await demo_trade_acc_decode_continuous(app, 20950594 - 1000)
 
 
 if __name__ == '__main__':
