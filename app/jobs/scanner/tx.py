@@ -127,6 +127,7 @@ class ThorObservedTx(NamedTuple):
     aggregator_target: str
     aggregator_target_limit: Optional[int] = None
     is_inbound: bool = False
+    original: dict = None
 
     @classmethod
     def from_dict(cls, d):
@@ -151,6 +152,7 @@ class ThorObservedTx(NamedTuple):
             aggregator_target=d.get('aggregator_target', ''),
             aggregator_target_limit=d.get('aggregator_target_limit'),
             is_inbound=d.get('__is_inbound', False),
+            original=d,
         )
 
 
