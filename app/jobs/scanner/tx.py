@@ -11,18 +11,6 @@ class ThorEvent(NamedTuple):
     def get(self, key, default=None):
         return self.attrs.get(key, default)
 
-    def __len__(self):
-        return len(self.attrs)
-
-    def __getitem__(self, key):
-        return self.attrs[key]
-
-    def __iter__(self):
-        return iter(self.attrs)
-
-    def __repr__(self):
-        return f"ThorEvent({self.attrs})"
-
     @staticmethod
     def _decode_combined_value_asset(d, v):
         d['_amount'], d['_asset'] = thor_decode_amount_field(v)
@@ -70,6 +58,7 @@ class ThorTxMessage(NamedTuple):
     MsgSend = '/types.MsgSend'
     MsgSendCosmos = '/cosmos.bank.v1beta1.MsgSend'
     MsgExecuteContract = '/cosmwasm.wasm.v1.MsgExecuteContract'
+    MsgObservedTxQuorum = '/types.MsgObservedTxQuorum'  # new!
 
     @property
     def is_send(self):
@@ -78,6 +67,10 @@ class ThorTxMessage(NamedTuple):
     @property
     def is_contract(self):
         return self.type == self.MsgExecuteContract
+
+    @property
+    def is_quorum(self):
+        return self.type == self.MsgObservedTxQuorum
 
     @property
     def txs(self) -> List[dict]:
@@ -89,17 +82,6 @@ class ThorTxMessage(NamedTuple):
 
     def __bool__(self):
         return bool(self.attrs)
-
-    def __len__(self):
-        return len(self.txs)
-
-    def __getitem__(self, key):
-        if isinstance(key, slice):
-            raise TypeError("Slicing is not supported for this object.")
-        return self.attrs[key]
-
-    def __iter__(self):
-        return iter(self.attrs)
 
     @property
     def type(self):
@@ -116,15 +98,9 @@ class ThorTxMessage(NamedTuple):
     def memo(self):
         return self.attrs.get('memo', '')
 
-    def __repr__(self):
-        return f"ThorTxMessage({self.attrs})"
-
-    def __str__(self):
-        return f"ThorTxMessage({self.attrs})"
-
     @property
     def contract_message(self):
-        return self['msg'] if self.is_contract else None
+        return self.attrs.get('msg') if self.is_contract else None
 
     @property
     def contract_funds(self):
@@ -150,6 +126,7 @@ class ThorObservedTx(NamedTuple):
     aggregator: str
     aggregator_target: str
     aggregator_target_limit: Optional[int] = None
+    is_inbound: bool = False
 
     @classmethod
     def from_dict(cls, d):
@@ -173,6 +150,7 @@ class ThorObservedTx(NamedTuple):
             aggregator=d.get('aggregator', ''),
             aggregator_target=d.get('aggregator_target', ''),
             aggregator_target_limit=d.get('aggregator_target_limit'),
+            is_inbound=d.get('__is_inbound', False),
         )
 
 
@@ -219,9 +197,17 @@ class NativeThorTx(NamedTuple):
         result = d.get('result', {})
         tx = d.get('tx', {})
         signers_raw = safe_get(tx, 'auth_info', 'signer_infos')
-        signers = [ThorSignerInfo.from_dict(s) for s in signers_raw]
+        signers = [ThorSignerInfo.from_dict(s) for s in signers_raw] if isinstance(signers_raw, list) else []
         body = tx.get('body', {})
-        messages = [ThorTxMessage.from_dict(m) for m in body.get('messages', [])]
+
+        if "messages" in body:
+            # old format
+            messages_raw = body.get('messages')
+        else:
+            # new format for Quorum Txs
+            messages_raw = tx.get('messages', [])
+        messages = [ThorTxMessage.from_dict(m) for m in messages_raw]
+
         return cls(
             tx_hash=d['hash'],
             code=result['code'],

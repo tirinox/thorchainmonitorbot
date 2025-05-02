@@ -45,7 +45,7 @@ class DepContainer:
 
     name_service: Optional[NameService] = None
 
-    block_scanner = None  # type: 'NativeScannerBlock'
+    block_scanner = None  # type: 'BlockScanner'
 
     rune_market_fetcher = None  # type: 'RuneMarketInfoFetcher'
 

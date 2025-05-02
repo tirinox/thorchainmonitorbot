@@ -99,6 +99,13 @@ class BlockResult:
                 if message.type == message.MsgObservedTxIn:
                     for inner_tx in message.txs:
                         observed_txs[inner_tx['tx']['id']] = inner_tx
+                elif message.type == message.MsgObservedTxQuorum:
+                    quo_tx = message.get('quoTx', {})
+                    obs_tx = quo_tx.get('obsTx', {})
+                    is_inbound = quo_tx.get('inbound', False)
+                    obs_tx['__is_inbound'] = is_inbound
+                    obs_tx['__is_quorum'] = True
+                    observed_txs[obs_tx['tx']['id']] = obs_tx
         return [
             ThorObservedTx.from_dict(d) for d in observed_txs.values()
         ]
