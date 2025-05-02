@@ -9,7 +9,7 @@ from jobs.scanner.transfer_detector import RuneTransferDetector
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.texts import sep
-from models.transfer import RuneTransfer
+from models.transfer import NativeTokenTransfer
 from notify.personal.balance import PersonalBalanceNotifier
 from notify.public.transfer_notify import RuneMoveNotifier
 from tools.lib.lp_common import LpAppFramework, Receiver
@@ -23,7 +23,7 @@ class ReceiverPublicText(INotified):
     # noinspection PyTypeChecker
     async def on_data(self, sender, data):
         for tr in data:
-            tr: RuneTransfer
+            tr: NativeTokenTransfer
             print(self.loc.notification_text_rune_transfer_public(tr, {}))
             sep()
 
@@ -64,6 +64,7 @@ async def demo_block_scanner_active(app, send_alerts=False, catch_up=0, force_st
 
     if send_alerts:
         notifier = RuneMoveNotifier(app.deps)
+        notifier.min_usd_native = 0.1
         detector.add_subscriber(notifier)
         notifier.add_subscriber(app.deps.alert_presenter)
     await scanner.run()
@@ -114,7 +115,7 @@ async def debug_block_tx_status_check(app):
 async def demo_debug_personal_transfer(app):
     balance_notifier = PersonalBalanceNotifier(app.deps)
     await balance_notifier.on_data(None, [
-        RuneTransfer(
+        NativeTokenTransfer(
             'thor136askulc04d0ek9yra6860vsaaamequv2l0jwh',
             'thor1tcet6mxe80x89a8dlpynehlj4ya7cae4v3hmce',
             13_300_000, '9E29B0D4E356DBA2B865AB129E22C4FA905C4720B3CCCAF7E0B2E0F4D9BDCF31',
@@ -151,8 +152,8 @@ async def dbg_second_chance_before_deactivate(app):
         await bpt.group_and_send_messages(
             [addr],
             [
-                RuneTransfer(addr, addr, 1230000, "FFFFFFFFFFF", 300.123, 5.0, is_native=True,
-                             memo="foobar", comment="comment")
+                NativeTokenTransfer(addr, addr, 1230000, "FFFFFFFFFFF", 300.123, 5.0, is_native=True,
+                                    memo="foobar", comment="comment")
             ]
         )
         await asyncio.sleep(10.0)
@@ -167,8 +168,8 @@ async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
         await app.deps.pool_fetcher.run_once()
-        # await demo_block_scanner_active(app, send_alerts=True, catch_up=5)
-        await demo_rune_transfers_once(app, BLOCK_BOND)
+        await demo_block_scanner_active(app, send_alerts=True, catch_up=500)
+        # await demo_rune_transfers_once(app, BLOCK_BOND)
         # await demo_rune_transfers_once(app, BLOCK_UNBOND)
         # await demo_rune_transfers_once(app, BLOCK_SEND)
 

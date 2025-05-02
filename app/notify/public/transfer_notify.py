@@ -9,7 +9,7 @@ from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.asset import Asset
 from models.time_series import TimeSeries
-from models.transfer import RuneTransfer, RuneCEXFlow
+from models.transfer import NativeTokenTransfer, RuneCEXFlow
 
 
 class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
@@ -41,10 +41,10 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
         self.tracker = CEXFlowTracker(deps)
         self.arb_detector = ArbBotDetector(deps)
 
-    def is_cex2cex(self, transfer: RuneTransfer):
+    def is_cex2cex(self, transfer: NativeTokenTransfer):
         return self.is_cex(transfer.from_addr) and self.is_cex(transfer.to_addr)
 
-    async def handle_big_transfer(self, transfer: RuneTransfer, usd_per_rune):
+    async def handle_big_transfer(self, transfer: NativeTokenTransfer, usd_per_rune):
         # ignore cex to cex transfers?
         if self.ignore_cex2cex and self.is_cex2cex(transfer):
             self.logger.info(f'Ignoring CEX2CEX transfer: {transfer}')
@@ -62,7 +62,7 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
 
                 await self.pass_data_to_listeners(transfer)
 
-    def _is_to_be_ignored(self, transfer: RuneTransfer):
+    def _is_to_be_ignored(self, transfer: NativeTokenTransfer):
         if transfer.comment:
             comment = transfer.comment.lower()
             for ignore_comment in self.IGNORE_COMMENTS:
@@ -72,12 +72,12 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
 
         return False
 
-    def _filter_transfers(self, transfers: List[RuneTransfer]):
+    def _filter_transfers(self, transfers: List[NativeTokenTransfer]):
         for transfer in transfers:
             if not self._is_to_be_ignored(transfer):
                 yield transfer
 
-    def _fill_asset_prices(self, transfers: List[RuneTransfer]):
+    def _fill_asset_prices(self, transfers: List[NativeTokenTransfer]):
         usd_per_rune = self.deps.price_holder.usd_per_rune
         for transfer in transfers:
             if transfer.is_rune:
@@ -87,7 +87,7 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
                 transfer.usd_per_asset = self.deps.price_holder.usd_per_asset(pool_name)
         return transfers
 
-    async def on_data(self, sender, transfers: List[RuneTransfer]):
+    async def on_data(self, sender, transfers: List[NativeTokenTransfer]):
         usd_per_rune = self.deps.price_holder.usd_per_rune
 
         transfers = list(self._filter_transfers(transfers))
@@ -115,7 +115,7 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
     def is_cex(self, addr):
         return addr in self.cex_list
 
-    async def _store_transfer(self, transfer: RuneTransfer):
+    async def _store_transfer(self, transfer: NativeTokenTransfer):
         if not transfer.is_rune:
             return
 

@@ -6,7 +6,7 @@ from .asset import is_rune
 
 
 @dataclass
-class RuneTransfer:
+class NativeTokenTransfer:
     from_addr: str
     to_addr: str
     block: int

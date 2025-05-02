@@ -9,7 +9,7 @@ from lib.constants import thor_to_float, DEFAULT_RESERVE_ADDRESS, BOND_MODULE, D
 from lib.delegates import WithDelegates, INotified
 from lib.logs import WithLogger
 from models.asset import is_rune
-from models.transfer import RuneTransfer
+from models.transfer import NativeTokenTransfer
 
 
 class RuneTransferDetectorNativeTX(WithLogger):
@@ -21,7 +21,8 @@ class RuneTransferDetectorNativeTX(WithLogger):
         super().__init__()
         self.address_prefix = address_prefix
 
-    def process_block(self, txs: List[NativeThorTx], block_no):
+    @staticmethod
+    def process_block(txs: List[NativeThorTx], block_no):
         if not txs:
             return []
         transfers = []
@@ -39,7 +40,7 @@ class RuneTransferDetectorNativeTX(WithLogger):
                         if is_rune(asset):
                             asset = RUNE_SYMBOL
                         # do not announce
-                        transfers.append(RuneTransfer(
+                        transfers.append(NativeTokenTransfer(
                             from_addr=from_addr,
                             to_addr=to_addr,
                             block=block_no,
@@ -52,7 +53,7 @@ class RuneTransferDetectorNativeTX(WithLogger):
                         ))
                 elif message.type == message.MsgDeposit:
                     for coin in message.coins:
-                        transfers.append(RuneTransfer(
+                        transfers.append(NativeTokenTransfer(
                             from_addr=message.get('signer', '?'),
                             to_addr='',
                             block=block_no,
@@ -94,7 +95,7 @@ class RuneTransferDetectorTxLogs(WithLogger):
                 else:
                     return
 
-            return RuneTransfer(
+            return NativeTokenTransfer(
                 ev.attrs['from'],
                 ev.attrs['to'],
                 block=block_no,
@@ -107,7 +108,7 @@ class RuneTransferDetectorTxLogs(WithLogger):
             )
 
     @classmethod
-    def connect_transactions_together(cls, transfers: List[RuneTransfer]):
+    def connect_transactions_together(cls, transfers: List[NativeTokenTransfer]):
         hash_map = defaultdict(list)
         for tr in transfers:
             if tr.tx_hash:
@@ -119,12 +120,12 @@ class RuneTransferDetectorTxLogs(WithLogger):
         return transfers
 
     @staticmethod
-    def set_comment(transfers: List[RuneTransfer], comment):
+    def set_comment(transfers: List[NativeTokenTransfer], comment):
         for t in transfers:
             t.comment = comment
 
     @classmethod
-    def make_connection(cls, transfers: List[RuneTransfer]):
+    def make_connection(cls, transfers: List[NativeTokenTransfer]):
         # some special cases
         if any(t.memo.lower().startswith('unbond:') for t in transfers):
             cls.set_comment(transfers, 'unbond')
@@ -173,7 +174,7 @@ class RuneTransferDetector(WithDelegates, INotified, WithLogger):
         self.tx_proc = RuneTransferDetectorNativeTX()
         self.log_proc = RuneTransferDetectorTxLogs(reserve_address)
 
-    async def process_block(self, data: BlockResult) -> List[RuneTransfer]:
+    async def process_block(self, data: BlockResult) -> List[NativeTokenTransfer]:
         if not data.txs or not data.begin_block_events:
             self.logger.debug(f'Empty block #{data.block_no}?')
             return []

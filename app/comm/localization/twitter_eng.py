@@ -31,7 +31,7 @@ from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolSta
 from models.s_swap import AlertSwapStart
 from models.savers import AlertSaverStats
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
-from models.transfer import RuneCEXFlow, RuneTransfer
+from models.transfer import RuneCEXFlow, NativeTokenTransfer
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from notify.channel import MESSAGE_SEPARATOR
@@ -666,7 +666,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'({short_dollar(cex_flow.netflow_usd)})'
         )
 
-    def notification_text_rune_transfer_public(self, t: RuneTransfer, name_map: NameMap):
+    def notification_text_rune_transfer_public(self, t: NativeTokenTransfer, name_map: NameMap):
         asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
             None, t,
             tx_title='',

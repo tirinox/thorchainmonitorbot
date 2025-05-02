@@ -4,7 +4,7 @@ from comm.localization.languages import Language
 from api.midgard.name_service import NameService
 from lib.texts import sep
 from models.memo import THORMemo
-from models.transfer import RuneTransfer
+from models.transfer import NativeTokenTransfer
 from tools.lib.lp_common import LpAppFramework
 
 NAMES = {
@@ -79,7 +79,7 @@ async def demo_node_names(app: LpAppFramework):
 
     # ------------------------------------
 
-    tr = RuneTransfer(
+    tr = NativeTokenTransfer(
         'thor1puhn8fclwvmmzh7uj7546wnxz5h3zar8adtqp3', 'thor166n4w5039meulfa3p6ydg60ve6ueac7tlt0jws',
         13_123_132, '123456789054321123456789098754321', 222_854.24, 5.29, is_native=True, asset='THOR.RUNE',
         comment='SEND', memo='Hello'

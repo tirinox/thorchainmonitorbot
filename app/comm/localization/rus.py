@@ -37,7 +37,7 @@ from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolSta
 from models.s_swap import AlertSwapStart
 from models.savers import AlertSaverStats
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
-from models.transfer import RuneTransfer, RuneCEXFlow
+from models.transfer import NativeTokenTransfer, RuneCEXFlow
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from .achievements.ach_rus import AchievementsRussianLocalization
@@ -1682,7 +1682,7 @@ class RussianLocalization(BaseLocalization):
         'OutboundTx': 'Исходящая',
     }
 
-    def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses, name_map):
+    def notification_text_rune_transfer(self, t: NativeTokenTransfer, my_addresses, name_map):
         asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
             my_addresses, t,
             name_map=name_map
@@ -1693,7 +1693,7 @@ class RussianLocalization(BaseLocalization):
                f'от {from_my} ' \
                f'➡️ к {to_my}{memo}.'
 
-    def notification_text_rune_transfer_public(self, t: RuneTransfer, name_map):
+    def notification_text_rune_transfer_public(self, t: NativeTokenTransfer, name_map):
         asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
             None, t,
             tx_title='',

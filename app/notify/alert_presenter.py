@@ -42,7 +42,7 @@ from models.runepool import AlertRunePoolAction
 from models.s_swap import AlertSwapStart
 from models.savers import AlertSaverStats
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
-from models.transfer import RuneCEXFlow, RuneTransfer
+from models.transfer import RuneCEXFlow, NativeTokenTransfer
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from notify.broadcast import Broadcaster
@@ -74,7 +74,7 @@ class AlertPresenter(INotified, WithLogger):
     async def _handle_async(self, data):
         if isinstance(data, RuneCEXFlow):
             await self._handle_rune_cex_flow(data)
-        elif isinstance(data, RuneTransfer):
+        elif isinstance(data, NativeTokenTransfer):
             await self._handle_rune_transfer(data)
         elif isinstance(data, EventBlockSpeed):
             await self._handle_block_speed(data)
@@ -145,7 +145,7 @@ class AlertPresenter(INotified, WithLogger):
 
     # ---- PARTICULARLY ----
 
-    async def _handle_rune_transfer(self, transfer: RuneTransfer):
+    async def _handle_rune_transfer(self, transfer: NativeTokenTransfer):
         name_map = await self.load_names([
             transfer.from_addr, transfer.to_addr
         ])

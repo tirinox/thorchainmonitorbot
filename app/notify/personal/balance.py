@@ -6,7 +6,7 @@ from lib.money import ABSURDLY_LARGE_NUMBER
 from lib.utils import safe_get
 from models.asset import Asset
 from models.node_watchers import UserWatchlist
-from models.transfer import RuneTransfer
+from models.transfer import NativeTokenTransfer
 from .base import BasePersonalNotifier
 from .helpers import GeneralSettings, Props
 
@@ -23,7 +23,7 @@ class PersonalBalanceNotifier(BasePersonalNotifier):
         watcher = WalletWatchlist(d.db)
         super().__init__(d, watcher)
 
-    async def on_data(self, sender, transfers: List[RuneTransfer]):
+    async def on_data(self, sender, transfers: List[NativeTokenTransfer]):
         self._fill_asset_price(transfers)
 
         # Collect all listed addresses
@@ -40,7 +40,7 @@ class PersonalBalanceNotifier(BasePersonalNotifier):
     def _fill_asset_price(self, transfers):
         usd_per_rune = self.deps.price_holder.usd_per_rune
         for tr in transfers:
-            tr: RuneTransfer
+            tr: NativeTokenTransfer
             if tr.is_rune:
                 tr.usd_per_asset = usd_per_rune
             else:
@@ -56,7 +56,7 @@ class PersonalBalanceNotifier(BasePersonalNotifier):
         # else:
         return ABSURDLY_LARGE_NUMBER
 
-    async def filter_events(self, event_list: List[RuneTransfer], user_id, settings: dict) -> List[RuneTransfer]:
+    async def filter_events(self, event_list: List[NativeTokenTransfer], user_id, settings: dict) -> List[NativeTokenTransfer]:
         balance_settings = safe_get(settings, GeneralSettings.BALANCE_TRACK, Props.KEY_ADDRESSES)
         if not isinstance(balance_settings, dict):
             # no preferences: return all!
@@ -77,7 +77,7 @@ class PersonalBalanceNotifier(BasePersonalNotifier):
 
         return results
 
-    def get_users_from_event(self, ev: RuneTransfer, address_to_user):
+    def get_users_from_event(self, ev: NativeTokenTransfer, address_to_user):
         return list(address_to_user.get(ev.from_addr)) + list(address_to_user.get(ev.to_addr))
 
     async def generate_message_text(self, loc, group, settings, user, user_watch_addy_list, name_map):
