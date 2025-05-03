@@ -92,7 +92,7 @@ class BlockResult:
         return set(ev.type for ev in self.end_block_events)
 
     @property
-    def all_observed_tx_in(self) -> List[ThorObservedTx]:
+    def all_observed_txs(self) -> List[ThorObservedTx]:
         observed_txs = {}
         for tx in self.txs:
             for message in tx.messages:

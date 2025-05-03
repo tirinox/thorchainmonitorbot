@@ -117,7 +117,7 @@ class SwapStartDetector(WithLogger):
         deposit_swap_starts = list(self.handle_deposits(deposits, b.block_no))
 
         # they are based only on memo parsed (just intention, real swap quantity may differ)
-        observed_in_txs = b.all_observed_tx_in
+        observed_in_txs = b.all_observed_txs
         observed_in_txs = list(self.handle_observed_txs(observed_in_txs, b.block_no))
 
         return deposit_swap_starts + observed_in_txs

@@ -93,7 +93,14 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     d = app.deps
 
     # Block scanner: the source of the river
-    d.block_scanner = BlockScannerClass(d, last_block=start)
+    d.block_scanner = BlockScannerClass(d)
+    d.block_scanner.initial_sleep = 0
+    if start < 0:
+        await d.block_scanner.ensure_last_block()
+        d.block_scanner.last_block -= abs(start)
+    elif start > 0:
+        d.block_scanner.last_block = start
+
     d.block_scanner.one_block_per_run = single_block
     d.block_scanner.allow_jumps = True
 
@@ -380,22 +387,22 @@ async def run():
 
         await app.deps.pool_fetcher.run_once()
 
-        await dbg_spam_any_active_swap_start(app, post=True, refresh=True)
+        # await dbg_spam_any_active_swap_start(app, post=True, refresh=True)
 
-        await debug_full_pipeline(
-            app,
-            start=19667693,
-            # tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
-            single_block=True
-        )
-        
+        # await debug_full_pipeline(
+        #     app,
+        #     start=19667693,
+        #     # tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
+        #     single_block=True
+        # )
+        #
         # ----
 
         # await dbg_collect_some_streaming_swaps(app)
 
         # await dbg_swap_quote(app)
 
-        # await debug_full_pipeline(app)
+        await debug_full_pipeline(app, start=-1000)
 
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app, block=17361911)

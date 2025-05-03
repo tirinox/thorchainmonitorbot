@@ -43,11 +43,11 @@ class ThorEvent(NamedTuple):
 
     @property
     def height(self):
-        return self.attrs.get('_height', 0)
+        return int(self.attrs.get('_height', 0))
 
     @height.setter
     def height(self, value):
-        self.attrs['_height'] = value
+        self.attrs['_height'] = int(value)
 
 
 class ThorTxMessage(NamedTuple):
@@ -128,6 +128,10 @@ class ThorObservedTx(NamedTuple):
     aggregator_target_limit: Optional[int] = None
     is_inbound: bool = False
     original: dict = None
+
+    @property
+    def is_outbound(self):
+        return not self.is_inbound
 
     @classmethod
     def from_dict(cls, d):

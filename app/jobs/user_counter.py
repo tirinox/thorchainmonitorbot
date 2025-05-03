@@ -29,7 +29,7 @@ class UserCounterMiddleware(INotified, WithLogger):
                     users.add(value)
 
         # Collecting users from observed_txs
-        observed_txs = block.all_observed_tx_in
+        observed_txs = block.all_observed_txs
         for tx in observed_txs:
             users.add(tx.from_address)
 

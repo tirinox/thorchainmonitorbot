@@ -70,14 +70,21 @@ class AffiliateRecorder(WithLogger, INotified):
         pass  # todo
 
     async def on_data(self, sender, data: BlockResult):
-        # for tx in data.txs:
-        #     try:
-        #         if memo := tx.deep_memo:
-        #             memo_obj = THORMemo.parse_memo(memo)
-        #             if memo_obj and memo_obj.affiliate_address:
-        #                 await self._process_aff_tx(tx, memo_obj)
-        #     except Exception as e:
-        #         self.logger.error(f'Error {e!r} processing tx: {tx.tx_hash} at block #{data.block_no}')
+        """
+        Look for events like this:
+        {
+            "asset": "THOR.RUNE",
+            "fee_amount": "166454",
+            "fee_bps": "50",
+            "gross_amount": "33290900",
+            "memo": "=:THOR.RUNE:thor1au0mkysxfh5vvv9g4jtrq78da0kfgqwvx9h33d:0/1/0:rj:50",
+            "mode": "EndBlock",
+            "rune_address": "thor1zspr6va4ev78lpsh48s57nv6szxj4cdyey34wa",
+            "thorname": "rj",
+            "tx_id": "5AA7F9DCCED688D7135130079EFA50F25EBAE4237C625648DC1266DB52DF6DB7",
+            "type": "affiliate_fee"
+        },
+        """
 
         # Sometimes we need to clear old dates
         await self.clear_old_events(self.days_to_keep)

@@ -44,7 +44,7 @@ async def run():
         while height > 0 and not finished:
             block = await scanner.fetch_one_block(height)
 
-            for tx in block.all_observed_tx_in:
+            for tx in block.all_observed_txs:
                 if is_our_tx(tx, tx_id):
                     sep()
                     print(f"Found it! block height: {height}")

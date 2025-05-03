@@ -1,19 +1,19 @@
 import datetime
 import os
 import sys
-from collections import defaultdict
 from typing import List
 
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.native_scan import BlockResult
 from jobs.scanner.swap_props import SwapProps
 from jobs.scanner.swap_start_detector import SwapStartDetector
+from jobs.scanner.tx import ThorObservedTx, ThorEvent
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.utils import hash_of_string_repr, say
 from models.events import EventOutbound, EventScheduledOutbound, \
-    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit, EventSwap
+    parse_swap_and_out_event, TypeEventSwapAndOut, EventSwap
 from models.tx import ThorAction
 
 
@@ -39,7 +39,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         await self.register_swap_events(block, interesting_events)
 
         # Extract finished TX
-        txs = await self.detect_swap_finished(block, interesting_events)
+        txs = await self.handle_finished_swaps(block)
 
         self.dbg_track_swap_id(txs)
 
@@ -77,18 +77,6 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
         return swaps
 
-    @staticmethod
-    def detect_l1_outbounds(block: BlockResult):
-        """
-        Get L1 outbounds from the block data as the results of MsgObservedTxOut
-        """
-        for tx in block.txs:
-            if not tx.is_success:
-                continue
-            for event in tx.events:
-                if event.type == 'outbound':
-                    yield EventOutbound.from_event(event)
-
     async def register_swap_events(self, block: BlockResult, interesting_events: List[TypeEventSwapAndOut]):
         for swap_ev in interesting_events:
             if not swap_ev.tx_id:
@@ -106,33 +94,60 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
             # boom = await self.dbg_on_swap_events(swap_ev, boom)
 
-    def get_events_of_interest(self, block: BlockResult):
+    @staticmethod
+    def get_events_of_interest(block: BlockResult):
         for ev in block.end_block_events:
             swap_ev = parse_swap_and_out_event(ev)
             if swap_ev:
                 yield swap_ev
 
-        for outbound in self.detect_l1_outbounds(block):
-            yield outbound
+    def make_events_from_observed_tx(self, tx: ThorObservedTx):
+        if not tx.is_outbound:
+            self.logger.error("Cannot create EventOutbound from inbound transaction")
+            return
 
-    async def detect_swap_finished(self,
-                                   block: BlockResult,
-                                   interesting_events: List[TypeEventSwapAndOut]) -> List[ThorAction]:
+        if not tx.memo.startswith('OUT:') or tx.memo.startswith('REFUND:'):
+            self.logger.error(f"Cannot create EventOutbound from tx with memo: {tx.memo!r}")
+            return
+
+        for coin in tx.coins:
+            yield EventOutbound.from_event(ThorEvent({
+                'id': tx.tx_id,
+                'chain': tx.chain,
+                'in_tx_id': tx.memo.split(':')[1],
+                'from': tx.from_address,
+                'to': tx.to_address,
+                'coin': f"{coin.asset} {coin.amount}",
+                'memo': tx.memo,
+                'type': 'outbound',
+                '_height': tx.block_height,
+                '_amount': coin.amount,
+                '_asset': coin.asset,
+            }))
+
+    def detect_outbounds(self, block: BlockResult):
+        completed_txs_ids = []
+        events = []
+        for tx in block.all_observed_txs:
+            if tx.is_outbound:
+                events.extend(self.make_events_from_observed_tx(tx))
+                completed_txs_ids.append(tx.tx_id)
+        return completed_txs_ids, events
+
+    async def handle_finished_swaps(self, block: BlockResult) -> List[ThorAction]:
         """
+            FixMe: old information is below
             We do not wait until scheduled outbound will be sent out.
             Swap end is detected by
                 a) EventScheduledOutbound
                 b) EventOutbound for Rune/synths
         """
 
-        # Group all outbound txs
-        group_by_in = defaultdict(list)
-        for ev in interesting_events:
-            if isinstance(ev, (EventOutbound, EventScheduledOutbound, EventTradeAccountDeposit)):
-                group_by_in[ev.tx_id].append(ev)
+        completed_txs_ids, events = self.detect_outbounds(block)
+        await self.register_swap_events(block, events)
 
         results = []
-        for tx_id, group in group_by_in.items():
+        for tx_id in completed_txs_ids:
             swap_props = await self._db.read_tx_status(tx_id)
             if not swap_props:
                 self.logger.warning(f'There are outbounds for tx {tx_id}, but there is no info about its initiation.')

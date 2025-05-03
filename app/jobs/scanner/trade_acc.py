@@ -24,7 +24,7 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
         all_events = {}
 
         # Observed In transactions
-        for observed_tx in block.all_observed_tx_in:
+        for observed_tx in block.all_observed_txs:
             if tr_dep_event := self._make_deposit(observed_tx, block.block_no):
                 all_events[observed_tx.tx_id] = tr_dep_event
 

@@ -1,8 +1,8 @@
 from typing import NamedTuple, Optional, Tuple, Union
 
+from jobs.scanner.tx import ThorEvent
 from lib.constants import POOL_MODULE, NATIVE_RUNE_SYMBOL, thor_to_float, bp_to_float
 from lib.utils import expect_string
-from jobs.scanner.tx import ThorEvent
 
 
 class EventSwap(NamedTuple):
