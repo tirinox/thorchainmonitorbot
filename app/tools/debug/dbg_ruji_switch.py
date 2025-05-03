@@ -4,12 +4,11 @@ import json
 from jobs.fetch.ruji_merge import RujiMergeStatsFetcher
 from jobs.ruji_merge import RujiMergeTracker
 from jobs.scanner.native_scan import BlockScanner
-from lib.constants import THOR_BLOCK_TIME
-from lib.date_utils import now_ts, DAY
+from lib.date_utils import now_ts
 from lib.texts import sep
 from lib.utils import namedtuple_to_dict
 from models.ruji import AlertRujiraMergeStats
-from notify.channel import BoardMessage, MessageType
+from notify.channel import BoardMessage
 from notify.public.ruji_merge_stats import RujiMergeStatsTxNotifier
 from tools.lib.lp_common import LpAppFramework, Receiver
 
@@ -57,15 +56,26 @@ async def dbg_merging_coin_gecko_prices(app):
     print(prices)
 
 
+async def dbg_print_merge_contracts(app):
+    ruji_merge_tracker = RujiMergeTracker(app.deps)
+
+    merge_stats = await ruji_merge_tracker.get_merge_system()
+    sep("Stats")
+    for contract in merge_stats.contracts:
+        print(contract)
+
+
 async def dbg_get_merge_status(app):
     ruji_merge_tracker = RujiMergeTracker(app.deps)
 
-    top_txs_days_back = 10
     merge_stats = await ruji_merge_tracker.get_merge_system()
-    top_txs = await ruji_merge_tracker.get_top_events_from_db(now_ts(), top_txs_days_back)
 
     sep("Stats")
-    print(merge_stats)
+    for contract in merge_stats.contracts:
+        print(contract)
+
+    top_txs_days_back = 10
+    top_txs = await ruji_merge_tracker.get_top_events_from_db(now_ts(), top_txs_days_back)
     print_top_merges(top_txs)
 
     sep()
@@ -105,9 +115,10 @@ async def run():
     async with app(brief=True):
         # await dbg_switch_event_continuous(app, force_start_block=20852630, one_block=True)
         # await dbg_get_merge_status(app)
+        await dbg_print_merge_contracts(app)
         # await dbg_switch_event_continuous(app, force_start_block=20852470 - int(DAY / THOR_BLOCK_TIME))
         # await dbg_mering_coin_gecko_prices(app)
-        await demo_ruji_stats_continuous(app)
+        # await demo_ruji_stats_continuous(app)
         # await demo_send_merge_stats_pic_once(app)
 
 
