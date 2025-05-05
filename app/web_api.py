@@ -10,6 +10,8 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route, Mount
 from starlette.staticfiles import StaticFiles
 
+from api.midgard.connector import MidgardConnector
+from api.midgard.name_service import NameService
 from api.w3.dex_analytics import DexAnalyticsCollector
 from comm.slack.slack_bot import SlackBot
 from jobs.user_counter import UserCounterMiddleware
@@ -39,6 +41,16 @@ class AppSettingsAPI:
 
         d.loop = asyncio.get_event_loop()
         d.db = DB(d.loop)
+
+        thor_env = d.cfg.get_thor_env_by_network_id()
+        cfg = d.cfg.get('thor.midgard')
+        d.midgard_connector = MidgardConnector(
+            d.session,
+            int(cfg.get_pure('tries', 3)),
+            public_url=thor_env.midgard_url
+        )
+
+        d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_holder)
 
         self._node_watcher = NodeWatcherStorage(d.db)
 
@@ -154,6 +166,15 @@ class AppSettingsAPI:
         report = await source.get_analytics(duration)
         return JSONResponse(recursive_asdict(report))
 
+    async def _get_name_info(self, req: Request):
+        address = req.path_params.get('address', '')
+        if not address:
+            return JSONResponse({'error': 'address not found'}, 404)
+        results = await self.deps.name_service.lookup_name_by_address(address)
+        return JSONResponse(
+            recursive_asdict(results)
+        )
+
     def _routes(self):
         other = []
 
@@ -176,6 +197,7 @@ class AppSettingsAPI:
 
             Route('/api/stats/users', self._active_users_handle, methods=['GET']),
             Route('/api/stats/dex', self._get_dex_aggregator_stats, methods=['GET']),
+            Route('/api/name/{address}', self._get_name_info, methods=['GET']),
             *other,
         ]
 
