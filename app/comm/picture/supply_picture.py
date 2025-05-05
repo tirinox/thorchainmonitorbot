@@ -317,7 +317,8 @@ class SupplyPictureGenerator(BasePictureGenerator):
                 it.amount,
                 self.PALETTE.get(it.name, self.PALETTE.get(ThorRealms.CEX)),
                 meta_data=meta(
-                    realm=it.name, label='tight_top' if it.amount < 15e6 else None,
+                    realm=it.name,
+                    # label='tight_top' if it.amount < 15e6 else None,
                     # todo: prev
                     # prev=self.prev_supply.find_by_realm(it.name).amount
                 )
