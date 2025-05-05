@@ -95,9 +95,8 @@ redis-sv-loc: # Start the Redis server locally.
 certbot: # Renew the SSL certificate for the bot's web admin panel.
 	docker compose stop $(BOTNAME) api nginx
 	sudo certbot certonly --standalone -w ./web/frontend -d "${DOMAIN}"
-	# todo: fix paths!
 	sudo rm -rf "./web/letsencrypt/${DOMAIN}/"
-	sudo cp -rL "/etc/letsencrypt/live/${DOMAIN}/*" "./web/letsencrypt/"
+	sudo cp -rL "/etc/letsencrypt/live/${DOMAIN}/" "./web/letsencrypt/${DOMAIN}"
 	make start
 
 
