@@ -73,6 +73,10 @@ class MergeConfig(NamedTuple):
         duration = float(self.decay_ends_at) - float(self.decay_starts_at)
         return remaining / duration
 
+    @property
+    def decay_factor_now(self):
+        return self.decay_factor(now_ts())
+
     def merge_ratio(self, now: float) -> float:
         factor = self.decay_factor(now)
         return self.max_rate * factor
@@ -154,6 +158,20 @@ class MergeContract(WasmContract):
 class MergeSystem(NamedTuple):
     contracts: List[MergeContract]
 
+    @property
+    def decay_staring_in_sec(self):
+        if not self.contracts:
+            return 0
+        c = self.contracts[0].config
+        return int(now_ts() - c.decay_starts_at)
+
+    @property
+    def decay_factor(self):
+        if not self.contracts:
+            return 0
+        c = self.contracts[0].config
+        return c.decay_factor_now
+
     RUJI_MERGE_CONTRACTS = [
         "thor14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s3p2nzy",
         "thor1yyca08xqdgvjz0psg56z67ejh9xms6l436u8y58m82npdqqhmmtqrsjrgh",
@@ -179,13 +197,6 @@ class MergeSystem(NamedTuple):
             ticker = Asset.from_string(contract.config.merge_denom)
             price = prices.get(ticker.name)
             contract.set_price(price)
-
-    @property
-    def decay_staring_in_sec(self):
-        if not self.contracts:
-            return 0
-        c = self.contracts[0].config
-        return int(now_ts() - c.decay_starts_at)
 
 
 class AlertRujiraMergeStats(NamedTuple):

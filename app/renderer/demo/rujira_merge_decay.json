@@ -2,7 +2,6 @@
   "template_name": "rujira_merge.jinja2",
   "parameters": {
     "merge": {
-      "decay_factor": 0.99,
       "contracts": [
         {
           "contract_address": "thor14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9s3p2nzy",
@@ -13,15 +12,16 @@
             "ruji_allocation": 4184468200000000,
             "decay_starts_at": 1746403200.0,
             "decay_ends_at": 1775347200.0,
-            "current_rate": 0.37246188594235824,
+            "current_rate": 0.3643223345469157,
+            "decay_factor_now": 0.9781466192842403,
             "max_rate": 0.37246188594235824
           },
           "status": {
-            "merged": 3772432374400300,
-            "shares": 1405087276542240,
-            "size": 1405087276759143
+            "merged": 8390433571642900,
+            "shares": 3124129079864495,
+            "size": 3148251742129566
           },
-          "price_usd": 0.237257
+          "price_usd": 0.422029
         },
         {
           "contract_address": "thor1yyca08xqdgvjz0psg56z67ejh9xms6l436u8y58m82npdqqhmmtqrsjrgh",
@@ -32,15 +32,16 @@
             "ruji_allocation": 372461900000000,
             "decay_starts_at": 1746403200.0,
             "decay_ends_at": 1775347200.0,
-            "current_rate": 0.3724619,
+            "current_rate": 0.3643223482949206,
+            "decay_factor_now": 0.9781466192779882,
             "max_rate": 0.3724619
           },
           "status": {
-            "merged": 247331687145500,
-            "shares": 92121630123204,
-            "size": 92121630124418
+            "merged": 967777728148299,
+            "shares": 360415975176274,
+            "size": 360722034762464
           },
-          "price_usd": 0.237257
+          "price_usd": 0.422029
         },
         {
           "contract_address": "thor1suhgf5svhu4usrurvxzlgn54ksxmn8gljarjtxqnapv8kjnp4nrsw5xx2d",
@@ -51,15 +52,16 @@
             "ruji_allocation": 155931700000000,
             "decay_starts_at": 1746403200.0,
             "decay_ends_at": 1775347200.0,
-            "current_rate": 0.009079545054362316,
+            "current_rate": 0.008881126299473097,
+            "decay_factor_now": 0.9781466192741497,
             "max_rate": 0.009079545054362316
           },
           "status": {
-            "merged": 8008831870488500,
-            "shares": 72716549795533,
-            "size": 72716549800913
+            "merged": 11198792740757200,
+            "shares": 101619175028470,
+            "size": 102862848593458
           },
-          "price_usd": 0.00584583
+          "price_usd": 0.01021258
         },
         {
           "contract_address": "thor1yw4xvtc43me9scqfr2jr2gzvcxd3a9y4eq7gaukreugw2yd2f8tsz3392y",
@@ -70,15 +72,16 @@
             "ruji_allocation": 142708400000000,
             "decay_starts_at": 1746403200.0,
             "decay_ends_at": 1775347200.0,
-            "current_rate": 0.020682376811594204,
+            "current_rate": 0.020230396956724985,
+            "decay_factor_now": 0.9781466192696274,
             "max_rate": 0.020682376811594204
           },
           "status": {
-            "merged": 2330416025563200,
-            "shares": 48198542366694,
-            "size": 48198542368475
+            "merged": 6468603435890800,
+            "shares": 133782351528149,
+            "size": 133980641228399
           },
-          "price_usd": 0.01244246
+          "price_usd": 0.01921386
         },
         {
           "contract_address": "thor1cnuw3f076wgdyahssdkd0g3nr96ckq8cwa2mh029fn5mgf2fmcmsmam5ck",
@@ -89,15 +92,16 @@
             "ruji_allocation": 144429800000000,
             "decay_starts_at": 1746403200.0,
             "decay_ends_at": 1775347200.0,
-            "current_rate": 0.02221996923076923,
+            "current_rate": 0.021734387783269152,
+            "decay_factor_now": 0.978146619265756,
             "max_rate": 0.02221996923076923
           },
           "status": {
-            "merged": 0,
-            "shares": 0,
-            "size": 0
+            "merged": 4286770884128100,
+            "shares": 95177096061869,
+            "size": 96323797558991
           },
-          "price_usd": 0.01253
+          "price_usd": 0.01568
         },
         {
           "contract_address": "thor1ltd0maxmte3xf4zshta9j5djrq9cl692ctsp9u5q0p9wss0f5lms7us4yf",
@@ -108,26 +112,28 @@
             "ruji_allocation": 500000000000000,
             "decay_starts_at": 1746403200.0,
             "decay_ends_at": 1775347200.0,
-            "current_rate": 0.0071915712644568955,
+            "current_rate": 0.007034411119510435,
+            "decay_factor_now": 0.9781466192618844,
             "max_rate": 0.0071915712644568955
           },
           "status": {
-            "merged": 21037898930633500,
-            "shares": 151295549412016,
-            "size": 151295549414091
+            "merged": 40486424012449800,
+            "shares": 291082266057571,
+            "size": 295387814193246
           },
-          "price_usd": 0.00467578
+          "price_usd": 0.00849943
         }
       ],
       "all_denoms": [
-        "thor.nstk",
-        "thor.lvn",
         "thor.wink",
-        "thor.rkuji",
+        "thor.kuji",
         "thor.fuzn",
-        "thor.kuji"
+        "thor.rkuji",
+        "thor.nstk",
+        "thor.lvn"
       ],
-      "decay_staring_in_sec": -815970
+      "decay_factor": 0.9781466192896604,
+      "decay_staring_in_sec": 632524
     },
     "top_txs": [
       {

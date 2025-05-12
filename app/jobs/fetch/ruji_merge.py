@@ -10,10 +10,12 @@ class RujiMergeStatsFetcher(BaseFetcher):
         sleep_period = deps.cfg.as_interval("rujira.merge.period", "10m")
         super().__init__(deps, sleep_period=sleep_period)
         self.deps = deps
-        self.system = MergeSystem([
-            MergeContract(deps.thor_connector, address)
-            for address in MergeSystem.RUJI_MERGE_CONTRACTS
-        ])
+        self.system = MergeSystem(
+            [
+                MergeContract(deps.thor_connector, address)
+                for address in MergeSystem.RUJI_MERGE_CONTRACTS
+            ]
+        )
 
     async def fetch(self):
         for contract in self.system.contracts:

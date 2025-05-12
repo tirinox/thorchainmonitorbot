@@ -41,7 +41,6 @@
             font-size: 24px;
             padding: 14px 20px 14px 20px;
 
-            {#outline: 2px solid  rgba(200, 200, 200, 0.5);#}
             background: rgba(197, 197, 197, 0.1);
 
             border-radius: 20px;
@@ -59,8 +58,9 @@
             letter-spacing: 8px;
             margin-bottom: 18px;
             color: #c5c5c5;
-
         }
+
+
     </style>
 
     {% with title="RUJIRA MERGE STATS" %}
@@ -92,23 +92,24 @@
     </div>
 
     <div class="decay-block fade-color">
-        <span>Decay Starting In...</span>
-        <span id="decay-date"></span>
+        {% if merge['decay_factor'] < 1.0 %}
+            <span>
+                Decay Factor
+                = <b>{{ short_money(merge['decay_factor']) }}x</b>
+            </span>
+        {% else %}
+            <span id="before-decay">
+            <span>Decay Starting In...</span>
+            <span id="decay-date"></span>
+        </span>
+        {% endif %}
+
     </div>
 
 
     <script src="renderer/static/js/helpers.js"></script>
 
     <script>
-        let topTxs = {{ top_txs|safe }};
-        let contracts = {{ merge['contracts']|safe }};
-        const decayTimestamp = contracts[0].config.decay_starts_at
-        const decayInSeconds = (new Date(decayTimestamp * 1000) - new Date()) / 1000;
-
-        if (decayInSeconds > 0) {
-            document.getElementById("decay-date").innerHTML = secondsToDaysHours(decayInSeconds)
-        }
-        // todo! change label text if decay started
-
     </script>
+
 {% endblock %}

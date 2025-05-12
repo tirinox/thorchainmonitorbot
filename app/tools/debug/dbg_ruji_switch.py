@@ -114,8 +114,8 @@ async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await dbg_switch_event_continuous(app, force_start_block=20852630, one_block=True)
-        # await dbg_get_merge_status(app)
-        await dbg_print_merge_contracts(app)
+        await dbg_get_merge_status(app)
+        # await dbg_print_merge_contracts(app)
         # await dbg_switch_event_continuous(app, force_start_block=20852470 - int(DAY / THOR_BLOCK_TIME))
         # await dbg_mering_coin_gecko_prices(app)
         # await demo_ruji_stats_continuous(app)
