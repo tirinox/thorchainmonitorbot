@@ -198,21 +198,29 @@ class PoolCache(WithLogger):
         cursor = 0
         block_heights = []
 
-        self.logger.info(f'Fetching thin out keys for {scan_batch_size} scans...')
+        # We don’t know total size, so we use tqdm without total
+        pbar = tqdm(desc="Scanning Redis hash", unit="keys")
+
         while True:
             cursor, data = await r.hscan(name=hash_name, cursor=cursor, count=scan_batch_size)
+            new_keys = 0
+
             for key in data.keys():
                 try:
                     block_heights.append(int(key))
+                    new_keys += 1
                 except ValueError:
-                    continue  # skip non-integer keys
+                    continue
+
+            pbar.update(new_keys)
 
             if cursor == 0:
                 break
 
-        self.logger.info(f'Found {len(block_heights)} thin out keys. Sorting...')
+        pbar.close()
 
         # 2. Sort all block heights globally
+        self.logger.info(f'Found {len(block_heights)} thin out keys. Sorting...')
         block_heights.sort()
 
         # 3. Thin the list based on min_distance
