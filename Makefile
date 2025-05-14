@@ -165,3 +165,7 @@ auth_twitter: # Authenticate your Twitter handle to be managed by the bot.
 auth_twitter_docker: # Authenticate your Twitter handle to be managed by the bot (with Docker, without Python env)
 	docker build -f Dockerfile-twitter-auth -t thor_bot_twitter_auth .
 	docker run -it -v ./app:/app -v ./config.yaml:/config/config.yaml thor_bot_twitter_auth
+
+
+.PHONY: thin-out-pool-cache  # Thin out the pool cache
+	docker compose exec thtgbot bash -c 'PYTHONPATH="/app" python tools/thin_out_pool_cache.py /config/config.yaml'
