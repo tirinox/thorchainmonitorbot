@@ -3,7 +3,7 @@ import random
 from redis import ResponseError
 from tqdm import tqdm
 
-from lib.constants import RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX, RUNE_SYMBOL_DET
+from lib.constants import RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX, RUNE_SYMBOL_DET, TCY_SYMBOL
 from lib.date_utils import DAY, HOUR, convert_to_milliseconds, YEAR
 from lib.db import DB
 from lib.delegates import INotified
@@ -22,6 +22,7 @@ class PriceRecorder(WithLogger, INotified):
         self.pool_price_series = PriceTimeSeries(RUNE_SYMBOL_POOL, db, max_len=history_max_points)
         self.cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, db, max_len=history_max_points)
         self.deterministic_price_series = PriceTimeSeries(RUNE_SYMBOL_DET, db, max_len=history_max_points)
+        self.tcy_price_series = PriceTimeSeries(TCY_SYMBOL, db, max_len=history_max_points)
 
     async def write(self, rune_market_info: RuneMarketInfo):
         if not rune_market_info:
