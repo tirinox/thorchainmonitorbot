@@ -190,6 +190,7 @@ class PoolCache(WithLogger):
     async def get_thin_out_keys(self,
                                 min_distance: int = 10,
                                 scan_batch_size: int = 10000,
+                                max_keys_to_delete: int = 10000,
                                 ) -> list[str]:
         r = await self.deps.db.get_redis()
         hash_name = self.DB_KEY_POOL_INFO_HASH
@@ -213,6 +214,10 @@ class PoolCache(WithLogger):
                     continue
 
             pbar.update(new_keys)
+
+            if len(block_heights) >= max_keys_to_delete:
+                self.logger.warning(f"Reached max keys to delete: {max_keys_to_delete}. Stopping scan.")
+                break
 
             if cursor == 0:
                 break

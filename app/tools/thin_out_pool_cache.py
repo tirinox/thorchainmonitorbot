@@ -13,8 +13,13 @@ async def thin_out_pool_cache(app):
 
     scan_batch_size = int(input("Enter scan batch size (default 1000): ") or 1000)
     min_distance = int(input("Enter minimum distance (default 5): ") or 5)
+    max_keys_to_delete = int(input("Enter maximum keys to delete (default 10000): ") or 10000)
 
-    keys = await pf.cache.get_thin_out_keys(min_distance=min_distance, scan_batch_size=scan_batch_size)
+    keys = await pf.cache.get_thin_out_keys(
+        min_distance=min_distance,
+        scan_batch_size=scan_batch_size,
+        max_keys_to_delete=max_keys_to_delete,
+    )
     print(f"Total keys to delete: {len(keys)}")
 
     # await pf.cache.backup_hash()
