@@ -4,16 +4,17 @@ from random import random
 from typing import Optional, List, Dict
 
 from redis.asyncio import Redis
+from tqdm import tqdm
 from ujson import JSONDecodeError
 
 from api.midgard.parser import get_parser_by_network_id
 from jobs.fetch.base import BaseFetcher
-from jobs.price_recorder import PriceRecorder
 from lib.config import Config
 from lib.constants import THOR_BLOCK_TIME
 from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
+from lib.utils import grouper
 from models.pool_info import parse_thor_pools, PoolInfo, PoolInfoMap
 
 
@@ -47,9 +48,12 @@ class PoolFetcher(BaseFetcher):
                 # latest
                 pool_map = await self._fetch_current_pool_data_from_thornode()
                 cache_key = self.deps.last_block_store.thor
-                await self.cache.put(cache_key, pool_map)
+                if cache_key:
+                    await self.cache.put(cache_key, pool_map)
+                else:
+                    self.logger.error(f'last_block_store.thor = {cache_key}. Cannot save to cache!')
             else:
-                pool_map = await self.cache.get(height)
+                pool_map = await self.cache.get(subkey=height)
                 if not pool_map:
                     pool_map = await self._fetch_current_pool_data_from_thornode(height)
                     await self.cache.put(height, pool_map)
@@ -75,6 +79,17 @@ class PoolFetcher(BaseFetcher):
     def convert_pool_list_to_dict(pool_list: List[PoolInfo]) -> Dict[str, PoolInfo]:
         return {p.asset: p for p in pool_list} if pool_list else None
 
+    async def load_historic_data(self, blocks_ago, block_interval: int = 10, forced=False):
+        current_block = self.deps.last_block_store.thor
+        if not current_block:
+            raise RuntimeError(f'last_block_store.thor = {current_block}. Cannot load historic data!')
+
+        for block_no in range(current_block, current_block - blocks_ago, -abs(block_interval)):
+            self.logger.info(f'block_no = {block_no}')
+            pool_map = await self.load_pools(height=block_no, caching=not forced)
+            if not pool_map:
+                self.logger.warning(f'Pool map is empty for block #{block_no}. Skipping...')
+
 
 class PoolInfoFetcherMidgard(BaseFetcher):
     def __init__(self, deps: DepContainer, period):
@@ -86,7 +101,7 @@ class PoolInfoFetcherMidgard(BaseFetcher):
     async def get_pool_info_midgard(self, period='30d') -> Optional[PoolInfoMap]:
         pool_data = await self.deps.midgard_connector.query_pools(period, parse=False)
         if not pool_data:
-            return
+            return None
         self.last_raw_result = pool_data
         return self.parser.parse_pool_info(pool_data)
 
@@ -138,6 +153,10 @@ class PoolCache(WithLogger):
         self.logger.info('Cache cleared successfully!')
 
     async def put(self, subkey, pool_map: PoolInfoMap):
+        if not pool_map:
+            self.logger.warning(f'Pool map is empty for {subkey = }. Cannot save to cache!')
+            return
+
         r: Redis = await self.deps.db.get_redis()
         j_pools = json.dumps({key: p.as_dict_brief() for key, p in pool_map.items()})
         await r.hset(self.DB_KEY_POOL_INFO_HASH, str(subkey), j_pools)
@@ -153,7 +172,7 @@ class PoolCache(WithLogger):
                     return pool_map
         except (TypeError, ValueError):
             self.logger.warning(f'Failed to load PoolInfoMap from the cache ({subkey = })')
-            return
+            return None
 
     async def purge(self):
         r: Redis = await self.deps.db.get_redis()
@@ -167,3 +186,74 @@ class PoolCache(WithLogger):
                 self.logger.info('Clearing the cache...')
                 await self.clear(self.pool_cache_max_age)
             self._pool_cache_saves += 1
+
+    async def get_thin_out_keys(self,
+                                min_distance: int = 10,
+                                scan_batch_size: int = 10000,
+                                ) -> list[str]:
+        r = await self.deps.db.get_redis()
+        hash_name = self.DB_KEY_POOL_INFO_HASH
+
+        # 1. Stream keys via HSCAN and collect all block heights
+        cursor = 0
+        block_heights = []
+
+        self.logger.info(f'Fetching thin out keys for {scan_batch_size} scans...')
+        while True:
+            cursor, data = await r.hscan(name=hash_name, cursor=cursor, count=scan_batch_size)
+            for key in data.keys():
+                try:
+                    block_heights.append(int(key))
+                except ValueError:
+                    continue  # skip non-integer keys
+
+            if cursor == 0:
+                break
+
+        self.logger.info(f'Found {len(block_heights)} thin out keys. Sorting...')
+
+        # 2. Sort all block heights globally
+        block_heights.sort()
+
+        # 3. Thin the list based on min_distance
+        kept = []
+        last = None
+        for h in block_heights:
+            if last is None or h - last >= min_distance:
+                kept.append(h)
+                last = h
+
+        # 4. Compute deletion list
+        kept_set = set(str(k) for k in kept)
+        all_keys_str = set(str(h) for h in block_heights)
+        to_delete = list(all_keys_str - kept_set)
+
+        return to_delete
+
+    async def backup_hash(self,
+                          hash_name: str = DB_KEY_POOL_INFO_HASH,
+                          backup_name: str = "",
+                          scan_batch_size: int = 1000
+                          ):
+        r = await self.deps.db.get_redis()
+
+        backup_name = backup_name or f"{hash_name}__backup"
+        cursor = 0
+
+        while True:
+            cursor, data = await r.hscan(name=hash_name, cursor=cursor, count=scan_batch_size)
+            if data:
+                await r.hset(backup_name, mapping=data)
+            if cursor == 0:
+                break
+
+        self.logger.info(f"Backed up hash '{hash_name}' to '{backup_name}' with batched copy.")
+
+    async def delete_keys_batched(self, keys):
+        if not keys:
+            self.logger.warning("No keys to delete.")
+            return
+
+        r = await self.deps.db.get_redis()
+        for batch in tqdm(grouper(1000, keys)):
+            await r.hdel(self.DB_KEY_POOL_INFO_HASH, *batch)

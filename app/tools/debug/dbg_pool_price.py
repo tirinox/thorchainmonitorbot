@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 
 from api.aionode.connector import ThorConnector
 from comm.picture.price_picture import price_graph_from_db
@@ -162,7 +163,7 @@ async def dbg_new_price_picture(app):
     await asyncio.sleep(5.0)
 
 
-async def dbg_price_picture_continiously(app):
+async def dbg_price_picture_continuously(app):
     await app.deps.pool_fetcher.run_once()
 
     mf: RuneMarketInfoFetcher = app.deps.rune_market_fetcher
@@ -175,8 +176,20 @@ async def dbg_price_picture_continiously(app):
     await mf.run()
 
 
+async def demo_load_historic_data(app):
+    await app.deps.last_block_fetcher.run_once()
+    await app.deps.pool_fetcher.load_historic_data(10000, block_interval=10)
+    
+    
+async def dbg_thin_out_pool_cache(app):
+    pf: PoolFetcher = app.deps.pool_fetcher
+    keys = await pf.cache.get_thin_out_keys(min_distance=5, scan_batch_size=1000)
+    print(keys)
+    print(f"Total keys: {len(keys)}")
+    
+
 async def main():
-    app = LpAppFramework()
+    app = LpAppFramework(log_level=logging.DEBUG)
     async with app(brief=True):
         # await find_anomaly(app)
         # await demo_cache_blocks(app)
@@ -185,7 +198,9 @@ async def main():
         # await debug_load_pools(app)
         # await dbg_save_market_info(app)
         # await dbg_new_price_picture(app)
-        await dbg_price_picture_continiously(app)
+        # await dbg_price_picture_continuously(app)
+        # await demo_load_historic_data(app)
+        await dbg_thin_out_pool_cache(app)
 
 
 if __name__ == '__main__':
