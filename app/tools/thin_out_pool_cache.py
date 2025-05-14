@@ -1,10 +1,7 @@
 import asyncio
 import logging
 
-import tqdm
-
 from jobs.fetch.pool_price import PoolFetcher
-from lib.utils import grouper
 from tools.lib.lp_common import LpAppFramework
 
 

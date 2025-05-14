@@ -84,8 +84,8 @@ class PoolFetcher(BaseFetcher):
         if not current_block:
             raise RuntimeError(f'last_block_store.thor = {current_block}. Cannot load historic data!')
 
-        for block_no in range(current_block, current_block - blocks_ago, -abs(block_interval)):
-            self.logger.info(f'block_no = {block_no}')
+        for block_no in tqdm(range(current_block, current_block - blocks_ago, -abs(block_interval))):
+            # self.logger.info(f'block_no = {block_no}')
             pool_map = await self.load_pools(height=block_no, caching=not forced)
             if not pool_map:
                 self.logger.warning(f'Pool map is empty for block #{block_no}. Skipping...')

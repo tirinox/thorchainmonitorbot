@@ -168,4 +168,8 @@ auth_twitter_docker: # Authenticate your Twitter handle to be managed by the bot
 
 
 .PHONY: thin-out-pool-cache  # Thin out the pool cache
-	docker compose exec thtgbot bash -c 'PYTHONPATH="/app" python tools/thin_out_pool_cache.py /config/config.yaml'
+	docker compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/thin_out_pool_cache.py /config/config.yaml'
+
+
+.PHONY: fill-pool-cache  # Fill the pool cache
+	docker compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/fill_pool_cache.py /config/config.yaml'
