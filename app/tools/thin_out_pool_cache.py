@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from jobs.fetch.pool_price import PoolFetcher
-from tools.lib.lp_common import LpAppFramework
+from tools.lib.lp_common import LpAppFramework, ask_yes_no
 
 
 async def thin_out_pool_cache(app):
@@ -22,8 +22,7 @@ async def thin_out_pool_cache(app):
     # await pf.cache.backup_hash()
 
     # Ask if the user wants to delete the keys
-    confirm = input(f"Do you want to delete {len(keys)} keys? (y/n): ")
-    if confirm.lower().strip() == 'y':
+    if ask_yes_no(f"Do you want to delete {len(keys)} keys?"):
         # Delete the keys in batches
         await pf.cache.delete_keys_batched(keys)
         print(f"Deleted {len(keys)} keys.")

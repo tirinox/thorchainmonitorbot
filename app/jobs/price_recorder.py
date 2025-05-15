@@ -57,6 +57,13 @@ class PriceRecorder(WithLogger, INotified):
 
         return pool_prices, cex_prices, det_prices
 
+    async def get_tcy_prices(self, period, max_points=None):
+        if not max_points:
+            max_points = 60_000 if period >= 7 * DAY else 10_000
+
+        tcy_prices = await self.tcy_price_series.get_last_values(period, with_ts=True, max_points=max_points)
+        return tcy_prices
+
     async def get_historical_price_dict(self, periods=(HOUR, DAY, 7 * DAY, 30 * DAY, YEAR), tolerance_percent=5):
         prices = {}
         for period in periods:

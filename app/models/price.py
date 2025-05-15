@@ -107,6 +107,7 @@ class AlertPrice:
     pool_prices: List[Tuple[float, float]]
     cex_prices: List[Tuple[float, float]]
     det_prices: List[Tuple[float, float]]
+    tcy_prices: List[Tuple[float, float]]
     volumes: List[Tuple[float, dict]]
     market_info: RuneMarketInfo = field(default_factory=RuneMarketInfo)
     last_ath: Optional[PriceATH] = None
@@ -115,6 +116,10 @@ class AlertPrice:
     ath_sticker: str = ''
     chain_state: List[Tuple[str, str]] = None
     price_graph_period: int = 7 * DAY
+
+    @property
+    def tcy_price(self):
+        return self.tcy_prices[0][1] if self.tcy_prices else 0.0
 
     @property
     def cex_price(self):

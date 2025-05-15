@@ -14,7 +14,7 @@ async def load_historic_data_task(app):
     max_blocks = int(input("Enter maximum blocks to scan (default 1000): ") or 1000)
 
     print(f"Loading {max_blocks} blocks with a distance of {block_distance}.")
-    await pf.load_historic_data(max_blocks, block_distance)
+    await pf.load_historic_data(max_blocks, block_distance, use_tqdm=True)
 
 
 async def main():

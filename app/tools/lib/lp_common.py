@@ -219,3 +219,24 @@ def save_and_show_pic(pic, show=True, name='pic'):
 
     if show:
         os.system(f'open "{filepath}"')
+
+
+def ask_yes_no(prompt, default='y'):
+    if default is True:
+        tag = '(Y/n)'
+    elif default is False:
+        tag = '(y/N)'
+    else:
+        tag = ''
+    full_prompt = f'{prompt} {tag}:'
+
+    while True:
+        answer = input(full_prompt).strip().lower()
+        if not answer and default is not None:
+            return default
+        if answer in ('y', 'yes'):
+            return True
+        elif answer in ('n', 'no'):
+            return False
+        else:
+            print(f'Invalid input. Please enter "y" or "n".')

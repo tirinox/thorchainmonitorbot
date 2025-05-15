@@ -65,12 +65,14 @@ class PriceNotifier(INotified, WithDelegates, WithLogger):
         hist_prices = await self.get_historical_price_dict()
         pool_prices, cex_prices, det_prices = await self.price_recorder.get_prices(self.price_graph_period)
         volumes = await self.deps.volume_recorder.get_data_range_ago_n(self.price_graph_period, n=VOLUME_N_POINTS)
+        tcy_prices = await self.price_recorder.get_tcy_prices(self.price_graph_period)
 
         return AlertPrice(
             hist_prices=hist_prices,
             pool_prices=pool_prices,
             cex_prices=cex_prices,
             det_prices=det_prices,
+            tcy_prices=tcy_prices,
             volumes=volumes,
             market_info=market_info,
             last_ath=last_ath,

@@ -20,6 +20,8 @@ from itertools import tee
 from typing import Iterable, List, Any, Awaitable
 from urllib.parse import urlparse, urlunparse
 
+from tqdm import tqdm
+
 from lib.date_utils import today_str
 
 
@@ -419,17 +421,31 @@ def str_to_bytes(s: str):
     return bytes.fromhex(s)
 
 
-async def parallel_run_in_groups(tasks, group_size=10, delay=0.0):
+async def parallel_run_in_groups(
+    tasks: List[Awaitable[Any]],
+    group_size: int = 10,
+    delay: float = 0.0,
+    use_tqdm: bool = False
+) -> List[Any]:
     if not tasks:
         return []
-    groups = grouper(group_size, tasks)
+
+    groups = list(grouper(group_size, tasks))
     results = []
+
+    pbar = tqdm(total=len(tasks), desc="Processing tasks") if use_tqdm and tqdm else None
+
     for group in groups:
-        results.extend(
-            await asyncio.gather(*group)
-        )
+        group_results = await asyncio.gather(*group)
+        results.extend(group_results)
+        if pbar:
+            pbar.update(len(group))
         if delay > 0:
             await asyncio.sleep(delay)
+
+    if pbar:
+        pbar.close()
+
     return results
 
 

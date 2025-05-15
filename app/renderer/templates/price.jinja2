@@ -15,15 +15,18 @@
 
         .legend {
             position: absolute;
-            top: 5%;
+            top: 3%;
             left: 3%;
+            right: 5%;
             display: flex;
             z-index: 100;
+            flex-wrap: wrap;
         }
 
         .legend-item {
             display: flex;
-            margin-right: 20px;
+            margin-top: 10px;
+            margin-right: 10px;
         }
 
         .legend-color {
@@ -107,7 +110,6 @@
         .halted {
             background-color: #ef5350;
             /* fire red shadow */
-
         }
 
         .halted-text {
@@ -210,6 +212,10 @@
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: rgb(5, 76, 48)"></div>
                     <div class="legend-text">Trade asset volume</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #23DCC8"></div>
+                    <div class="legend-text">TCY price</div>
                 </div>
             </div>
             <div id="price-chart"></div>
@@ -363,8 +369,10 @@
         const poolPrices = {{ pool_prices|safe }};
         const cexPrices = {{ cex_prices|safe }};
         const detPrices = {{ det_prices|safe }};
+        const tcyPrices = {{ tcy_prices|safe }};
 
-        console.log(JSON.stringify(poolPrices.splice(0, 10)));
+        console.log("POOL PRICES:" + JSON.stringify(poolPrices.splice(0, 10)));
+        console.log("TCY: " + JSON.stringify(tcyPrices.splice(0, 10)));
 
         const poolOHLC = convertToOHLC(poolPrices, INTERVAL);
         console.log(poolOHLC);
@@ -378,6 +386,7 @@
 
         const detLineData = aggregateToIntervalAvg(detPrices, INTERVAL);
         const cexLineData = aggregateToIntervalAvg(cexPrices, INTERVAL);
+        const tcyLineData = aggregateToIntervalAvg(tcyPrices, INTERVAL);
 
         function aggregateSwapVolumes(volumes, interval, key = 'swap') {
             const dailyVolumes = {};
@@ -488,7 +497,6 @@
         });
         detSeries.setData(detLineData);
 
-
         const cexSeries = chart.addSeries(LightweightCharts.LineSeries, {
             // 00CCFF
             color: "rgba(0, 204, 255, 0.8)",
@@ -500,6 +508,18 @@
             priceLineVisible: false,
         });
         cexSeries.setData(cexLineData);
+
+        const tcySeries = chart.addSeries(LightweightCharts.LineSeries, {
+            color: "#23DCC8",
+            lineWidth: 3,
+
+            // dashed line
+            type: 'dashed',
+            lineStyle: LightweightCharts.LineStyle.Dotted,
+            priceLineVisible: false,
+        });
+        tcySeries.setData(tcyLineData);
+
 
         const barSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
             upColor: '#26a69a',

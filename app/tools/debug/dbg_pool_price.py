@@ -93,6 +93,8 @@ async def _create_price_alert(app, fill=False):
 
 
 async def dbg_load_latest_price_data_and_save_as_demo(app, fill=False):
+    await app.deps.last_block_fetcher.run_once()
+
     event = await _create_price_alert(app, fill)
     sep()
 
@@ -194,13 +196,13 @@ async def main():
         # await find_anomaly(app)
         # await demo_cache_blocks(app)
         # await demo_top_pools(app)
-        # await dbg_load_latest_price_data_and_save_as_demo(app, fill=False)
+        await dbg_load_latest_price_data_and_save_as_demo(app, fill=True)
         # await debug_load_pools(app)
         # await dbg_save_market_info(app)
         # await dbg_new_price_picture(app)
         # await dbg_price_picture_continuously(app)
         # await demo_load_historic_data(app)
-        await dbg_thin_out_pool_cache(app)
+        # await dbg_thin_out_pool_cache(app)
 
 
 if __name__ == '__main__':

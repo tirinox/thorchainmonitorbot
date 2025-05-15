@@ -14,7 +14,7 @@ from lib.constants import THOR_BLOCK_TIME
 from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from lib.utils import grouper
+from lib.utils import grouper, parallel_run_in_groups
 from models.pool_info import parse_thor_pools, PoolInfo, PoolInfoMap
 
 
@@ -79,17 +79,34 @@ class PoolFetcher(BaseFetcher):
     def convert_pool_list_to_dict(pool_list: List[PoolInfo]) -> Dict[str, PoolInfo]:
         return {p.asset: p for p in pool_list} if pool_list else None
 
-    async def load_historic_data(self, blocks_ago, block_interval: int = 10, forced=False):
+    async def load_historic_data(self,
+                                 blocks_ago,
+                                 block_interval: int = 10,
+                                 forced=False,
+                                 group_size=10,
+                                 use_tqdm=False):
         current_block = self.deps.last_block_store.thor
         if not current_block:
             raise RuntimeError(f'last_block_store.thor = {current_block}. Cannot load historic data!')
 
-        for block_no in tqdm(range(current_block, current_block - blocks_ago, -abs(block_interval))):
-            # self.logger.info(f'block_no = {block_no}')
+        block_heights = list(range(current_block, current_block - blocks_ago, -abs(block_interval)))
+
+        async def load_for_block(block_no):
             pool_map = await self.load_pools(height=block_no, caching=not forced)
             if not pool_map:
                 self.logger.warning(f'Pool map is empty for block #{block_no}. Skipping...')
+            return pool_map
 
+        tasks = [load_for_block(block_no) for block_no in block_heights]
+
+        results = await parallel_run_in_groups(
+            tasks,
+            group_size=group_size,
+            delay=0.0,
+            use_tqdm=use_tqdm
+        )
+
+        return results  # Optionally, filter or process this further
 
 class PoolInfoFetcherMidgard(BaseFetcher):
     def __init__(self, deps: DepContainer, period):
@@ -186,6 +203,16 @@ class PoolCache(WithLogger):
                 self.logger.info('Clearing the cache...')
                 await self.clear(self.pool_cache_max_age)
             self._pool_cache_saves += 1
+
+    async def scan_all_keys(self, hash_name=DB_KEY_POOL_INFO_HASH, scan_batch_size: int = 1000):
+        r = await self.deps.db.get_redis()
+        cursor = 0
+        while True:
+            cursor, data = await r.hscan(name=hash_name, cursor=cursor, count=scan_batch_size)
+            if cursor == 0:
+                break
+            for block_no, v in data.items():
+                yield int(block_no), v
 
     async def get_thin_out_keys(self,
                                 min_distance: int = 10,
