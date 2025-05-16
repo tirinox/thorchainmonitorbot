@@ -176,10 +176,13 @@ class BlockScanner(BaseFetcher):
         if result:
             return int(safe_get(result, 'result', 'sync_info', 'latest_block_height'))
 
+    async def _fetch_raw_block(self, block_no):
+        return await self.deps.thor_connector.query_thorchain_block_raw(block_no)
+
     async def fetch_one_block(self, block_index) -> Optional[BlockResult]:
-        block_raw = await self.deps.thor_connector.query_thorchain_block_raw(block_index)
+        block_raw = await self._fetch_raw_block(block_index)
         if block_raw is None:
-            return
+            return None
 
         block_result = BlockResult.load_block(block_raw, block_index)
 

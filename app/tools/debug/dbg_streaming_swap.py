@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import random
 
 from api.aionode.connector import ThorConnector
@@ -28,12 +27,11 @@ from notify.alert_presenter import AlertPresenter
 from notify.public.dex_report_notify import DexReportNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
 from notify.public.tx_notify import SwapTxNotifier
-from tools.debug.dbg_key_metrcis_weekly import show_picture
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 BlockScannerClass = BlockScannerCached
 print(BlockScannerClass, ' <= look!')
-BlockScannerClass = BlockScanner
+# BlockScannerClass = BlockScanner
 
 
 # 1)
