@@ -56,7 +56,7 @@ class SwapStartDetector(WithLogger):
         amount = coins[0]['amount']
         in_amount = thor_to_float(amount)
         in_asset = Asset.from_string(coins[0]["asset"])
-        from_address = msg.get('from_address', None) or msg.get('signer', '')
+        from_address = msg.get('from_address', None) or msg.get('signer', '') or safe_get(msg, 'tx', 'from_address')
 
         if str(in_asset) == NATIVE_RUNE_SYMBOL:
             volume_usd = in_amount * prices.usd_per_rune
