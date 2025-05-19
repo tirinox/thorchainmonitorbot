@@ -2,16 +2,17 @@ import os
 import typing
 from contextlib import asynccontextmanager
 
-from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from aiogram.dispatcher import FSMContext
 from redis import asyncio as aioredis
+
+from comm.telegram.custom_redis_storgate import RedisStorage3
 
 
 class DB:
     def __init__(self, loop):
         self.loop = loop
         self.redis: typing.Optional[aioredis.Redis] = None
-        self.storage: typing.Optional[RedisStorage2] = None
+        self.storage: typing.Optional[RedisStorage3] = None
         self.host = os.environ.get('REDIS_HOST', 'localhost')
         self.port = os.environ.get('REDIS_PORT', 6379)
         self.db_index = os.environ.get('REDIS_DB_INDEX', 0)
@@ -28,8 +29,8 @@ class DB:
             decode_responses=True
         )
 
-        self.storage = RedisStorage2(prefix='fsm')
-        self.storage._redis = self.redis
+        self.storage = RedisStorage3(prefix='fsm', redis=self.redis)
+        # self.storage._redis = self.redis
 
         return self.redis
 

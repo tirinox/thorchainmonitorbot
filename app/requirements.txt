@@ -1,13 +1,12 @@
 aiodns
 aiofiles
 aiogram==2.*
-aiohttp
+aiohttp>=3.11.0
 async-timeout
 bech32
 colorama
 # discord.py  # will be installed at Stage 2
 emoji
-git+https://github.com/danielgtaylor/python-betterproto@v2.0.0b5#egg=betterproto
 html-slacker
 markdownify
 multidict
@@ -36,3 +35,6 @@ uvloop>=0.17.0
 web3>=6.0.0
 websockets
 python-json-logger>=3.0.0
+
+aioredis  # outdated? fixme see DB class
+distutils
