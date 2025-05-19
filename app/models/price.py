@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, NamedTuple, Tuple
 
 from lib.config import Config
-from lib.constants import BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float, RUNE_IDEAL_SUPPLY
+from lib.constants import BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float, RUNE_IDEAL_SUPPLY, TCY_SYMBOL
 from lib.date_utils import now_ts, DAY, HOUR, YEAR
 from lib.delegates import INotified
 from lib.money import weighted_mean
@@ -66,6 +66,10 @@ class RuneMarketInfo:
     @property
     def total_active_pools(self):
         return len([p for p in self.pools.values() if p.is_enabled])
+
+    @property
+    def tcy_price(self):
+        return LastPriceHolder().update_pools(self.pools).get_asset_price_in_usd(TCY_SYMBOL)
 
 
 REAL_REGISTERED_ATH = 20.87  # $ / Rune

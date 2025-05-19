@@ -47,6 +47,12 @@ class PriceRecorder(WithLogger, INotified):
         else:
             self.logger.error(f'Odd {rune_market_info.fair_price = }')
 
+        # Fill TCY price
+        if tcy_price := rune_market_info.tcy_price:
+            await self.tcy_price_series.add(price=tcy_price)
+        else:
+            self.logger.error(f'Odd {rune_market_info.tcy_price = }')
+
     async def get_prices(self, period, max_points=None):
         if not max_points:
             max_points = 60_000 if period >= 7 * DAY else 10_000
