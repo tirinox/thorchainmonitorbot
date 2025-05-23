@@ -3,13 +3,11 @@ import random
 
 from api.aionode.connector import ThorConnector
 from api.aionode.types import float_to_thor, thor_to_float
-from api.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from api.w3.aggregator import AggregatorDataExtractor
 from api.w3.dex_analytics import DexAnalyticsCollector
 from jobs.fetch.streaming_swaps import StreamingSwapFechter
 from jobs.fetch.tx import TxFetcher
 from jobs.scanner.event_db import EventDatabase
-from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.scan_cache import BlockScannerCached
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.user_counter import UserCounterMiddleware
@@ -17,7 +15,7 @@ from jobs.volume_filler import VolumeFillerUpdater
 from lib.money import DepthCurve
 from lib.texts import sep
 from lib.utils import save_pickle, load_pickle
-from models.asset import Asset, AssetRUNE
+from models.asset import Asset
 from models.memo import ActionType, THORMemo
 from models.pool_info import parse_thor_pools
 from models.price import LastPriceHolder
@@ -119,12 +117,9 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
 
     d.block_scanner.add_subscriber(native_action_extractor)
 
-    profit_calc = StreamingSwapVsCexProfitCalculator(d)
-    native_action_extractor.add_subscriber(profit_calc)
-
     # Enrich with aggregator data
     aggregator = AggregatorDataExtractor(d)
-    profit_calc.add_subscriber(aggregator)
+    native_action_extractor.add_subscriber(aggregator)
 
     # Volume filler (important)
     volume_filler = VolumeFillerUpdater(d)
@@ -201,50 +196,6 @@ async def debug_tx_records(app: LpAppFramework, tx_id):
     sep('tx')
     tx = props.build_action()
     print(tx)
-
-
-async def debug_cex_profit_calc(app: LpAppFramework, tx_id):
-    d = app.deps
-    native_action_extractor = SwapExtractorBlock(d)
-
-    tx = await native_action_extractor.build_tx_from_database(tx_id)
-    if not tx:
-        raise Exception(f'TX {tx_id} not found')
-
-    volume_filler = VolumeFillerUpdater(d)
-
-    profit_calc = StreamingSwapVsCexProfitCalculator(d)
-    volume_filler.add_subscriber(profit_calc)
-
-    swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=DepthCurve.DEFAULT_TX_VS_DEPTH_CURVE)
-    swap_notifier_tx.no_repeat_protection = False
-    swap_notifier_tx.curve_mult = 0.00001
-    volume_filler.add_subscriber(swap_notifier_tx)
-
-    swap_notifier_tx.add_subscriber(d.alert_presenter)
-
-    # push it through the pipeline
-    await volume_filler.on_data(None, [tx])
-
-    await asyncio.sleep(5.0)
-
-
-async def debug_cex_profit_calc_binance(app: LpAppFramework):
-    profit_calc = StreamingSwapVsCexProfitCalculator(app.deps)
-
-    btc = Asset.from_string('BTC.BTC')
-    bnb = Asset.from_string('BNB.BNB')
-
-    result = await profit_calc.binance_query(btc, bnb, 10)
-    print(f'10 BTC => {result} BNB')
-
-    result = await profit_calc.binance_query(bnb, btc, 10)
-    print(f'10 BNB => {result} BTC')
-
-    result = await profit_calc.binance_query(btc, AssetRUNE, 100)
-    print(f'100 BTC => {result} RUNE')
-
-    # print(await profit_calc.binance_get_order_book_cached('BTC', 'BNB'))
 
 
 async def debug_tx_status(app):
@@ -400,7 +351,7 @@ async def run():
 
         # await dbg_swap_quote(app)
 
-        await debug_full_pipeline(app, start=-1000)
+        await debug_full_pipeline(app, start=-5000)
 
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app, block=17361911)

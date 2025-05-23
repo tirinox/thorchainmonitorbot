@@ -3,7 +3,6 @@ import asyncio
 from api.aionode.connector import ThorConnector
 from api.midgard.connector import MidgardConnector
 from api.midgard.name_service import NameService
-from api.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from api.w3.aggregator import AggregatorDataExtractor
 from api.w3.dex_analytics import DexAnalyticsCollector
 from comm.dialog.main import init_dialogs
@@ -334,11 +333,8 @@ class App(WithLogger):
             volume_filler = VolumeFillerUpdater(d)
             aggregator.add_subscriber(volume_filler)
 
-            profit_calc = StreamingSwapVsCexProfitCalculator(d)
-            volume_filler.add_subscriber(profit_calc)
-
             d.dex_analytics = DexAnalyticsCollector(d)
-            profit_calc.add_subscriber(d.dex_analytics)
+            volume_filler.add_subscriber(d.dex_analytics)
 
             d.volume_recorder = VolumeRecorder(d)
             volume_filler.add_subscriber(d.volume_recorder)

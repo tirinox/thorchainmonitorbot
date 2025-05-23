@@ -8,7 +8,6 @@ from api.midgard.urlgen import free_url_gen
 from api.w3.aggregator import AggregatorDataExtractor
 from comm.localization.languages import Language
 from comm.localization.manager import BaseLocalization
-from api.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from jobs.fetch.tx import TxFetcher
 from jobs.volume_filler import VolumeFillerUpdater
 from lib.constants import Chains, thor_to_float, ZERO_HASH
@@ -147,9 +146,9 @@ async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
     pool_info: PoolInfo = app.deps.price_holder.pool_info_map.get(pool)
     full_rune = ex_tx.calc_full_rune_amount(app.deps.price_holder.pool_info_map)
 
-    profit_calc = StreamingSwapVsCexProfitCalculator(app.deps)
-    if ex_tx.is_of_type(ActionType.SWAP):
-        await profit_calc.get_cex_data_v2(ex_tx)
+    # profit_calc = StreamingSwapVsCexProfitCalculator(app.deps)
+    # if ex_tx.is_of_type(ActionType.SWAP):
+    #     await profit_calc.get_cex_data_v2(ex_tx)
 
     print(f'{ex_tx.affiliate_fee = }')
     rune_price = app.deps.price_holder.usd_per_rune
@@ -261,7 +260,7 @@ async def demo_verify_tx_scanner_in_the_past(app: LpAppFramework):
     n_zeros = 0
 
     while True:
-        batch_txs = await fetcher_tx.fetch_one_batch(page, tx_types=ActionType.GROUP_MAIN)
+        batch_txs = await fetcher_tx.fetch_one_batch(page, tx_types=ActionType.SWAP)
         batch_txs = batch_txs.txs
         for tx in batch_txs:
             if tx.tx_hash == ZERO_HASH:

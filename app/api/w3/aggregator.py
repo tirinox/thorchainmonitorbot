@@ -156,6 +156,7 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
                 if tx.is_of_type(ActionType.SWAP):
                     in_amount = await self._try_detect_aggregator(tx.first_input_tx, is_in=True)
 
+                    # fixme: here
                     # out_amount = await self._try_detect_aggregator(tx.first_output_tx, is_in=False)
                     out_amount = await self._try_detect_out_aggregator_from_memo(tx)
 
