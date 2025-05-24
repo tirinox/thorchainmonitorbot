@@ -86,7 +86,7 @@ class MimirNameRules:
         # remove duplicates
         words = list(set(words))
         # sort by length longest first
-        words = list(sorted(words, key=len, reverse=True))
+        words = sorted(words, key=lambda w: (-len(w), w))
         # save
         self.rules['words'] = words
 
