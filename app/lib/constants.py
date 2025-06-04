@@ -71,10 +71,11 @@ class Chains:
     ATOM = 'GAIA'
     BSC = 'BSC'
     BASE = 'BASE'
+    XRP = 'XRP'
 
     ALL_EVM = (ETH, BSC, BASE, AVAX)
 
-    META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM, BSC, BASE)
+    META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM, BSC, BASE, XRP)
 
     @staticmethod
     def detect_chain(orig_address: str) -> str:
@@ -113,6 +114,8 @@ class Chains:
             return 3.0
         elif chain == Chains.BASE:
             return 2.0
+        elif chain == Chains.XRP:
+            return 4.0  # typical
         return 0.01
 
     @staticmethod
