@@ -22,7 +22,7 @@ class RuneTransferDetectorNativeTX(WithLogger):
         self.address_prefix = address_prefix
 
     @staticmethod
-    def process_block(txs: List[NativeThorTx], block_no):
+    def process_block(txs: List[NativeThorTx], block_no) -> List[NativeTokenTransfer]:
         if not txs:
             return []
         transfers = []

@@ -2,6 +2,7 @@ from contextlib import suppress
 from typing import List
 
 from jobs.scanner.arb_detector import ArbBotDetector
+from lib.constants import SYNTH_MODULE
 from lib.cooldown import Cooldown
 from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.delegates import INotified, WithDelegates
@@ -45,11 +46,6 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
         return self.is_cex(transfer.from_addr) and self.is_cex(transfer.to_addr)
 
     async def handle_big_transfer(self, transfer: NativeTokenTransfer, usd_per_rune):
-        # ignore cex to cex transfers?
-        if self.ignore_cex2cex and self.is_cex2cex(transfer):
-            self.logger.info(f'Ignoring CEX2CEX transfer: {transfer}')
-            return
-
         # compare against min_usd_amount threshold
         min_usd_amount = self.min_usd_native
         if transfer.amount * usd_per_rune >= min_usd_amount:
@@ -68,7 +64,18 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
             for ignore_comment in self.IGNORE_COMMENTS:
                 # fixme issue: bond is deposit, it is ignored
                 if ignore_comment in comment:
+                    self.logger.debug(f'ignore comment: {comment} in {transfer}')
                     return True
+
+        # bug fix, ignore tcy stake and similar things
+        if transfer.to_addr == SYNTH_MODULE:
+            self.logger.debug(f"Ignore deposits to SYNTH_MODULE: {transfer}")
+            return True
+
+        # ignore cex to cex transfers?
+        if self.ignore_cex2cex and self.is_cex2cex(transfer):
+            self.logger.debug(f'Ignoring CEX2CEX transfer: {transfer}')
+            return True
 
         return False
 
