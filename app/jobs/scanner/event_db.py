@@ -74,3 +74,9 @@ class EventDatabase(WithLogger):
         with open(filename, 'w') as f:
             json.dump(local_db, f, indent=4)
             self.logger.info(f'Saved a backup containing {len(local_db)} records.')
+
+    async def erase_tx_id(self, tx_id):
+        r: Redis = await self.db.get_redis()
+        key = self.key_to_tx(tx_id)
+        await r.delete(key)
+        self.logger.warning(f'Erased tx_id {tx_id} from the database.')

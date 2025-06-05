@@ -49,7 +49,8 @@ async def debug_block_analyse(app: LpAppFramework, block):
     print(actions)
 
 
-async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
+async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False,
+                              swap_start_enabled=True):
     d = app.deps
 
     # Block scanner: the source of the river
@@ -107,18 +108,25 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     curve = DepthCurve(curve_pts)
 
     swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
-    # if tx_id:
-    #     await swap_notifier_tx.deduplicator.forget(tx_id)
+    if tx_id:
+        swap_notifier_tx.dbg_just_pass_only_tx_id = tx_id
+        swap_notifier_tx.no_repeat_protection = False
+
+        # delete
+        ev_db = EventDatabase(app.deps.db)
+        await ev_db.erase_tx_id(tx_id)
+        # await swap_notifier_tx.deduplicator.forget(tx_id)
 
     swap_notifier_tx.dbg_evaluate_curve_for_pools()
     volume_filler.add_subscriber(swap_notifier_tx)
     swap_notifier_tx.add_subscriber(d.alert_presenter)
 
     # When SS starts we do notify as well
-    stream_swap_notifier = StreamingSwapStartTxNotifier(d)
-    stream_swap_notifier.check_unique = False
-    d.block_scanner.add_subscriber(stream_swap_notifier)
-    stream_swap_notifier.add_subscriber(d.alert_presenter)
+    if swap_start_enabled:
+        stream_swap_notifier = StreamingSwapStartTxNotifier(d)
+        stream_swap_notifier.check_unique = False
+        d.block_scanner.add_subscriber(stream_swap_notifier)
+        stream_swap_notifier.add_subscriber(d.alert_presenter)
 
     # Run all together
     if single_block:
@@ -270,22 +278,25 @@ async def run():
         await app.deps.last_block_fetcher.run_once()
         await app.deps.pool_fetcher.run_once()
 
-        # await dbg_look_into_tx_props(app, "225E7E3FC81BA3EC096A9C37F3E1514753C91A3EC0F1CF1EEDC4D2125BB4EC61")
+        # await dbg_look_into_tx_props(app, "C35BBEEE5D3466B5C6227A41789041EC544C5DEDC4E10236A138220206406E16")
 
         #  Trade 2,179.26 DOGE -> Trade 421.050556 USDT
         # await debug_full_pipeline(app,
         #                           start=21388144 - 2,
-        #                           tx_id="225E7E3FC81BA3EC096A9C37F3E1514753C91A3EC0F1CF1EEDC4D2125BB4EC61")
+        #                           tx_id="225E7E3FC81BA3EC096A9C37F3E1514753C91A3EC0F1CF1EEDC4D2125BB4EC61",
+        #                           swap_start_enabled=False)
 
         # Native 0.0002 BTC -> 22.99379305 TWT
         # await debug_full_pipeline(app,
         #                           start=21388126 - 2,
-        #                           tx_id="D668B3B676DCA5D3CFD17AB6A99CC58783758E97EEEBEE23871912CB255A7DC4")
+        #                           tx_id="D668B3B676DCA5D3CFD17AB6A99CC58783758E97EEEBEE23871912CB255A7DC4",
+        #                           swap_start_enabled=False)
 
         # 0.011 ETH -> 17.51021135 RUNE
         await debug_full_pipeline(app,
                                   start=21402727,
-                                  tx_id="C35BBEEE5D3466B5C6227A41789041EC544C5DEDC4E10236A138220206406E16")
+                                  tx_id="C35BBEEE5D3466B5C6227A41789041EC544C5DEDC4E10236A138220206406E16",
+                                  swap_start_enabled=False)
 
         # await debug_full_pipeline(app, start=-200)
 

@@ -36,6 +36,8 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
 
         self.deduplicator = TxDeduplicator(deps.db, DB_KEY_TX_ANNOUNCED_HASHES)
 
+        self.dbg_just_pass_only_tx_id = ''
+
     async def on_data(self, senders, txs: List[ThorAction]):
         try:
             await self.handle_txs_unsafe(senders, txs)
@@ -77,11 +79,11 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         has_liquidity = any(tx.is_liquidity_type for tx in large_txs)
 
         for tx in large_txs:
-            is_last = tx == large_txs[-1]
             pool_info = self.deps.price_holder.pool_info_map.get(tx.first_pool_l1)
 
             clout = await self._get_clout(tx.sender_address)
 
+            is_last = tx == large_txs[-1]
             event = EventLargeTransaction(
                 tx, usd_per_rune,
                 pool_info,
@@ -138,6 +140,10 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         return min_pool_depth
 
     def is_tx_suitable(self, tx: ThorAction, min_rune_volume, usd_per_rune, curve_mult=None):
+        if self.dbg_just_pass_only_tx_id:
+            # Debug mode, just pass the Tx with this ID
+            return tx.tx_hash == self.dbg_just_pass_only_tx_id
+
         pool_usd_depth = self._get_min_usd_depth(tx, usd_per_rune)
         if pool_usd_depth == 0.0:
             if not tx.is_of_type(ActionType.REFUND):
