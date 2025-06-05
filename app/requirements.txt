@@ -38,3 +38,4 @@ python-json-logger>=3.0.0
 
 aioredis  # outdated? fixme see DB class
 distutils
+jsonformatter
