@@ -31,11 +31,11 @@ class ThorEvent(NamedTuple):
 
     @property
     def amount(self):
-        return self.attrs.get('_amount', 0) or self.attrs.get('amount', 0)
+        return self.attrs.get('_amount', 0)
 
     @property
     def asset(self):
-        return self.attrs.get('_asset', '') or self.attrs.get('asset', '')
+        return self.attrs.get('_asset', '')
 
     @property
     def type(self):

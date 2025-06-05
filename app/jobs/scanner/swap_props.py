@@ -33,9 +33,9 @@ class SwapProps(NamedTuple):
 
         results = []
         key: str
-        for key, value in attrs.items():
+        for key, str_cont in attrs.items():
             if key.startswith("ev_"):
-                raw_dict = json.loads(value)
+                raw_dict = json.loads(str_cont)
                 event = ThorEvent.from_dict(raw_dict)
                 swap_ev = parse_swap_and_out_event(event)
                 results.append(swap_ev)
@@ -72,7 +72,8 @@ class SwapProps(NamedTuple):
 
         if self.is_output_l1_asset:
             # if output is L1 asset, we wait to outbound
-            if any(isinstance(ev, EventOutbound) and ev.asset == self.attrs.get('out_asset') for ev in self.events):
+            out_asset = self.attrs.get('out_asset').upper()
+            if any(isinstance(ev, EventOutbound) and ev.asset.upper() == out_asset for ev in self.events):
                 return True
         else:
             # if any(isinstance(ev, EventScheduledOutbound) for ev in self.events):

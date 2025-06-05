@@ -46,6 +46,8 @@ class EventDatabase(WithLogger):
             await r.hset(key, mapping=kwargs)
             await r.expire(key, int(self._expiration_sec))
 
+            # print(f"{tx_id}: {mapping}")
+
     async def write_tx_status_kw(self, tx_id, **kwargs):
         await self.write_tx_status(tx_id, kwargs)
 

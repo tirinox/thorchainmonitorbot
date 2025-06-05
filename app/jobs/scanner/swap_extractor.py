@@ -17,6 +17,10 @@ from models.events import EventOutbound, EventScheduledOutbound, \
 from models.tx import ThorAction
 
 
+def _consists_only_zeros(s):
+    return len(s) > 0 and all(char == '0' for char in s)
+
+
 class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
@@ -33,13 +37,21 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         new_swaps = await self.register_new_swaps(block)
 
         # Swaps and Outbounds
-        interesting_events = list(self.get_events_of_interest(block))
+        interesting_end_block_events = list(self.get_end_block_events_of_interest(block))
+
+        # Collect a list of original in_tx_id for end block outbounds
+        end_block_outbounds_tx_ids = [ev.tx_id for ev in interesting_end_block_events if isinstance(ev, EventOutbound)]
+
+        # Also get quorum observed outbounds
+        outbound_tx_ids, outbound_events = self.detect_observed_quorum_outbounds(block)
 
         # Write them into the DB
-        await self.register_swap_events(block, interesting_events)
+        await self.register_swap_events(block, interesting_end_block_events)
+        await self.register_swap_events(block, outbound_events)
 
-        # Extract finished TX
-        txs = await self.handle_finished_swaps(block)
+        # Extract finished TX from these two sources
+        all_outbounds_tx_ids = end_block_outbounds_tx_ids + outbound_tx_ids
+        txs = await self.handle_finished_swaps(all_outbounds_tx_ids)
 
         self.dbg_track_swap_id(txs)
 
@@ -77,25 +89,36 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
         return swaps
 
+    @staticmethod
+    def _event_ident(event, block_no):
+        if hasattr(event, "out_id") and not _consists_only_zeros(event.out_id):
+            # use existing tx_id to make our idents
+            hash_key = event.out_id
+        else:
+            # just hash of object
+            hash_key = hash_of_string_repr(event, block_no)
+
+        short_hash_key = hash_key[:7]
+        return f"ev_{event.original.type}_{short_hash_key}"
+
     async def register_swap_events(self, block: BlockResult, interesting_events: List[TypeEventSwapAndOut]):
-        for swap_ev in interesting_events:
-            if not swap_ev.tx_id:
+        for event in interesting_events:
+            if not event.tx_id:
                 continue
 
-            hash_key = hash_of_string_repr(swap_ev, block.block_no)[:6]
-
-            if not swap_ev.original:
-                self.logger.error(f'Original event is missing for {swap_ev} at block #{block.block_no}')
+            if not event.original:
+                self.logger.error(f'Original event is missing for {event} at block #{block.block_no}')
                 continue
 
-            await self._db.write_tx_status(swap_ev.tx_id, {
-                f"ev_{swap_ev.original.type}_{hash_key}": swap_ev.original.attrs
+            event_ident = self._event_ident(event, block.block_no)
+            await self._db.write_tx_status(event.tx_id, {
+                event_ident: event.original.attrs
             })
 
             # boom = await self.dbg_on_swap_events(swap_ev, boom)
 
     @staticmethod
-    def get_events_of_interest(block: BlockResult):
+    def get_end_block_events_of_interest(block: BlockResult):
         for ev in block.end_block_events:
             swap_ev = parse_swap_and_out_event(ev)
             if swap_ev:
@@ -106,8 +129,12 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             self.logger.error("Cannot create EventOutbound from inbound transaction")
             return
 
+        if tx.memo.startswith('MIGRATE'):
+            self.logger.debug(f"Migrate tx {tx.memo} ignored.")
+            return
+
         if not tx.memo.startswith('OUT:') or tx.memo.startswith('REFUND:'):
-            self.logger.error(f"Cannot create EventOutbound from tx with memo: {tx.memo!r}")
+            self.logger.warning(f"Cannot create EventOutbound from tx with memo: {tx.memo!r}")
             return
 
         for coin in tx.coins:
@@ -125,7 +152,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 '_asset': coin.asset,
             }))
 
-    def detect_outbounds(self, block: BlockResult):
+    def detect_observed_quorum_outbounds(self, block: BlockResult):
         completed_txs_ids = []
         events = []
         for tx in block.all_observed_txs:
@@ -134,20 +161,12 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 completed_txs_ids.append(tx.tx_id)
         return completed_txs_ids, events
 
-    async def handle_finished_swaps(self, block: BlockResult) -> List[ThorAction]:
+    async def handle_finished_swaps(self, outbound_tx_id) -> List[ThorAction]:
         """
-            FixMe: old information is below
-            We do not wait until scheduled outbound will be sent out.
-            Swap end is detected by
-                a) EventScheduledOutbound
-                b) EventOutbound for Rune/synths
+        Outbound can come from end_block_events or from observed quorum txs.
         """
-
-        completed_txs_ids, events = self.detect_outbounds(block)
-        await self.register_swap_events(block, events)
-
         results = []
-        for tx_id in completed_txs_ids:
+        for tx_id in outbound_tx_id:
             swap_props = await self._db.read_tx_status(tx_id)
             if not swap_props:
                 self.logger.warning(f'There are outbounds for tx {tx_id}, but there is no info about its initiation.')

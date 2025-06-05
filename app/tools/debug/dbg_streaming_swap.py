@@ -1,12 +1,12 @@
 import asyncio
 import random
+from pprint import pprint
 
 from api.aionode.connector import ThorConnector
-from api.aionode.types import float_to_thor, thor_to_float
+from api.aionode.types import thor_to_float
 from api.w3.aggregator import AggregatorDataExtractor
 from api.w3.dex_analytics import DexAnalyticsCollector
 from jobs.fetch.streaming_swaps import StreamingSwapFechter
-from jobs.fetch.tx import TxFetcher
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.scan_cache import BlockScannerCached
 from jobs.scanner.swap_extractor import SwapExtractorBlock
@@ -15,12 +15,10 @@ from jobs.volume_filler import VolumeFillerUpdater
 from lib.money import DepthCurve
 from lib.texts import sep
 from lib.utils import save_pickle, load_pickle
-from models.asset import Asset
-from models.memo import ActionType, THORMemo
+from models.memo import THORMemo
 from models.pool_info import parse_thor_pools
 from models.price import LastPriceHolder
 from models.s_swap import AlertSwapStart, StreamingSwap
-from models.tx import ThorAction
 from notify.alert_presenter import AlertPresenter
 from notify.public.dex_report_notify import DexReportNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
@@ -29,44 +27,10 @@ from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 BlockScannerClass = BlockScannerCached
 print(BlockScannerClass, ' <= look!')
+
+
 # BlockScannerClass = BlockScanner
 
-
-# 1)
-# Memo:  =:ETH.THOR:0x8d2e7cab1747f98a7e1fa767c9ef62132e4c31db:139524325459200/9/99:t:30
-# Mdg: https://midgard.ninerealms.com/v2/actions?txid=75327336C1EC3FE39D1DECB06C5F05756FAA5C28E0ACC777239F98D7F2903589
-# VB: https://viewblock.io/thorchain/tx/75327336C1EC3FE39D1DECB06C5F05756FAA5C28E0ACC777239F98D7F2903589
-# Inb: https://thornode.ninerealms.com/thorchain/tx/75327336C1EC3FE39D1DECB06C5F05756FAA5C28E0ACC777239F98D7F2903589
-# Block: min = 12079656
-# Block outbound : 17879640, finalized 12081263
-# Block failed sub swap? 12080322
-
-# 2)
-#  030E71AD7F00A9273ADFFF6327069264FBE6296119CFFC9E6A1C174E35F87315
-#  ETH => [ss, aff] => ETH.XDEFI
-#   "memo": "=:ETH.XDEFI:0xc8Ba8c8E2D86d1Cf614325ceC04151D24Ed72DDa:4261584533288/9/65:t:15"
-# Inb: https://thornode.ninerealms.com/thorchain/tx/030E71AD7F00A9273ADFFF6327069264FBE6296119CFFC9E6A1C174E35F87315
-
-
-# 3)
-#  026170F3A6E8EA8A9BA1DDBB106536390C086B64D8E157F31E65789A31841284
-# BTC.BTC => BNB (12132219, obs 1)
-
-# 4) rare!!
-# https://viewblock.io/thorchain/tx/1E67334A573AC5AA87084836E7CAEC77CC9716A6A39C03A462DC623322E0E3E5
-# This is streaming swap of synth!
-
-
-# 5) Simple ARB: Rune -> synth, no aff, no stream
-# 1516681B16786D7F0721942685162510C77A0022F74FF88D9A73C5EC6E5AB46C
-# https://midgard.ninerealms.com/v2/actions?txid=1516681B16786D7F0721942685162510C77A0022F74FF88D9A73C5EC6E5AB46C
-# https://viewblock.io/thorchain/tx/1516681B16786D7F0721942685162510C77A0022F74FF88D9A73C5EC6E5AB46C
-# 12176322
-
-# 6) RUNE => synthAVAX (549AE165C4156F08DEFDC8BC87890A5F630C759308AFC39834AC629518422495)
-# With Aff, Streaming
-# No Aff swap, because input is Rune!
-#
 
 async def debug_fetch_ss(app: LpAppFramework):
     ssf = StreamingSwapFechter(app.deps)
@@ -166,24 +130,13 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
             await asyncio.sleep(5.9)
 
 
-async def demo_search_for_deposit_streaming_synth(app):
-    tx_fetcher = TxFetcher(app.deps, tx_types=(ActionType.SWAP,))
-    txs = await tx_fetcher.fetch_one_batch(tx_types=tx_fetcher.tx_types)
-    next_token = txs.next_page_token
-
-    for page in range(1000):
-        txs = await tx_fetcher.fetch_one_batch(next_page_token=next_token)
-        next_token = txs.next_page_token
-
-        for tx in txs.txs:
-            if not tx.meta_swap:
-                continue
-            tx: ThorAction
-            if Asset(tx.first_input_tx.first_asset).is_synth:
-                if tx.memo.is_streaming:
-                    sep('BINGO')
-                    print(tx)
-
+async def debug_full_pipeline_search_start(app, tx_id):
+    status = await app.deps.thor_connector.query_tx_details(tx_id)
+    height = status['consensus_height']
+    print(f"Tx link: https://runescan.io/tx/{tx_id}")
+    print(f"Height = {height}")
+    print(f"https://thornode.ninerealms.com/thorchain/block?height={height}")
+    await debug_full_pipeline(app, tx_id=tx_id, single_block=False, start=height)
 
 
 async def debug_tx_records(app: LpAppFramework, tx_id):
@@ -196,34 +149,6 @@ async def debug_tx_records(app: LpAppFramework, tx_id):
     sep('tx')
     tx = props.build_action()
     print(tx)
-
-
-async def debug_tx_status(app):
-    tx_st = await app.deps.thor_connector.query_tx_status(
-        'EDF8885C62DA1814E1C0AB2FBA2F9E2BDA857FBCFEDA8CE27CD95C5A52C7597F')
-    print(tx_st)
-
-
-async def dbg_swap_start_extra_info(app):
-    notifier = StreamingSwapStartTxNotifier(app.deps)
-    # todo
-
-
-async def dbg_swap_quote(app):
-    thor = app.deps.thor_connector
-
-    quote = await thor.query_swap_quote(
-        from_asset='THOR.RUNE',
-        amount=float_to_thor(100_000),
-        to_asset='BSC.BNB',
-        destination='0x1c7b17362c84287bd1184447e6dfeaf920c31bbe',
-        streaming_interval=1,
-        streaming_quantity=0,
-        tolerance_bps=5000,
-        affiliate='t/t',
-        affiliate_bps='5/10'
-    )
-    print(quote)
 
 
 FILE_SWAP_START_PICKLE = '../temp/swap_start_event_4.pickle'
@@ -329,68 +254,80 @@ async def dbg_collect_some_streaming_swaps(app):
         await asyncio.sleep(1)
 
 
+async def dbg_look_into_tx_props(app, tx_id):
+    # native_action_extractor = SwapExtractorBlock(app.deps)
+    # native_action_extractor.get_events_of_interest()
+    ev_db = EventDatabase(app.deps.db)
+    props = await ev_db.read_tx_status(tx_id)
+    pprint(props)
+    sep()
+    print(f"{props.is_finished = }")
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        print('start!')
-
+        await app.deps.last_block_fetcher.run_once()
         await app.deps.pool_fetcher.run_once()
 
-        # await dbg_spam_any_active_swap_start(app, post=True, refresh=True)
+        # await dbg_look_into_tx_props(app, "225E7E3FC81BA3EC096A9C37F3E1514753C91A3EC0F1CF1EEDC4D2125BB4EC61")
 
-        # await debug_full_pipeline(
-        #     app,
-        #     start=19667693,
-        #     # tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
-        #     single_block=True
-        # )
-        #
-        # ----
+        #  Trade 2,179.26 DOGE -> Trade 421.050556 USDT
+        # await debug_full_pipeline(app,
+        #                           start=21388144 - 2,
+        #                           tx_id="225E7E3FC81BA3EC096A9C37F3E1514753C91A3EC0F1CF1EEDC4D2125BB4EC61")
 
-        # await dbg_collect_some_streaming_swaps(app)
+        # Native 0.0002 BTC -> 22.99379305 TWT
+        # await debug_full_pipeline(app,
+        #                           start=21388126 - 2,
+        #                           tx_id="D668B3B676DCA5D3CFD17AB6A99CC58783758E97EEEBEE23871912CB255A7DC4")
 
-        # await dbg_swap_quote(app)
+        # 0.011 ETH -> 17.51021135 RUNE
+        await debug_full_pipeline(app,
+                                  start=21402727,
+                                  tx_id="C35BBEEE5D3466B5C6227A41789041EC544C5DEDC4E10236A138220206406E16")
 
-        await debug_full_pipeline(app, start=-5000)
-
-        # await debug_fetch_ss(app)
-        # await debug_block_analyse(app, block=17361911)
-        # await debug_full_pipeline(app, start=16387377, single_block=True,
-        #                           tx_id='BE7B085E50DE86CD9BD8959ABF3EA924AC60302330888D484219B8B7385F7B1D')
-        # await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
-
-        # await debug_tx_records(app, '62065183022E32395A1538DE9AE28CCCD81247327971990D8A57FD88BE2594EC')
-
-        # ------------------- trade to trade no stream -------------------
-        # await debug_full_pipeline(
-        #     app,
-        #     start=16908330,
-        #     tx_id='BAB65D6A6A2D7AC127FDF36DF2B1219AC5F44732804848DB4FCEFC72AD5BCE77',
-        #     single_block=True
-        # )
-
-        # ------------------- trade to trade with stream -------------------
-        # await debug_full_pipeline(
-        #     app,
-        #     start=16908744 - 1,
-        #     tx_id='4824290D3C7AE55F9915D4F0FEC46C93BB87604BD403649AD5BA208940218522',
-        #     single_block=False
-        # )
-
-        # await debug_full_pipeline(
-        #     app, start=12802333,
-        #     tx_id='2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
-
-        # await debug_full_pipeline(
-        #     app, start=12802040,
-        #     tx_id='63218D1F853AEB534B3469C4E0236F43E04BFEE99832DF124425454B8DB1528E')
-
-        # await debug_detect_start_on_deposit_rune(app)
-        # await debug_detect_start_on_external_tx(app)
-
-        # await debug_cex_profit_calc(app, '2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
-        # await debug_cex_profit_calc_binance(app)
+        # await debug_full_pipeline(app, start=-200)
 
 
 if __name__ == '__main__':
     asyncio.run(run())
+
+# ------- old stuff to remember ----
+
+# await debug_full_pipeline_search_start(app, "DC5E005D6AB304532038EA6946A4CBB3ECFB2C77A695F219ABFABC905E860840")
+
+
+# await debug_full_pipeline(app, start=-5000)
+
+# await debug_fetch_ss(app)
+# await debug_block_analyse(app, block=17361911)
+# await debug_full_pipeline(app, start=16387377, single_block=True,
+#                           tx_id='BE7B085E50DE86CD9BD8959ABF3EA924AC60302330888D484219B8B7385F7B1D')
+# await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
+
+# await debug_tx_records(app, '62065183022E32395A1538DE9AE28CCCD81247327971990D8A57FD88BE2594EC')
+
+# ------------------- trade to trade no stream -------------------
+# await debug_full_pipeline(
+#     app,
+#     start=16908330,
+#     tx_id='BAB65D6A6A2D7AC127FDF36DF2B1219AC5F44732804848DB4FCEFC72AD5BCE77',
+#     single_block=True
+# )
+
+# ------------------- trade to trade with stream -------------------
+# await debug_full_pipeline(
+#     app,
+#     start=16908744 - 1,
+#     tx_id='4824290D3C7AE55F9915D4F0FEC46C93BB87604BD403649AD5BA208940218522',
+#     single_block=False
+# )
+
+# await debug_full_pipeline(
+#     app, start=12802333,
+#     tx_id='2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
+
+# await debug_full_pipeline(
+#     app, start=12802040,
+#     tx_id='63218D1F853AEB534B3469C4E0236F43E04BFEE99832DF124425454B8DB1528E')
