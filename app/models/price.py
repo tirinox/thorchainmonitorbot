@@ -9,8 +9,7 @@ from lib.date_utils import now_ts, DAY, HOUR, YEAR
 from lib.delegates import INotified
 from lib.money import weighted_mean
 from lib.texts import fuzzy_search
-from models.asset import Asset, is_rune, ASSET_TRADE_SEPARATOR, ASSET_SYNTH_SEPARATOR, ASSET_NORMAL_SEPARATOR, \
-    normalize_asset
+from models.asset import Asset, is_rune, normalize_asset, AssetKind
 from .base import BaseModelMixin
 from .circ_supply import RuneCirculatingSupply
 from .pool_info import PoolInfo, PoolInfoMap
@@ -250,25 +249,13 @@ class LastPriceHolder(INotified):
             tlv += thor_to_float(pool.balance_rune)
         return tlv * 2.0
 
-    @staticmethod
-    def restore_asset_type(original: str, name: str):
-        if not name or not original:
-            return name
-
-        if ASSET_TRADE_SEPARATOR in original:
-            return name.replace(ASSET_NORMAL_SEPARATOR, ASSET_TRADE_SEPARATOR, 1)
-        elif ASSET_SYNTH_SEPARATOR in original:
-            return name.replace(ASSET_NORMAL_SEPARATOR, ASSET_SYNTH_SEPARATOR, 1)
-        else:
-            return name
-
     def pool_fuzzy_search(self, query: str, restore_type=False) -> List[str]:
         if (q := query.lower()) in Asset.SHORT_NAMES:
             # See: https://dev.thorchain.org/thorchain-dev/concepts/memos#shortened-asset-names
             return [Asset.SHORT_NAMES[q]]
         results = fuzzy_search(query, self.pool_names)
         if restore_type:
-            results = [self.restore_asset_type(query, r) for r in results]
+            results = [AssetKind.restore_asset_type(query, r) for r in results]
         return results
 
     def pool_fuzzy_first(self, query: str, restore_type=False) -> str:
@@ -293,7 +280,7 @@ class LastPriceHolder(INotified):
 
             result = deepest_pool
 
-        return self.restore_asset_type(original, result) if restore_type else result
+        return AssetKind.restore_asset_type(original, result) if restore_type else result
 
     def get_asset_price_in_rune(self, query: str):
         if is_rune(query):

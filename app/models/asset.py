@@ -2,26 +2,136 @@ import dataclasses
 from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass
-from typing import Iterable, Union
+from enum import Enum
+from typing import Iterable, Union, Optional
 
 from lib.constants import RUNE_DENOM, Chains, NATIVE_RUNE_SYMBOL
 
-ASSET_NORMAL_SEPARATOR = '.'
-ASSET_SYNTH_SEPARATOR = '/'
-ASSET_TRADE_SEPARATOR = '~'
+
+# ASSET_NORMAL_SEPARATOR = '.'
+# ASSET_SYNTH_SEPARATOR = '/'
+# ASSET_TRADE_SEPARATOR = '~'
+# ASSET_SECURED_SEPARATOR = '-'
 
 
-def is_synthetic(asset: str):
-    return ASSET_SYNTH_SEPARATOR in asset
+class Delimiter:
+    SYNTH = '/'
+    """Synth assets use '/' as delimiter (BTC/BTC)"""
+
+    TRADE = '~'
+    """Trade assets use '~' as delimiter (BTC~BTC)"""
+
+    NATIVE = '.'
+    """Native assets use '.' as delimiter (THOR.RUNE, BTC.BTC)"""
+
+    SECURED = '-'
+    """
+        Secured assets use '-' as delimiter (ETH-ETH).
+        See: https://docs.thorchain.org/thorchain-finance/secured-assets
+    """
+
+    ALL_DELIMITERS = {NATIVE, TRADE, SYNTH, SECURED}
+
+
+class AssetKind(Enum):
+    NATIVE = 'native'
+    """Native Assets are L1 assets (eg BTC) available on its native L1 (eg Bitcoin Network)."""
+
+    SYNTH = 'synth'
+    """
+    THORChain synthetics are fully collateralized while they exist and switch to a 1:1 peg upon redemption.
+    See: https://docs.thorchain.org/frequently-asked-questions/asset-types#synthetic-assets
+    Attention! Synthetic assets are now suspended on the network due to THORFi being on pause.
+    Please use trade and secured assets instead.
+    """
+    # todo: fill in the details for derived assets
+
+    TRADE = 'trade'
+    """
+    Trade Assets, a new class of primitives on THORChain, offer double the capital efficiency of synthetic assets, 
+    enhancing arbitrage and high-frequency trading. They settle with THORChain’s block speed and cost, enabling 
+    6-second finality swaps without high fees. Redeemable anytime with no slippage, Trade Assets emulate centralized 
+    exchange trading but maintain on-chain transparency and security. Custodied by THORChain outside of liquidity pools, 
+    they provide user credits while holding funds 1:1 as L1 assets until withdrawal, making THORChain more user-friendly 
+    for active traders.
+    See: https://docs.thorchain.org/frequently-asked-questions/asset-types#trade-assets
+    """
+
+    DERIVED = 'derived'
+    """
+    THORChain derived assets.
+    See: https://docs.thorchain.org/frequently-asked-questions/asset-types#derived-assets
+    """
+
+    SECURED = 'secured'
+    """
+    Secure Assets allow L1 tokens to be deposited to THORChain, creating a new native asset, which can be transferred 
+    between accounts, over IBC and integrated with CosmWasm smart contracts using standard Cosmos SDK messages. 
+    They also replace Trade Assets. 
+    See: https://docs.thorchain.org/thorchain-finance/secured-assets
+    """
+
+    UNKNOWN = 'unknown'
+    """Unknown asset type."""
+
+    @property
+    def delimiter(self):
+        """
+        Return the delimiter based on the asset kind.
+        """
+        if self == AssetKind.SYNTH:
+            return Delimiter.SYNTH
+        elif self == AssetKind.TRADE:
+            return Delimiter.TRADE
+        elif self == AssetKind.SECURED:
+            return Delimiter.SECURED
+        else:
+            return Delimiter.NATIVE
+
+    @classmethod
+    def recognize(cls, asset_str: str) -> 'AssetKind':
+        """
+            Detects the asset type based on the first delimiter in the asset string.
+
+            :param asset_str: The asset string (e.g., "ETH.ETH", "BTC-BTC", "XRP~XRP").
+            :return: The asset type: "trade" for "~", "secured" for "-", "native" for ".", or "unknown" if no valid delimiter is found.
+            :rtype AssetKind
+        """
+        for char in asset_str:
+            if char in Delimiter.ALL_DELIMITERS:
+                return _DELIMITER_TABLE[char]
+        return cls.UNKNOWN
+
+    @staticmethod
+    def restore_asset_type(original: str, name: str):
+        if not name or not original:
+            return name
+
+        if Delimiter.TRADE in original:
+            return name.replace(Delimiter.NATIVE, Delimiter.TRADE, 1)
+        elif Delimiter.SYNTH in original:
+            return name.replace(Delimiter.NATIVE, Delimiter.SYNTH, 1)
+        elif Delimiter.SECURED in original:
+            return name.replace(Delimiter.NATIVE, Delimiter.SECURED, 1)
+        else:
+            return name
+
+
+_DELIMITER_TABLE = {
+    Delimiter.TRADE: AssetKind.TRADE,
+    Delimiter.SECURED: AssetKind.SECURED,
+    Delimiter.NATIVE: AssetKind.NATIVE,
+    Delimiter.SYNTH: AssetKind.SYNTH,
+}
 
 
 def is_trade_asset(asset: str):
-    return ASSET_TRADE_SEPARATOR in asset
+    return AssetKind.recognize(asset) == AssetKind.TRADE
 
 
 def normalize_asset(asset: str):
-    asset = asset.replace(ASSET_SYNTH_SEPARATOR, ASSET_NORMAL_SEPARATOR, 1).strip()
-    asset = asset.replace(ASSET_TRADE_SEPARATOR, ASSET_NORMAL_SEPARATOR, 1)
+    kind = AssetKind.recognize(asset)
+    asset = asset.replace(kind.delimiter, Delimiter.NATIVE, 1).strip()
     return asset
 
 
@@ -33,7 +143,7 @@ class Asset:
     is_synth: bool = False
     is_virtual: bool = False
     is_trade: bool = False
-    is_secured: bool = False  # todo
+    is_secured: bool = False
 
     @property
     def valid(self):
@@ -78,24 +188,24 @@ class Asset:
         if asset == RUNE_DENOM:
             return copy(AssetRUNE)
 
-        is_synth, is_trade = False, False
-        if is_synthetic(asset):
-            is_synth = True
-            separator = ASSET_SYNTH_SEPARATOR
-        elif is_trade_asset(asset):
-            is_trade = True
-            separator = ASSET_TRADE_SEPARATOR
-        else:
-            separator = ASSET_NORMAL_SEPARATOR
+        is_synth, is_trade, is_secured = False, False, False
+        kind = AssetKind.recognize(asset)
+        match kind:
+            case AssetKind.SYNTH:
+                is_synth = True
+            case AssetKind.TRADE:
+                is_trade = True
+            case AssetKind.SECURED:
+                is_secured = True
 
         try:
-            chain, name_and_tag = asset.split(separator, maxsplit=2)
+            separator = kind.delimiter
+            chain, name_and_tag = asset.split(separator, maxsplit=1)
             name, tag = cls.get_name_tag(name_and_tag)
             chain = str(chain).upper()
             name = str(name).upper()
             tag = str(tag).upper()
             is_virtual = chain == 'THOR' and name != 'RUNE'
-            is_secured = False  # todo: support secured assets
             return cls(chain, name, tag, is_synth, is_virtual, is_trade, is_secured=is_secured)
         except ValueError:
             # not enough values to unpack. It's a string like "ETH" or "BTC"
@@ -111,6 +221,8 @@ class Asset:
             return f'synth {pn}'
         elif self.is_trade:
             return f'trade {pn}'
+        elif self.is_secured:
+            return f'secured {pn}'
         else:
             return pn
 
@@ -143,11 +255,13 @@ class Asset:
     @property
     def separator_symbol(self):
         if self.is_trade:
-            return ASSET_TRADE_SEPARATOR
+            return Delimiter.TRADE
         elif self.is_synth:
-            return ASSET_SYNTH_SEPARATOR
+            return Delimiter.SYNTH
+        elif self.is_secured:
+            return Delimiter.SECURED
         else:
-            return ASSET_NORMAL_SEPARATOR
+            return Delimiter.NATIVE
 
     @property
     def to_canonical(self):
@@ -163,7 +277,7 @@ class Asset:
 
     @property
     def l1_asset(self):
-        return dataclasses.replace(self, is_synth=False, is_trade=False, is_virtual=False)
+        return dataclasses.replace(self, is_synth=False, is_trade=False, is_virtual=False, is_secured=False)
 
     def __str__(self):
         return self.to_canonical
@@ -186,11 +300,12 @@ class Asset:
         'e': 'ETH.ETH',
         'l': 'LTC.LTC',
         'r': 'THOR.RUNE',
-        'f': 'BASE.ETH'
+        'f': 'BASE.ETH',
+        'x': 'XRP.XRP',
     }
 
     ABBREVIATE_GAS_ASSETS = {
-        'ETH.ETH', 'BTC.BTC', 'LTC.LTC', 'AVAX.AVAX', 'DOGE.DOGE', 'GAIA.ATOM', 'BSC.BNB', 'BCH.BCH',
+        'ETH.ETH', 'BTC.BTC', 'LTC.LTC', 'AVAX.AVAX', 'DOGE.DOGE', 'GAIA.ATOM', 'BSC.BNB', 'BCH.BCH', 'XRP.XRP',
     }
 
     GAS_ASSETS = {
