@@ -31,16 +31,32 @@ def pubkey_to_thor_address(pubkey: str, prefix='thor') -> str:
 
 
 def thor_decode_amount_field(string: str):
-    """ e.g. 114731984rune """
-    amt, asset = '', ''
-    still_numbers = True
+    if ' ' in string:
+        # Handle cases with space, e.g. "114731984 rune" or "BSC.BNB-0x33434 900514"
+        amt, asset = string.split(' ', maxsplit=1)
+        if not amt.isdigit() and asset.isdigit():
+            # swap
+            amt, asset = asset, amt
+    else:
+        """ e.g. 114731984rune """
+        amt, asset = '', ''
+        still_numbers = True
+        for symbol in string:
+            if not str.isdigit(symbol):
+                still_numbers = False
+            if still_numbers:
+                amt += symbol
+            else:
+                asset += symbol
 
-    for symbol in string:
-        if not str.isdigit(symbol):
-            still_numbers = False
-        if still_numbers:
-            amt += symbol
-        else:
-            asset += symbol
+    asset = asset.strip().upper()
+    if not asset:
+        raise ValueError(f"Asset part is empty in string: {string!r}")
+    elif ' ' in asset:
+        raise ValueError(f"Asset part contains space in string: {string!r}")
 
-    return (int(amt) if amt else 0), asset.strip().upper()
+    try:
+        amt = int(amt)
+        return amt, asset.strip().upper()
+    except ValueError:
+        raise ValueError(f"Unable to parse amount and asset from string: {string!r}")
