@@ -3,15 +3,9 @@ from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass
 from enum import Enum
-from typing import Iterable, Union, Optional
+from typing import Iterable, Union
 
 from lib.constants import RUNE_DENOM, Chains, NATIVE_RUNE_SYMBOL
-
-
-# ASSET_NORMAL_SEPARATOR = '.'
-# ASSET_SYNTH_SEPARATOR = '/'
-# ASSET_TRADE_SEPARATOR = '~'
-# ASSET_SECURED_SEPARATOR = '-'
 
 
 class Delimiter:

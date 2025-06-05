@@ -1,11 +1,9 @@
 import pytest
 
 from lib.money import short_address
-from models.asset import Asset, is_ambiguous_asset, AssetKind
-
-
-import pytest
 from models.asset import Asset
+from models.asset import is_ambiguous_asset, AssetKind
+
 
 @pytest.mark.parametrize("asset_string, expected_chain, expected_name, expected_tag, expected_str", [
     ('ETH.XRUNE-0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C', 'ETH', 'XRUNE', '0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C', 'ETH.XRUNE-0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C'),

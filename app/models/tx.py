@@ -8,7 +8,7 @@ from api.w3.token_record import SwapInOut
 from lib.constants import Chains, thor_to_float, bp_to_float, THOR_BLOCK_TIME
 from lib.date_utils import now_ts
 from lib.texts import safe_sum
-from .asset import Asset, is_rune, ASSET_TRADE_SEPARATOR, ASSET_SYNTH_SEPARATOR
+from .asset import Asset, is_rune, Delimiter, AssetKind
 from .cap_info import ThorCapInfo
 from .lp_info import LPAddress
 from .memo import ActionType, is_action
@@ -428,11 +428,15 @@ class ThorAction:
 
     @property
     def is_synth_involved(self):
-        return any(True for a in self.all_assets if ASSET_SYNTH_SEPARATOR in a)
+        return any(True for a in self.all_assets if Delimiter.SYNTH in a)
 
     @property
     def is_trade_asset_involved(self):
-        return any(True for a in self.all_assets if ASSET_TRADE_SEPARATOR in a)
+        return any(True for a in self.all_assets if Delimiter.TRADE in a)
+
+    @property
+    def is_secured_asset_involved(self):
+        return any(True for a in self.all_assets if AssetKind.recognize(a) == AssetKind.SECURED)
 
     @property
     def is_liquidity_type(self):
