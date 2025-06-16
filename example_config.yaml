@@ -228,15 +228,19 @@ names:
     dcf: Decentralfi
     dcg: Dash Core
     decentralfi: Decentralfi
+    dp: Astrolescent
     dph: Delphibets
     ds: Defispot
     dx: Asgardex
+    ecx: EasyCross
     edge: edge
     ej: edge
     eld: El Dorito
     g1: "Gem Wallet"
+    hw: Hasher Wallet
     is: InstaSwap
     kf: Kensho Finance
+    KNS: Keystone
     lends: Lends
     leo: LeoDex
     lifi: LI.FI
@@ -246,7 +250,7 @@ names:
     mo: Moca
     moca: Moca
     okw: OKX
-    onekey: OneKey
+    OKY: OneKey
     os: Osaia
     rg: Rango Exchange
     rj: Rujira
@@ -256,6 +260,7 @@ names:
     ss: ShapeShift
     ssp: ShardSpace
     sy: Symbiosis
+    t1: TrustWallet
     t: THORSwap
     tb: TrustWallet
     td: TrustWallet
@@ -275,8 +280,6 @@ names:
     xdf: Ctrl
     zengo: Zengo
     "-_": SwapKit
-    t1: TrustWallet
-    kns: Keystone
 
   arb_bot_detector:
     min_sequence: 10_000  # minimum sequence number to consider this address as arbitrage
