@@ -275,6 +275,8 @@ names:
     xdf: Ctrl
     zengo: Zengo
     "-_": SwapKit
+    t1: TrustWallet
+    kns: Keystone
 
   arb_bot_detector:
     min_sequence: 10_000  # minimum sequence number to consider this address as arbitrage
