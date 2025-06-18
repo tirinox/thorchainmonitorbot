@@ -219,7 +219,10 @@ names:
     "thor1fddercd7pufy0adf2rh7ml2x9jdwla5lp56dpe": "TrustWalletFee"
 
   affiliates:
+    -_: SwapKit
     0xbami: Unizen
+    KNS: Keystone
+    OKY: OneKey
     be: WinBit32
     bgw: Bitget
     cakewallet: Cake Wallet
@@ -236,12 +239,11 @@ names:
     edge: edge
     ej: edge
     eld: El Dorito
-    g1: "Gem Wallet"
+    g1: Gem Wallet
     hpy: HyperPay
     hw: Hasher Wallet
     is: InstaSwap
     kf: Kensho Finance
-    KNS: Keystone
     lends: Lends
     leo: LeoDex
     lifi: LI.FI
@@ -251,7 +253,7 @@ names:
     mo: Moca
     moca: Moca
     okw: OKX
-    OKY: OneKey
+    onekey: OneKey
     os: Osaia
     rg: Rango Exchange
     rj: Rujira
@@ -261,8 +263,8 @@ names:
     ss: ShapeShift
     ssp: ShardSpace
     sy: Symbiosis
-    t1: TrustWallet
     t: THORSwap
+    t1: TrustWallet
     tb: TrustWallet
     td: TrustWallet
     te: TrustWallet
@@ -280,7 +282,6 @@ names:
     wr: THORWallet
     xdf: Ctrl
     zengo: Zengo
-    "-_": SwapKit
 
   arb_bot_detector:
     min_sequence: 10_000  # minimum sequence number to consider this address as arbitrage

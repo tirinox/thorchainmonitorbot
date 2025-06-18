@@ -16,7 +16,7 @@ def load_keys_from_file(filepath):
 
 
 def main():
-    keys = load_keys_from_file("aff-list.txt")
+    keys = load_keys_from_file("data/aff-list.txt")
     print(keys)
 
     struct = {
@@ -26,7 +26,7 @@ def main():
     }
 
     # export to Yaml
-    with open("aff-list.yaml", "w", encoding="utf-8") as file:
+    with open("data/aff-list.yaml", "w", encoding="utf-8") as file:
         yaml.dump(struct, file, default_flow_style=False, allow_unicode=True)
 
 
