@@ -66,8 +66,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="HTML to PNG Renderer", lifespan=lifespan)
 
 # Mount the static directory
-app.mount("/static", StaticFiles(directory="renderer/static"), name="static")
-
+app.mount("/static", StaticFiles(directory="data/renderer/static"), name="static")
 app.mount("/logo", StaticFiles(directory="data/asset_logo"), name="asset_logo")
 
 
