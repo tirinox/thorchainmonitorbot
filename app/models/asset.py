@@ -200,6 +200,7 @@ class Asset:
             name = str(name).upper()
             tag = str(tag).upper()
             is_virtual = chain == 'THOR' and name != 'RUNE'
+            # is_app_layer = chain == 'X' and is_synth
             return cls(chain, name, tag, is_synth, is_virtual, is_trade, is_secured=is_secured)
         except ValueError:
             # not enough values to unpack. It's a string like "ETH" or "BTC"
@@ -211,7 +212,9 @@ class Asset:
     @property
     def pretty_str(self):
         pn = self._pretty_name.upper()
-        if self.is_synth:
+        if self.is_app_layer:
+            return pn
+        elif self.is_synth:
             return f'synth {pn}'
         elif self.is_trade:
             return f'trade {pn}'
@@ -283,6 +286,10 @@ class Asset:
     @property
     def is_gas_asset(self):
         return self.gas_asset_from_chain(self.chain) == self
+
+    @property
+    def is_app_layer(self):
+        return self.chain.upper() == "X" and self.is_synth
 
     SHORT_NAMES = {
         'a': 'AVAX.AVAX',

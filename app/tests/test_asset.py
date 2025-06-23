@@ -6,8 +6,10 @@ from models.asset import is_ambiguous_asset, AssetKind
 
 
 @pytest.mark.parametrize("asset_string, expected_chain, expected_name, expected_tag, expected_str", [
-    ('ETH.XRUNE-0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C', 'ETH', 'XRUNE', '0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C', 'ETH.XRUNE-0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C'),
-    ('ETH.DODO-0X43DFC4159D86F3A37A5A4B3D4580B888AD7D4DDD', 'ETH', 'DODO', '0X43DFC4159D86F3A37A5A4B3D4580B888AD7D4DDD', 'ETH.DODO-0X43DFC4159D86F3A37A5A4B3D4580B888AD7D4DDD'),
+    ('ETH.XRUNE-0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C', 'ETH', 'XRUNE',
+     '0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C', 'ETH.XRUNE-0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C'),
+    ('ETH.DODO-0X43DFC4159D86F3A37A5A4B3D4580B888AD7D4DDD', 'ETH', 'DODO', '0X43DFC4159D86F3A37A5A4B3D4580B888AD7D4DDD',
+     'ETH.DODO-0X43DFC4159D86F3A37A5A4B3D4580B888AD7D4DDD'),
     ('BNB.BSC', 'BNB', 'BSC', '', 'BNB.BSC'),
     ('XRP/FLR', 'XRP', 'FLR', '', 'XRP/FLR'),
     ('XRP~FLR', 'XRP', 'FLR', '', 'XRP~FLR'),
@@ -21,21 +23,25 @@ def test_asset1(asset_string, expected_chain, expected_name, expected_tag, expec
     assert asset == Asset.from_string(asset_string)
 
 
-@pytest.mark.parametrize("asset_string, peculiarities, expected_name, expected_tag, expected_chain, expected_pretty_str", [
-    ("eth-yfi-0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", "secured", "YFI", "0X0BC529C00C6401AEF6D220BE8C6EA1667F6AD93E",
-     "ETH", "secured ETH-YFI"),
-    ("eth~yfi-0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", "trade", "YFI", "0X0BC529C00C6401AEF6D220BE8C6EA1667F6AD93E",
-     "ETH", "trade ETH~YFI"),
-    ("eth.yfi-0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", "", "YFI", "0X0BC529C00C6401AEF6D220BE8C6EA1667F6AD93E",
-     "ETH", "ETH.YFI"),
-    ("ETH/USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48", "synth", "USDC",
-     "0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48", "ETH", "synth ETH/USDC"),
-    ("BNB/BTCB-1DE", "synth", "BTCB", "1DE", "BNB", "synth BNB/BTCB"),
-    ("BSC~BNB-0x123", "trade", "BNB", "0X123", "BSC", "trade BSC~BNB"),
-    ("btc/btc", "synth", "BTC", "", "BTC", "synth BTC"),
-    ("BTC/btc", "synth", "BTC", "", "BTC", "synth BTC"),
-])
-def test_synth_asset_name(asset_string, peculiarities, expected_name, expected_tag, expected_chain, expected_pretty_str):
+@pytest.mark.parametrize(
+    "asset_string, peculiarities, expected_name, expected_tag, expected_chain, expected_pretty_str", [
+        ("eth-yfi-0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", "secured", "YFI",
+         "0X0BC529C00C6401AEF6D220BE8C6EA1667F6AD93E",
+         "ETH", "secured ETH-YFI"),
+        ("eth~yfi-0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", "trade", "YFI",
+         "0X0BC529C00C6401AEF6D220BE8C6EA1667F6AD93E",
+         "ETH", "trade ETH~YFI"),
+        ("eth.yfi-0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e", "", "YFI", "0X0BC529C00C6401AEF6D220BE8C6EA1667F6AD93E",
+         "ETH", "ETH.YFI"),
+        ("ETH/USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48", "synth", "USDC",
+         "0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48", "ETH", "synth ETH/USDC"),
+        ("BNB/BTCB-1DE", "synth", "BTCB", "1DE", "BNB", "synth BNB/BTCB"),
+        ("BSC~BNB-0x123", "trade", "BNB", "0X123", "BSC", "trade BSC~BNB"),
+        ("btc/btc", "synth", "BTC", "", "BTC", "synth BTC"),
+        ("BTC/btc", "synth", "BTC", "", "BTC", "synth BTC"),
+    ])
+def test_synth_asset_name(asset_string, peculiarities, expected_name, expected_tag, expected_chain,
+                          expected_pretty_str):
     asset = Asset(asset_string)
     peculiarities = peculiarities.split(',') if isinstance(peculiarities, str) else peculiarities
     assert asset.is_synth == ('synth' in peculiarities)
@@ -59,6 +65,7 @@ def test_recognize_kind():
     assert AssetKind.recognize('XRP') == AssetKind.UNKNOWN
     assert AssetKind.recognize('XRP.XRP') == AssetKind.NATIVE
     assert AssetKind.recognize('ETH/ETH') == AssetKind.SYNTH
+    assert AssetKind.recognize('X/Ruji') == AssetKind.SYNTH
     assert AssetKind.recognize('ETH~ETH') == AssetKind.TRADE
     assert AssetKind.recognize('ETH-ETH') == AssetKind.SECURED
 
@@ -120,3 +127,19 @@ def test_ambiguous_name():
 def test_l1_asset_vs_gas_asset(asset_name, chain):
     # assert Chains.l1_asset(chain) == asset_name
     assert str(Asset.gas_asset_from_chain(chain)) == asset_name
+
+
+@pytest.mark.parametrize('asset, is_app_layer', [
+    ('ETH.ETH', False),
+    ('BTC.BTC', False),
+    ('BTC/BTC', False),
+    ('ETH/ETH', False),
+    ('X/ruji', True),
+    ('x/RUJI', True),
+    ('x~RUJI', False),
+    ('X.RUJI', False),
+    ('x/bow-xyk-thor.lqdy-btc-btc', True),
+    ('x/bow-xyk-thor.auto-eth-usdc-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', True),
+])
+def test_is_app_layer(asset, is_app_layer):
+    assert Asset.from_string(asset).is_app_layer == is_app_layer
