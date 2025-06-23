@@ -6,6 +6,7 @@ affiliates:
   cakewallet: Cake Wallet
   cb: CoinBot
   cs: CacaoSwap
+  cs3: Coinstore Web3 Wallet
   dcf: Decentralfi
   dcg: Dash Core
   decentralfi: Decentralfi
@@ -67,6 +68,7 @@ common:
     cakewallet: Cake Wallet
     cb: CoinBot
     cs: CacaoSwap
+    cs3: Coinstore Web3 Wallet
     dcf: Decentralfi
     dcg: Dash Core
     decentralfi: Decentralfi
@@ -78,6 +80,7 @@ common:
     edge: edge
     ej: edge
     eld: El Dorito
+    elp: ELLIPAL
     g1: Gem Wallet
     hpy: HyperPay
     hw: Hasher Wallet
