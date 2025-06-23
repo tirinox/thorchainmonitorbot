@@ -6,6 +6,7 @@ foo:
     cakewallet: Cake Wallet
     cb: CoinBot
     cs: CacaoSwap
+    cs3: Coinstore Web3 Wallet
     dcf: Decentralfi
     dcg: Dash Core
     decentralfi: Decentralfi
@@ -15,8 +16,10 @@ foo:
     edge: edge
     ej: edge
     eld: El Dorito
+    elp: ELLIPAL
     is: InstaSwap
     kf: Kensho Finance
+    kns: Keystone
     lends: Lends
     leo: LeoDex
     lifi: LI.FI
@@ -26,7 +29,7 @@ foo:
     mo: Moca
     moca: Moca
     okw: OKX
-    onekey: OneKey
+    oky: OneKey
     os: Osaia
     rg: Rango Exchange
     runifier: Runifier

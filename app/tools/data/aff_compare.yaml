@@ -6,6 +6,7 @@ affiliates:
   cakewallet: Cake Wallet
   cb: CoinBot
   cs: CacaoSwap
+  cs3: Coinstore Web3 Wallet
   dcf: Decentralfi
   dcg: Dash Core
   decentralfi: Decentralfi
@@ -15,9 +16,11 @@ affiliates:
   edge: edge
   ej: edge
   eld: El Dorito
+  elp: ELLIPAL
   g1: Gem Wallet
   is: InstaSwap
   kf: Kensho Finance
+  kns: Keystone
   lends: Lends
   leo: LeoDex
   lifi: LI.FI
@@ -27,7 +30,7 @@ affiliates:
   mo: Moca
   moca: Moca
   okw: OKX
-  onekey: OneKey
+  oky: OneKey
   os: Osaia
   rg: Rango Exchange
   rj: Rujira
@@ -66,6 +69,7 @@ common:
     cakewallet: Cake Wallet
     cb: CoinBot
     cs: CacaoSwap
+    cs3: Coinstore Web3 Wallet
     dcf: Decentralfi
     dcg: Dash Core
     decentralfi: Decentralfi
@@ -77,11 +81,13 @@ common:
     edge: edge
     ej: edge
     eld: El Dorito
+    elp: ELLIPAL
     g1: Gem Wallet
     hpy: HyperPay
     hw: Hasher Wallet
     is: InstaSwap
     kf: Kensho Finance
+    kns: Keystone
     lends: Lends
     leo: LeoDex
     lifi: LI.FI
@@ -91,7 +97,7 @@ common:
     mo: Moca
     moca: Moca
     okw: OKX
-    onekey: OneKey
+    oky: OneKey
     os: Osaia
     rg: Rango Exchange
     rj: Rujira
