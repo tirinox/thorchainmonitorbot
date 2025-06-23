@@ -292,10 +292,16 @@ async def run():
         #                           tx_id="D668B3B676DCA5D3CFD17AB6A99CC58783758E97EEEBEE23871912CB255A7DC4",
         #                           swap_start_enabled=False)
 
-        # 0.011 ETH -> 17.51021135 RUNE
+        # # 0.011 ETH -> 17.51021135 RUNE
+        # await debug_full_pipeline(app,
+        #                           start=21402727,
+        #                           tx_id="C35BBEEE5D3466B5C6227A41789041EC544C5DEDC4E10236A138220206406E16",
+        #                           swap_start_enabled=False)
+
+        # 102K RUNE -> 171K USDC
         await debug_full_pipeline(app,
-                                  start=21402727,
-                                  tx_id="C35BBEEE5D3466B5C6227A41789041EC544C5DEDC4E10236A138220206406E16",
+                                  start=21491631,
+                                  tx_id="33C70AE3E503CE33A3B24FC780F6F681882BE27C0524FC06B8882DA943D56238",
                                   swap_start_enabled=False)
 
         # await debug_full_pipeline(app, start=-200)

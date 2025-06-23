@@ -118,11 +118,12 @@ class SwapProps(NamedTuple):
             ev for ev in self.events
             if isinstance(ev, EventOutbound) and (ev.is_outbound_memo or ev.is_refund_memo)
         ]
-        # noinspection PyUnresolvedReferences
-        outbounds += [
-            ev for ev in self.events
-            if isinstance(ev, EventTradeAccountDeposit) and ev.rune_address
-        ]
+
+        # looks like we don't need this anymore, because it's already processed above
+        # outbounds += [
+        #     ev for ev in self.events
+        #     if isinstance(ev, EventTradeAccountDeposit) and ev.rune_address
+        # ]
         return outbounds
 
     def gather_outbounds(self) -> List[ThorSubTx]:

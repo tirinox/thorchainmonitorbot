@@ -63,7 +63,12 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
 
         min_rune_volume = self.min_usd_total / usd_per_rune
 
-        large_txs = [tx for tx in txs if self.is_tx_suitable(tx, min_rune_volume, usd_per_rune)]
+        if self.dbg_just_pass_only_tx_id:
+            self.logger.warning(f'Debug mode is on, passing only Tx with ID: {self.dbg_just_pass_only_tx_id}')
+            large_txs = [tx for tx in txs if tx.tx_hash == self.dbg_just_pass_only_tx_id]
+        else:
+            large_txs = [tx for tx in txs if self.is_tx_suitable(tx, min_rune_volume, usd_per_rune)]
+
         if not large_txs:
             return
 
@@ -140,10 +145,6 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         return min_pool_depth
 
     def is_tx_suitable(self, tx: ThorAction, min_rune_volume, usd_per_rune, curve_mult=None):
-        if self.dbg_just_pass_only_tx_id:
-            # Debug mode, just pass the Tx with this ID
-            return tx.tx_hash == self.dbg_just_pass_only_tx_id
-
         pool_usd_depth = self._get_min_usd_depth(tx, usd_per_rune)
         if pool_usd_depth == 0.0:
             if not tx.is_of_type(ActionType.REFUND):
