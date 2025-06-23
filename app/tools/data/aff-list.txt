@@ -36,3 +36,4 @@ DPH: "Delphibets"
 SSP: "ShardSpace"
 be: "WinBit32"
 elp: "ELLIPAL"
+cs3: "Coinstore Web3 Wallet
