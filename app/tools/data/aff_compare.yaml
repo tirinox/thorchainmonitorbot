@@ -20,6 +20,7 @@ affiliates:
   g1: Gem Wallet
   is: InstaSwap
   kf: Kensho Finance
+  kns: Keystone
   lends: Lends
   leo: LeoDex
   lifi: LI.FI
@@ -29,7 +30,7 @@ affiliates:
   mo: Moca
   moca: Moca
   okw: OKX
-  OKY: OneKey
+  oky: OneKey
   os: Osaia
   rg: Rango Exchange
   rj: Rujira
@@ -86,6 +87,7 @@ common:
     hw: Hasher Wallet
     is: InstaSwap
     kf: Kensho Finance
+    kns: Keystone
     lends: Lends
     leo: LeoDex
     lifi: LI.FI
@@ -95,7 +97,7 @@ common:
     mo: Moca
     moca: Moca
     okw: OKX
-    onekey: OneKey
+    oky: OneKey
     os: Osaia
     rg: Rango Exchange
     rj: Rujira
