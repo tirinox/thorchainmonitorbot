@@ -19,6 +19,7 @@ foo:
     elp: ELLIPAL
     is: InstaSwap
     kf: Kensho Finance
+    kns: Keystone
     lends: Lends
     leo: LeoDex
     lifi: LI.FI
@@ -28,7 +29,7 @@ foo:
     mo: Moca
     moca: Moca
     okw: OKX
-    OKY: OneKey
+    oky: OneKey
     os: Osaia
     rg: Rango Exchange
     runifier: Runifier
