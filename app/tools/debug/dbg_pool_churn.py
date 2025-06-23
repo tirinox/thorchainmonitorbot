@@ -13,36 +13,38 @@ from notify.public.pool_churn_notify import PoolChurnNotifier
 from tools.lib.lp_common import LpAppFramework
 
 
-async def send_to_channel_test_message(d: DepContainer):
+async def dbg_simulate_pool_churn(d: DepContainer):
     d.broadcaster = Broadcaster(d)
 
-    async with aiohttp.ClientSession() as d.session:
-        ppf = PoolInfoFetcherMidgard(d, 100)
-        notifier_pool_churn = PoolChurnNotifier(d)
+    ppf = PoolInfoFetcherMidgard(d, 100)
+    notifier_pool_churn = PoolChurnNotifier(d)
+    notifier_pool_churn.add_subscriber(d.alert_presenter)
 
-        ppf_old = PoolFetcher(d)
-        d.price_holder.pool_info_map = await ppf_old.load_pools(caching=False)
-        await ppf.get_pool_info_midgard()
+    ppf_old = PoolFetcher(d)
+    d.price_holder.pool_info_map = await ppf_old.load_pools(caching=False)
+    await ppf.get_pool_info_midgard()
 
-        # feed original pools
-        await notifier_pool_churn.on_data(ppf, None)
-        await notifier_pool_churn.on_data(ppf, d.price_holder.pool_info_map)  # must notify about changes above ^^^
+    # feed original pools
+    await notifier_pool_churn.on_data(ppf, None)
+    await notifier_pool_churn.on_data(ppf, d.price_holder.pool_info_map)  # must notify about changes above ^^^
 
-        d.price_holder.pool_info_map = deepcopy(d.price_holder.pool_info_map)  # make a copy
-        # del lph.pool_info_map['ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7']  # deleted pool
-        del d.price_holder.pool_info_map['ETH.SUSHI-0X6B3595068778DD592E39A122F4F5A5CF09C90FE2']  # deleted pool
-        d.price_holder.pool_info_map['BNB.AVA-645'].status = PoolInfo.STAGED
-        d.price_holder.pool_info_map['BNB.FTM-A64'].status = PoolInfo.AVAILABLE
-        d.price_holder.pool_info_map[DOGE_SYMBOL] = PoolInfo(DOGE_SYMBOL, 18555, 18555, 100, PoolInfo.STAGED)
+    pool_info_map = deepcopy(d.price_holder.pool_info_map)  # make a copy
+    del pool_info_map['ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7']  # deleted pool
+    pool_info_map[DOGE_SYMBOL].status = PoolInfo.STAGED  # staged pool
+    # pool_info_map[DOGE_SYMBOL] = PoolInfo(DOGE_SYMBOL, 18555, 18555, 100, PoolInfo.STAGED)
 
-        await notifier_pool_churn.on_data(ppf, d.price_holder.pool_info_map)  # no update at this moment!
+    await notifier_pool_churn.spam_cd.clear()
+    # to make sure we do not notify about pool removal
+    notifier_pool_churn.ignore_pool_removed = False
+    await notifier_pool_churn.on_data(ppf, pool_info_map)  # no update at this moment!
+    await asyncio.sleep(5)
 
 
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app:
         await lp_app.prepare(brief=True)
-        await send_to_channel_test_message(lp_app.deps)
+        await dbg_simulate_pool_churn(lp_app.deps)
 
 
 if __name__ == '__main__':

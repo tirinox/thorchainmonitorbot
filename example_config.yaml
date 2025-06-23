@@ -516,6 +516,7 @@ net_summary:
 pool_churn:
   enabled: true
   notification:
+    ignore_pool_removed: true
     cooldown: 1h
 
 

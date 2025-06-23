@@ -1,4 +1,5 @@
 from jobs.fetch.pool_price import PoolInfoFetcherMidgard
+from lib.config import SubConfig
 from lib.cooldown import Cooldown
 from lib.date_utils import parse_timespan_to_seconds
 from lib.delegates import INotified, WithDelegates
@@ -12,8 +13,10 @@ class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
         super().__init__()
         self.deps = deps
         self.old_pool_dict = {}
-        cooldown_sec = parse_timespan_to_seconds(deps.cfg.pool_churn.notification.cooldown)
+        cfg: SubConfig = deps.cfg.pool_churn
+        cooldown_sec = cfg.as_interval('notification.cooldown', '1h')
         self.spam_cd = Cooldown(self.deps.db, 'PoolChurnNotifier-spam', cooldown_sec)
+        self.ignore_pool_removed = cfg.as_bool('notification.ignore_pool_removed', True)
 
     async def on_data(self, sender: PoolInfoFetcherMidgard, data: PoolInfoMap):
         # compare starting w 2nd iteration
@@ -57,8 +60,9 @@ class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
                 status = new_pool_dict[name].status
                 added_pools.append(PoolChange(name, status, status))
             elif name not in new_pools and name in old_pools:
-                status = self.old_pool_dict[name].status
-                removed_pools.append(PoolChange(name, status, status))
+                if not self.ignore_pool_removed:
+                    status = self.old_pool_dict[name].status
+                    removed_pools.append(PoolChange(name, status, status))
 
         return PoolChanges(added_pools, removed_pools, changed_status_pools)
 
