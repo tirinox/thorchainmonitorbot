@@ -3,7 +3,7 @@
 This is a telegram bot to monitor some aspects of THORChain. It can also generate liquidity pool reports for you. Like
 this:
 
-[![Report](misc/example_report_thumbnail.png)](https://raw.githubusercontent.com/tirinox/thorchainmonitorbot/master/misc/example_report.jpeg)
+[![Report](docs/misc/example_report_thumbnail.png)](https://raw.githubusercontent.com/tirinox/thorchainmonitorbot/master/misc/example_report.jpeg)
 
 ## Live bot
 
@@ -66,3 +66,7 @@ PYTHONPATH="/app" python tools/cleanup_tx_db.py /config/config.yaml
 ```
 
 cleanup_tx_db script will remove all transactions older than 30 days.
+
+### Adding a new affiliate
+
+Please refer to the [NewAffiliate.md](docs/NewAffiliate.md) guide for instructions on how to add a new affiliate to the bot.

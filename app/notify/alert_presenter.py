@@ -31,6 +31,7 @@ from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
 from models.last_block import EventBlockSpeed, BlockProduceState
 from models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
+from models.memo import THORMemo
 from models.mimir import AlertMimirChange, AlertMimirVoting
 from models.node_info import AlertNodeChurn
 from models.pool_info import PoolChanges, EventPools
@@ -285,6 +286,13 @@ class AlertPresenter(INotified, WithLogger):
         else:
             return ''  # no ambiguity
 
+    def get_affiliates(self, memo: THORMemo):
+        ns = self.deps.name_service
+        return (
+            [ns.get_affiliate_name(a.address) for a in memo.affiliates],
+            [ns.get_affiliate_logo(a.address) for a in memo.affiliates],
+        )
+
     async def render_swap_start(self, loc, data: AlertSwapStart, name_map: NameMap):
         if not self.use_renderer:
             return None, None
@@ -294,10 +302,8 @@ class AlertPresenter(INotified, WithLogger):
         from_asset = Asset(data.in_asset)
         to_asset = Asset(data.out_asset)
 
-        affiliate_names = [
-            self.deps.name_service.get_affiliate_name(a.address) for a in data.memo.affiliates
-        ]
         aff_fee_percent = data.memo.affiliate_fee_bp / THOR_BASIS_POINT_MAX * 100.0
+        aff_names, aff_logos = self.get_affiliates(data.memo)
 
         parameters = {
             "user_name": user_name,
@@ -318,8 +324,8 @@ class AlertPresenter(INotified, WithLogger):
             "destination_amount": thor_to_float(data.expected_out_amount),
             "volume_usd": data.volume_usd,
 
-            # todo: support multiple affiliates
-            "affiliate_names": affiliate_names,
+            "affiliate_names": aff_names,
+            "affiliate_logos": aff_logos,
             "affiliate_fee": aff_fee_percent,
 
             "swap_quantity": data.ss.quantity,
@@ -346,10 +352,8 @@ class AlertPresenter(INotified, WithLogger):
         from_asset = Asset(from_subtx.first_asset)
         to_asset = Asset(to_subtx.first_asset)
 
-        affiliate_names = [
-            self.deps.name_service.get_affiliate_name(a.address) for a in tx.memo.affiliates
-        ]
         aff_fee_percent = tx.memo.affiliate_fee_bp / THOR_BASIS_POINT_MAX * 100.0
+        aff_names, aff_logos = self.get_affiliates(tx.memo)
 
         duration = data.duration
         if not (0 < duration < 3 * DAY):
@@ -383,7 +387,8 @@ class AlertPresenter(INotified, WithLogger):
 
             "liquidity_fee_percent": tx.liquidity_fee_percent,
 
-            "affiliate_names": affiliate_names,
+            "affiliate_names": aff_names,
+            "affiliate_logos": aff_logos,
             "affiliate_fee": aff_fee_percent,
 
             # "swap_quantity": tx.ss.quantity,

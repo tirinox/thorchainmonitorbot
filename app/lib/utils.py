@@ -533,15 +533,6 @@ def expect_string(o):
     return o if isinstance(o, str) else o.decode('utf-8')
 
 
-def keys_to_lower(d: dict) -> dict:
-    if not d:
-        return {}
-
-    return {
-        (k.lower() if isinstance(k, str) else k): v for k, v in d.items()
-    }
-
-
 def translate(s: str, d: dict):
     for k, v in d.items():
         s = s.replace(k, v)

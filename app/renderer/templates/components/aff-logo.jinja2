@@ -28,18 +28,12 @@
         color: #ffffff;
     }
 
-    .affiliate-name-no {
-        text-shadow: none;
-        color: #bbb;
-    }
-
     .aff-fee {
         display: inline;
         font-size: 36px;
         width: 220px;
         text-align: left;
         color: #51efe2;
-    {#color: #a3f8ef;#}
     }
 
     .aff-free {
@@ -89,109 +83,22 @@
 </div>
 
 <script>
-    const nameToCode = {
-        'trustwallet': 'trust',
-        'trust': '',
-        'thorswap': '',
-        'asgardex': '',
-        'babylonswap': '',
-        'bitget': '',
-        'cacaoswap': '',
-        'cakewallet': '',
-        'coinbot': '',
-
-        'ctrl': '',
-        'xdefi': 'ctrl',
-
-        'decentralfi': '',
-        'edgewallet': '',
-        'eldorito': '',
-        'ethos': '',
-        'gemwallet': '',
-        'giddy': '',
-        'instaswap': '',
-
-        'ledgerlive': '',
-        'ledger live': 'ledgerlive',
-        'ledger': 'ledgerlive',
-        'll': 'ledgerlive',
-
-        'lends': '',
-        'lifi': '',
-        'li.fi': 'lifi',
-        'okx': '',
-        'onekey': '',
-        'rango': '',
-        'shapeshift': '',
-        'symbiosis': '',
-        'thorwallet': '',
-        'unizen': '',
-        'vultisig': '',
-        'vultisig ios': 'vultisig',
-        'vultisig android': 'vultisig',
-
-        'zengo': '',
-        'tokenpocket': '',
-        'swapkit': '',
-
-        'gemwallet': '',
-    };
-
-    const logoSpecialCase = {
-        'shapeshift': 'fox.png',
-        'tokenpocket': 'tps.png',
-        'vultisig': 'vult.svg',
-        'rango': 'rango.png',
-        'rangoexchange': 'rango.png',
-        'swapkit': 'swapkit.png',
-        'bitget': 'bitget.png',
-        'astrolescent': 'astrolescent.png',
-        'hyperpay': 'hyperpay.png',
-        'onekey': 'onekey.png',
-        'hasherwallet': 'hasher-wallet.png',
-        'easycross': 'easycross.png',
-        'keystone': 'key-stone.png',
-    }
-
-    function setLogoForAffiliate(affiliateName, selector = '.affiliate-logo') {
-        console.log(`Affiliate name is ${affiliateName} assigned to selector ${selector}`)
-        affiliateName = affiliateName.toLowerCase().replace(/\s+/g, '');
-        let codedAffName = nameToCode[affiliateName];
-
-        if (codedAffName === undefined || codedAffName === '') {
-            codedAffName = affiliateName;
-        }
-
-        let logoPath = `https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/${codedAffName}/logo.svg`
-        const specialCaseLogo = logoSpecialCase[codedAffName];
-        if (specialCaseLogo !== undefined) {
-            logoPath = `renderer/static/img/ecosystem/${specialCaseLogo}`
-            console.log(`Special case logo for ${affiliateName} URL is ${logoPath}`)
-        }
-
-        const affiliateLogo = document.querySelector(selector);
-
-        // on error try the same name with .png extension
-        // do it once
-        let triedPng = false;
+    const affiliateLogos = {{ affiliate_logos | safe }};
+    const affiliateNames = {{ affiliate_names | safe }};
+    for (let i = 0; i < affiliateNames.length; i++) {
+        const name = affiliateNames[i];
+        const affiliateLogo = document.querySelector(`.affiliate-logo-${i}`);
         affiliateLogo.onerror = function () {
-            if (!triedPng) {
-                affiliateLogo.src = logoPath.replace('.svg', '.png');
-                console.log(`Affiliate logo for ${affiliateName} URL is ${logoPath.replace('.svg', '.png')}`)
-                triedPng = true;
-            } else {
-                affiliateLogo.src = 'renderer/logo/unknown.png'
-            }
+            affiliateLogo.src = 'renderer/logo/unknown.png'
         }
+        let logoPath = affiliateLogos[i]
+        console.log(`Affiliate name is ${name} (${logoPath})`)
 
+        // if it does not start with 'https', this is local path, prepend local path
+        if (!logoPath.startsWith('https://') && !logoPath.startsWith('http://')) {
+            logoPath = 'renderer/static/img/ecosystem/' + logoPath;
+        }
         affiliateLogo.src = logoPath;
-        console.log(`Affiliate logo for ${affiliateName} (${codedAffName}) URL is ${logoPath}`)
     }
-
-    const names = {{ affiliate_names | safe }};
-    for (let i = 0; i < names.length; i++) {
-        setLogoForAffiliate(names[i], `.affiliate-logo-${i}`);
-    }
-
 </script>
 

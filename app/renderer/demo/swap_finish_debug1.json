@@ -21,7 +21,10 @@
         "destination_volume_usd": 1286.0568665660587,
         "liquidity_fee_percent": 0.16097222472205852,
         "affiliate_names": [
-            "TrustWallet", "Swap Kit"
+            "ThorWallet", "Swap Kit"
+        ],
+        "affiliate_logos": [
+            "https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorwallet/logo.png", "swapkit.png"
         ],
         "affiliate_fee": 0.7000000000000001,
         "total_time_sec": 24.0,

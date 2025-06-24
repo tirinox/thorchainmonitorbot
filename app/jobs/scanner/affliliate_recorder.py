@@ -47,7 +47,7 @@ class AffiliateRecorder(WithLogger, INotified):
         return f"{self.key_prefix}:aff_collector:{name}:{self._date_format(date)}"
 
     @staticmethod
-    def get_affiliate_name(memo: THORMemo):
+    def get_affiliate_from_memo(memo: THORMemo):
         affiliate_name = memo.affiliate_address.lower()
         return affiliate_name
 
@@ -55,7 +55,7 @@ class AffiliateRecorder(WithLogger, INotified):
         if volume_usd <= 0:
             return
 
-        aff = self.get_affiliate_name(memo)
+        aff = self.get_affiliate_from_memo(memo)
         key = self._prefixed_key(aff, dt)
 
         affiliate_fee = memo.affiliate_fee_0_1 * volume_usd

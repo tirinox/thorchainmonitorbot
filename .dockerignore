@@ -4,7 +4,7 @@ temp/*
 redis_data/
 datavar/
 dump.rdb
-misc/
+docs/misc/
 venv/
 art/
 web/

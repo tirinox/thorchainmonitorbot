@@ -8,7 +8,7 @@ from lib.constants import Chains
 from lib.date_utils import parse_timespan_to_seconds
 from lib.db import DB
 from lib.logs import WithLogger
-from lib.utils import keys_to_lower, filter_none_values
+from lib.utils import filter_none_values
 from models.memo import THORMemo
 from models.name import ThorName, make_virtual_thor_name, ThorNameAlias
 from models.node_info import NodeListHolder
@@ -65,12 +65,17 @@ class NameService(WithLogger):
         if self._thorname_enabled:
             self.logger.info(f'ThorName is enabled with expire time of {self._thorname_expire} sec.')
 
+        self.aff_man = AffiliateManager()
+
     @property
     def cache(self):
         return self._cache
 
     def get_affiliate_name(self, affiliate_short):
-        return self._cache.get_affiliate_name(affiliate_short)
+        return self.aff_man.get_affiliate_name(affiliate_short)
+
+    def get_affiliate_logo(self, affiliate_short):
+        return self.aff_man.get_affiliate_logo(affiliate_short)
 
     def get_affiliate_name_from_memo(self, memo: THORMemo):
         if memo and (aff := memo.first_affiliate):
@@ -191,7 +196,6 @@ class THORNameCache:
 
         self._known_address = {}
         self._known_names = {}
-        self._affiliates = {}
 
         self.thorname_expire = int(parse_timespan_to_seconds(cfg.as_str('names.thorname.expire', '24h'))) or None
 
@@ -206,12 +210,6 @@ class THORNameCache:
             if address and label:
                 self._known_address[address] = make_virtual_thor_name(address, label)
                 self._known_names[label] = address
-
-        self.affiliates = keys_to_lower(self.cfg.get_pure('names.affiliates'))
-
-    def get_affiliate_name(self, affiliate_short: str):
-        a = affiliate_short.lower().strip()
-        return self.affiliates.get(a, a)
 
     @staticmethod
     def _key_thorname_to_addresses(name: str):
@@ -366,3 +364,43 @@ def add_thor_suffix(thor_name: ThorName):
     else:
         # Configured
         return thor_name.name
+
+
+class AffiliateManager(WithLogger):
+    FILE = 'data/affiliates.yaml'
+
+    def __init__(self):
+        super().__init__()
+        # load the affiliate data from the YAML file
+        with open(self.FILE, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+            self.thorname_to_name = self.remove_space_and_lowercase(data['affiliates']['names'])
+            self.name_to_logo = self.remove_space_and_lowercase(data['affiliates']['logos'])
+            self.logger.info(f'Loaded {len(self.thorname_to_name)} affiliate names and '
+                             f'{len(self.name_to_logo)} logos from {self.FILE}')
+
+    def get_affiliate_name(self, address_or_name: str) -> str:
+        """
+        Returns the affiliate name for a given address or ThorName.
+        If the address or name is not found, it returns the address or name itself.
+        """
+        name = address_or_name.replace(' ', '').lower()
+        return self.thorname_to_name.get(name, name)
+
+    def get_affiliate_logo(self, address_or_name: str) -> Optional[str]:
+        """
+        Returns the affiliate logo for a given address or ThorName.
+        If the address or name is not found, it returns None.
+        """
+        name = self.get_affiliate_name(address_or_name)
+        name = name.replace(' ', '').lower()
+        return self.name_to_logo.get(name)
+
+    @staticmethod
+    def remove_space_and_lowercase(d: dict) -> dict:
+        """
+        Removes spaces and converts the name to lowercase.
+        """
+        return {
+            k.replace(' ', '').lower(): v for k, v in d.items()
+        }

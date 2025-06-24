@@ -20,6 +20,9 @@
     "volume_usd": 9303345,
 
     "affiliate_names": ["Vultisig"],
+    "affiliate_logos": [
+      "vult.svg"
+    ],
     "affiliate_fee": 0.5,
 
     "swap_quantity": 333,
