@@ -10,5 +10,5 @@ from lib.depcont import DepContainer
 def fixture_deps():
     d = DepContainer()
     d.loop = asyncio.get_event_loop()
-    d.db = DB(d.loop)
+    d.db = DB()
     return d

@@ -12,7 +12,7 @@ from models.node_watchers import NodeWatcherStorage
 def deps():
     d = DepContainer()
     d.loop = asyncio.get_event_loop()
-    d.db = DB(d.loop)
+    d.db = DB()
     return d
 
 

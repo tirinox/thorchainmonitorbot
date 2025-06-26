@@ -40,7 +40,7 @@ class AppSettingsAPI:
         d.price_holder.load_stable_coins(d.cfg)
 
         d.loop = asyncio.get_event_loop()
-        d.db = DB(d.loop)
+        d.db = DB()
 
         thor_env = d.cfg.get_thor_env_by_network_id()
         cfg = d.cfg.get('thor.midgard')

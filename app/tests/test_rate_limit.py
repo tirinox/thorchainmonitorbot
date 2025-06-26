@@ -11,7 +11,7 @@ from lib.rate_limit import RateLimiter, RateLimitCooldown
 def deps():
     d = DepContainer()
     d.loop = asyncio.get_event_loop()
-    d.db = DB(d.loop)
+    d.db = DB()
     return d
 
 
