@@ -109,7 +109,6 @@ class App(WithLogger):
         self._init_configuration(log_level)
 
         d.db = DB()
-        self._admin_messages = AdminMessages(d)
 
         d.node_info_fetcher = NodeInfoFetcher(d)
 
@@ -167,6 +166,7 @@ class App(WithLogger):
 
     def _init_messaging(self):
         d = self.deps
+        self._admin_messages = AdminMessages(d)
         d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
         d.emergency = EmergencyReport(d.cfg.first_admin_id, d.telegram_bot.bot)
         d.loc_man = LocalizationManager(d.cfg)
@@ -212,14 +212,14 @@ class App(WithLogger):
 
         self.logger.info('Loading procedure start.')
 
+        await self.create_thor_node_connector()
+
         sleep_step = self.sleep_step
         retry_after = sleep_step * 5
         while True:
             try:
                 self.logger.info('Testing DB connection...')
                 await self.deps.db.test_db_connection()
-
-                await self.create_thor_node_connector()
 
                 # update pools for bootstrap (other components need them)
                 self.logger.info('Loading last block...')
