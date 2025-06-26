@@ -3,6 +3,8 @@ import json
 import struct
 from typing import Optional, List, Iterable, Dict, NamedTuple
 
+import yaml
+
 from lib.config import Config
 from lib.constants import Chains
 from lib.date_utils import parse_timespan_to_seconds
@@ -367,13 +369,13 @@ def add_thor_suffix(thor_name: ThorName):
 
 
 class AffiliateManager(WithLogger):
-    FILE = 'data/affiliates.yaml'
+    FILE = './data/affiliates.yaml'
 
     def __init__(self):
         super().__init__()
         # load the affiliate data from the YAML file
         with open(self.FILE, 'r', encoding='utf-8') as file:
-            data = json.load(file)
+            data = yaml.load(file, Loader=yaml.SafeLoader)
             self.thorname_to_name = self.remove_space_and_lowercase(data['affiliates']['names'])
             self.name_to_logo = self.remove_space_and_lowercase(data['affiliates']['logos'])
             self.logger.info(f'Loaded {len(self.thorname_to_name)} affiliate names and '

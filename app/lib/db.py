@@ -9,8 +9,7 @@ from comm.telegram.custom_redis_storgate import RedisStorage3
 
 
 class DB:
-    def __init__(self, loop):
-        self.loop = loop
+    def __init__(self):
         self.redis: typing.Optional[aioredis.Redis] = None
         self.storage: typing.Optional[RedisStorage3] = None
         self.host = os.environ.get('REDIS_HOST', 'localhost')

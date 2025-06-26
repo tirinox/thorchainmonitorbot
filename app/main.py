@@ -106,9 +106,10 @@ class App(WithLogger):
         d.is_loading = True
         self._bg_task = None
 
-        self._admin_messages = AdminMessages(d)
-
         self._init_configuration(log_level)
+
+        d.db = DB()
+        self._admin_messages = AdminMessages(d)
 
         d.node_info_fetcher = NodeInfoFetcher(d)
 
@@ -152,8 +153,6 @@ class App(WithLogger):
         self.logger.info(f'Starting THORChainMonitoringBot for "{d.cfg.network_id}".')
         self.logger.info(f"Log level: {log_level}")
 
-        d.loop = asyncio.get_event_loop()
-        d.db = DB(d.loop)
         d.price_holder.load_stable_coins(d.cfg)
 
         self.sleep_step = d.cfg.sleep_step
@@ -734,8 +733,9 @@ class App(WithLogger):
         )
 
     async def on_startup(self, _):
-        self.deps.make_http_session()  # it must be inside a coroutine!
-
+        d = self.deps
+        d.make_http_session()  # it must be inside a coroutine!
+        d.loop = asyncio.get_event_loop()
         self._bg_task = asyncio.create_task(self._run_background_jobs())
 
     async def on_shutdown(self, _):
