@@ -47,12 +47,21 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     TEXT_REF_CALL = f'Start trading now 👉 {URL_OUR_REF} ⚡!'
 
+    def link_to_tx(self, tx_id, chain=Chains.THOR, label="TX"):
+        return "TX: " + get_explorer_url_to_tx(self.cfg.network_id, chain, tx_id)
+
+    def link_to_address(self, addr, name_map, chain=Chains.THOR):
+        # without a link, just a caption
+        if name_map:
+            name = name_map.by_address.get(addr)
+        else:
+            name = None
+        caption = add_thor_suffix(name) if name else short_address(addr, 0, 4)
+        return f'[{caption}]'
+
     def smart_split(self, parts):
         parts = twitter_intelligent_text_splitter(parts, self.twitter_max_len)
         return MESSAGE_SEPARATOR.join(parts).strip()
-
-    def link_to_tx(self, tx_id, chain=Chains.THOR, label="TX"):
-        return "TX: " + get_explorer_url_to_tx(self.cfg.network_id, chain, tx_id)
 
     PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION = 'THORChain nodes'
 
@@ -611,15 +620,6 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     def notification_text_best_pools(self, pd: EventPools, n_pools):
         return 'THORChain top liquidity pools'
-
-    def link_to_address(self, addr, name_map, chain=Chains.THOR):
-        # without a link, just a caption
-        if name_map:
-            name = name_map.by_address.get(addr)
-        else:
-            name = None
-        caption = add_thor_suffix(name) if name else short_address(addr, 0, 4)
-        return f'[{caption}]'
 
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
         emoji = self.cex_flow_emoji(cex_flow)

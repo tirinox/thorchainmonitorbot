@@ -319,7 +319,7 @@ class RussianLocalization(BaseLocalization):
         return f'\n\n💪Влиятельность: {clout_text}'
 
     TEXT_CLICK_FOR_DETAILED_CARD = '\n\n👇 Выберите пул, чтобы получить подробную карточку информации о позиции.'
-    TEXT_BALANCE_TITTLE = '💲Account balance:'
+    TEXT_BALANCE_TITTLE = '💲Балансы кошелька:'
     TEXT_LOCAL_NAME = 'Локальное имя'
     TEXT_TOTAL = 'Всего'
 

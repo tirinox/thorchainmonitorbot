@@ -15,7 +15,7 @@ from lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
     DEFAULT_CEX_BASE_ASSET, bp_to_percent, ThorRealms
 from lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
 from lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
-    get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
+    get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link, thorchain_net_address
 from lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, pretty_dollar, short_dollar, \
     RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
@@ -116,8 +116,26 @@ class BaseLocalization(ABC):  # == English
         return (f'{progressbar(info.pooled_rune, info.cap, 10)} '
                 f'({format_percent(info.pooled_rune, info.cap)})')
 
+    # --- EXPLORER LINKS ---
+
+    def explorer_link_to_address_with_domain(self, address):
+        net = self.cfg.network_id
+        runescan_url = link_with_domain_text(get_explorer_url_to_address(net, Chains.THOR, address))
+        thorchain_net_url = link_with_domain_text(thorchain_net_address(address))
+        return f'{runescan_url} | {thorchain_net_url}'
+
     def link_to_tx(self, tx_id, chain=Chains.THOR, label="TX"):
         return link(get_explorer_url_to_tx(self.cfg.network_id, chain, tx_id), label)
+
+    def link_to_address(self, addr, name_map, chain=Chains.THOR):
+        tab = ''
+        url = get_explorer_url_to_address(self.cfg.network_id, chain, addr, tab)
+        if name_map:
+            name = name_map.by_address.get(addr)
+        else:
+            name = None
+        caption = add_thor_suffix(name) if name else short_address(addr)
+        return link(url, caption)
 
     # ---- WELCOME ----
     def help_message(self):
@@ -339,10 +357,6 @@ class BaseLocalization(ABC):  # == English
     def text_lp_loading_pools(self, address):
         return f'{self.TEXT_PLEASE_WAIT}\n' \
                f'Loading pools information for {pre(address)}...'
-
-    def explorer_link_to_address_with_domain(self, address, chain=Chains.THOR):
-        net = self.cfg.network_id
-        return link_with_domain_text(get_explorer_url_to_address(net, chain, address))
 
     TEXT_TOTAL = 'Total'
 
@@ -2111,16 +2125,6 @@ class BaseLocalization(ABC):  # == English
     @staticmethod
     def _is_my_address_tag(address, my_addresses):
         return ' ★' if my_addresses and address in my_addresses else ''
-
-    def link_to_address(self, addr, name_map, chain=Chains.THOR):
-        tab = ''
-        url = get_explorer_url_to_address(self.cfg.network_id, chain, addr, tab)
-        if name_map:
-            name = name_map.by_address.get(addr)
-        else:
-            name = None
-        caption = add_thor_suffix(name) if name else short_address(addr)
-        return link(url, caption)
 
     def _native_transfer_prepare_stuff(self, my_addresses, t: NativeTokenTransfer, tx_title='TX', name_map=None):
         my_addresses = my_addresses or []

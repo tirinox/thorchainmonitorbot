@@ -2,6 +2,14 @@ from lib.constants import NetworkIdents, Chains
 from models.asset import Asset
 
 
+def thorchain_net_tx(tx_id: str):
+    return f'https://thorchain.net/tx/{tx_id}'
+
+
+def thorchain_net_address(address: str):
+    return f'https://thorchain.net/address/{address}'
+
+
 def get_explorer_url_to_address(network_id, pool_or_chain: str, address: str, tab=None):
     chain = Asset(pool_or_chain).first_filled_component
 
