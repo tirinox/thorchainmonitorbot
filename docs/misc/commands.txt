@@ -2,7 +2,6 @@ start - Start/restart the bot
 lp - List of wallets you follow
 price - Rune price chart
 stats - THORChain stats
-savings - Savings vaults stats
 supply - Rune supply chart
 queue - TX queue info
 nodes - List of THORNodes
@@ -12,5 +11,11 @@ pools - Top pools
 voting - Node-Mimir voting
 weekly - Weekly key statistics
 wallets - List of wallets you follow
-lending - Lending stats
 lang - Set the language
+cexflow - Rune flow to/from CEXs
+pol - Protocol owned liquidity
+tradeacc - Trade account info
+burnedrune - Burned Rune info
+rujimerge - Rujira merge info
+
+# todo add runeburn
