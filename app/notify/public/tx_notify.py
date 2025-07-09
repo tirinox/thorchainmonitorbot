@@ -192,21 +192,8 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
 class LiquidityTxNotifier(GenericTxNotifier):
     def __init__(self, deps: DepContainer, params: SubConfig, curve: DepthCurve):
         super().__init__(deps, params, (ActionType.WITHDRAW, ActionType.ADD_LIQUIDITY), curve)
-        self.ilp_paid_min_usd = params.as_float('also_trigger_when.ilp_paid_min_usd', 6000)
-
-        self.savers_enabled = params.get('savers.enabled', True)
-        self.savers_min_usd_total = params.as_float('savers.min_usd_total', 10_000.0)
-        self.savers_curve_mult = params.as_float('savers.curve_mult', 0.4)
 
     def is_tx_suitable(self, tx: ThorAction, min_rune_volume, usd_per_rune, curve_mult=None):
-        if tx.meta_withdraw and (tx.meta_withdraw.ilp_rune >= self.ilp_paid_min_usd / usd_per_rune):
-            return True
-
-        if tx.is_savings:
-            min_rune_volume_savers = self.savers_min_usd_total / usd_per_rune
-            if super().is_tx_suitable(tx, min_rune_volume_savers, usd_per_rune, self.savers_curve_mult):
-                return True
-
         return super().is_tx_suitable(tx, min_rune_volume, usd_per_rune, curve_mult)
 
 

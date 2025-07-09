@@ -28,13 +28,6 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         A.MARKET_CAP_USD: "Rune Total Market Cap",
         A.TOTAL_POOLS: "Total pools",
         A.TOTAL_ACTIVE_POOLS: "Active pools",
-        A.TOTAL_UNIQUE_SAVERS: "Total unique savers",
-        A.TOTAL_SAVED_USD: "Total USD saved",
-        A.TOTAL_SAVERS_EARNED_USD: "Savers: Total USD earned",
-        A.SAVER_VAULT_SAVED_ASSET: "::asset:: Savers depth",
-        A.SAVER_VAULT_SAVED_USD: "::asset:: Savers depth in USD",
-        A.SAVER_VAULT_MEMBERS: "::asset:: savers count",
-        A.SAVER_VAULT_EARNED_ASSET: "Savers earned ::asset::",
         A.SWAP_VOLUME_TOTAL_RUNE: "Total swap volume",
         A.MAX_SWAP_AMOUNT_USD: "Maximum swap volume",
         A.MAX_ADD_AMOUNT_USD: "Maximum add liquidity volume",
@@ -50,12 +43,6 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         A.WEEKLY_PROTOCOL_REVENUE_USD: "Weekly protocol revenue",
         A.WEEKLY_AFFILIATE_REVENUE_USD: "Weekly affiliate revenue",
 
-        A.RUNE_BURNT_LENDING: "RUNE burned",
-        A.LOANS_OPENED: "Loans opened",
-        A.BORROWER_COUNT: "Borrowers count",
-        A.MAX_LOAN_AMOUNT_USD: "Maximum loan amount",
-        A.TOTAL_BORROWED_USD: "Total borrowed",
-        A.TOTAL_COLLATERAL_USD: "Total collateral",
     }
 
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"

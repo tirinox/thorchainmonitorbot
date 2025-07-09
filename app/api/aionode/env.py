@@ -42,8 +42,6 @@ class ThorEnvironment:
     path_liq_provider_details = '/thorchain/pool/{asset}/liquidity_provider/{address}?height={height}'
     path_liq_providers = '/thorchain/pool/{asset}/liquidity_providers?height={height}'
 
-    path_saver_details = '/thorchain/pool/{asset}/saver/{address}?height={height}'
-    path_savers = '/thorchain/pool/{asset}/savers?height={height}'
     path_network = '/thorchain/network?height={height}'
     path_swapper_clout = '/thorchain/clout/swap/{address}?height={height}'
 
@@ -53,8 +51,6 @@ class ThorEnvironment:
     path_tx_simple = '/thorchain/tx/{txid}'
 
     path_block_results = '/block_results?height={height}'
-
-    path_borrower_details = '/thorchain/pool/{asset}/borrower/{address}?height={height}'
 
     path_trade_units = '/thorchain/trade/units?height={height}'
     path_trade_accounts = '/thorchain/trade/accounts/{asset}?height={height}'

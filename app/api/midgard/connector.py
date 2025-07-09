@@ -10,7 +10,6 @@ from lib.logs import WithLogger
 from models.earnings_history import EarningHistoryResponse
 from models.pool_info import PoolInfoMap
 from models.pool_member import PoolMemberDetails
-from models.savers import MidgardSaversHistory
 from models.swap_history import SwapHistoryResponse
 
 DEFAULT_MIDGARD_PORT = 8080
@@ -72,6 +71,7 @@ class MidgardConnector(WithLogger):
             self.logger.error(f'Midgard ({ip_address}/{path}) exception: {e!r}.')
             return self.ERROR_RESPONSE
 
+    # noinspection PyTypeChecker
     async def request(self, path: str) -> Union[str, dict, list]:
         result = await self._request_json_from_midgard_by_ip(self.public_url, path)
         if isinstance(result, str) and result != self.ERROR_NOT_FOUND:
@@ -92,21 +92,14 @@ class MidgardConnector(WithLogger):
         if j:
             return SwapHistoryResponse.from_json(j)
 
-    async def query_transactions(self, url_for_tx) -> TxParseResult:
+    async def query_transactions(self, url_for_tx) -> Optional[TxParseResult]:
         j = await self.request(url_for_tx)
         if j:
             return self.parser.parse_tx_response(j)
 
-    async def query_savers_history(self, pool, from_ts=0, to_ts=0, count=10, interval='day') \
-            -> Optional[MidgardSaversHistory]:
-        url = self.urlgen.url_for_savers_history(pool, from_ts, to_ts, count, interval)
-        j = await self.request(url)
-        if j:
-            return MidgardSaversHistory.from_json(j)
-
-    async def query_pool_membership(self, address: str, show_savers=True) -> List[PoolMemberDetails]:
+    async def query_pool_membership(self, address: str) -> List[PoolMemberDetails]:
         j = await self.request(
-            self.urlgen.url_for_address_pool_membership(address, show_savers)
+            self.urlgen.url_for_address_pool_membership(address)
         )
         if j == self.ERROR_RESPONSE or j == self.ERROR_NOT_FOUND:
             return []
@@ -116,5 +109,5 @@ class MidgardConnector(WithLogger):
     async def query_pools(self, period: str = '30d', parse=True) -> Optional[PoolInfoMap]:
         raw_data = await self.request(self.urlgen.url_pool_info(period=period))
         if not raw_data or raw_data == self.ERROR_RESPONSE:
-            return
+            return None
         return self.parser.parse_pool_info(raw_data) if parse else raw_data

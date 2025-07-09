@@ -1,18 +1,18 @@
 import logging
 from abc import ABC
 from datetime import datetime
-from math import ceil
 from typing import List, Optional, Tuple
+
+from math import ceil
 
 from api.aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout
 from api.midgard.name_service import NameService, add_thor_suffix, NameMap
 from api.w3.dex_analytics import DexReport, DexReportEntry
 from api.w3.token_record import AmountToken
 from jobs.fetch.chain_id import AlertChainIdChange
-from jobs.runeyield.borrower import LoanReportCard
 from lib.config import Config
 from lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
-    DEFAULT_CEX_BASE_ASSET, bp_to_percent, LOAN_MARKER, BTC_SYMBOL, ETH_SYMBOL, ThorRealms
+    DEFAULT_CEX_BASE_ASSET, bp_to_percent, ThorRealms
 from lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
 from lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
@@ -20,15 +20,14 @@ from lib.money import format_percent, pretty_money, short_address, short_money, 
     calc_percent_change, pretty_dollar, short_dollar, \
     RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
 from lib.texts import progressbar, link, pre, code, bold, ital, link_with_domain_text, \
-    up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text, underline, \
-    comma_join, int_to_letter
+    up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text, comma_join, \
+    int_to_letter
 from lib.utils import grouper, run_once, identity
 from models.asset import Asset
 from models.cap_info import ThorCapInfo
 from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
 from models.last_block import BlockProduceState, EventBlockSpeed
-from models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from models.lp_info import LiquidityPoolReport
 from models.memo import ActionType
 from models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption, AlertMimirVoting
@@ -44,7 +43,6 @@ from models.queue import QueueInfo
 from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
-from models.savers import how_much_savings_you_can_add, AlertSaverStats
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, RuneCEXFlow
 from models.tx import ThorAction, ThorSubTx, EventLargeTransaction
@@ -57,6 +55,7 @@ CREATOR_TG = '@account1242'
 URL_THOR_SWAP = 'https://app.thorswap.finance/'
 
 URL_OUR_REF = 'https://app.thorswap.finance/swap?ref=ref'
+
 
 class BaseLocalization(ABC):  # == English
     def __init__(self, cfg: Config):
@@ -189,7 +188,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_LP_SUBSCRIBE = '🔔 Subscribe'
     BUTTON_LP_UNSUBSCRIBE = '🔕 Unsubscribe'
     TEXT_SUBSCRIBE_TO_LP = '🔔 Would you like to sign up for automatic notifications for this position? ' \
-                           'You\'ll be receiving LP/Savers yield report at the same time ' \
+                           'You\'ll be receiving LP yield report at the same time ' \
                            'every other day, week, or month.'
     BUTTON_LP_UNSUBSCRIBE_ALL = '🔕 Unsubscribe from all'
     BUTTON_LP_PERIOD_1D = 'Every day'
@@ -219,10 +218,8 @@ class BaseLocalization(ABC):  # == English
     TEXT_WALLETS_INTRO = (
         'Here you can add the addresses of the wallets you want to follow. The following features are available:\n'
         '👉 Liquidity Provisioning\n'
-        '👉 Savings vaults\n'
         '👉 Track balances and actions\n'
         '👉 Provision of Bond to nodes 🆕\n'
-        '👉 Loans 🆕\n'
     )
     TEXT_NO_ADDRESSES = "🔆 You have not added any addresses yet. Send me one."
     TEXT_YOUR_ADDRESSES = '🔆 You added addresses:'
@@ -325,9 +322,6 @@ class BaseLocalization(ABC):  # == English
 
     def label_for_pool_button(self, pool_name):
         short_name = cut_long_text(pool_name)
-        if LOAN_MARKER in pool_name:
-            # strip LOAN_MARKER
-            return f'Loan: {short_name[len(LOAN_MARKER):]}'
 
         if Asset(pool_name).is_synth:
             return 'Sv:' + short_name
@@ -619,15 +613,9 @@ class BaseLocalization(ABC):  # == English
 
         heading = ''
         if tx.is_of_type(ActionType.ADD_LIQUIDITY):
-            if tx.is_savings:
-                heading = f'🐳→💰 <b>Add to savings vault</b>'
-            else:
-                heading = f'🐳→⚡ <b>Add liquidity</b>'
+            heading = f'🐳→⚡ <b>Add liquidity</b>'
         elif tx.is_of_type(ActionType.WITHDRAW):
-            if tx.is_savings:
-                heading = f'🐳←💰 <b>Withdraw from savings vault</b>'
-            else:
-                heading = f'🐳←⚡ <b>Withdraw liquidity</b>'
+            heading = f'🐳←⚡ <b>Withdraw liquidity</b>'
         elif tx.is_of_type(ActionType.DONATE):
             heading = f'🙌 <b>Donation to the pool</b>'
         elif tx.is_of_type(ActionType.SWAP):
@@ -655,48 +643,18 @@ class BaseLocalization(ABC):  # == English
             else:
                 aff_text = ''
 
-            ilp_rune = tx.meta_withdraw.ilp_rune if tx.meta_withdraw else 0
-            if ilp_rune > 0:
-                ilp_usd = ilp_rune * usd_per_rune
-                mark = self._exclamation_sign(ilp_usd, 'ilp_usd_limit')
-                ilp_text = f'🛡️ Impermanent loss protection paid: {code(short_rune(ilp_rune))}{mark} ' \
-                           f'({short_dollar(ilp_usd)})\n'
-            else:
-                ilp_text = ''
+            rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rune_side_usd_short}) ↔️ "
+            asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({asset_side_usd_short})"
+            pool_depth_part = f'Pool depth is {bold(short_dollar(pool_depth_usd))} now.'
+            pool_percent_part = f" ({percent_of_pool:.2f}% of pool)" if percent_of_pool >= self.MIN_PERCENT_TO_SHOW \
+                else ''
 
-            if tx.is_savings:
-                amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
-                    self.get_savers_limits(pool_info, usd_per_rune, e.mimir, tx.asset_amount)
-                saver_cap_part = f'Savers cap is {saver_pb} full. '
-
-                if self.show_add_more and amount_more > 0:
-                    saver_cap_part += f'You can add {pre(short_money(amount_more))} {pre(asset_more)} more.'
-
-                vault_percent_part = f", {saver_percent:.2f}% of vault" if saver_percent >= self.MIN_PERCENT_TO_SHOW \
-                    else ''
-                asset_part = f"{bold(short_money(tx.asset_amount))} {asset}"
-
-                content = (
-                    f"{asset_part} ({code(short_dollar(total_usd_volume))}{vault_percent_part})\n"
-                    f"{aff_text}"
-                    f"{ilp_text}"
-                    f"{saver_cap_part}"
-                )
-
-            else:
-                rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rune_side_usd_short}) ↔️ "
-                asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({asset_side_usd_short})"
-                pool_depth_part = f'Pool depth is {bold(short_dollar(pool_depth_usd))} now.'
-                pool_percent_part = f" ({percent_of_pool:.2f}% of pool)" if percent_of_pool >= self.MIN_PERCENT_TO_SHOW \
-                    else ''
-
-                content = (
-                    f"{rune_part}{asset_part}\n"
-                    f"Total: {code(short_dollar(total_usd_volume))}{pool_percent_part}\n"
-                    f"{aff_text}"
-                    f"{ilp_text}"
-                    f"{pool_depth_part}"
-                )
+            content = (
+                f"{rune_part}{asset_part}\n"
+                f"Total: {code(short_dollar(total_usd_volume))}{pool_percent_part}\n"
+                f"{aff_text}"
+                f"{pool_depth_part}"
+            )
 
         elif tx.is_of_type(ActionType.REFUND):
             reason = shorten_text(tx.meta_refund.reason, 180)
@@ -741,15 +699,6 @@ class BaseLocalization(ABC):  # == English
                 blockchain_components.append(text_outputs + out_links)
 
         return " / ".join(blockchain_components)
-
-    def get_savers_limits(self, pool: PoolInfo, usd_per_rune, mimir: MimirHolder, asset_amount):
-        max_synth_per_asset_ratio = mimir.get_max_synth_per_pool_depth()  # normally: 0.15
-
-        cap = pool.get_synth_cap_in_asset_float(max_synth_per_asset_ratio)
-        amount_more = how_much_savings_you_can_add(pool, max_synth_per_asset_ratio)
-        saver_pb = self._cap_progress_bar(ThorCapInfo(cap, pool.synth_supply_float, usd_per_rune))
-        saver_pct = asset_amount / cap * 100.0 if pool.savers_depth else 100
-        return amount_more, Asset(pool.asset).name, saver_pb, cap, saver_pct
 
     def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
@@ -913,7 +862,6 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_STATS = '📊 Stats'
     BUTTON_METR_NODES = '🖥 Nodes'
     BUTTON_METR_LEADERBOARD = '🏆 Leaderboard'
-    BUTTON_METR_SAVERS = '💰 Savers'
     BUTTON_METR_CHAINS = '⛓️ Chains'
     BUTTON_METR_MIMIR = '🎅 Mimir consts'
     BUTTON_METR_VOTING = '🏛️ Voting'
@@ -2164,8 +2112,8 @@ class BaseLocalization(ABC):  # == English
     def _is_my_address_tag(address, my_addresses):
         return ' ★' if my_addresses and address in my_addresses else ''
 
-    def link_to_address(self, addr, name_map, chain=Chains.THOR, is_loan=False):
-        tab = 'loans' if is_loan else ''
+    def link_to_address(self, addr, name_map, chain=Chains.THOR):
+        tab = ''
         url = get_explorer_url_to_address(self.cfg.network_id, chain, addr, tab)
         if name_map:
             name = name_map.by_address.get(addr)
@@ -2251,9 +2199,8 @@ class BaseLocalization(ABC):  # == English
         explorer_link, name_str, pretty_pool, thor_yield_link = self._regular_report_variables(address, local_name,
                                                                                                pool)
 
-        pos_type = 'savings' if lp_report.is_savers else 'liquidity'
         return (
-            f'Your {pos_type} position report {explorer_link}{name_str} in the pool {pre(pretty_pool)} is ready.\n'
+            f'Your liquidity position report {explorer_link}{name_str} in the pool {pre(pretty_pool)} is ready.\n'
             f'{thor_yield_link}.\n\n'
             f'{self.unsubscribe_text(unsub_id)}'
         )
@@ -2268,68 +2215,6 @@ class BaseLocalization(ABC):  # == English
         name_str = f' ({ital(local_name)})' if local_name else ''
 
         return explorer_link, name_str, pretty_pool, thor_yield_link
-
-    TEXT_LP_NO_LOAN_FOR_THIS_ADDRESS = "📪 <i>There are no loans for this address in the pool {pool}</i>"
-
-    def notification_text_loan_card(self, card: LoanReportCard, local_name='', unsub_id=''):
-        address_link = self.link_to_address(card.address, None, is_loan=True)
-        t_pos = card.details.t_pos
-        asset_str = Asset(t_pos.asset).pretty_str
-        message = (
-            f"––––––––––––––––––––––––––––––––––––––––––––––––\n"
-            f'🏦 <b>Loan for</b> {address_link} ({card.pool})\n\n'
-        )
-
-        message += (
-            f'Current collateral is {underline(bold(pretty_money(t_pos.collateral_current)))} '
-            f'{bold(asset_str)} or '
-            f'{underline(bold(pretty_dollar(card.collateral_current_usd)))}\n'
-        )
-
-        if card.collateral_price_last_add and card.collateral_price_last_add > 0:
-            old_collateral_value = card.collateral_price_last_add * t_pos.collateral_current
-            message += (
-                f"Value of collateral at the time "
-                f"of loan opening was {ital(pretty_dollar(old_collateral_value))}"
-            )
-
-            percent_change = up_down_arrow(old_collateral_value, card.collateral_current_usd, signed=True,
-                                           percent_delta=True)
-
-            if percent_change:
-                message += f" ({percent_change})"
-            message += '\n'
-
-        message += f'Time elapsed: {ital(self.seconds_human(card.time_elapsed))}\n'
-
-        message += f'\n<b>Debt current</b>: {underline(bold(pretty_dollar(t_pos.debt_current)))}\n'
-
-        if t_pos.debt_current > t_pos.debt_issued:
-            message += f'<b>Debt issued</b>: {ital(pretty_dollar(t_pos.debt_issued))}\n'
-
-        if t_pos.debt_repaid:
-            message += f'<b>Debt repaid</b>: {ital(pretty_dollar(t_pos.debt_repaid))}\n'
-
-        if t_pos.debt_current > 0:
-            message += (
-                f"CR: {bold(pretty_money(card.collateral_ratio))}x, "
-                f"LTV: {bold(pretty_money(card.loan_to_value))}%\n"
-            )
-
-        if target_assets := card.details.m_pos.target_assets:
-            if len(target_assets) == 1:
-                asset = target_assets[0]
-                message += f'Target asset is {ital(Asset(asset).pretty_str)}\n'
-            else:
-                assets_all = ', '.join(Asset(a).pretty_str for a in target_assets)
-                message += f'Target assets are {ital(assets_all)}\n'
-
-        if unsub_id:
-            message += f'\n{self.unsubscribe_text(unsub_id)}\n'
-
-        message += f"––––––––––––––––––––––––––––––––––––––––––––––––"
-
-        return message
 
     # ------ DEX -------
 
@@ -2376,79 +2261,6 @@ class BaseLocalization(ABC):  # == English
             f'Popular aggregators:\n{top_aggr_str}\n'
             f'Popular assets:\n{top_asset_str}'
         ).strip()
-
-    # ------ SAVERS -------
-
-    MIN_PERCENT_TO_SHOW_VAULT_FILL = 10
-
-    def notification_text_saver_stats(self, event: AlertSaverStats):
-        message = f'💰 <b>THORChain Savers Vaults summary</b>\n'
-
-        savers, prev = event.current_stats, event.previous_stats
-
-        total_earned_usd = savers.total_rune_earned * event.usd_per_rune
-        avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change = \
-            self.get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd)
-
-        fill_cap = savers.overall_fill_cap_percent(event.pool_map)
-
-        message += (
-            f'\n'
-            f'Total {code(savers.total_unique_savers)}{saver_number_change} savers '
-            f'with {code(short_dollar(savers.total_usd_saved))}{total_usd_change} saved.\n'
-            f'<b>Average APR</b> is {pre(pretty_money(savers.average_apr))}%{avg_apr_change}.\n'
-            f'Total earned: {pre(pretty_dollar(total_earned_usd))}{total_earned_change_usd}.\n'
-            f'Total filled: {fill_cap:.1f}%'
-        )
-
-        return message
-
-    @staticmethod
-    def get_savers_stat_changed_metrics_as_str(event: AlertSaverStats, prev, savers, total_earned_usd):
-        if prev:
-            saver_number_change = bracketify(up_down_arrow(
-                prev.total_unique_savers, savers.total_unique_savers, int_delta=True), before=' ')
-            total_usd_change = bracketify(up_down_arrow(
-                prev.total_usd_saved, savers.total_usd_saved, money_delta=True, money_prefix='$'), before=' ')
-            avg_apr_change = bracketify(up_down_arrow(
-                prev.average_apr, savers.average_apr, money_delta=True, postfix='%'
-            ), before=' ')
-            prev_total_earned_usd = prev.total_rune_earned * event.usd_per_rune
-            total_earned_change_usd = bracketify(up_down_arrow(
-                prev_total_earned_usd, total_earned_usd, money_delta=True, money_prefix='$'
-            ), before=' ')
-        else:
-            saver_number_change = ''
-            total_usd_change = ''
-            avg_apr_change = ''
-            total_earned_change_usd = ''
-        return avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change
-
-    TEXT_PIC_SAVERS_VAULTS = 'savers vaults'
-    TEXT_PIC_SAVERS_TOTAL_SAVERS = 'Total Savers'
-    TEXT_PIC_SAVERS_TOTAL_SAVED_VALUE = 'Total Saved Value'
-    TEXT_PIC_SAVERS_TOTAL_EARNED = 'Total Earned'
-    TEXT_PIC_SAVERS_APR_MEAN = 'APR Mean'
-    TEXT_PIC_SAVERS_TOTAL_FILLED = 'Total Filled'
-    TEXT_PIC_SAVERS_OR = ' or '
-    TEXT_PIC_SAVERS_ASSET = 'Asset'
-    TEXT_PIC_SAVERS_USD = 'USD'
-    TEXT_PIC_SAVERS_APR = 'APR'
-    TEXT_PIC_SAVERS = 'Savers'
-    TEXT_PIC_SAVERS_FILLED = 'Savers filled'
-    TEXT_PIC_SAVERS_EARNED = 'Earned'
-
-    TEXT_SAVERS_NO_DATA = '😩 Sorry. We have not gotten any data for Savers Vaults yet.'
-
-    SV_PIC_TITLE = 'savings'
-    SV_PIC_APR = 'APR'
-    SV_PIC_USD = 'USD'
-    SV_PIC_ADDED = 'Added'
-    SV_PIC_WITHDRAWN = 'Withdrawn'
-    SV_PIC_REDEEMABLE = 'Redeemable'
-    SV_PIC_PRICE = 'Price'
-    SV_PIC_EARNED = 'Earned'
-    SV_PIC_ELAPSED = 'elapsed since addition'
 
     # ------ POL -------
 
@@ -2510,130 +2322,6 @@ class BaseLocalization(ABC):  # == English
             text += self._format_pol_membership(event, of_pool='of pool')
 
         return text.strip()
-
-    # ----- LOANS ------
-    LENDING_DASHBOARD_URL = 'https://dashboards.ninerealms.com/#lending'
-
-    def notification_text_loan_open(self, event: AlertLoanOpen, name_map: NameMap):
-        l = event.loan
-        user_link = self.link_to_address(l.owner, name_map)
-        asset = ' ' + Asset(l.collateral_asset).pretty_str
-        target_asset = Asset(l.target_asset).pretty_str
-        db_link = link(self.LENDING_DASHBOARD_URL, "Dashboard")
-        # tx_link = self.link_to_tx(event.tx_id)
-        return (
-            '🏦→ <b>Loan open</b>\n'
-            f'Collateral deposited: {code(pretty_money(l.collateral_float, postfix=asset))}'
-            f' ({pretty_dollar(event.collateral_usd)})\n'
-            f'CR: x{pretty_money(l.collateralization_ratio)}\n'
-            f'Debt: {code(pretty_dollar(l.debt_usd))}\n'
-            f'Target asset: {pre(target_asset)}\n'
-            f'{user_link} | {db_link}'
-        )
-
-    def notification_text_loan_repayment(self, event: AlertLoanRepayment, name_map: NameMap):
-        user_link = self.link_to_address(event.loan.owner, name_map)
-        asset = ' ' + Asset(event.loan.collateral_asset).pretty_str
-        db_link = link(self.LENDING_DASHBOARD_URL, "Dashboard")
-        # tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
-        return (
-            '🏦← <b>Loan repayment</b>\n'
-            f'Collateral withdrawn: {code(pretty_money(event.loan.collateral_float, postfix=asset))}'
-            f' ({pretty_dollar(event.collateral_usd)})\n'
-            f'Debt repaid: {pre(pretty_dollar(event.loan.debt_repaid_usd))}\n'
-            f'{user_link} | {db_link}'
-        )
-
-    LENDING_LINK = "https://dashboards.ninerealms.com/#lending"
-
-    LEND_DICT = {
-        BTC_SYMBOL: "₿ Bitcoin",
-        ETH_SYMBOL: "Ξ Ethereum",
-    }
-
-    def _lend_pool_desc(self, event: AlertLendingStats):
-        pool_desc = ''
-        for pool in sorted(event.current.pools):
-            asset = pool.pool
-            pool_name = self.LEND_DICT.get(asset, asset)
-
-            fill = format_percent(pool.fill, total=1.0)
-            remaining_collateral = short_money(pool.collateral_available)
-            if pool.fill >= 1.0:
-                sing = '🚩'
-            elif pool.fill >= 0.9:
-                sing = '🔰'
-            else:
-                sing = '🟢'
-            pool_desc = self._format_lending_pool_entry(asset, fill, pool_desc, pool_name, remaining_collateral, sing)
-
-        return pool_desc
-
-    def _format_lending_pool_entry(self, asset, fill, pool_desc, pool_name, remaining_collateral, sing):
-        pool_desc += (
-            f'{pool_name} '
-            f'fill: {fill} {sing}, '
-            f'{remaining_collateral} {self.pretty_asset(asset)} available.'
-            f'\n'
-        )
-        return pool_desc
-
-    @staticmethod
-    def _lending_stats_delta(event: AlertLendingStats):
-        # todo! fix fields
-        # todo! flag if disabled
-        curr, prev = event.current, event.previous
-        if prev:
-            borrower_count_delta = bracketify(up_down_arrow(curr.borrower_count, prev.borrower_count, int_delta=True))
-            lending_tx_count_delta = bracketify(
-                up_down_arrow(curr.lending_tx_count, prev.lending_tx_count, int_delta=True))
-            total_collateral_value_delta = bracketify(
-                up_down_arrow(curr.total_collateral_value_usd, prev.total_collateral_value_usd, money_delta=True))
-            total_borrowed_amount_delta = bracketify(
-                up_down_arrow(curr.total_borrowed_amount_usd, prev.total_borrowed_amount_usd, money_delta=True))
-            rune_burned_rune_delta = bracketify(
-                up_down_arrow(curr.rune_burned_rune, prev.rune_burned_rune, money_delta=True))
-        else:
-            borrower_count_delta = ''
-            lending_tx_count_delta = ''
-            total_collateral_value_delta = ''
-            total_borrowed_amount_delta = ''
-            rune_burned_rune_delta = ''
-        cr = event.current.avg_cr
-        return (
-            borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta,
-            total_borrowed_amount_delta, total_collateral_value_delta, cr
-        )
-
-    def notification_lending_stats(self, event: AlertLendingStats):
-        (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta, total_borrowed_amount_delta,
-         total_collateral_value_delta, cr) = self._lending_stats_delta(event)
-
-        paused_str = '🛑 Lending is paused!\n' if event.current.is_paused else ''
-
-        return (
-            f'<b>Lending stats</b>\n\n'
-            f'{paused_str}'
-            f'🙋‍♀️ Borrower count: {bold(pretty_money(curr.borrower_count))} {borrower_count_delta}\n'
-            f'📝 Lending Txs: {bold(pretty_money(curr.lending_tx_count, integer=True))} {lending_tx_count_delta}\n'
-            f'💰 Total collateral value: {bold(short_dollar(curr.total_collateral_value_usd))} {total_collateral_value_delta}\n'
-            f'💸 Total borrowed value: {bold(short_dollar(curr.total_borrowed_amount_usd))} {total_borrowed_amount_delta}\n'
-            f'{self._lend_pool_desc(event)}'
-            f"Collateral Ratio: {pretty_money(cr)}\n"
-            f'❤️‍🔥 Rune burned: {bold(short_rune(curr.rune_burned_rune))} {rune_burned_rune_delta}\n\n'
-            f'{link(self.LENDING_LINK, "Details")}'
-        )
-
-    def notification_lending_open_back_up(self, event: AlertLendingOpenUpdate):
-        available_collateral = short_money(event.pool_state.collateral_available)
-        pool_name = self.LEND_DICT.get(event.asset, event.asset)
-        return (
-            f'🟢 A lending opportunity is now available in the {bold(self.pretty_asset(event.asset))} pool.\n'
-            f'{bold(available_collateral)} {ital(pool_name)} can be deposited as collateral.\n'
-            f'Fill level is {ital(format_percent(event.pool_state.fill, total=1.0))}.\n'
-        )
-
-    TEXT_LENDING_STATS_NO_DATA = '😩 Sorry. We have not gotten any data for lending stats yet.'
 
     # ------ TRADE ACCOUNT ------
 
@@ -2794,26 +2482,14 @@ class BaseLocalization(ABC):  # == English
 
     # ------- Rune burn -------
 
-    RUNE_BURN_GRAPH_TITLE = 'Rune burn'
-
     @staticmethod
     def notification_rune_burn(e: EventRuneBurn):
         return (f'{bold(short_rune(e.last_24h_burned_rune))} $RUNE was burned today '
                 f'({short_dollar(e.last_24h_burned_usd)})')
 
-        # trend = 'Deflation' if e.deflation_percent > 0 else 'Inflation'
-        # return (
-        #     f'🔥 <b>Rune burned</b>\n\n'
-        #     f'Last {int(e.tally_days)} days burned: {bold(pretty_rune(e.delta_rune))} '
-        #     f'({ital(pretty_dollar(e.delta_usd))})\n'
-        #     f'Total burned: {bold(pretty_rune(e.total_burned_rune))} '
-        #     f'({ital(pretty_dollar(e.total_burned_usd))})\n'
-        #     f"Burning {bold(pretty_percent(e.system_income_burn_percent, signed=False))} of the system's income, "
-        #     f"approximately {ital(pretty_rune(e.yearly_burn_prediction))} Runes will be burned in a year.\n"
-        #     f"{trend} is {bold(pretty_percent(e.deflation_percent, signed=False))}."
-        # )
-
     TEXT_BURN_NO_DATA = '😩 Sorry. We have not gotten any data for burned Rune yet.'
+
+    # ------- Ruji -------
 
     @staticmethod
     def notification_rujira_merge_stats(e: AlertRujiraMergeStats):

@@ -61,10 +61,6 @@ class ActionType(Enum):
     # Name service
     THORNAME = 'thorname'
 
-    # Lending
-    LOAN_OPEN = 'loan+'
-    LOAN_CLOSE = 'loan-'
-
     # Node operator/bond provider
     BOND = 'bond'
     UNBOND = 'unbond'
@@ -116,10 +112,6 @@ MEMO_ACTION_TABLE = {
     "name": ActionType.THORNAME,
     "n": ActionType.THORNAME,
     "~": ActionType.THORNAME,
-    "$+": ActionType.LOAN_OPEN,
-    "loan+": ActionType.LOAN_OPEN,
-    "$-": ActionType.LOAN_CLOSE,
-    "loan-": ActionType.LOAN_CLOSE,
     "trade+": ActionType.TRADE_ACC_DEPOSIT,
     "trade-": ActionType.TRADE_ACC_WITHDRAW,
     "pool+": ActionType.RUNEPOOL_ADD,
@@ -310,33 +302,6 @@ class THORMemo:
                 pool=ith(components, 1, '')
             )
 
-        elif tx_type == ActionType.LOAN_OPEN:
-            # LOAN+:BTC.BTC:bc1234567:minBTC:affAddr:affPts:dexAgg:dexTarAddr:DexTargetLimit
-            # 0     1       2         3      4       5      6      7          8
-            affiliates = cls._parse_affiliates(
-                ith(components, 4, ''),
-                ith(components, 5, ''),
-            )
-            return cls.loan_open(
-                asset=ith(components, 1),
-                dest_address=ith(components, 2),
-                limit=ith(components, 3, 0, is_number=True),
-                affiliates=affiliates,
-                # dex_aggregator_address=ith(components, 6, ''),
-                # dex_final_asset_address=ith(components, 7, ''),
-                # dex_min_amount_out=ith(components, 8, 0, is_number=True)
-            )
-
-        elif tx_type == ActionType.LOAN_CLOSE:
-            # "LOAN-:BTC.BTC:bc1234567:minOut"
-            #  0     1       2         3
-
-            return cls.loan_close(
-                asset=ith(components, 1),
-                dest_address=ith(components, 2),
-                min_out=ith(components, 3, 0, is_number=True)
-            )
-
         elif tx_type == ActionType.BOND:
             # BOND:NODEADDR:PROVIDER:FEE
             # 0    1        2        3
@@ -447,17 +412,6 @@ class THORMemo:
                 f'~:{self.name}:{self.chain}:{self.dest_address}:{self.owner}'
                 f':{self.affiliate_asset}:{nothing_if_0(expiry)}'
             )
-
-        elif self.action == ActionType.LOAN_OPEN:
-            # LOAN+:ASSET:DESTADDR:MINOUT:AFFILIATE:FEE
-            memo = (
-                f'$+:{self.asset}:{self.dest_address}:{self.limit}'
-                f':{self._affiliate_part}'
-            )
-
-        elif self.action == ActionType.LOAN_CLOSE:
-            # LOAN-:ASSET:DEST_ADDR:MIN_OUT
-            memo = f'$-:{self.asset}:{self.dest_address}:{nothing_if_0(self.limit)}'
 
         elif self.action == ActionType.BOND:
             # # BOND:NODEADDR:PROVIDER:FEE
@@ -590,34 +544,6 @@ class THORMemo:
             owner=thor_owner,
             name_expiry=expiry,
             affiliate_asset=preferred_asset,
-        )
-
-    @classmethod
-    def loan_open(cls, asset: str, dest_address: str, limit: int = 0,
-                  affiliate_address: str = '', affiliate_fee_bp: int = 0,
-                  affiliates: Optional[List[Affiliate]] = None
-                  ):
-        # LOAN+:BTC.BTC:bc1234567:minBTC:affAddr:affPts:dexAgg:dexTarAddr:DexTargetLimit
-        # 0     1       2         3      4       5      6      7          8
-        affiliates = affiliates or ([Affiliate(affiliate_address, affiliate_fee_bp)] if affiliate_address else [])
-        return cls(
-            ActionType.LOAN_OPEN,
-            asset=asset,
-            dest_address=dest_address,
-            limit=limit,
-            affiliates=affiliates,
-            pool=asset,
-        )
-
-    @classmethod
-    def loan_close(cls, asset: str, dest_address: str, min_out: int = 0):
-        # "LOAN-:BTC.BTC:bc123456:minOut"
-        #  0     1       2         3
-
-        return cls(
-            ActionType.LOAN_CLOSE,
-            asset=asset, pool=asset,
-            dest_address=dest_address, limit=min_out
         )
 
     @classmethod

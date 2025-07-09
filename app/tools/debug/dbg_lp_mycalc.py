@@ -2,13 +2,12 @@ import asyncio
 import logging
 from datetime import date
 
-from comm.picture.lp_picture import generate_yield_picture, savings_pool_picture, lp_address_summary_picture
 from comm.localization.languages import Language
+from comm.picture.lp_picture import lp_address_summary_picture
+from jobs.fetch.tx import TxFetcher
 from jobs.runeyield.date2block import DateToBlockMapper
 from jobs.runeyield.lp_my import HomebrewLPConnector
-from jobs.fetch.tx import TxFetcher
 from lib.texts import sep
-from models.asset import Asset
 from tools.lib.lp_common import LpAppFramework
 
 LANG = Language.RUSSIAN
@@ -29,25 +28,9 @@ async def my_test_summary_of_all_pools(lpgen: LpAppFramework, addr):
         print('------')
 
 
-async def demo_report_for_single_pool(lpgen: LpAppFramework, addr, pool, hidden=True):
-    is_savers = Asset.from_string(pool).is_synth
-    sep()
-    print(f'{addr = }, {pool = }, {is_savers = }')
-    sep()
-
-    loc = lpgen.deps.loc_man[LANG]
-    report = await lpgen.rune_yield.generate_yield_report_single_pool(addr, pool)
-    print(report)
-    if is_savers:
-        picture = await savings_pool_picture(lpgen.deps.price_holder, report, loc, hidden)
-    else:
-        picture = await generate_yield_picture(lpgen.deps.price_holder, report, loc, hidden)
-    picture.show()
-
-
 async def demo_summary_all_pools(lpgen: LpAppFramework, addr, hidden=False):
     loc = lpgen.deps.loc_man[LANG]
-    pools = await lpgen.rune_yield.get_my_pools(addr, show_savers=True)
+    pools = await lpgen.rune_yield.get_my_pools(addr)
     print(f'{addr} has {pools = }')
     yield_summary = await lpgen.rune_yield.generate_yield_summary(addr, pools)
 
@@ -90,7 +73,7 @@ async def clear_date2block(lpgen: LpAppFramework):
 
 
 async def demo_get_my_pools(app: LpAppFramework, address):
-    pools = await app.rune_yield.get_my_pools(address, show_savers=True)
+    pools = await app.rune_yield.get_my_pools(address)
     print(f'{address = } => {pools = }')
 
 
@@ -120,9 +103,9 @@ async def demo_find_interesting_savers(app: LpAppFramework):
                 print(f'interrupted sessions detected: {n_this_session = } but {n = } !!!')
 
 
-async def debug_current_lp_state(app: LpAppFramework, pool, address, is_savings):
+async def debug_current_lp_state(app: LpAppFramework, pool, address):
     lp_conn = HomebrewLPConnector(app.deps)
-    lp = await lp_conn.get_current_liquidity_from_node(address, pool, is_savings)
+    lp = await lp_conn.get_current_liquidity_from_node(address, pool)
     print(lp)
 
 
@@ -132,18 +115,6 @@ async def main():
         global LANG
         LANG = Language.ENGLISH
 
-        # saver BTC
-        # await debug_current_lp_state(app, "BTC.BTC", 'bc1qhjp04nzu744lupkjds4agyl2qm92z8z4qd6u9a',
-        #                              is_savings=True)
-
-        # await demo_summary_all_pools(app, 'bc1qhjp04nzu744lupkjds4agyl2qm92z8z4qd6u9a')  # savers
-
-        await demo_report_for_single_pool(app,
-                                          '',
-                                          'BTC.BTC',
-                                          hidden=False)
-
-        # await demo_find_interesting_savers(app)
         # await demo_get_my_pools(app, 'bc1q0jmh2ht08zha0vajx0kq87vxtyspak45xywf2p')
         # await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH')
         # await demo_report_for_single_pool(app, 'bc1q0jmh2ht08zha0vajx0kq87vxtyspak45xywf2p', 'BTC/BTC')  # only 1 add
@@ -166,8 +137,7 @@ async def main():
         # await demo_test_block_to_date(app, 16510834)
         # await demo_test_block_to_date(app, 14232321)
 
-        # await demo_summary_all_pools(app, 'thor1gzautydm2mrpcuj36drqyzuuzqw4w8cp8zjj2c')  # 3 classic LP
-        # await demo_summary_all_pools(app, 'bc1qcsmgsvfpp4w6dmlwwdf4s87ngh8trz8yuwsfy0')  # savers
+        await demo_summary_all_pools(app, 'thor1gzautydm2mrpcuj36drqyzuuzqw4w8cp8zjj2c')  # 3 classic LP
         # await demo_summary_all_pools(app, 'ltc1q67tf8ryuggvetakwz5flex5ydhyvn7rp0y8kx3')
 
         # await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH',

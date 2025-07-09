@@ -90,7 +90,7 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         return self.get_pure_rune_from_thor_array(j['balances'])
 
     async def get_treasury_lp_value(self, address=TREASURY_LP_ADDRESS):
-        tr_lp = await self.midgard.query_pool_membership(address, show_savers=True)
+        tr_lp = await self.midgard.query_pool_membership(address)
         pools = await self.midgard.query_pools()
         rune_accum = 0.0
         for member in tr_lp:

@@ -132,11 +132,6 @@ class MainMenuDialog(BaseDialog):
         message.text = ''
         await self.build_metrics_dialog().show_rune_supply(message)
 
-    @message_handler(commands='savings', state='*')
-    async def cmd_savings(self, message: Message):
-        message.text = ''
-        await self.build_metrics_dialog().show_savers(message)
-
     @message_handler(commands='voting', state='*')
     async def cmd_voting(self, message: Message):
         message.text = ''
@@ -166,10 +161,6 @@ class MainMenuDialog(BaseDialog):
     @message_handler(commands='weekly', state='*')
     async def cmd_weekly(self, message: Message):
         await self.build_metrics_dialog().show_weekly_stats(message)
-
-    @message_handler(commands='lending', state='*')
-    async def cmd_lending(self, message: Message):
-        await self.build_metrics_dialog().show_lending_stats(message)
 
     @message_handler(commands='tradeacc', state='*')
     async def cmd_trade_acc_stats(self, message: Message):

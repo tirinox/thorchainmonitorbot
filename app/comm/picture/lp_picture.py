@@ -9,11 +9,10 @@ from comm.localization.manager import BaseLocalization
 from comm.picture.resources import Resources
 from lib.constants import RUNE_SYMBOL
 from lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR, \
-    TC_WHITE, paste_image_masked, LINE_COLOR
+    TC_WHITE
 from lib.money import pretty_money, format_percent, pretty_percent, RAIDO_GLYPH, pretty_rune, \
-    short_dollar, short_money
+    short_dollar
 from lib.plot_graph import PlotBarGraph
-from lib.texts import bracketify
 from lib.utils import async_wrap, grouper
 from models.asset import Asset, is_rune
 from models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
@@ -39,20 +38,16 @@ async def generate_yield_picture(price_holder: LastPriceHolder,
                                  report: LiquidityPoolReport,
                                  loc: BaseLocalization,
                                  value_hidden=False):
+    # LP only
     r = Resources()
     asset = report.pool.asset
 
-    if report.is_savers:
-        # savings position
-        asset_image = await r.logo_downloader.get_or_download_logo_cached(asset)
-        return await _generate_savings_picture(price_holder, report, loc, asset_image, value_hidden)
-    else:
-        # LP position
-        rune_image, asset_image = await asyncio.gather(
-            r.logo_downloader.get_or_download_logo_cached(RUNE_SYMBOL),
-            r.logo_downloader.get_or_download_logo_cached(asset)
-        )
-        return await _generate_lp_pool_picture(price_holder, report, loc, rune_image, asset_image, value_hidden)
+    # LP position
+    rune_image, asset_image = await asyncio.gather(
+        r.logo_downloader.get_or_download_logo_cached(RUNE_SYMBOL),
+        r.logo_downloader.get_or_download_logo_cached(asset)
+    )
+    return await _generate_lp_pool_picture(price_holder, report, loc, rune_image, asset_image, value_hidden)
 
 
 def put_title(draw, title, fonts):
@@ -493,14 +488,9 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
     total_fees_usd = 0.0
     total_fees_rune = 0.0
     for report in reports:
-        if report.is_savers:
-            runes, r_usd = 0.0, 0.0
-            assets = report.current_value(report.ASSET)
-            a_usd = report.current_value(report.USD)
-        else:
-            runes = report.current_value(report.RUNE) * 0.5
-            assets = report.current_value(report.ASSET) * 0.5
-            r_usd = a_usd = report.current_value(report.USD) * 0.5
+        runes = report.current_value(report.RUNE) * 0.5
+        assets = report.current_value(report.ASSET) * 0.5
+        r_usd = a_usd = report.current_value(report.USD) * 0.5
 
         asset_values[report.pool.asset] += assets
         asset_values[RUNE_SYMBOL] += runes
@@ -681,166 +671,5 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
     else:
         draw.text(pos_percent_lp(50, 90), loc.LP_PIC_SUMMARY_NO_WEEKLY_CHART, fill=FADE_COLOR,
                   font=r.font_head, anchor='mm')
-
-    return image
-
-
-async def savings_pool_picture(price_holder: LastPriceHolder,
-                               report: LiquidityPoolReport,
-                               loc: BaseLocalization,
-                               value_hidden=False):
-    r = Resources()
-    asset = report.pool.asset
-    asset_image = await r.logo_downloader.get_or_download_logo_cached(asset)
-    return await _generate_savings_picture(price_holder, report, loc, asset_image, value_hidden)
-
-
-@async_wrap
-def _generate_savings_picture(price_holder: LastPriceHolder,
-                              report: LiquidityPoolReport,
-                              loc: BaseLocalization,
-                              asset_image,
-                              value_hidden: bool):
-    full_asset = report.pool.asset
-    asset = str(Asset(full_asset).name)
-
-    min_change_rel = 0.01
-    line_color = LINE_COLOR
-    caption_x, asset_row_x, usd_row_x = 29, 51, 80
-    middle_row_x = 0.5 * (asset_row_x + usd_row_x)
-    start_table_y = table_y = 26
-    delta_y = 8
-
-    r = Resources()
-    image = r.bg_image.copy()
-    draw = ImageDraw.Draw(image)
-
-    def h_line():
-        y = table_y - delta_y * 0.5
-        draw.line((pos_percent_lp(0, y), pos_percent_lp(100, y)), fill=line_color, width=2)
-
-    def put_hidden_plate():
-        r.put_hidden_plate(image, pos_percent_lp(asset_row_x, table_y), anchor='center', ey=-18)
-        r.put_hidden_plate(image, pos_percent_lp(usd_row_x, table_y), anchor='center', ey=-18)
-
-    # TITLE
-    put_title(draw, loc.SV_PIC_TITLE, r.fonts)
-
-    paste_image_masked(image, asset_image, pos_percent_lp(asset_row_x, 20), anchor='mb')
-
-    font_t = r.fonts.get_font(53)
-    font_n = r.fonts.get_font_bold(56)
-
-    # --- COLUMNS ---
-    draw.text(pos_percent_lp(asset_row_x, table_y), str(asset), anchor='mm', fill=FORE_COLOR, font=font_t)
-    draw.text(pos_percent_lp(usd_row_x, table_y), loc.SV_PIC_USD, anchor='mm', fill=FORE_COLOR, font=font_t)
-    table_y += delta_y
-    h_line()
-
-    # --- ADD ---
-    draw.text(pos_percent_lp(caption_x, table_y), loc.SV_PIC_ADDED, anchor='rm', fill=FADE_COLOR, font=font_t)
-    if value_hidden:
-        put_hidden_plate()
-    else:
-        draw.text(pos_percent_lp(asset_row_x, table_y), short_money(report.added_value(report.ASSET)),
-                  anchor='mm', fill=FORE_COLOR, font=font_n)
-        draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(report.added_value(report.USD)),
-                  anchor='mm', fill=FORE_COLOR, font=font_n)
-    table_y += delta_y
-    h_line()
-
-    # --- WITHDRAW ---
-    draw.text(pos_percent_lp(caption_x, table_y), loc.SV_PIC_WITHDRAWN, anchor='rm', fill=FADE_COLOR, font=font_t)
-    if value_hidden:
-        put_hidden_plate()
-    else:
-        draw.text(pos_percent_lp(asset_row_x, table_y), short_money(report.withdrawn_value(report.ASSET)),
-                  anchor='mm', fill=FORE_COLOR, font=font_n)
-        draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(report.withdrawn_value(report.USD)),
-                  anchor='mm', fill=FORE_COLOR, font=font_n)
-    table_y += delta_y
-    h_line()
-
-    # --- REDEEMABLE ---
-    draw.text(pos_percent_lp(caption_x, table_y), loc.SV_PIC_REDEEMABLE, anchor='rm', fill=FADE_COLOR, font=font_t)
-    if value_hidden:
-        put_hidden_plate()
-    else:
-        draw.text(pos_percent_lp(asset_row_x, table_y), short_money(report.current_value(report.ASSET)),
-                  anchor='mm', fill=FORE_COLOR, font=font_n)
-        draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(report.current_value(report.USD)),
-                  anchor='mm', fill=FORE_COLOR, font=font_n)
-    table_y += delta_y
-    h_line()
-
-    # --- PRICE ---
-    draw.text(pos_percent_lp(caption_x, table_y), loc.SV_PIC_PRICE, anchor='rm', fill=FADE_COLOR, font=font_t)
-    font_small_n = r.fonts.get_font_bold(48)
-    font_small_t = r.fonts.get_font(48)
-    if report.usd_per_asset_start is not None:
-        last_price = short_dollar(report.usd_per_asset_start)
-        curr_price = short_dollar(report.usd_per_asset)
-        price_change = report.price_change(report.ASSET)
-        price_change_percent_str = bracketify(short_money(price_change, signed=True, postfix='%'))
-        price_text = f'{last_price} → {curr_price} {price_change_percent_str}'
-        draw.text(pos_percent_lp(middle_row_x, table_y),
-                  price_text,
-                  fill=result_color(price_change, min_ch=min_change_rel * 100.0),
-                  font=font_small_t, anchor='mm')
-
-    table_y += delta_y
-    h_line()
-
-    # --- EARNED ---
-    draw.text(pos_percent_lp(caption_x, table_y), loc.SV_PIC_EARNED, anchor='rm', fill=FADE_COLOR, font=font_t)
-
-    gain_usd, gain_usd_percent = report.gain_loss(report.USD)
-    gain_asset, gain_asset_percent = report.gain_loss(report.ASSET)
-
-    if value_hidden:
-        put_hidden_plate()
-    else:
-        draw.text(pos_percent_lp(asset_row_x, table_y), short_money(gain_asset, signed=True),
-                  anchor='mm', fill=result_color(gain_asset), font=font_n)
-        draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(gain_usd, signed=True),
-                  anchor='mm', fill=result_color(gain_usd), font=font_n)
-
-    dy_per = 3.5
-
-    draw.text(pos_percent_lp(asset_row_x, table_y + dy_per), bracketify(short_money(gain_asset_percent, postfix='%')),
-              anchor='mm', fill=result_color(gain_asset_percent), font=font_small_n)
-    draw.text(pos_percent_lp(usd_row_x, table_y + dy_per), bracketify(short_money(gain_usd_percent, postfix='%')),
-              anchor='mm', fill=result_color(gain_usd_percent), font=font_small_n)
-
-    table_y += delta_y + dy_per
-    h_line()
-
-    # --- ARP ---
-    table_y += 2
-    font_big_n = r.fonts.get_font_bold(80)
-    draw.text(pos_percent_lp(caption_x, table_y), loc.SV_PIC_APR,
-              anchor='rm', fill=FADE_COLOR, font=r.fonts.get_font(66))
-
-    if report.total_lping_sec > 10:
-        apr_asset = report.savers_apr
-        # apr_usd = report.savers_usd_apr
-
-        draw.text(pos_percent_lp(middle_row_x, table_y), short_money(apr_asset, postfix='%'),
-                  anchor='mm', fill=result_color(apr_asset, min_ch=min_change_rel), font=font_big_n)
-        # draw.text(pos_percent_lp(usd_row_x, table_y), short_money(apr_usd, postfix='%'),
-        #           anchor='mm', fill=result_color(apr_usd, min_ch=min_change_rel), font=font_big_n)
-    table_y += delta_y * 2
-
-    # ---- ELAPSED ----
-    elapsed_days = loc.pic_lping_days(report.total_days, report.in_out.first_add_ts, loc.SV_PIC_ELAPSED)
-    draw.text(pos_percent_lp(50, table_y), elapsed_days,
-              font=r.fonts.get_font(40), anchor='mm', fill=FADE_COLOR)
-
-    # v line
-    v_line_x = caption_x + 3.5
-    draw.line((
-        pos_percent_lp(v_line_x, start_table_y - delta_y * 0.5),
-        pos_percent_lp(v_line_x, table_y - delta_y * 1.5)),
-        fill=line_color, width=1)
 
     return image

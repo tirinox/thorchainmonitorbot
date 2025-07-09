@@ -1,18 +1,15 @@
 import asyncio
-from typing import Union
 
 from api.midgard.name_service import NameService, NameMap, add_thor_suffix
 from api.w3.dex_analytics import DexReport
 from comm.localization.manager import BaseLocalization
 from comm.picture.achievement_picture import build_achievement_picture_generator
 from comm.picture.block_height_picture import block_speed_chart
-from comm.picture.burn_picture import rune_burn_graph
 from comm.picture.key_stats_picture import KeyStatsPictureGenerator
 from comm.picture.nodes_pictures import NodePictureGenerator
 from comm.picture.pools_picture import PoolPictureGenerator
 from comm.picture.price_picture import price_graph_from_db
 from comm.picture.queue_picture import queue_graph
-from comm.picture.savers_picture import SaversPictureGenerator
 from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.achievement.ach_list import Achievement
 from jobs.fetch.chain_id import AlertChainIdChange
@@ -30,7 +27,6 @@ from models.cap_info import AlertLiquidityCap
 from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
 from models.last_block import EventBlockSpeed, BlockProduceState
-from models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from models.memo import THORMemo
 from models.mimir import AlertMimirChange, AlertMimirVoting
 from models.node_info import AlertNodeChurn
@@ -41,7 +37,6 @@ from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunepoolStats
 from models.runepool import AlertRunePoolAction
 from models.s_swap import AlertSwapStart
-from models.savers import AlertSaverStats
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import RuneCEXFlow, NativeTokenTransfer
 from models.tx import EventLargeTransaction
@@ -83,8 +78,6 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_large_tx(data)
         elif isinstance(data, DexReport):
             await self._handle_dex_report(data)
-        elif isinstance(data, AlertSaverStats):
-            await self._handle_saver_stats(data)
         elif isinstance(data, PoolChanges):
             await self._handle_pool_churn(data)
         elif isinstance(data, AlertPOLState):
@@ -97,18 +90,12 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_key_stats(data)
         elif isinstance(data, AlertSwapStart):
             await self._handle_streaming_swap_start(data)
-        elif isinstance(data, (AlertLoanOpen, AlertLoanRepayment)):
-            await self._handle_loans(data)
-        elif isinstance(data, AlertLendingOpenUpdate):
-            await self._handle_lending_caps(data)
         elif isinstance(data, AlertPrice):
             await self._handle_price(data)
         elif isinstance(data, AlertMimirChange):
             await self._handle_mimir(data)
         elif isinstance(data, AlertChainHalt):
             await self._handle_chain_halt(data)
-        elif isinstance(data, AlertLendingStats):
-            await self._handle_lending_stats(data)
         elif isinstance(data, EventPools):
             await self._handle_best_pools(data)
         elif isinstance(data, AlertTradeAccountAction):
@@ -179,16 +166,6 @@ class AlertPresenter(INotified, WithLogger):
             BaseLocalization.notification_text_dex_report,
             event
         )
-
-    async def _handle_saver_stats(self, event: AlertSaverStats):
-        async def _gen(loc: BaseLocalization, event):
-            pic_gen = SaversPictureGenerator(loc, event)
-            pic, pic_name = await pic_gen.get_picture()
-
-            caption = loc.notification_text_saver_stats(event)
-            return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
-
-        await self.broadcaster.broadcast_to_all(_gen, event)
 
     async def _handle_pool_churn(self, event: PoolChanges):
         await self.broadcaster.broadcast_to_all(BaseLocalization.notification_text_pool_churn, event)
@@ -421,19 +398,6 @@ class AlertPresenter(INotified, WithLogger):
 
         await self.deps.broadcaster.broadcast_to_all(message_gen)
 
-    async def _handle_loans(self, event: Union[AlertLoanOpen, AlertLoanRepayment]):
-        name_map = await self.load_names(event.loan.owner)
-
-        if isinstance(event, AlertLoanOpen):
-            method = BaseLocalization.notification_text_loan_open
-        else:
-            method = BaseLocalization.notification_text_loan_repayment
-
-        await self.broadcaster.broadcast_to_all(
-            method,
-            event, name_map
-        )
-
     async def render_price_graph(self, loc: BaseLocalization, event: AlertPrice):
         raw_data = recursive_asdict(event, add_properties=True)
         parameters = {
@@ -467,18 +431,6 @@ class AlertPresenter(INotified, WithLogger):
             BaseLocalization.notification_text_mimir_changed,
             data.changes,
             data.holder,
-        )
-
-    async def _handle_lending_stats(self, data: AlertLendingStats):
-        await self.deps.broadcaster.broadcast_to_all(
-            BaseLocalization.notification_lending_stats,
-            data,
-        )
-
-    async def _handle_lending_caps(self, data: AlertLendingOpenUpdate):
-        await self.deps.broadcaster.broadcast_to_all(
-            BaseLocalization.notification_lending_open_back_up,
-            data,
         )
 
     async def _handle_best_pools(self, data: EventPools):
@@ -567,13 +519,9 @@ class AlertPresenter(INotified, WithLogger):
         await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_price_divergence, data)
 
     async def render_rune_burn_graph(self, loc, data: EventRuneBurn):
-        if self.use_renderer:
-            # todo: share EventRuneBurn between the components, use Pydantic
-            photo = await self.renderer.render('rune_burn_and_income.jinja2', namedtuple_to_dict(data))
-            photo_name = 'rune_burnt.png'
-        else:
-            # old style
-            photo, photo_name = await rune_burn_graph(data.points, loc, days=data.tally_days)
+        # todo: share EventRuneBurn between the components, use Pydantic
+        photo = await self.renderer.render('rune_burn_and_income.jinja2', namedtuple_to_dict(data))
+        photo_name = 'rune_burnt.png'
         return photo, photo_name
 
     async def _handle_rune_burn(self, data: EventRuneBurn):

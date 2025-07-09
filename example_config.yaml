@@ -140,7 +140,7 @@ broadcasting:
       name: "@thorchain_alert"  # live channel
       lang: eng
     - type: discord
-      name: 322323232323  # channel ID
+      name: 123  # channel ID
       lang: rus
     - type: twitter
       lang: eng-tw
@@ -238,8 +238,6 @@ tx:
 
   add_date_if_older_than: 2h
 
-  estimated_savings_vs_cex_enabled: false  # (!) new
-
   #  exclamation:
   #    fee_usd_limit: 3000
   #    ilp_usd_limit: 5000
@@ -263,11 +261,6 @@ tx:
     also_trigger_when:
       ilp_paid_usd_greater: 5000
       affiliate_fee_usd_greater: 1000
-
-    savers:
-      enabled: true
-      min_usd_total: 100
-      curve_mult: 0.00008
 
   swap:
     enabled: true
@@ -294,11 +287,6 @@ tx:
     min_usd_total: 50000
     curve_mult: 0.1
     cooldown: 20m
-
-  loans:
-    enabled: true
-    min_usd_total: 5000
-    # curve_mult: 0.1
 
   dex_aggregator_update:
     enabled: true
@@ -536,12 +524,6 @@ supply:
       tally_period_days: 7d
 
 
-saver_stats:
-  enabled: true
-  period: 3d
-  fetch_period: 50
-
-
 wallet_counter:
   enabled: true
   fetch_period: 1h
@@ -561,20 +543,6 @@ key_metrics:
   data_max_age: 36h
   notification:
     cooldown: 7d
-
-
-lending:
-  fetch_period: 2h
-
-  stats_report:
-    enabled: false
-    cooldown: 3d
-
-  caps_alert:
-    enabled: true
-    cooldown: 1h
-    threshold: 99  # %
-
 
 
 trade_accounts:

@@ -19,7 +19,6 @@ from models.cap_info import ThorCapInfo
 from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
 from models.last_block import EventBlockSpeed, BlockProduceState
-from models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from models.memo import ActionType
 from models.mimir import MimirChange, MimirHolder
 from models.net_stats import AlertNetworkStats
@@ -29,7 +28,6 @@ from models.price import RuneMarketInfo, AlertPrice, AlertPriceDiverge
 from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
-from models.savers import AlertSaverStats
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import RuneCEXFlow, NativeTokenTransfer
 from models.tx import EventLargeTransaction
@@ -100,15 +98,9 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         heading = ''
         if tx.is_of_type(ActionType.ADD_LIQUIDITY):
-            if tx.is_savings:
-                heading = f'🐳→💰 Add to savings vault'
-            else:
-                heading = f'🐳→⚡ Add liquidity'
+            heading = f'🐳→⚡ Add liquidity'
         elif tx.is_of_type(ActionType.WITHDRAW):
-            if tx.is_savings:
-                heading = f'🐳←💰 Withdraw from savings vault'
-            else:
-                heading = f'🐳←⚡ Withdraw liquidity'
+            heading = f'🐳←⚡ Withdraw liquidity'
         elif tx.is_of_type(ActionType.DONATE):
             heading = f'🐳 Donation to the pool 🙌'
         elif tx.is_of_type(ActionType.SWAP):
@@ -134,41 +126,17 @@ class TwitterEnglishLocalization(BaseLocalization):
             else:
                 aff_text = ''
 
-            ilp_rune = tx.meta_withdraw.ilp_rune if tx.meta_withdraw else 0
-            if ilp_rune > 0:
-                ilp_usd = ilp_rune * usd_per_rune
-                ilp_rune_fmt = short_rune(ilp_rune)
-                mark = self._exclamation_sign(ilp_usd, 'ilp_usd_limit')
-                ilp_text = f'🛡️ IL prot. paid: {ilp_rune_fmt}{mark} ' \
-                           f'({short_dollar(ilp_usd)})\n'
-            else:
-                ilp_text = ''
-
             asset = self.pretty_asset(tx.first_pool)
 
-            if tx.is_savings:
-                rune_part = ''
-                asset_part = f"{short_money(tx.asset_amount)} {asset}"
-                amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
-                    self.get_savers_limits(pool_info, usd_per_rune, e.mimir, tx.asset_amount)
-                pool_depth_part = f'Savers cap is {saver_pb} full. '
-
-                if self.show_add_more and amount_more > 0:
-                    pool_depth_part += f'You can add {short_money(amount_more)} {asset_more} more.'
-
-                pool_percent_part = f" ({saver_percent:.2f}% of vault)" if saver_percent > self.MIN_PERCENT_TO_SHOW \
-                    else ''
-            else:
-                rune_part = f"{short_money(tx.rune_amount)} {self.R} ({rune_side_usd_short}) ↔️ "
-                asset_part = f"{short_money(tx.asset_amount)} {asset} ({asset_side_usd_short})"
-                pool_depth_part = f'Pool depth is {short_dollar(pool_depth_usd)} now.'
-                pool_percent_part = f" ({percent_of_pool:.2f}% of pool)" if percent_of_pool > 0.01 else ''
+            rune_part = f"{short_money(tx.rune_amount)} {self.R} ({rune_side_usd_short}) ↔️ "
+            asset_part = f"{short_money(tx.asset_amount)} {asset} ({asset_side_usd_short})"
+            pool_depth_part = f'Pool depth is {short_dollar(pool_depth_usd)} now.'
+            pool_percent_part = f" ({percent_of_pool:.2f}% of pool)" if percent_of_pool > 0.01 else ''
 
             content += (
                 f"{rune_part}{asset_part}\n"
                 f"Total: {short_dollar(total_usd_volume)}{pool_percent_part}\n"
                 f"{aff_text}"
-                f"{ilp_text}"
                 f"{pool_depth_part}"
             )
 
@@ -644,7 +612,7 @@ class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_best_pools(self, pd: EventPools, n_pools):
         return 'THORChain top liquidity pools'
 
-    def link_to_address(self, addr, name_map, chain=Chains.THOR, is_loan=False):
+    def link_to_address(self, addr, name_map, chain=Chains.THOR):
         # without a link, just a caption
         if name_map:
             name = name_map.by_address.get(addr)
@@ -747,32 +715,6 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return self.smart_split(parts)
 
-    def notification_text_saver_stats(self, event: AlertSaverStats):
-        parts = [f'💰 THORChain Savers\n']
-
-        savers, prev = event.current_stats, event.previous_stats
-        total_earned_usd = savers.total_rune_earned * event.usd_per_rune
-        avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change = \
-            self.get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd)
-        fill_cap = savers.overall_fill_cap_percent(event.pool_map)
-
-        parts.append(
-            f'\n'
-            f'{savers.total_unique_savers}{saver_number_change} savers '
-            f'| {(short_dollar(savers.total_usd_saved))}{total_usd_change}\n'
-        )
-        parts.append(
-            f'Avg. APR is {(pretty_money(savers.average_apr))}%{avg_apr_change}\n'
-        )
-        parts.append(
-            f'Earned: {pretty_dollar(total_earned_usd)}{total_earned_change_usd}\n'
-        )
-        parts.append(
-            f'Total filled: {fill_cap:.1f}%\n\n'
-        )
-
-        return self.smart_split(parts)
-
     # ------ POL -------
 
     @staticmethod
@@ -826,65 +768,6 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     def notification_text_key_metrics_caption(self, data: AlertKeyStats):
         return '.@THORChain weekly stats $RUNE'
-
-    # ----- LOANS ------
-
-    def notification_text_loan_open(self, event: AlertLoanOpen, name_map: NameMap):
-        l = event.loan
-        user_link = self.link_to_address(l.owner, name_map)
-        asset = ' ' + Asset(l.collateral_asset).pretty_str
-        target_asset = Asset(l.target_asset).pretty_str
-
-        return (
-            f'🏦→ Loan open {user_link}\n'
-            f'Collateral deposited: {pretty_money(l.collateral_float, postfix=asset)}'
-            f' ({pretty_dollar(event.collateral_usd)})\n'
-            f'CR: x{pretty_money(l.collateralization_ratio)}\n'
-            f'Debt: {pretty_dollar(l.debt_usd)}\n'
-            f'Target asset: {target_asset}\n'
-            f'{self.LENDING_DASHBOARD_URL}'
-        )
-
-    def notification_text_loan_repayment(self, event: AlertLoanRepayment, name_map: NameMap):
-        loan = event.loan
-        user_link = self.link_to_address(loan.owner, name_map)
-        asset = ' ' + Asset(loan.collateral_asset).pretty_str
-
-        return (
-            f'🏦← Loan repayment {user_link}\n'
-            f'Collateral withdrawn: {pretty_money(loan.collateral_float, postfix=asset)}'
-            f' ({pretty_dollar(event.collateral_usd)})\n'
-            f'Debt repaid: {pretty_dollar(loan.debt_repaid_usd)}\n'
-            f'{self.LENDING_DASHBOARD_URL}'
-        )
-
-    def notification_lending_stats(self, event: AlertLendingStats):
-        (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta, total_borrowed_amount_delta,
-         total_collateral_value_delta, cr) = self._lending_stats_delta(event)
-
-        paused_str = '🛑 Paused!\n' if event.current.is_paused else ''
-
-        return (
-            f'Lending stats\n\n'
-            f'{paused_str}'
-            f'🙋‍️ Borrower count: {pretty_money(curr.borrower_count)} {borrower_count_delta}\n'
-            f'📝 Tx count: {pretty_money(curr.lending_tx_count)} {lending_tx_count_delta}\n'
-            f'💰 Total collateral: {short_dollar(curr.total_collateral_value_usd)} {total_collateral_value_delta}\n'
-            f'💸 Total borrowed: {short_dollar(curr.total_borrowed_amount_usd)} {total_borrowed_amount_delta}\n'
-            f'{self._lend_pool_desc(event)}'
-            f"Collateral Ratio: {pretty_money(cr)}\n"
-            f'❤️‍🔥 Rune burned: {short_rune(curr.rune_burned_rune)} {rune_burned_rune_delta}\n\n'
-            f'{self.LENDING_LINK}'
-        )
-
-    def notification_lending_open_back_up(self, event: AlertLendingOpenUpdate):
-        available_collateral = short_money(event.pool_state.collateral_available)
-        pool_name = self.LEND_DICT.get(event.asset, event.asset)
-        return (
-            f'🟢 A lending opportunity is now available in the {self.pretty_asset(event.asset)} pool.\n'
-            f'{available_collateral} {pool_name} can be deposited as collateral.\n'
-            f'Current fill level: {format_percent(event.pool_state.fill, total=1.0)}.\n'
-        )
 
     # ------ TRADE ACCOUNT ------
 

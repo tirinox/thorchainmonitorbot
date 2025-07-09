@@ -19,9 +19,6 @@ class TxMetricType:
     RUNEPOOL_ADD = 'runepool_add'
     RUNEPOOL_WITHDRAW = 'runepool_withdraw'
 
-    LOAN_OPEN = 'loan_open'
-    LOAN_CLOSE = 'loan_close'
-
     @staticmethod
     def usd_key(rune_key):
         return f'{rune_key}_usd'

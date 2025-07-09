@@ -2,21 +2,11 @@ import asyncio
 import json
 from pprint import pprint
 
-from comm.picture.burn_picture import rune_burn_graph
 from lib.date_utils import HOUR, DAY
 from lib.texts import sep
 from lib.utils import namedtuple_to_dict
 from notify.public.burn_notify import BurnNotifier
-from tools.lib.lp_common import LpAppFramework, save_and_show_pic
-
-
-async def demo_burn_picture_old(app: LpAppFramework, notifier):
-    points = await notifier.ts.get_last_points(period_sec=7 * DAY, max_points=7 * DAY / HOUR)
-    pic, name = await rune_burn_graph(points, app.deps.loc_man.default)
-    save_and_show_pic(pic, name)
-
-    last_max_supply = await notifier.ts.get_last_value('max_supply')
-    print(f'Last max supply: {last_max_supply}')
+from tools.lib.lp_common import LpAppFramework
 
 
 async def demo_last_burn_event(app: LpAppFramework, notifier):

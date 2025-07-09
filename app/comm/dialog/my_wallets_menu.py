@@ -11,11 +11,11 @@ from aiogram.utils.helper import HelperMode
 
 from api.aionode.types import ThorSwapperClout
 from api.midgard.name_service import add_thor_suffix
-from comm.telegram.inline_list import TelegramInlineList
 from comm.localization.eng_base import BaseLocalization
+from comm.picture.lp_picture import generate_yield_picture, lp_address_summary_picture
+from comm.telegram.inline_list import TelegramInlineList
 from jobs.runeyield import get_rune_yield_connector
-from jobs.runeyield.borrower import BorrowerPositionGenerator
-from lib.constants import Chains, LOAN_MARKER
+from lib.constants import Chains
 from lib.date_utils import today_str, parse_timespan_to_seconds
 from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
@@ -30,7 +30,6 @@ from notify.personal.helpers import GeneralSettings, Props
 from notify.personal.scheduled import PersonalPeriodicNotificationService, PersonalIdTriplet
 from .base import message_handler, query_handler, DialogWithSettings
 from .message_cat_db import MessageCategoryDB
-from comm.picture.lp_picture import generate_yield_picture, lp_address_summary_picture
 
 CAT_ADD_MORE = 'add-more'
 CAT_WALLET_MENU = 'wallet-menu'
@@ -248,22 +247,12 @@ class MyWalletsMenu(DialogWithSettings):
     async def _load_my_pools(self, address: str):
         try:
             rune_yield = get_rune_yield_connector(self.deps)
-            pools = await rune_yield.get_my_pools(address, show_savers=True)
+            pools = await rune_yield.get_my_pools(address)
             pool_names = [p.pool for p in pools]
         except FileNotFoundError:
             logging.error(f'not found pools for address {address}')
             pool_names = []
-
-        try:
-            loans_positions = await self.lending_helper().get_full_borrower_state(address)
-            non_zero_positions = loans_positions.get_non_empty_positions
-            loan_names = [f'{LOAN_MARKER}{lp.collateral_asset}' for lp in non_zero_positions]
-        except Exception as e:
-            logging.error(f'Error loading borrower positions for {address}: {e!r}')
-            loan_names = []
-
-        my_pools = pool_names + loan_names
-        return my_pools
+        return pool_names
 
     async def _present_wallet_contents_menu(self, message: Message, edit: bool):
         await LPMenuStates.WALLET_MENU.set()
@@ -576,45 +565,7 @@ class MyWalletsMenu(DialogWithSettings):
     # --- LP Pic generation actions ----
 
     async def click_on_wallet_position(self, query: CallbackQuery, pool_label, allow_subscribe=False):
-        if LOAN_MARKER in pool_label:
-            # LOAN
-            await self.view_loan_report(query, pool_label, allow_subscribe)
-        else:
-            # LP or savers
-            await self.view_pool_report(query, pool_label, allow_subscribe)
-
-    async def view_loan_report(self, query: CallbackQuery, pool, allow_subscribe=False):
-        address = self.current_address
-
-        # remember the last pool (if we want to subscribe)
-        self.data[self.KEY_LAST_POOL] = pool
-
-        await self.start_typing(query.message)
-
-        # CONTENT
-
-        try:
-            loan_card = await self.lending_helper().get_loan_report_card(pool, address)
-        except ValueError:
-            loan_card = None
-
-        if allow_subscribe:
-            picture_kb = await self._get_picture_bottom_keyboard(query, address, pool)
-        else:
-            picture_kb = None
-
-        await query.message.answer(
-            self.loc.notification_text_loan_card(loan_card),
-            disable_notification=True,
-            disable_web_page_preview=True,
-            reply_markup=picture_kb
-        )
-
-        # ANSWER
-        await self._show_wallet_again(query)
-
-        # CLEAN UP
-        await self.safe_delete(query.message)
+        await self.view_pool_report(query, pool_label, allow_subscribe)
 
     async def view_pool_report(self, query: CallbackQuery, pool, allow_subscribe=False):
         address = self.current_address
@@ -903,6 +854,3 @@ class MyWalletsMenu(DialogWithSettings):
     async def register_message(self, category, message: Message):
         with suppress(Exception):
             await self.get_message_tracker(message, category).push(message.message_id)
-
-    def lending_helper(self) -> BorrowerPositionGenerator:
-        return BorrowerPositionGenerator(self.deps)

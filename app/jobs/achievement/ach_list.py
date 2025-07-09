@@ -72,14 +72,6 @@ class AchievementName:
     WEEKLY_AFFILIATE_REVENUE_USD = 'weekly_affiliate_revenue_usd'
     WEEKLY_SWAP_VOLUME = 'weekly_swap_volume'
 
-    # loans
-    RUNE_BURNT_LENDING = 'rune_burnt_lending'
-    LOANS_OPENED = 'loans_opened'
-    BORROWER_COUNT = 'borrower_count'
-    MAX_LOAN_AMOUNT_USD = 'max_loan_amount_usd'
-    TOTAL_BORROWED_USD = 'total_borrowed_usd'
-    TOTAL_COLLATERAL_USD = 'total_collateral_usd'
-
     # trade assets
     TRADE_BALANCE_TOTAL_USD = 'trade_balance_total_usd'
     TRADE_ASSET_HOLDERS_COUNT = 'trade_asset_holders_count'
@@ -308,15 +300,6 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.WEEKLY_SWAP_VOLUME, 'Weekly swap volume', prefix='$', thresholds=300_600_000),
     ADesc(A.WEEKLY_PROTOCOL_REVENUE_USD, 'Weekly protocol revenue', prefix='$', thresholds=867_900),
     ADesc(A.WEEKLY_AFFILIATE_REVENUE_USD, 'Weekly affiliate revenue', prefix='$', thresholds=60_300),
-
-    # loans
-    ADesc(A.RUNE_BURNT_LENDING, 'Rune Burned from lending', postfix=POSTFIX_RUNE,
-          preferred_bg=BURN_BG, tint='#f83f0e'),
-    ADesc(A.LOANS_OPENED, 'Total loans opened'),
-    ADesc(A.BORROWER_COUNT, 'Total borrowers count'),
-    ADesc(A.MAX_LOAN_AMOUNT_USD, 'Maximum loan amount', prefix='$'),
-    ADesc(A.TOTAL_BORROWED_USD, 'Total borrowed', prefix='$'),
-    ADesc(A.TOTAL_COLLATERAL_USD, 'Total collateral', prefix='$'),
 
     # trade assets
     ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade asset balance', prefix='$', thresholds=10_000_000),

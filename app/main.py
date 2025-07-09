@@ -21,7 +21,6 @@ from jobs.fetch.chains import ChainStateFetcher
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.fetch.key_stats import KeyStatsFetcher
 from jobs.fetch.last_block import LastBlockFetcher
-from jobs.fetch.lending_stats import LendingStatsFetcher
 from jobs.fetch.mimir import ConstMimirFetcher
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from jobs.fetch.node_info import NodeInfoFetcher
@@ -29,13 +28,11 @@ from jobs.fetch.pol import RunePoolFetcher
 from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from jobs.fetch.queue import QueueFetcher
 from jobs.fetch.ruji_merge import RujiMergeStatsFetcher
-from jobs.fetch.savers_vnx import SaversStatsFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.tx import TxFetcher
 from jobs.node_churn import NodeChurnDetector
 from jobs.price_recorder import PriceRecorder
 from jobs.ruji_merge import RujiMergeTracker
-from jobs.scanner.loan_extractor import LoanExtractorBlock
 from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.runepool import RunePoolEventDecoder
 from jobs.scanner.swap_extractor import SwapExtractorBlock
@@ -75,9 +72,6 @@ from notify.public.chain_id_notify import ChainIdNotifier
 from notify.public.chain_notify import TradingHaltedNotifier
 from notify.public.dex_report_notify import DexReportNotifier
 from notify.public.key_metrics_notify import KeyMetricsNotifier
-from notify.public.lend_stats_notify import LendingStatsNotifier
-from notify.public.lending_open_up import LendingCapsNotifier
-from notify.public.loans_notify import LoanTxNotifier
 from notify.public.mimir_notify import MimirChangedNotifier
 from notify.public.node_churn_notify import NodeChurnNotifier
 from notify.public.pol_notify import POLNotifier
@@ -88,7 +82,6 @@ from notify.public.queue_notify import QueueNotifier, QueueStoreMetrics
 from notify.public.ruji_merge_stats import RujiMergeStatsTxNotifier
 from notify.public.runepool_notify import RunePoolTransactionNotifier, RunepoolStatsNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
-from notify.public.savers_stats_notify import SaversStatsNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
 from notify.public.supply_notify import SupplyNotifier
 from notify.public.trade_acc_notify import TradeAccTransactionNotifier, TradeAccSummaryNotifier
@@ -384,17 +377,6 @@ class App(WithLogger):
                 volume_filler.add_subscriber(self.refund_notifier_tx)
                 self.refund_notifier_tx.add_subscriber(d.alert_presenter)
 
-            if d.cfg.tx.loans.get('enabled', True):
-                loan_extractor = LoanExtractorBlock(d)
-                d.block_scanner.add_subscriber(loan_extractor)
-
-                if achievements_enabled:
-                    loan_extractor.add_subscriber(achievements)
-
-                loan_notifier = LoanTxNotifier(d, curve=curve)
-                loan_extractor.add_subscriber(loan_notifier)
-                loan_notifier.add_subscriber(d.alert_presenter)
-
             tasks.append(fetcher_tx)
 
         if d.cfg.get('cap.enabled', True):
@@ -520,16 +502,6 @@ class App(WithLogger):
                 d.mimir_const_fetcher.add_subscriber(burn_notifier)
                 burn_notifier.add_subscriber(d.alert_presenter)
 
-        if d.cfg.get('saver_stats.enabled', True):
-            d.saver_stats_fetcher = SaversStatsFetcher(d)
-            tasks.append(d.saver_stats_fetcher)
-
-            ssc = SaversStatsNotifier(d)
-            ssc.add_subscriber(d.alert_presenter)
-
-            # if achievements_enabled:
-            #     d.saver_stats_fetcher.add_subscriber(achievements)
-
         if d.cfg.get('wallet_counter.enabled', True) and achievements_enabled:  # only used along with achievements
             wallet_counter = AccountNumberFetcher(d)
             tasks.append(wallet_counter)
@@ -544,25 +516,6 @@ class App(WithLogger):
             metrics_notifier.add_subscriber(d.alert_presenter)
             if achievements_enabled:
                 metrics_fetcher.add_subscriber(achievements)
-
-        lending_report_enabled = d.cfg.get('lending.stats_report.enabled', True)
-        lending_caps_alert_enabled = d.cfg.get('lending.caps_alert.enabled', True)
-        if lending_caps_alert_enabled or lending_report_enabled:
-            d.lend_stats_fetcher = LendingStatsFetcher(d)
-            tasks.append(d.lend_stats_fetcher)
-
-            if lending_report_enabled:
-                d.lend_stats_notifier = LendingStatsNotifier(d)
-                d.lend_stats_notifier.add_subscriber(d.alert_presenter)
-                d.lend_stats_fetcher.add_subscriber(d.lend_stats_notifier)
-
-            if lending_caps_alert_enabled:
-                lend_cap_notifier = LendingCapsNotifier(d)
-                lend_cap_notifier.add_subscriber(d.alert_presenter)
-                d.lend_stats_fetcher.add_subscriber(lend_cap_notifier)
-
-            if achievements_enabled:
-                d.lend_stats_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('trade_accounts.enabled', True):
             # Trade account actions

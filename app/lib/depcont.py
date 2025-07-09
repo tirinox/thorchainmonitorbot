@@ -54,7 +54,6 @@ class DepContainer:
     mimir_const_fetcher = None  # type: 'ConstMimirFetcher'
     last_block_fetcher = None  # type: 'LastBlockFetcher'
     fetcher_chain_state = None # type: 'ChainStateFetcher'
-    saver_stats_fetcher = None
     data_controller = None
     lend_stats_fetcher = None
     trade_acc_fetcher = None  # type: 'TradeAccountFetcher'

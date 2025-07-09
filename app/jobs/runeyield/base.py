@@ -29,5 +29,5 @@ class AsgardConsumerConnectorBase(WithLogger):
 
     # interface
     @abstractmethod
-    async def get_my_pools(self, address, show_savers=False) -> List[PoolMemberDetails]:
+    async def get_my_pools(self, address) -> List[PoolMemberDetails]:
         ...

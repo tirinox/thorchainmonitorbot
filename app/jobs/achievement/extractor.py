@@ -7,16 +7,13 @@ from lib.date_utils import full_years_old_ts
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.utils import is_list_of_type
-from models.asset import Asset
 from models.key_stats_model import AlertKeyStats
-from models.loans import LendingStats, AlertLoanOpen
 from models.memo import ActionType
 from models.mimir import MimirTuple
 from models.net_stats import NetworkStats
 from models.node_info import NodeSetChanges
-from models.price import RuneMarketInfo, LastPriceHolder
+from models.price import RuneMarketInfo
 from models.runepool import AlertPOLState, AlertRunePoolAction
-from models.savers import SaversBank
 from models.trade_acc import AlertTradeAccountStats, AlertTradeAccountAction
 from models.tx import ThorAction
 from notify.public.block_notify import LastBlockStore
@@ -39,8 +36,6 @@ class AchievementsExtractor(WithLogger):
             kv_events = self.on_mimir(data)
         elif isinstance(data, RuneMarketInfo):
             kv_events = self.on_rune_market_info(data)
-        elif isinstance(data, SaversBank):
-            kv_events = self.on_savers(data, self.deps.price_holder)
         elif isinstance(sender, AccountNumberFetcher):
             kv_events = [Achievement(A.WALLET_COUNT, int(data))]
         elif is_list_of_type(data, ThorAction):
@@ -52,16 +47,10 @@ class AchievementsExtractor(WithLogger):
             kv_events = self.on_weekly_stats(data)
         elif isinstance(data, EventTestAchievement):
             kv_events = self.on_test_event(data)
-        elif isinstance(data, LendingStats):
-            kv_events = self.on_lending_stats(data)
-        elif isinstance(data, AlertLoanOpen):
-            kv_events = self.on_loan_open(data)
         elif isinstance(data, AlertTradeAccountStats):
             kv_events = self.on_trade_asset_summary(data)
         elif isinstance(data, AlertTradeAccountAction):
             kv_events = self.on_trade_asset_action(data)
-        # elif isinstance(data, AlertSaverStats):
-        #     pass
 
         # todo: add event types for Trade accounts!
 
@@ -130,29 +119,7 @@ class AchievementsExtractor(WithLogger):
             Achievement(A.TOTAL_POOLS, data.total_pools),
             Achievement(A.TOTAL_ACTIVE_POOLS, data.total_active_pools),
             Achievement(A.COIN_MARKET_CAP_RANK, data.rank, descending=True) if data.rank else None,
-            Achievement(A.RUNE_BURNT_LENDING, int(data.supply_info.lending_burnt_rune)),
         ]
-        return events
-
-    @staticmethod
-    def on_savers(data: SaversBank, price_holder: LastPriceHolder):
-        rune_price = price_holder.usd_per_rune or 0.0
-        events = [
-            Achievement(A.TOTAL_UNIQUE_SAVERS, data.total_unique_savers),
-            Achievement(A.TOTAL_SAVED_USD, int(data.total_usd_saved)),
-            Achievement(A.TOTAL_SAVERS_EARNED_USD, data.total_rune_earned * rune_price),
-        ]
-        for vault in data.vaults:
-            asset = Asset.from_string(vault.asset).name[:10]
-            events.append(Achievement(A.SAVER_VAULT_MEMBERS, vault.number_of_savers, specialization=asset))
-            events.append(Achievement(A.SAVER_VAULT_SAVED_USD, int(vault.total_asset_saved_usd), specialization=asset))
-            if not 'USD' in asset:
-                events.append(
-                    Achievement(A.SAVER_VAULT_SAVED_ASSET, int(vault.total_asset_saved), specialization=asset))
-
-            earned = vault.calc_asset_earned(price_holder.pool_info_map)
-            events.append(Achievement(A.SAVER_VAULT_EARNED_ASSET, int(earned), specialization=asset))
-
         return events
 
     def on_thor_tx_list(self, txs: List[ThorAction]):
@@ -199,21 +166,6 @@ class AchievementsExtractor(WithLogger):
             Achievement(A.WEEKLY_SWAP_VOLUME, int(weekly_swap_volume))
         ]
         return results
-
-    @staticmethod
-    def on_lending_stats(data: LendingStats):
-        return [
-            Achievement(A.BORROWER_COUNT, data.borrower_count),
-            Achievement(A.LOANS_OPENED, data.lending_tx_count),
-            Achievement(A.TOTAL_COLLATERAL_USD, int(data.total_collateral_value_usd)),
-            Achievement(A.TOTAL_BORROWED_USD, int(data.total_borrowed_amount_usd)),
-        ]
-
-    @staticmethod
-    def on_loan_open(data: AlertLoanOpen):
-        return [
-            Achievement(A.MAX_LOAN_AMOUNT_USD, int(data.loan.debt_issued)),
-        ]
 
     @staticmethod
     def on_trade_asset_summary(data: AlertTradeAccountStats):

@@ -8,7 +8,6 @@ from comm.picture.key_stats_picture import KeyStatsPictureGenerator
 from comm.picture.nodes_pictures import NodePictureGenerator
 from comm.picture.pools_picture import PoolPictureGenerator
 from comm.picture.queue_picture import queue_graph
-from comm.picture.savers_picture import SaversPictureGenerator
 from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.fetch.node_info import NodeInfoFetcher
@@ -71,7 +70,7 @@ class MetricsDialog(BaseDialog):
         await MetricsStates.SECTION_FINANCE.set()
         reply_markup = kbd([
             [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_POL, self.loc.BUTTON_METR_STATS],
-            [self.loc.BUTTON_METR_SAVERS, self.loc.BUTTON_METR_TOP_POOLS, self.loc.BUTTON_METR_CEX_FLOW],
+            [self.loc.BUTTON_METR_TOP_POOLS, self.loc.BUTTON_METR_CEX_FLOW],
             [self.loc.BUTTON_METR_SUPPLY, self.loc.BUTTON_METR_DEX_STATS, self.loc.BUTTON_BACK],
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
@@ -102,8 +101,6 @@ class MetricsDialog(BaseDialog):
             await self.show_pol(message)
         elif message.text == self.loc.BUTTON_METR_STATS:
             await self.show_last_stats(message)
-        elif message.text == self.loc.BUTTON_METR_SAVERS:
-            await self.show_savers(message)
         elif message.text == self.loc.BUTTON_METR_TOP_POOLS:
             await self.show_top_pools(message)
         elif message.text == self.loc.BUTTON_METR_CEX_FLOW:
@@ -143,23 +140,6 @@ class MetricsDialog(BaseDialog):
         await message.answer(self.loc.cap_message(info),
                              disable_web_page_preview=True,
                              disable_notification=True)
-
-    async def show_savers(self, message: Message):
-        await self.start_typing(message)
-
-        event = await self.deps.saver_stats_fetcher.get_savers_event_cached()
-
-        if not event or not event.current_stats or not event.current_stats.vaults:
-            await message.answer(self.loc.TEXT_SAVERS_NO_DATA,
-                                 disable_notification=True)
-            return
-
-        pic_gen = SaversPictureGenerator(self.loc, event)
-        pic, name = await pic_gen.get_picture()
-
-        await message.answer_photo(img_to_bio(pic, name),
-                                   caption=self.loc.notification_text_saver_stats(event),
-                                   disable_notification=True)
 
     async def show_last_stats(self, message: Message):
         await self.start_typing(message)
@@ -364,17 +344,6 @@ class MetricsDialog(BaseDialog):
 
         await message.answer_photo(img_to_bio(pic, pic_name), caption=caption, disable_notification=True)
 
-    async def show_lending_stats(self, message: Message):
-        await self.start_typing(message)
-
-        try:
-            event = await self.deps.lend_stats_notifier.get_last_event()
-        except AttributeError:
-            event = None
-
-        text = self.loc.notification_lending_stats(event) if event else self.loc.TEXT_LENDING_STATS_NO_DATA
-        await message.answer(text, disable_notification=True)
-
     async def show_trade_acc_stats(self, message: Message):
         await self.start_typing(message)
 
@@ -476,8 +445,6 @@ class MetricsDialog(BaseDialog):
             await self.show_price(message, period)
         elif next_state == 'queue':
             await self.show_queue(message, period)
-        elif next_state == 'savers':
-            await self.show_savers(message)
         elif next_state == 'cex_flow':
             await self.show_cex_flow(message, period)
         elif next_state == 'dex_aggr':

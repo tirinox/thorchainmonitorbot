@@ -119,18 +119,6 @@ class ThorConnector:
         if data:
             return ThorLiquidityProvider.from_json(data)
 
-    async def query_savers(self, asset, height=0):
-        url = self.env.path_savers.format(asset=asset, height=height)
-        data = await self._request(url)
-        if data:
-            return [ThorLiquidityProvider.from_json(p) for p in data]
-
-    async def query_saver_details(self, asset, address, height=0):
-        url = self.env.path_saver_details.format(asset=asset, height=height, address=address)
-        data = await self._request(url)
-        if data:
-            return ThorLiquidityProvider.from_json(data)
-
     async def query_network(self, height=0):
         url = self.env.path_network.format(height=height)
         data = await self._request(url)
@@ -163,12 +151,6 @@ class ThorConnector:
         url = self.env.path_tx_simple.format(txid=tx_hash)
         data = await self._request(url)
         return data
-
-    async def query_borrower_details(self, asset, address, height=0):
-        url = self.env.path_borrower_details.format(asset=asset, height=height, address=address)
-        data = await self._request(url)
-        if data:
-            return ThorBorrowerPosition.from_json(data)
 
     async def query_trade_units(self, height=0):
         url = self.env.path_trade_units.format(height=height)

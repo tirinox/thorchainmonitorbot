@@ -3,8 +3,6 @@ from typing import NamedTuple
 
 from comm.picture.lp_picture import generate_yield_picture
 from jobs.runeyield import get_rune_yield_connector
-from jobs.runeyield.borrower import BorrowerPositionGenerator
-from lib.constants import LOAN_MARKER
 from lib.date_utils import today_str, MONTH
 from lib.db_one2one import OneToOne
 from lib.delegates import INotified
@@ -95,10 +93,7 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
 
     async def _deliver_report_safe(self, tr: PersonalIdTriplet):
         try:
-            if LOAN_MARKER in tr.pool:
-                await self._deliver_loan_report(tr)
-            else:
-                await self._deliver_report(tr)
+            await self._deliver_report(tr)
         except Exception as e:
             self.logger.exception(f'Error while delivering report for {tr}: {e}')
             await self.unsubscribe(tr)
@@ -130,27 +125,6 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
         await self._deliver_message_generic(message, platform, tr.user_id)
 
         self.logger.info(f'Report for {tr} sent successfully.')
-
-    async def _deliver_loan_report(self, tr: PersonalIdTriplet):
-        self.logger.info(f'Generating loan report for {tr}...')
-
-        if LOAN_MARKER not in tr.pool:
-            return
-
-        # Generate report
-
-        try:
-            loan_card = await BorrowerPositionGenerator(self.deps).get_loan_report_card(tr.pool, tr.address)
-        except ValueError:
-            loan_card = None
-
-        loc, local_name, unsub_id, platform = await self._prepare_state(tr)
-
-        message = BoardMessage(loc.notification_text_loan_card(loan_card, local_name, unsub_id))
-
-        await self._deliver_message_generic(message, platform, tr.user_id)
-
-        self.logger.info(f'Loan report for {tr} sent successfully.')
 
     async def _deliver_error_message(self, details, tr: PersonalIdTriplet):
         loc, local_name, unsub_id, platform = await self._prepare_state(tr)

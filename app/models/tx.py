@@ -233,8 +233,6 @@ class ThorAction:
 
     dex_info: SwapInOut = SwapInOut()
 
-    is_savings: bool = False
-
     def is_of_type(self, t):
         if isinstance(t, (tuple, list, set)):
             return any(is_action(self.type, tp) for tp in t)
@@ -462,8 +460,6 @@ class ThorAction:
             if self.is_of_type(ActionType.SWAP):
                 self.affiliate_fee = self.meta_swap.affiliate_fee
 
-        self.is_savings = any(True for asset in self.pools if Asset.from_string(asset).is_synth)
-
     def asymmetry(self, force_abs=False):
         rune_asset_amount = self.asset_amount * self.asset_per_rune
         factor = (self.rune_amount / (rune_asset_amount + self.rune_amount) - 0.5) * 200.0  # -100 % ... + 100 %
@@ -517,8 +513,7 @@ class ThorAction:
                 realm = self.search_realm(in_only=True)
             else:
                 realm = self.search_realm(out_only=True)
-            r = self.calc_amount(pool_map, realm,
-                                 filter_unknown_runes=self.is_savings)
+            r = self.calc_amount(pool_map, realm)
         elif self.is_of_type((ActionType.TRADE_ACC_WITHDRAW, ActionType.TRADE_ACC_DEPOSIT)):
             r = self.calc_amount(pool_map, self.all_realms)
         else:

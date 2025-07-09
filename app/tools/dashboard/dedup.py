@@ -4,7 +4,7 @@ from notify.dup_stop import TxDeduplicator
 
 async def dedup_dashboard_info(d):
     items = [
-        "scanner:last_seen", 'route:seen_tx', 'TxCount', 'VolumeRecorder', "loans:announced-hashes",
+        "scanner:last_seen", 'route:seen_tx', 'TxCount', 'VolumeRecorder',
         'RunePool:announced-hashes', 'ss-started:announced-hashes', 'TradeAcc:announced-hashes',
         'large-tx:announced-hashes'
     ]

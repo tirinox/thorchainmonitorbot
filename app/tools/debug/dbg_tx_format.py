@@ -11,7 +11,7 @@ from comm.localization.manager import BaseLocalization
 from jobs.fetch.tx import TxFetcher
 from jobs.volume_filler import VolumeFillerUpdater
 from lib.constants import Chains, thor_to_float, ZERO_HASH
-from lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
+from lib.explorers import get_explorer_url_to_tx
 from lib.money import DepthCurve
 from lib.texts import sep
 from models.memo import ActionType
@@ -42,20 +42,6 @@ async def demo_midgard_test_large_ilp(app):
     await present_one_aff_tx(app, q_path)
 
 
-async def demo_savers_add(app):
-    q_path = free_url_gen.url_for_tx(0, 50,
-                                     tx_type=ActionType.ADD_LIQUIDITY,
-                                     txid='B380846D04AFB83961D2728177B10D593E1C144A534A21A443366D233971A135')
-    # txid='413768826A02E8EA4068A2F35A7941008A15A18F7E76E49B8602BD99D840B721')
-    await present_one_aff_tx(app, q_path)
-
-
-async def demo_test_savers_vaults(app):
-    # q_path = free_url_gen.url_for_tx(0, 50, txid='050000225130CE9C5DBDDF0D1821036FC1CB7473A01EA41BB4F1EB5E3431A036')
-    # q_path = free_url_gen.url_for_tx(0, 50, txid='DDC41663A7337BD60FA89B8399C4E8D1B7DDFA389B46F60CF280399978411AB2')
-    q_path = free_url_gen.url_for_tx(0, 50, txid='4B1C25DD13810B6D388C39143E3F70ABCFB693E26F61E3534D1B89920A1E0260')
-    await present_one_aff_tx(app, q_path, find_aff=False)
-
 
 async def demo_test_aff_add_liq(app):
     q_path = free_url_gen.url_for_tx(0, 50,
@@ -84,21 +70,6 @@ async def demo_test_2(app):
     await present_one_aff_tx(app, q_path)
 
 
-async def demo_withdraw_savers(app):
-    q_path = free_url_gen.url_for_tx(0, 50,
-                                     txid='C24DF9D0A379519EBEEF2DBD50F5AD85AB7A5B75A2F3C571E185202EE2E9876F',
-                                     # txid='59A5981184350A481F02FC9D8782FF114A4A010E0FE9C26630089D0944DC42AF',
-                                     tx_type=ActionType.WITHDRAW)
-    await present_one_aff_tx(app, q_path)
-
-
-async def demo_add_savers(app):
-    q_path = free_url_gen.url_for_tx(0, 50,
-                                     txid='2A36FD67A32D47C9B7B1821197A8EF9F3C688CAB8979C43F235B8664563009CF',
-                                     tx_type=ActionType.ADD_LIQUIDITY)
-    await present_one_aff_tx(app, q_path)
-
-
 async def midgard_test_donate(app, mdg, tx_parser):
     q_path = free_url_gen.url_for_tx(0, 10, types='donate')
     j = await mdg.request(q_path)
@@ -110,25 +81,6 @@ async def present_one_aff_tx(app, q_path, find_aff=False):
     mdg = app.deps.midgard_connector
     ex_tx = await load_tx(app, mdg, q_path, find_aff)
     await send_tx_notification(app, ex_tx)
-
-
-async def demo_find_last_savers_additions(app: LpAppFramework):
-    d = app.deps
-    fetcher_tx = TxFetcher(d, tx_types=(ActionType.ADD_LIQUIDITY,))
-
-    aggregator = AggregatorDataExtractor(d)
-    fetcher_tx.add_subscriber(aggregator)
-
-    volume_filler = VolumeFillerUpdater(d)
-    aggregator.add_subscriber(volume_filler)
-
-    txs = await fetcher_tx.fetch_all_tx(liquidity_change_only=True, max_pages=5)
-    for tx in txs:
-        if tx.first_pool == 'BTC/BTC':
-            url = get_explorer_url_to_address(d.cfg.network_id, Chains.THOR, tx.sender_address)
-            amt = thor_to_float(tx.first_input_tx.first_amount)
-            print(f'{tx.first_pool} ({url}) amount = {amt} {tx.first_input_tx.first_asset}')
-            sep()
 
 
 async def load_tx(app, mdg, q_path, find_aff=False):
@@ -410,16 +362,10 @@ async def main():
     # await refund_full_rune(app)
     # await demo_midgard_test_large_ilp(app)
     # await demo_full_tx_pipeline(app, announce=True)
-    # await demo_test_savers_vaults(app)
     # await demo_aggr_aff_2(app)
     # await demo_test_aff_add_liq(app)
     # await demo_test_2(app)
     # await demo_aggr_aff(app)
-    # await demo_withdraw_savers(app)
-    # await demo_add_savers(app)
-    # await demo_find_last_savers_additions(app)
-    # await demo_midgard_test_large_ilp(app)
-    # await demo_savers_add(app)
     # await demo_verify_tx_scanner_in_the_past(app)
     # await find_affiliate_txs(app, 1, (ThorTxType.TYPE_SWAP,))
     # await demo_find_aggregator_error(app)

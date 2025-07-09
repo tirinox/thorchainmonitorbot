@@ -51,10 +51,9 @@ class LPPosition:
     usd_per_rune: float
     usd_per_asset: float
     total_usd_balance: float
-    is_savings: bool  # todo: new
 
     @classmethod
-    def create(cls, pool: PoolInfo, my_units: int, usd_per_rune: float, is_savings: bool):
+    def create(cls, pool: PoolInfo, my_units: int, usd_per_rune: float):
         usd_per_asset = usd_per_rune / pool.asset_per_rune
         return cls(
             pool=pool.asset,
@@ -65,7 +64,6 @@ class LPPosition:
             usd_per_rune=usd_per_rune,
             usd_per_asset=usd_per_asset,
             total_usd_balance=thor_to_float(pool.balance_rune) * usd_per_rune * 2.0,
-            is_savings=is_savings,
         )
 
 
@@ -182,8 +180,6 @@ class LiquidityPoolReport:
     fees: FeeReport
     pool: PoolInfo
 
-    is_savers: bool = False
-
     ASSET = 'asset'
     RUNE = 'rune'
     USD = 'usd'
@@ -274,11 +270,7 @@ class LiquidityPoolReport:
 
     @property
     def redeemable_rune_asset(self):
-        if self.is_savers:
-            r = 0
-            a = self.pool.savers_depth_float / thor_to_float(self.pool.savers_units) * self.in_out.pool_units
-        else:
-            r, a = pool_share(self.pool.balance_rune, self.pool.balance_asset, self.in_out.pool_units, self.pool.units)
+        r, a = pool_share(self.pool.balance_rune, self.pool.balance_asset, self.in_out.pool_units, self.pool.units)
         return thor_to_float(r), thor_to_float(a)
 
     def added_value(self, mode):
