@@ -162,6 +162,7 @@ async def dbg_second_chance_before_deactivate(app):
 BLOCK_UNBOND = 19027130
 BLOCK_BOND = 18986273
 BLOCK_SEND = 19034147
+BLOCK_RUJI_SEND = 21600000
 
 
 async def main():
@@ -171,7 +172,7 @@ async def main():
         # await demo_block_scanner_active(app, send_alerts=True, catch_up=500)
         # await demo_rune_transfers_once(app, BLOCK_BOND)
         # await demo_rune_transfers_once(app, BLOCK_UNBOND)
-        await demo_rune_transfers_once(app, 21006589)
+        await demo_rune_transfers_once(app, BLOCK_RUJI_SEND)
 
 
 if __name__ == '__main__':

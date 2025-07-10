@@ -229,6 +229,8 @@ class Asset:
         str_me = str(self)
         if is_rune(str_me):
             return 'Rune ᚱ'
+        elif is_ruji(str_me):
+            return 'RUJI'
         elif normalize_asset(str_me) in self.ABBREVIATE_GAS_ASSETS:
             return self.name  # Not ETH.ETH, just ETH
         else:
@@ -332,6 +334,13 @@ def is_rune(asset: Union[Asset, str]):
         asset = str(asset)
     asset = asset.strip()
     return asset.lower() in ('r', RUNE_DENOM) or asset.upper() == NATIVE_RUNE_SYMBOL
+
+
+def is_ruji(asset: Union[Asset, str]):
+    if isinstance(asset, Asset):
+        asset = str(asset)
+    asset = asset.strip()
+    return asset.lower() == 'x/ruji'
 
 
 def is_ambiguous_asset(asset: Union[str, Asset], among_assets: Iterable[str] = None):

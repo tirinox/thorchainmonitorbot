@@ -190,7 +190,6 @@ async def demo_full_tx_pipeline(app: LpAppFramework, announce=True,
     await fetcher_tx.run()
 
     # await demo_run_txs_example_file(fetcher_tx, 'swap_with_aff_new.json')
-    # await demo_run_txs_example_file(fetcher_tx, 'withdraw_ilp.json')
     # await demo_run_txs_example_file(fetcher_tx, 'swap_synth_synth.json')
     # await demo_run_txs_example_file(fetcher_tx, 'add_withdraw_big.json')
     await asyncio.sleep(10.0)
