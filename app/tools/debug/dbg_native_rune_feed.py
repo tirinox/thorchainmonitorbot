@@ -169,10 +169,12 @@ async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
         await app.deps.pool_fetcher.run_once()
-        # await demo_block_scanner_active(app, send_alerts=True, catch_up=500)
+        await demo_block_scanner_active(app, send_alerts=True, catch_up=500)
         # await demo_rune_transfers_once(app, BLOCK_BOND)
         # await demo_rune_transfers_once(app, BLOCK_UNBOND)
-        await demo_rune_transfers_once(app, BLOCK_RUJI_SEND)
+        # await demo_debug_personal_transfer(app)
+        # await demo_rune_transfers_once(app, BLOCK_RUJI_SEND)
+        await asyncio.sleep(3.0)
 
 
 if __name__ == '__main__':

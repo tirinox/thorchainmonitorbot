@@ -1648,15 +1648,14 @@ class RussianLocalization(BaseLocalization):
     def notification_text_rune_transfer_public(self, t: NativeTokenTransfer, name_map):
         asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
             None, t,
-            tx_title='',
             name_map=name_map
         )
 
         return (
-            f'💸 <b>Большой перевод</b>{tx_link}: '
+            f'💸 <b>Большой перевод</b> {comment}: '
             f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} '
-            f'от {from_my} ➡️ к {to_my}{memo}.'
-            f'{self._conditional_announcement()}'
+            f'от {from_my} ➡️ к {to_my}{memo}.\n'
+            f'Транзакция: {tx_link}'
         )
 
     @staticmethod

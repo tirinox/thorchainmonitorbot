@@ -2131,7 +2131,7 @@ class BaseLocalization(ABC):  # == English
     def _is_my_address_tag(address, my_addresses):
         return ' ★' if my_addresses and address in my_addresses else ''
 
-    def _native_transfer_prepare_stuff(self, my_addresses, t: NativeTokenTransfer, tx_title='TX', name_map=None):
+    def _native_transfer_prepare_stuff(self, my_addresses, t: NativeTokenTransfer, name_map=None):
         my_addresses = my_addresses or []
         name_map = name_map or {}
 
@@ -2164,8 +2164,7 @@ class BaseLocalization(ABC):  # == English
 
         # TX link
         if t.tx_hash:
-            tx_title = tx_title or comment
-            tx_link = ' ' + link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, t.tx_hash), tx_title)
+            tx_link = ' ' + self.link_to_tx(t.tx_hash)
         else:
             tx_link = ''
 
@@ -2174,7 +2173,7 @@ class BaseLocalization(ABC):  # == English
 
         memo = ''
         if t.memo and not t.memo.startswith('OUT:'):
-            memo = f' MEMO: "{code(shorten_text(t.memo, limit=42))}"'
+            memo = f'\nMEMO: "{code(shorten_text(t.memo, limit=42))}"'
 
         return asset, comment, from_my, to_my, tx_link, usd_amt, memo
 
@@ -2191,13 +2190,13 @@ class BaseLocalization(ABC):  # == English
     def notification_text_rune_transfer_public(self, t: NativeTokenTransfer, name_map: NameMap):
         asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
             None, t,
-            tx_title='',
             name_map=name_map
         )
 
-        return f'💸 <b>Large transfer</b>{tx_link}: ' \
+        return f'💸 <b>Large transfer</b> {comment}: ' \
                f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
-               f'from {from_my} ➡️ {to_my}{memo}.'
+               f'from {from_my} ➡️ {to_my}{memo}.\n' \
+               f'TX: {tx_link}'
 
     @staticmethod
     def unsubscribe_text(unsub_id):

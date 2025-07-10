@@ -637,7 +637,6 @@ class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_rune_transfer_public(self, t: NativeTokenTransfer, name_map: NameMap):
         asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
             None, t,
-            tx_title='',
             name_map=name_map
         )
 
@@ -652,7 +651,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'💸 Large transfer{comment}: '
             f'{short_money(t.amount)} {asset} {usd_amt} '
             f'from {from_my} ➡️ {to_my}{memo}\n'
-            f'{link}'.strip()
+            f'TX: {link}'.strip()
         )
 
     # ----- SUPPLY ------
