@@ -2430,9 +2430,9 @@ class BaseLocalization(ABC):  # == English
         amt_str = f"{pre(pretty_rune(event.amount))}"
 
         if event.is_deposit:
-            route = f"👤{from_link} ➡️ RUNEPool"
+            route = f"{from_link} ➡️ RUNEPool"
         else:
-            route = f"RUNEPool ➡️ 👤{to_link}"
+            route = f"RUNEPool ➡️ {to_link}"
 
         if event.affiliate:
             aff_collector = self.name_service.get_affiliate_name(event.affiliate)
@@ -2443,10 +2443,11 @@ class BaseLocalization(ABC):  # == English
             aff_text = ''
 
         return (
-            f"🏦 <b>RUNEPool {action_str}</b> {self.link_to_tx(event.tx_hash)}\n"
+            f"🏦 <b>RUNEPool {action_str}</b>\n"
             f"{route}\n"
             f"Total: {amt_str} ({pretty_dollar(event.usd_amount)})\n"
             f"{aff_text}"
+            f"{self.link_to_tx(event.tx_hash)}\n"
         )
 
     def notification_runepool_stats(self, event: AlertRunepoolStats):

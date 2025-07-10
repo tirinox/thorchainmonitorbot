@@ -1722,11 +1722,11 @@ class RussianLocalization(BaseLocalization):
         if event.is_deposit:
             action_str = 'добавление'
             from_link = self.link_to_address(event.actor, name_map)
-            route = f"👤{from_link} ➡️ RUNEPool"
+            route = f"{from_link} ➡️ RUNEPool"
         else:
             action_str = 'вывод'
             to_link = self.link_to_address(event.destination_address, name_map)
-            route = f"RUNEPool ➡️ 👤{to_link}"
+            route = f"RUNEPool ➡️ {to_link}"
 
         if event.affiliate:
             aff_collector = self.name_service.get_affiliate_name(event.affiliate)
@@ -1739,10 +1739,11 @@ class RussianLocalization(BaseLocalization):
         amt_str = f"{pre(pretty_rune(event.amount))}"
 
         return (
-            f"🏦 <b>RUNEPool {action_str}</b> {self.link_to_tx(event.tx_hash)}\n"
+            f"🏦 <b>RUNEPool {action_str}</b>\n"
             f"{route}\n"
             f"Всего: {amt_str} ({pretty_dollar(event.usd_amount)})\n"
             f"{aff_text}"
+            f"{self.link_to_tx(event.tx_hash)}\n"
         )
 
     def notification_runepool_stats(self, event: AlertRunepoolStats):
