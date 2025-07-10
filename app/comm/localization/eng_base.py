@@ -2339,10 +2339,10 @@ class BaseLocalization(ABC):  # == English
         arrow = '➡' if event.is_deposit else '⬅'
 
         return (
-            f"{arrow}🏦 <b>Trade account {action_str}</b> {self.link_to_tx(event.tx_hash)}\n"
-            f"👤 From {from_link}"
-            f" to {to_link}\n"
-            f"Total: {amt_str}"
+            f"{arrow}🏦 <b>Trade account {action_str}</b>\n"
+            f"From {from_link} to {to_link}\n"
+            f"Total: {amt_str}\n"
+            f"Transaction: {self.link_to_tx(event.tx_hash)}"
         )
 
     def _trade_acc_from_to_links(self, event: AlertTradeAccountAction, name_map, formatting=True):

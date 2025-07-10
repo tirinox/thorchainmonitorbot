@@ -907,10 +907,10 @@ class RussianLocalization(BaseLocalization):
         from_link, to_link, amt_str = self._trade_acc_from_to_links(event, name_map)
         arrow = '➡' if event.is_deposit else '⬅'
         return (
-            f"{arrow}🏦 <b>{action_str}</b> {self.link_to_tx(event.tx_hash)}\n"
-            f"👤 От {from_link}"
-            f" на {to_link}\n"
-            f"Всего: {amt_str}"
+            f"{arrow}🏦 <b>{action_str}</b>\n"
+            f"От {from_link} на {to_link}\n"
+            f"Всего: {amt_str}\n"
+            f"{self.link_to_tx(event.tx_hash)}"
         )
 
     def notification_text_trade_account_summary(self, e: AlertTradeAccountStats):
