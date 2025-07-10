@@ -47,7 +47,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     TEXT_REF_CALL = f'Start trading now 👉 {URL_OUR_REF} ⚡!'
 
-    def link_to_tx(self, tx_id, chain=Chains.THOR, label="TX"):
+    def link_to_tx(self, tx_id, chain=Chains.THOR):
         return "TX: " + get_explorer_url_to_tx(self.cfg.network_id, chain, tx_id)
 
     def link_to_address(self, addr, name_map, chain=Chains.THOR):

@@ -15,7 +15,8 @@ from lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
     DEFAULT_CEX_BASE_ASSET, bp_to_percent, ThorRealms
 from lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
 from lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
-    get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link, thorchain_net_address
+    get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link, thorchain_net_address, \
+    thorchain_net_tx
 from lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, pretty_dollar, short_dollar, \
     RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
@@ -118,14 +119,16 @@ class BaseLocalization(ABC):  # == English
 
     # --- EXPLORER LINKS ---
 
-    def explorer_link_to_address_with_domain(self, address):
+    def explorer_links_to_address_with_domain(self, address):
         net = self.cfg.network_id
         runescan_url = link_with_domain_text(get_explorer_url_to_address(net, Chains.THOR, address))
         thorchain_net_url = link_with_domain_text(thorchain_net_address(address))
-        return f'{runescan_url} | {thorchain_net_url}'
+        return f'{runescan_url} {thorchain_net_url}'
 
-    def link_to_tx(self, tx_id, chain=Chains.THOR, label="TX"):
-        return link(get_explorer_url_to_tx(self.cfg.network_id, chain, tx_id), label)
+    def link_to_tx(self, tx_id, chain=Chains.THOR):
+        ordinary_link = link(get_explorer_url_to_tx(self.cfg.network_id, chain, tx_id), '🔍runescan')
+        thorchain_net_link = link(thorchain_net_tx(tx_id), '🔍thorchain.net')
+        return f'{ordinary_link} | {thorchain_net_link}'
 
     def link_to_address(self, addr, name_map, chain=Chains.THOR):
         tab = ''
@@ -135,7 +138,11 @@ class BaseLocalization(ABC):  # == English
         else:
             name = None
         caption = add_thor_suffix(name) if name else short_address(addr)
-        return link(url, caption)
+
+        ordinary_link = link(url, f'👤{caption}')
+        # thorchain_net_link = link(thorchain_net_address(addr), 'tc.net')
+        # return f'{ordinary_link} / {thorchain_net_link}'
+        return ordinary_link
 
     # ---- WELCOME ----
     def help_message(self):
@@ -407,7 +414,7 @@ class BaseLocalization(ABC):  # == English
     def text_address_explorer_details(self, address, chain):
         thor_yield_url = get_thoryield_address(address, chain)
         return (
-            f"\n\n🔍 Explorer: {self.explorer_link_to_address_with_domain(address)}\n"
+            f"\n\n🔍 Explorer: {self.explorer_links_to_address_with_domain(address)}\n"
             f"🌎 View it on {link(thor_yield_url, 'THORYield')}"
         )
 
@@ -525,10 +532,6 @@ class BaseLocalization(ABC):  # == English
         if extra_n > 0:
             result += self.TEXT_MORE_TXS.format(n=extra_n)
         return result
-
-    def link_to_explorer_user_address_for_tx(self, tx: ThorAction, name_map):
-        address, _ = tx.sender_address_and_chain
-        return self.link_to_address(tx.sender_address, name_map)  # Chains.THOR is always here, that is deliberate!
 
     @staticmethod
     def lp_tx_calculations(usd_per_rune, pool_info: PoolInfo, tx: ThorAction):
@@ -685,13 +688,13 @@ class BaseLocalization(ABC):  # == English
                     content += f'\nSuccess rate: {format_percent(success, 1)} ({good}/{total})'
 
         user_link = self.link_to_address(tx.sender_address, name_map)
-        runescan_url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
-        runescan_link = link(runescan_url, 'Runescan')
+        tx_link = self.link_to_tx(tx.tx_hash)
 
         msg = (
             f"{heading}\n"
             f"{content}\n"
-            f"User: {user_link} / {runescan_link}"
+            f"User: {user_link}\n"
+            f"Transaction: {tx_link}\n"
         )
 
         return msg.strip()
@@ -701,7 +704,10 @@ class BaseLocalization(ABC):  # == English
         return f'https://track.ninerealms.com/{tx_id}'
 
     def _add_input_output_links(self, tx, name_map, text_inputs, text_outputs, text_user):
-        blockchain_components = [f"{text_user}{self.link_to_explorer_user_address_for_tx(tx, name_map)}"]
+        address, _ = tx.sender_address_and_chain
+        # Chains.THOR is always here, that is deliberate!
+        link_to_explorer_user_address_for_tx = self.link_to_address(tx.sender_address, name_map)
+        blockchain_components = [f"{text_user}{link_to_explorer_user_address_for_tx}"]
 
         if tx.in_tx:
             in_links = self.links_to_txs(tx.in_tx, tx.tx_hash)
@@ -716,9 +722,7 @@ class BaseLocalization(ABC):  # == English
 
     def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
-        tx_link = link(self.url_for_tx_tracker(e.tx_id), 'Track TX')
-        url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, e.tx_id)
-        runescan_link = link(url, 'Runescan')
+        track_link = link(self.url_for_tx_tracker(e.tx_id), '👁️‍🗨️Track')
 
         asset_str = Asset(e.in_asset).pretty_str
         amount_str = self.format_op_amount(e.in_amount_float)
@@ -727,7 +731,8 @@ class BaseLocalization(ABC):  # == English
         return (
             f'🌊 <b>Streaming swap has started</b>\n'
             f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {bold(target_asset_str)}\n'
-            f'User: {user_link} / {tx_link} / {runescan_link}\n'
+            f'User: {user_link}\n'
+            f'Transaction: {track_link} {self.link_to_tx(e.tx_id)}\n'
         )
 
     # ------- QUEUE -------
@@ -2333,6 +2338,7 @@ class BaseLocalization(ABC):  # == English
         action_str = 'deposit' if event.is_deposit else 'withdrawal'
         from_link, to_link, amt_str = self._trade_acc_from_to_links(event, name_map)
         arrow = '➡' if event.is_deposit else '⬅'
+
         return (
             f"{arrow}🏦 <b>Trade account {action_str}</b> {self.link_to_tx(event.tx_hash)}\n"
             f"👤 From {from_link}"
@@ -2583,7 +2589,6 @@ class BaseLocalization(ABC):  # == English
 
         bonds.sort(key=(lambda _bp: _bp[1].rune_bond), reverse=True)
 
-        # bp_link = '👤' + self.link_to_address(node.node_address, name_map)
         for i, (node, bp) in enumerate(bonds, start=1):
             node_op_text = ' [NodeOp]' if bp.is_node_operator else ''
             emoji = '🌩️' if node.is_active else '⏱️'

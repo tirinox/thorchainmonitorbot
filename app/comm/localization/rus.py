@@ -10,7 +10,7 @@ from jobs.fetch.chain_id import AlertChainIdChange
 from lib.config import Config
 from lib.constants import Chains, ThorRealms
 from lib.date_utils import format_time_ago, seconds_human, now_ts
-from lib.explorers import get_explorer_url_to_address, get_ip_info_link, get_explorer_url_to_tx, get_thoryield_address
+from lib.explorers import get_explorer_url_to_address, get_ip_info_link, get_thoryield_address
 from lib.money import pretty_dollar, pretty_money, short_address, short_money, short_dollar, format_percent, \
     RAIDO_GLYPH, short_rune, pretty_percent, \
     chart_emoji, pretty_rune
@@ -326,7 +326,7 @@ class RussianLocalization(BaseLocalization):
     def text_address_explorer_details(self, address, chain):
         thor_yield_url = get_thoryield_address(address, chain)
         return (
-            f"\n\n🔍 Обозреватель: {self.explorer_link_to_address_with_domain(address)}\n"
+            f"\n\n🔍 Обозреватель: {self.explorer_links_to_address_with_domain(address)}\n"
             f"🌎 Посмотреть на {link(thor_yield_url, 'THORYield')}"
         )
 
@@ -470,13 +470,13 @@ class RussianLocalization(BaseLocalization):
                     content += f'\nПроцент успеха: {format_percent(success, 1)} ({good}/{total})'
 
         user_link = self.link_to_address(tx.sender_address, name_map)
-        runescan_url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
-        runescan_link = link(runescan_url, 'Runescan')
+        tx_link = self.link_to_tx(tx.tx_hash)
 
         msg = (
             f"{heading}\n"
             f"{content}\n"
-            f"Пользователь: {user_link} / {runescan_link}\n"
+            f"Пользователь: {user_link}\n"
+            f"Транзакция: {tx_link}\n"
             f"{self._conditional_announcement()}"
         )
 
@@ -484,20 +484,17 @@ class RussianLocalization(BaseLocalization):
 
     def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
-
-        tx_link = link(self.url_for_tx_tracker(e.tx_id), 'Отследить')
+        track_link = link(self.url_for_tx_tracker(e.tx_id), '👁️‍🗨️Отследить')
 
         asset_str = Asset(e.in_asset).pretty_str
         amount_str = self.format_op_amount(e.in_amount_float)
         target_asset_str = Asset(e.out_asset).pretty_str
 
-        url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, e.tx_id)
-        runescan_link = link(url, 'Runescan')
-
         return (
-            '🌊 <b>Потоковый обмен начался</b>\n'
-            f'Пользователь: {user_link} / {tx_link} / {runescan_link}\n'
+            f'🌊 <b>Потоковый обмен начался</b>\n'
             f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {bold(target_asset_str)}\n'
+            f'Пользователь: {user_link}\n'
+            f'Транзакция: {track_link} | {self.link_to_tx(e.tx_id)}\n'
             f'{self._conditional_announcement()}'
         )
 
@@ -1723,14 +1720,13 @@ class RussianLocalization(BaseLocalization):
     # ------- RUNEPOOL -------
 
     def notification_runepool_action(self, event: AlertRunePoolAction, name_map: NameMap):
-        action_str = 'добавление' if event.is_deposit else 'вывод'
-        from_link = self.link_to_address(event.actor, name_map)
-        to_link = self.link_to_address(event.destination_address, name_map)
-        amt_str = f"{pre(pretty_rune(event.amount))}"
-
         if event.is_deposit:
+            action_str = 'добавление'
+            from_link = self.link_to_address(event.actor, name_map)
             route = f"👤{from_link} ➡️ RUNEPool"
         else:
+            action_str = 'вывод'
+            to_link = self.link_to_address(event.destination_address, name_map)
             route = f"RUNEPool ➡️ 👤{to_link}"
 
         if event.affiliate:
@@ -1740,6 +1736,8 @@ class RussianLocalization(BaseLocalization):
             aff_text = f'{aff_collector}партнерская комиссия: {format_percent(event.affiliate_rate, 1)}\n'
         else:
             aff_text = ''
+
+        amt_str = f"{pre(pretty_rune(event.amount))}"
 
         return (
             f"🏦 <b>RUNEPool {action_str}</b> {self.link_to_tx(event.tx_hash)}\n"
@@ -1872,7 +1870,6 @@ class RussianLocalization(BaseLocalization):
 
         bonds.sort(key=(lambda _bp: _bp[1].rune_bond), reverse=True)
 
-        # bp_link = '👤' + self.link_to_address(node.node_address, name_map)
         for i, (node, bp) in enumerate(bonds, start=1):
             node_op_text = ' [Оператор]' if bp.is_node_operator else ''
             emoji = '🌩️' if node.is_active else '⏱️'
