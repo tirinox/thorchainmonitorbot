@@ -1,0 +1,31 @@
+{% extends "base.jinja2" %}
+
+{% block content %}
+    <style>
+        #chart-container {
+            width: 100%;
+            height: 70%;
+
+            padding: 10px 10px 10px 20px;
+
+            font-family: ThorFontLight, serif;
+            font-weight: lighter;
+        }
+
+    </style>
+
+    <script src="renderer/static/js/lightweight-charts.standalone.production.js"></script>
+
+    {% with title="TCY" %}
+        {% include "components/header.jinja2" %}
+    {% endwith %}
+
+    <div class="main-container">
+
+    </div>
+
+    <script>
+        // todo
+    </script>
+
+{% endblock %}
