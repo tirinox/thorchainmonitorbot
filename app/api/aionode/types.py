@@ -724,3 +724,17 @@ class ThorRunePoolProvider(NamedTuple):
     @classmethod
     def from_json_array(cls, j):
         return [cls.from_json(item) for item in j] if j else []
+
+
+class ThorSecuredAsset(NamedTuple):
+    asset: str
+    supply: int
+    depth: int
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            asset=j.get('asset', ''),
+            supply=int(j.get('supply', 0)),
+            depth=int(j.get('depth', 0))
+        )

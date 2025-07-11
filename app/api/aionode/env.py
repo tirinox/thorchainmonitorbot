@@ -17,49 +17,50 @@ class ThorEnvironment:
     path_queue: str = '/thorchain/queue'
     path_nodes: str = '/thorchain/nodes'
     path_pools: str = "/thorchain/pools"
-    path_pools_height: str = "/thorchain/pools?height={height}"
+    path_pools_height: str = "/thorchain/pools"
     path_pool: str = "/thorchain/pool/{pool}"
-    path_pool_height: str = "/thorchain/pool/{pool}?height={height}"
+    path_pool_height: str = "/thorchain/pool/{pool}"
 
     path_last_blocks: str = "/thorchain/lastblock"
     path_constants: str = "/thorchain/constants"
-    path_mimir: str = "/thorchain/mimir?height={height}"
+    path_mimir: str = "/thorchain/mimir"
     path_mimir_nodes: str = '/thorchain/mimir/nodes'
     path_mimir_votes: str = '/thorchain/mimir/nodes_all'
     path_inbound_addresses: str = "/thorchain/inbound_addresses"
-    path_vault_yggdrasil: str = "/thorchain/vaults/yggdrasil?height={height}"
-    path_vault_asgard: str = "/thorchain/vaults/asgard?height={height}"
+    path_vault_yggdrasil: str = "/thorchain/vaults/yggdrasil"
+    path_vault_asgard: str = "/thorchain/vaults/asgard"
     path_balance: str = '/cosmos/bank/v1beta1/balances/{address}'
-    path_block_by_height: str = '/block?height={height}'
-    path_thorchain_block_by_height: str = '/thorchain/block?height={height}'
+    path_block_by_height: str = '/block'
+    path_thorchain_block_by_height: str = '/thorchain/block'
     path_tx_by_hash: str = '/cosmos/tx/v1beta1/txs/{hash}'
-    path_tx_by_hash_old: str = '/tx?hash={hash}'
-    path_tx_search: str = '/tx_search?query={query}&prove={prove}&page={page}&per_page={per_page}&order_by={order_by}'
 
     path_genesis: str = '/genesis'
     path_status: str = '/status?'
 
-    path_liq_provider_details = '/thorchain/pool/{asset}/liquidity_provider/{address}?height={height}'
-    path_liq_providers = '/thorchain/pool/{asset}/liquidity_providers?height={height}'
+    path_liq_provider_details = '/thorchain/pool/{asset}/liquidity_provider/{address}'
+    path_liq_providers = '/thorchain/pool/{asset}/liquidity_providers'
 
-    path_network = '/thorchain/network?height={height}'
-    path_swapper_clout = '/thorchain/clout/swap/{address}?height={height}'
+    path_network = '/thorchain/network'
+    path_swapper_clout = '/thorchain/clout/swap/{address}'
 
     path_tx_details = '/thorchain/tx/details/{txid}'
     path_tx_stages = '/thorchain/tx/stages/{txid}'
     path_tx_status = '/thorchain/tx/status/{txid}'
     path_tx_simple = '/thorchain/tx/{txid}'
 
-    path_block_results = '/block_results?height={height}'
+    path_block_results = '/block_results'
 
-    path_trade_units = '/thorchain/trade/units?height={height}'
-    path_trade_accounts = '/thorchain/trade/accounts/{asset}?height={height}'
-    path_trade_account = '/thorchain/trade/account/{wallet}?height={height}'
+    path_trade_units = '/thorchain/trade/units'
+    path_trade_accounts = '/thorchain/trade/accounts/{asset}'
+    path_trade_account = '/thorchain/trade/account/{wallet}'
 
-    path_runepool = '/thorchain/runepool?height={height}'
-    path_runepool_providers = '/thorchain/rune_providers?height={height}'
+    path_runepool = '/thorchain/runepool'
+    path_runepool_providers = '/thorchain/rune_providers'
 
     path_quote_swap = '/thorchain/quote/swap'
+    path_secured_assets = '/thorchain/securedassets'
+
+    path_holders = '/cosmos/bank/v1beta1/denom_owners/{asset}'
 
     kind: str = ''
 

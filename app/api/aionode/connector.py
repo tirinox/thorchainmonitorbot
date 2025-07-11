@@ -29,18 +29,18 @@ class ThorConnector:
 
     async def query_pools(self, height=None) -> List[ThorPool]:
         if height:
-            path = self.env.path_pools_height.format(height=height)
+            path = self.env.path_pools_height
         else:
             path = self.env.path_pools
-        data = await self._request(path, treat_empty_as_ok=False)
+        data = await self._request(path, treat_empty_as_ok=False, height=height)
         return [ThorPool.from_json(j) for j in data] if data else None
 
     async def query_pool(self, pool: str, height=None) -> ThorPool:
         if height:
-            path = self.env.path_pool_height.format(pool=pool, height=height)
+            path = self.env.path_pool_height.format(pool=pool)
         else:
             path = self.env.path_pool.format(pool=pool)
-        data = await self._request(path)
+        data = await self._request(path, height=height)
         return ThorPool.from_json(data)
 
     async def query_last_blocks(self) -> List[ThorLastBlock]:
@@ -51,8 +51,8 @@ class ThorConnector:
         data = await self._request(self.env.path_constants)
         return ThorConstants.from_json(data) if data else ThorConstants()
 
-    async def query_mimir(self, height=0) -> ThorMimir:
-        data = await self._request(self.env.path_mimir.format(height=height))
+    async def query_mimir(self, height=None) -> ThorMimir:
+        data = await self._request(self.env.path_mimir, height=height)
 
         return ThorMimir.from_json(data) if data else ThorMimir()
 
@@ -75,10 +75,9 @@ class ThorConnector:
             info_list = [ThorChainInfo.from_json(j) for j in current]
         return {info.chain: info for info in info_list}
 
-    async def query_vault(self, vault_type=ThorVault.TYPE_ASGARD, height=0) -> List[ThorVault]:
+    async def query_vault(self, vault_type=ThorVault.TYPE_ASGARD, height=None) -> List[ThorVault]:
         path = self.env.path_vault_asgard if vault_type == ThorVault.TYPE_ASGARD else self.env.path_vault_yggdrasil
-        path = path.format(height=height)
-        data = await self._request(path)
+        data = await self._request(path, height=height)
         return [ThorVault.from_json(v) for v in data]
 
     async def query_balance(self, address: str) -> ThorBalances:
@@ -87,13 +86,13 @@ class ThorConnector:
         return ThorBalances.from_json(data, address)
 
     async def query_tendermint_block_raw(self, height):
-        path = self.env.path_block_by_height.format(height=height)
-        data = await self._request(path, is_rpc=True)
+        path = self.env.path_block_by_height
+        data = await self._request(path, is_rpc=True, height=height)
         return data
 
     async def query_thorchain_block_raw(self, height):
-        path = self.env.path_thorchain_block_by_height.format(height=height)
-        data = await self._request(path)
+        path = self.env.path_thorchain_block_by_height
+        data = await self._request(path, height=height)
         return data
 
     async def query_genesis(self):
@@ -103,31 +102,31 @@ class ThorConnector:
     async def query_native_status_raw(self):
         return await self._request(self.env.path_status, is_rpc=True)
 
-    async def query_native_block_results_raw(self, height):
-        url = self.env.path_block_results.format(height=height)
-        return await self._request(url, is_rpc=True)
+    async def query_native_block_results_raw(self, height=None):
+        url = self.env.path_block_results
+        return await self._request(url, is_rpc=True, height=height)
 
-    async def query_liquidity_providers(self, asset, height=0):
-        url = self.env.path_liq_providers.format(asset=asset, height=height)
-        data = await self._request(url)
+    async def query_liquidity_providers(self, asset, height=None):
+        url = self.env.path_liq_providers.format(asset=asset)
+        data = await self._request(url, height=height)
         if data:
             return [ThorLiquidityProvider.from_json(p) for p in data]
 
-    async def query_liquidity_provider(self, asset, address, height=0):
-        url = self.env.path_liq_provider_details.format(asset=asset, height=height, address=address)
-        data = await self._request(url)
+    async def query_liquidity_provider(self, asset, address, height=None):
+        url = self.env.path_liq_provider_details.format(asset=asset, address=address)
+        data = await self._request(url, height=height)
         if data:
             return ThorLiquidityProvider.from_json(data)
 
-    async def query_network(self, height=0):
-        url = self.env.path_network.format(height=height)
-        data = await self._request(url)
+    async def query_network(self, height=None):
+        url = self.env.path_network
+        data = await self._request(url, height=height)
         if data:
             return ThorNetwork.from_json(data)
 
-    async def query_swapper_clout(self, address: str, height=0):
-        url = self.env.path_swapper_clout.format(address=address, height=height)
-        data = await self._request(url)
+    async def query_swapper_clout(self, address: str, height=None):
+        url = self.env.path_swapper_clout.format(address=address)
+        data = await self._request(url, height=height)
         if data:
             return ThorSwapperClout.from_json(data)
 
@@ -152,21 +151,21 @@ class ThorConnector:
         data = await self._request(url)
         return data
 
-    async def query_trade_units(self, height=0):
-        url = self.env.path_trade_units.format(height=height)
-        data = await self._request(url)
+    async def query_trade_units(self, height=None):
+        url = self.env.path_trade_units
+        data = await self._request(url, height=height)
         if data:
             return [ThorTradeUnits.from_json(p) for p in data]
 
-    async def query_trade_accounts(self, asset, height=0):
-        url = self.env.path_trade_accounts.format(asset=asset, height=height)
-        data = await self._request(url)
+    async def query_trade_accounts(self, asset, height=None):
+        url = self.env.path_trade_accounts.format(asset=asset)
+        data = await self._request(url, height=height)
         if data:
             return [ThorTradeAccount.from_json(p) for p in data]
 
-    async def query_trade_account(self, address, height=0) -> List[ThorTradeAccount]:
-        url = self.env.path_trade_account.format(wallet=address, height=height)
-        data = await self._request(url, treat_empty_as_ok=True)
+    async def query_trade_account(self, address, height=None) -> List[ThorTradeAccount]:
+        url = self.env.path_trade_account.format(wallet=address)
+        data = await self._request(url, treat_empty_as_ok=True, height=height)
         if data:
             if isinstance(data, list):
                 return [ThorTradeAccount.from_json(p) for p in data]
@@ -175,15 +174,15 @@ class ThorConnector:
 
         return []
 
-    async def query_runepool(self, height=0):
-        url = self.env.path_runepool.format(height=height)
-        data = await self._request(url)
+    async def query_runepool(self, height=None):
+        url = self.env.path_runepool
+        data = await self._request(url, height=height)
         if data:
             return ThorRunePool.from_json(data)
 
-    async def query_runepool_providers(self, height=0):
-        url = self.env.path_runepool_providers.format(height=height)
-        data = await self._request(url)
+    async def query_runepool_providers(self, height=None):
+        url = self.env.path_runepool_providers
+        data = await self._request(url, height=height)
         if data:
             return [ThorRunePoolProvider.from_json(p) for p in data]
 
@@ -233,6 +232,19 @@ class ThorConnector:
         if data:
             return data
 
+    async def query_secured_assets(self, height=None):
+        url = self.env.path_secured_assets
+        data = await self._request(url, treat_empty_as_ok=True, height=height)
+        if data:
+            return [ThorSecuredAsset.from_json(p) for p in data] if isinstance(data, list) else [
+                ThorSecuredAsset.from_json(data)]
+
+    async def query_holders(self, asset: str, height=None):
+        asset = asset.lower()
+        url = self.env.path_holders.format(asset=asset)
+        data = await self._request(url, paginated=True, height=height, collect_key='denom_owners')
+        return data
+
     # ---- Internal ----
 
     def __init__(self, env: ThorEnvironment, session: ClientSession, logger=None, extra_headers=None,
@@ -260,13 +272,16 @@ class ThorConnector:
         for client in self._clients:
             client.set_client_id_header(client_id)
 
-    async def _request(self, path, is_rpc=False, treat_empty_as_ok=True):
+    async def _request(self, path, is_rpc=False, treat_empty_as_ok=True, paginated=False, height=None, collect_key=''):
         for client in self._clients:
             for attempt in range(1, client.env.retries + 1):
                 if attempt > 1:
                     self.logger.debug(f'Retry #{attempt} for path "{path}"')
                 try:
-                    data = await client.request(path, is_rpc=is_rpc)
+                    if paginated:
+                        data = await client.paginated_request(path, height=height, result_key=collect_key)
+                    else:
+                        data = await client.request(path, is_rpc=is_rpc, height=height)
 
                     if treat_empty_as_ok:
                         return data
