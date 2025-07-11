@@ -59,7 +59,7 @@ class TradeAccountFetcher(BaseFetcher):
             pools = self.deps.price_holder.pool_info_map
             if not pools:
                 self.logger.error('No pool info map yet. Skipping.')
-                return
+                return None
         else:
             pools = await self.deps.pool_fetcher.load_pools(height)
             # this fills asset prices in usd

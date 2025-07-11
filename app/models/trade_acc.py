@@ -1,4 +1,4 @@
-from typing import NamedTuple, List
+from typing import NamedTuple, List, Optional
 
 from api.aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount, float_to_thor, thor_to_float
 from lib.date_utils import now_ts
@@ -90,7 +90,7 @@ class TradeAccountVaults(NamedTuple):
     def total_traders(self) -> int:
         return sum(len(t) for t in self.pool2traders.values())
 
-    def usd_units(self, asset) -> float:
+    def usd_units(self, asset) -> Optional[float]:
         pool = self.pools.get(normalize_asset(asset))
         if pool:
             return self.pool2acc.get(pool.asset).depth_float * pool.usd_per_asset

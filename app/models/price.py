@@ -89,21 +89,6 @@ class PriceATH(BaseModelMixin):
         return price > REAL_REGISTERED_ATH and price > self.ath_price
 
 
-class Prices(NamedTuple):
-    # todo
-    pool: float
-    cex: float
-    in_btc: float
-    fair: float
-    market_cap: float
-    market_rank: int
-    tvl_non_rune: float
-
-    @property
-    def spec_mult(self):
-        return self.pool / self.fair
-
-
 @dataclass
 class AlertPrice:
     hist_prices: dict
