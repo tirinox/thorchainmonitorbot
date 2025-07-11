@@ -34,6 +34,7 @@ from models.queue import QueueInfo
 from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
+from models.secured import AlertSecuredAssetSummary
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, RuneCEXFlow
 from models.tx import EventLargeTransaction
@@ -1808,9 +1809,11 @@ class RussianLocalization(BaseLocalization):
 
     @staticmethod
     def notification_rujira_merge_stats(e: AlertRujiraMergeStats):
-        return (
-            f'RUJIRA Статистика слияния'
-        )
+        return f'RUJIRA Статистика слияния'
+
+    @staticmethod
+    def notification_text_secured_asset_summary(e: AlertSecuredAssetSummary):
+        return 'Сводка безопасных активов'
 
     # ------ Bond providers alerts ------
 

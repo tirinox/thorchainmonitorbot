@@ -44,6 +44,7 @@ class TradeAccSummaryNotifier(INotified, WithDelegates, WithLogger):
     async def on_data(self, sender, e: AlertTradeAccountStats):
         if not e:
             self.logger.error('Empty event!')
+            return
 
         self.last_event = e
         if await self.cd.can_do():

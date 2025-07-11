@@ -44,6 +44,7 @@ from models.queue import QueueInfo
 from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
+from models.secured import AlertSecuredAssetSummary
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, RuneCEXFlow
 from models.tx import ThorAction, ThorSubTx, EventLargeTransaction
@@ -2507,6 +2508,10 @@ class BaseLocalization(ABC):  # == English
             f'RUJIRA Merge stats $RUJI\n'
             f'https://rujira.network/merge/'
         )
+
+    @staticmethod
+    def notification_text_secured_asset_summary(e: AlertSecuredAssetSummary):
+        return 'Secured Asset Summary'
 
     # ------ Bond providers alerts ------
 

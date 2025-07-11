@@ -587,7 +587,7 @@ chain_id:
   confidence_window_size: 14
 
 
-rujira: # (!) new
+rujira:
   enabled: true
 
   merge:
@@ -595,3 +595,13 @@ rujira: # (!) new
     period: 1d
     notification:
       enabled: false
+
+
+secured_assets:  # (!) new
+  enabled: true
+  period: 1h
+
+  summary:
+    notification:
+      enabled: true
+      cooldown: 3d

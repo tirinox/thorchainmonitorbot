@@ -28,6 +28,7 @@ from jobs.fetch.pol import RunePoolFetcher
 from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from jobs.fetch.queue import QueueFetcher
 from jobs.fetch.ruji_merge import RujiMergeStatsFetcher
+from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.tx import TxFetcher
 from jobs.node_churn import NodeChurnDetector
@@ -82,6 +83,7 @@ from notify.public.queue_notify import QueueNotifier, QueueStoreMetrics
 from notify.public.ruji_merge_stats import RujiMergeStatsTxNotifier
 from notify.public.runepool_notify import RunePoolTransactionNotifier, RunepoolStatsNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
+from notify.public.secured_notify import SecureAssetSummaryNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
 from notify.public.supply_notify import SupplyNotifier
 from notify.public.trade_acc_notify import TradeAccTransactionNotifier, TradeAccSummaryNotifier
@@ -594,6 +596,15 @@ class App(WithLogger):
                     notifier_ruji_merge = RujiMergeStatsTxNotifier(d)
                     notifier_ruji_merge.add_subscriber(d.alert_presenter)
                     ruji_stats_fetcher.add_subscriber(notifier_ruji_merge)
+
+        if d.cfg.get('secured_assets.enabled', True):
+            secured_asset_fetcher = SecuredAssetAssetFetcher(d)
+            tasks.append(secured_asset_fetcher)
+
+            if d.cfg.get('secured_assets.summary.notification.enabled', True):
+                secured_asset_notifier = SecureAssetSummaryNotifier(d)
+                secured_asset_fetcher.add_subscriber(secured_asset_notifier)
+                secured_asset_notifier.add_subscriber(d.alert_presenter)
 
         # -------- SCHEDULER --------
 

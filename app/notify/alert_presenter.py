@@ -37,6 +37,7 @@ from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunepoolStats
 from models.runepool import AlertRunePoolAction
 from models.s_swap import AlertSwapStart
+from models.secured import AlertSecuredAssetSummary
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import RuneCEXFlow, NativeTokenTransfer
 from models.tx import EventLargeTransaction
@@ -124,6 +125,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_rune_burn(data)
         elif isinstance(data, AlertRujiraMergeStats):
             await self._handle_rujira_merge_stats(data)
+        elif isinstance(data, AlertSecuredAssetSummary):
+            await self._handle_secured_asset_summary(data)
 
     async def load_names(self, addresses) -> NameMap:
         if isinstance(addresses, str):
@@ -550,6 +553,22 @@ class AlertPresenter(INotified, WithLogger):
         async def message_gen(loc: BaseLocalization):
             text = loc.notification_rujira_merge_stats(data)
             photo, photo_name = await self.render_rujira_merge_graph(loc, data)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
+        await self.deps.broadcaster.broadcast_to_all(message_gen)
+
+    async def render_secured_asset_summary(self, loc: BaseLocalization, data: AlertSecuredAssetSummary):
+        photo = await self.renderer.render('secured_asset_summary.jinja2', namedtuple_to_dict(data))
+        photo_name = 'secured_asset_summary.png'
+        return photo, photo_name
+
+    async def _handle_secured_asset_summary(self, data: AlertSecuredAssetSummary):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_secured_asset_summary(data)
+            photo, photo_name = await self.render_secured_asset_summary(loc, data)
             if photo is not None:
                 return BoardMessage.make_photo(photo, text, photo_name)
             else:
