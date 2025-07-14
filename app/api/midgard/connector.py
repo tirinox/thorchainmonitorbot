@@ -86,8 +86,9 @@ class MidgardConnector(WithLogger):
         if j:
             return EarningHistoryResponse.from_json(j)
 
-    async def query_swap_stats(self, from_ts=0, to_ts=0, count=10, interval='day') -> Optional[SwapHistoryResponse]:
-        url = self.urlgen.url_for_swap_history(from_ts, to_ts, count, interval)
+    async def query_swap_stats(self, from_ts=0, to_ts=0, count=10, interval='day', pool=None) \
+            -> Optional[SwapHistoryResponse]:
+        url = self.urlgen.url_for_swap_history(from_ts, to_ts, count, interval, pool)
         j = await self.request(url)
         if j:
             return SwapHistoryResponse.from_json(j)

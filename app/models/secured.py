@@ -5,16 +5,26 @@ class SecureAssetInfo(NamedTuple):
     asset: str
     supply: float
     price_usd: float
-    total_value_usd: float
+    value_usd: float
     holders: int
     to_pool_depth_ratio: float
     pool_depth: float
+    l1_name: str
+    display_name: str
+    volume_24h_usd: float
+
+    @property
+    def secured_to_pool_percentage(self) -> float:
+        if self.pool_depth == 0:
+            return 0.0
+        return (self.supply / self.pool_depth) * 100.0
 
 
 class SecuredAssetsStats(NamedTuple):
     assets: List[SecureAssetInfo]
     total_vault_usd: float
     total_pool_usd: float
+    total_volume_24h_usd: float = 0.0
 
     @property
     def total_assets(self) -> int:
@@ -22,7 +32,7 @@ class SecuredAssetsStats(NamedTuple):
 
     @property
     def total_value_usd(self) -> float:
-        return sum(asset.total_value_usd for asset in self.assets)
+        return sum(asset.value_usd for asset in self.assets)
 
     @property
     def total_secured_to_pool_percentage(self) -> float:
