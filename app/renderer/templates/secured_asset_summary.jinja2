@@ -1,0 +1,198 @@
+{% extends "base.jinja2" %}
+
+{% block content %}
+    <style>
+        .logo-box {
+            min-width: 60px;
+        }
+
+        .asset_logo {
+            width: 40px;
+            height: 40px;
+            margin-right: 20px;
+            filter: drop-shadow(0 0 4px #0af);
+        }
+
+        .main-container {
+            top: 13%;
+        }
+
+        .table-head {
+            color: #c5c5c5;
+            font-weight: bold;
+        }
+
+        .pane {
+            padding: 0;
+            margin: 0;
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .one_asset_container {
+            display: flex;
+            flex-direction: row;
+            gap: 0;
+            padding-top: 8px;
+            font-size: 24px;
+            border-bottom: 1px solid #5a5a5a;
+            padding-bottom: 8px;
+        }
+
+        .one_asset_container:last-child {
+            border-bottom: none;
+        }
+
+        .t {
+
+            padding-left: 5px;
+            align-items: center;
+            justify-content: center;
+            min-width: 200px;
+            font-size: 30px;
+            margin: 0;
+        }
+
+        .col-name {
+            min-width: 240px;
+            justify-content: left;
+        }
+
+        .col-holders {
+            min-width: 180px;
+        }
+
+        .indicator-container {
+            position: absolute;
+            bottom: 5%;
+            left: 3%;
+            right: 3%;
+            height: 13%;
+
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+        }
+
+        .indicator-box {
+            display: flex;
+            padding: 10px;
+
+            background: rgba(52, 51, 51, 0.21);
+            border-radius: 12px;
+            font-family: ThorFontLight, serif;
+            justify-content: space-between;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .indicator-label {
+            display: flex;
+
+            font-weight: normal;
+            font-size: 22px;
+            color: rgb(40 244 175);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            padding: 0 20px 0 20px;
+        }
+
+        .indicator-subvalue {
+            display: flex;
+            font-weight: bolder;
+            font-size: 24px;
+            color: #eee;
+            margin-bottom: 3px;
+            letter-spacing: 2px;
+            text-shadow: none;
+        }
+
+        .indicator-value {
+            font-weight: bold;
+            font-size: 48px;
+            color: #ffffff; /* Bright orange color */
+            margin-bottom: 3px;
+            letter-spacing: 2px;
+        }
+
+
+    </style>
+
+    {% with title="SECURED ASSETS" %}
+        {% include "components/header.jinja2" %}
+    {% endwith %}
+
+    <div class="main-container">
+
+        <div class="pane">
+            <div class="one_asset_container table-head">
+                <div class="flex logo-box">
+                </div>
+                <div class="flex t col-name">
+                    Name
+                </div>
+                <div class="flex t">
+                    Total supply
+                </div>
+                <div class="flex t">
+                    Value USD
+                </div>
+                <div class="flex t col-holders">
+                    Holders
+                </div>
+                <div class="flex t">
+                    Volume 24h
+                </div>
+            </div>
+
+            {% for a in assets[:10] %}
+                <div class="one_asset_container">
+                    <div class="flex logo-box">
+                        <img class="asset_logo" src="renderer/logo/{{ a['l1_name'] }}.png"
+                             alt="{{ a['l1_name'] }} logo">
+                    </div>
+
+                    <div class="flex t col-name">{{ a["display_name"] }}</div>
+                    <div class="flex t">{{ short_money(a["supply"]) }}</div>
+                    <div class="flex t">{{ short_dollar(a["value_usd"]) }}</div>
+                    <div class="flex t col-holders">{{ short_money(a["holders"], integer=True) }}</div>
+                    <div class="flex t">{{ short_dollar(a["volume_24h_usd"]) }}</div>
+                </div>
+            {% endfor %}
+        </div>
+
+    </div>
+
+    <div class="indicator-container">
+        <div class="indicator-box cbox">
+            <div class="indicator-value"> {{ total_assets }}</div>
+            <div class="indicator-label">Total secured assets</div>
+        </div>
+
+        <div class="indicator-box cbox">
+            <div class="indicator-value"> {{ short_dollar(total_value_usd) }}</div>
+            <div class="indicator-subvalue">{# todo: delta#} </div>
+            <div class="indicator-label">Total secured depth</div>
+        </div>
+
+        <div class="indicator-box cbox">
+            <div class="indicator-value"> {{ "%.1f"|format(total_secured_to_pool_percentage) }} %</div>
+            <div class="indicator-label">Secured / pool</div>
+        </div>
+
+        <div class="indicator-box cbox">
+            <div class="indicator-value"> {{ short_dollar(total_volume_24h_usd) }}</div>
+            <div class="indicator-label">Volume 24H</div>
+        </div>
+    </div>
+
+
+    <script>
+        // todo
+    </script>
+
+{% endblock %}
