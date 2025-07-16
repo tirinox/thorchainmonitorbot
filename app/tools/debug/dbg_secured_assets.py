@@ -1,16 +1,19 @@
 import asyncio
 import json
+import os
 
+from jobs.fetch.cached.swap_history import SwapHistoryFetcher
 from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
 from lib.money import pretty_dollar
 from lib.texts import sep
 from lib.utils import namedtuple_to_dict
 from tools.lib.lp_common import LpAppFramework
 
+DEMO_DATA_FILENAME = "./renderer/demo/secured_asset_summary.json"
+
 
 async def dbg_fetch_secured_assets(app):
     f = SecuredAssetAssetFetcher(app.deps)
-
 
     # v_prev, v_curr = await f.load_volumes_usd_prev_curr("BTC.BTC", days=1)
     # sep("PREV")
@@ -36,16 +39,27 @@ async def dbg_fetch_secured_assets(app):
     raw = namedtuple_to_dict(secured_asset_info)
     print(json.dumps(raw, indent=2))
 
+    with open(DEMO_DATA_FILENAME, "r") as f:
+        existing_data = json.load(f)
+
+    existing_data["parameters"].update(raw)
+    with open(DEMO_DATA_FILENAME, "w") as f:
+        json.dump(existing_data, f, indent=2)
+
 
 async def dbg_fetch_secured_volumes(app):
-    ...
+    f = SwapHistoryFetcher(app.deps.midgard_connector, 10)
+    mdg = await f.get()
+    sep("Swap History Fetch:")
+    print(mdg)
 
 
 async def run():
-    app = LpAppFramework(log_level='INFO')
+    app = LpAppFramework(log_level='DEBUG')
     async with app(brief=True):
         await app.deps.pool_fetcher.run_once()
-        await dbg_fetch_secured_assets(app)
+        # await dbg_fetch_secured_assets(app)
+        await dbg_fetch_secured_volumes(app)
 
 
 if __name__ == '__main__':
