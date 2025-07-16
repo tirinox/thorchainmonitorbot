@@ -2,6 +2,10 @@ from dataclasses import dataclass
 from typing import List
 
 
+def from_e2(x):
+    return int(x) / 1e2
+
+
 @dataclass
 class SwapsHistoryEntry:
     start_time: int
@@ -31,15 +35,15 @@ class SwapsHistoryEntry:
     total_volume: int
 
     # USD Volumes
-    to_asset_volume_usd: int
-    to_rune_volume_usd: int
-    to_trade_volume_usd: int
-    from_trade_volume_usd: int
-    to_secured_volume_usd: int
-    from_secured_volume_usd: int
-    synth_mint_volume_usd: int
-    synth_redeem_volume_usd: int
-    total_volume_usd: int
+    to_asset_volume_usd: float
+    to_rune_volume_usd: float
+    to_trade_volume_usd: float
+    from_trade_volume_usd: float
+    to_secured_volume_usd: float
+    from_secured_volume_usd: float
+    synth_mint_volume_usd: float
+    synth_redeem_volume_usd: float
+    total_volume_usd: float
 
     # Fees
     to_asset_fees: int
@@ -90,15 +94,15 @@ class SwapsHistoryEntry:
             synth_redeem_volume=int(j.get('synthRedeemVolume', 0)),
             total_volume=int(j.get('totalVolume', 0)),
 
-            to_asset_volume_usd=int(j.get('toAssetVolumeUSD', 0)),
-            to_rune_volume_usd=int(j.get('toRuneVolumeUSD', 0)),
-            to_trade_volume_usd=int(j.get('toTradeVolumeUSD', 0)),
-            from_trade_volume_usd=int(j.get('fromTradeVolumeUSD', 0)),
-            to_secured_volume_usd=int(j.get('toSecuredVolumeUSD', 0)),
-            from_secured_volume_usd=int(j.get('fromSecuredVolumeUSD', 0)),
-            synth_mint_volume_usd=int(j.get('synthMintVolumeUSD', 0)),
-            synth_redeem_volume_usd=int(j.get('synthRedeemVolumeUSD', 0)),
-            total_volume_usd=int(j.get('totalVolumeUSD', 0)),
+            to_asset_volume_usd=from_e2(j.get('toAssetVolumeUSD', 0)),
+            to_rune_volume_usd=from_e2(j.get('toRuneVolumeUSD', 0)),
+            to_trade_volume_usd=from_e2(j.get('toTradeVolumeUSD', 0)),
+            from_trade_volume_usd=from_e2(j.get('fromTradeVolumeUSD', 0)),
+            to_secured_volume_usd=from_e2(j.get('toSecuredVolumeUSD', 0)),
+            from_secured_volume_usd=from_e2(j.get('fromSecuredVolumeUSD', 0)),
+            synth_mint_volume_usd=from_e2(j.get('synthMintVolumeUSD', 0)),
+            synth_redeem_volume_usd=from_e2(j.get('synthRedeemVolumeUSD', 0)),
+            total_volume_usd=from_e2(j.get('totalVolumeUSD', 0)),
 
             to_asset_fees=int(j.get('toAssetFees', 0)),
             to_rune_fees=int(j.get('toRuneFees', 0)),

@@ -29,9 +29,9 @@ class SecuredAssetAssetFetcher(BaseFetcher):
         start_day = 1 if len(swap_stats.intervals) % 2 else 0
 
         previous_volume = sum(it.from_secured_volume_usd + it.to_secured_volume_usd
-                              for it in swap_stats.intervals[start_day:days]) / 1e2
+                              for it in swap_stats.intervals[start_day:days])
         current_volume = sum(it.from_secured_volume_usd + it.to_secured_volume_usd
-                             for it in swap_stats.intervals[days:]) / 1e2
+                             for it in swap_stats.intervals[days:])
 
         # s = swap_stats.meta.from_trade_volume_usd + swap_stats.meta.to_trade_volume_usd
         return previous_volume, current_volume

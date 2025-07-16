@@ -142,6 +142,6 @@ class AlertTradeAccountStats(NamedTuple):
         curr_to_trade, prev_to_trade = self.swap_stats.curr_and_prev_interval("to_trade_volume_usd")
         curr_from_trade, prev_from_trade = self.swap_stats.curr_and_prev_interval("from_trade_volume_usd")
         return (
-            (curr_from_trade + curr_to_trade) / 1e2,
-            (prev_from_trade + prev_to_trade) / 1e2
+            (curr_from_trade + curr_to_trade),
+            (prev_from_trade + prev_to_trade)
         )
