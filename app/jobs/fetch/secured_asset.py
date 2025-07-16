@@ -26,6 +26,7 @@ class SecuredAssetAssetFetcher(BaseFetcher):
 
     async def load_volumes_usd_prev_curr(self, pool, days=1):
         swap_stats = await self.deps.midgard_connector.query_swap_stats(count=days * 2 + 1, interval='day', pool=pool)
+        swap_stats = swap_stats.with_last_day_dropped
         start_day = 1 if len(swap_stats.intervals) % 2 else 0
 
         previous_volume = sum(it.from_secured_volume_usd + it.to_secured_volume_usd
@@ -76,7 +77,7 @@ class SecuredAssetAssetFetcher(BaseFetcher):
             holders = await self.load_holders(name, height=height)
             a = Asset(name).l1_asset
             volume_24h_prev, volume_24h_curr = await self.load_volumes_usd_prev_curr(str(a), days=1) if pool else (0, 0)
-            volume = volume_24h_curr if height else volume_24h_prev
+            volume = volume_24h_prev if height else volume_24h_curr
             total_volume_usd += volume
             assets.append(SecureAssetInfo(
                 name,

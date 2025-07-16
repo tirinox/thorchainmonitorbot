@@ -158,3 +158,10 @@ class SwapHistoryResponse:
         interval_prev = sum_by_attribute(self.intervals[0:middle], attr_name)
         interval_curr = sum_by_attribute(self.intervals[middle:], attr_name)
         return interval_curr, interval_prev
+
+    @property
+    def with_last_day_dropped(self):
+        return SwapHistoryResponse(
+            intervals=self.intervals[:-1],
+            meta=self.meta
+        )
