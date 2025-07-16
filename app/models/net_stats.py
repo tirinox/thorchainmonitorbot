@@ -3,7 +3,7 @@ from typing import Optional, NamedTuple, List
 
 from .base import BaseModelMixin
 from .node_info import NodeInfo
-from .swap_history import SwapHistoryResponse
+from .swap_history import SwapsHistoryEntry
 
 
 @dataclass
@@ -58,7 +58,7 @@ class NetworkStats(BaseModelMixin):
 
     swap_volume_24h: float = 0  # swap history
 
-    swap_stats: Optional[SwapHistoryResponse] = None
+    swap_stats: Optional[SwapsHistoryEntry] = None
 
     @property
     def total_bond_usd(self):

@@ -169,8 +169,8 @@ async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_trade_balance(app)
-        await demo_decode_trade_acc(app, TX_WITHDRAW_USDC)
-        await demo_decode_trade_acc(app, TX_ID_DEPOSIT_USDC)
+        # await demo_decode_trade_acc(app, TX_WITHDRAW_USDC)
+        # await demo_decode_trade_acc(app, TX_ID_DEPOSIT_USDC)
         # sep()
         # await demo_decode_trade_acc(app, TX_ID_WITHDRAWAL)
         # sep()
@@ -180,9 +180,9 @@ async def run():
         # await demo_top_trade_asset_holders(app)
 
         # await demo_trade_acc_summary_continuous(app)
-        # await demo_trade_acc_summary_single(app, reset_cache=False)
+        await demo_trade_acc_summary_single(app, reset_cache=False)
         # await demo_trade_acc_decode_continuous(app, 19973890)
-        await demo_trade_acc_decode_continuous(app, 20950594 - 1000)
+        # await demo_trade_acc_decode_continuous(app, 20950594 - 1000)
 
 
 if __name__ == '__main__':

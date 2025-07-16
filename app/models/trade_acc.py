@@ -1,6 +1,6 @@
 from typing import NamedTuple, List, Optional
 
-from api.aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount, float_to_thor, thor_to_float
+from api.aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount, float_to_thor
 from lib.date_utils import now_ts
 from .asset import normalize_asset
 from .memo import ActionType
@@ -139,9 +139,9 @@ class AlertTradeAccountStats(NamedTuple):
 
     @property
     def curr_and_prev_trade_volume_usd(self):
-        interval_curr, interval_prev = self.swap_stats.curr_and_prev_interval()
-        # todo: get from local db!
+        curr_to_trade, prev_to_trade = self.swap_stats.curr_and_prev_interval("to_trade_volume_usd")
+        curr_from_trade, prev_from_trade = self.swap_stats.curr_and_prev_interval("from_trade_volume_usd")
         return (
-            interval_curr.rune_price_usd * thor_to_float(interval_curr.to_trade_volume + interval_curr.from_trade_volume),
-            interval_prev.rune_price_usd * thor_to_float(interval_prev.to_trade_volume + interval_prev.from_trade_volume)
+            (curr_from_trade + curr_to_trade) / 1e2,
+            (prev_from_trade + prev_to_trade) / 1e2
         )

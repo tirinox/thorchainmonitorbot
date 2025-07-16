@@ -129,12 +129,8 @@ class AlertKeyStats:
 
     @cached_property
     def usd_volume_curr_prev(self) -> Tuple[float, float]:
-        # return self.current.swap_vol.get(TxMetricType.SWAP, 0), self.previous.swap_vol.get(TxMetricType.SWAP, 0)
-        interval_curr, interval_prev = self.mdg_swap_stats.curr_and_prev_interval()
-        return (
-            interval_curr.rune_price_usd * thor_to_float(interval_curr.total_volume),
-            interval_prev.rune_price_usd * thor_to_float(interval_prev.total_volume)
-        )
+        curr, prev = self.mdg_swap_stats.curr_and_prev_interval("total_volume_usd")
+        return curr / 1e2, prev / 1e2
 
     @property
     def locked_value_usd_curr_prev(self):
