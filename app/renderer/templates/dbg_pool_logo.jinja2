@@ -1,0 +1,37 @@
+{% extends "base.jinja2" %}
+
+{% block content %}
+    <style>
+        .grid {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .grid img {
+            width: 64px;
+            height: auto;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+    </style>
+
+    {% with title="DBG POOL LOGO" %}
+        {% include "components/header.jinja2" %}
+    {% endwith %}
+
+    <div class="main-container">
+        <div class="grid">
+            {% for img_url in pools %}
+                <img src="renderer/logo/{{ img_url }}.png" alt="Image {{ img_url }}">
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        // todo
+    </script>
+
+{% endblock %}
