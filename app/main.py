@@ -15,6 +15,7 @@ from comm.telegram.telegram import TelegramBot
 from comm.twitter.twitter_bot import TwitterBot, TwitterBotMock
 from jobs.achievement.notifier import AchievementsNotifier
 from jobs.fetch.account_number import AccountNumberFetcher
+from jobs.fetch.cached.swap_history import SwapHistoryFetcher
 from jobs.fetch.cap import CapInfoFetcher
 from jobs.fetch.chain_id import ChainIdFetcher
 from jobs.fetch.chains import ChainStateFetcher
@@ -190,6 +191,8 @@ class App(WithLogger):
             int(cfg.get_pure('tries', 3)),
             public_url=thor_env.midgard_url
         )
+
+        d.swap_history_cache = SwapHistoryFetcher(d.midgard_connector)
 
         d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_holder)
         d.alert_presenter.name_service = d.name_service

@@ -11,6 +11,7 @@ from api.midgard.connector import MidgardConnector
 from api.midgard.name_service import NameService
 from comm.telegram.telegram import TelegramBot
 from comm.twitter.twitter_bot import TwitterBot
+from jobs.fetch.cached.swap_history import SwapHistoryFetcher
 from lib.config import Config
 from lib.db import DB
 from lib.emergency import EmergencyReport
@@ -44,6 +45,9 @@ class DepContainer:
     midgard_connector: Optional[MidgardConnector] = None
 
     name_service: Optional[NameService] = None
+
+    # new cached ones
+    swap_history_cache: Optional[SwapHistoryFetcher] = None
 
     block_scanner = None  # type: 'BlockScanner'
 
