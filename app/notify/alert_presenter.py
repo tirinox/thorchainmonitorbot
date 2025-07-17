@@ -561,7 +561,11 @@ class AlertPresenter(INotified, WithLogger):
         await self.deps.broadcaster.broadcast_to_all(message_gen)
 
     async def render_secured_asset_summary(self, loc: BaseLocalization, data: AlertSecuredAssetSummary):
-        photo = await self.renderer.render('secured_asset_summary.jinja2', namedtuple_to_dict(data))
+        photo = await self.renderer.render('secured_asset_summary.jinja2', {
+            **namedtuple_to_dict(data),
+            "_width": 1280,
+            "_height": 920,
+        })
         photo_name = 'secured_asset_summary.png'
         return photo, photo_name
 

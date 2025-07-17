@@ -3,10 +3,11 @@ from typing import List
 
 from api.aionode.types import ThorVault, thor_to_float
 from jobs.fetch.base import BaseFetcher
+from lib.date_utils import DAY
 from lib.depcont import DepContainer
 from models.asset import Asset
 from models.price import LastPriceHolder
-from models.secured import SecuredAssetsStats, SecureAssetInfo
+from models.secured import SecuredAssetsStats, SecureAssetInfo, AlertSecuredAssetSummary
 
 
 class SecuredAssetAssetFetcher(BaseFetcher):
@@ -97,12 +98,16 @@ class SecuredAssetAssetFetcher(BaseFetcher):
 
         assets.sort(key=lambda a: a.value_usd, reverse=True)
 
-        return SecuredAssetsStats(
-            assets=assets,
-            total_pool_usd=total_pool_usd,
-            total_vault_usd=total_vault_usd,
-            total_volume_24h_usd=total_volume_usd,
+        return AlertSecuredAssetSummary(
+            period_seconds=DAY,
+            current=SecuredAssetsStats(
+                assets=assets,
+                total_pool_usd=total_pool_usd,
+                total_vault_usd=total_vault_usd,
+                total_volume_24h_usd=total_volume_usd,
+            ),
+            previous=None
         )
 
-    async def fetch(self) -> SecuredAssetsStats:
+    async def fetch(self) -> AlertSecuredAssetSummary:
         return await self.load_for_height()

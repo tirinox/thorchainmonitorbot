@@ -45,13 +45,13 @@
         }
 
         .t {
-
             padding-left: 5px;
             align-items: center;
             justify-content: center;
             min-width: 200px;
             font-size: 30px;
             margin: 0;
+            font-weight: bolder;
         }
 
         .col-name {
@@ -149,7 +149,7 @@
                 </div>
             </div>
 
-            {% for a in assets[:10] %}
+            {% for a in current.assets[:10] %}
                 <div class="one_asset_container">
                     <div class="flex logo-box">
                         <img class="asset_logo" src="renderer/logo/{{ a['l1_name'] }}.png"
@@ -169,27 +169,26 @@
 
     <div class="indicator-container">
         <div class="indicator-box cbox">
-            <div class="indicator-value"> {{ total_assets }}</div>
+            <div class="indicator-value"> {{ current.total_assets }}</div>
             <div class="indicator-label">Total secured assets</div>
         </div>
 
         <div class="indicator-box cbox">
-            <div class="indicator-value"> {{ short_dollar(total_value_usd) }}</div>
+            <div class="indicator-value"> {{ short_dollar(current.total_value_usd) }}</div>
             <div class="indicator-subvalue">{# todo: delta#} </div>
             <div class="indicator-label">Total secured depth</div>
         </div>
 
         <div class="indicator-box cbox">
-            <div class="indicator-value"> {{ "%.1f"|format(total_secured_to_pool_percentage) }} %</div>
+            <div class="indicator-value"> {{ "%.1f"|format(current.total_secured_to_pool_percentage) }} %</div>
             <div class="indicator-label">Secured / pool</div>
         </div>
 
         <div class="indicator-box cbox">
-            <div class="indicator-value"> {{ short_dollar(total_volume_24h_usd) }}</div>
+            <div class="indicator-value"> {{ short_dollar(current.total_volume_24h_usd) }}</div>
             <div class="indicator-label">Volume 24H</div>
         </div>
     </div>
-
 
     <script>
         // todo
