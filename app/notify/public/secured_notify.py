@@ -9,7 +9,7 @@ class SecureAssetSummaryNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        cfg = deps.cfg.secured_assets.summary.notication
+        cfg = deps.cfg.secured_assets.summary.notification
         self.cooldown_sec = cfg.as_interval('cooldown', '3d')
         self.cd = Cooldown(self.deps.db, "SecuredAssetSummaryNotification", self.cooldown_sec)
         self.last_event = None
