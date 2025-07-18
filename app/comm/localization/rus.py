@@ -1643,9 +1643,12 @@ class RussianLocalization(BaseLocalization):
         )
         comment = self.TX_COMMENT_TABLE.get(comment, comment)
 
-        return f'🏦 <b>{comment}</b>{tx_link}: {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
-               f'от {from_my} ' \
-               f'➡️ к {to_my}{memo}.'
+        return (
+            f'🏦 <b>{comment}</b>: {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} '
+            f'от {from_my} '
+            f'➡️ к {to_my}{memo}.\n'
+            f'{tx_link}'
+        )
 
     def notification_text_rune_transfer_public(self, t: NativeTokenTransfer, name_map):
         asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
