@@ -605,9 +605,9 @@ class App(WithLogger):
             tasks.append(secured_asset_fetcher)
 
             if d.cfg.get('secured_assets.summary.notification.enabled', True):
-                secured_asset_notifier = SecureAssetSummaryNotifier(d)
-                secured_asset_fetcher.add_subscriber(secured_asset_notifier)
-                secured_asset_notifier.add_subscriber(d.alert_presenter)
+                d.secured_asset_notifier = SecureAssetSummaryNotifier(d)
+                secured_asset_fetcher.add_subscriber(d.secured_asset_notifier)
+                d.secured_asset_notifier.add_subscriber(d.alert_presenter)
 
         # -------- SCHEDULER --------
 

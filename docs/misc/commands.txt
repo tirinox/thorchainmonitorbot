@@ -17,5 +17,4 @@ pol - Protocol owned liquidity
 tradeacc - Trade account info
 burnedrune - Burned Rune info
 rujimerge - Rujira merge info
-
-# todo add runeburn
+secured - Secured asset info

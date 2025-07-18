@@ -890,6 +890,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_CEX_FLOW = '🌬 CEX Flow'
     BUTTON_METR_SUPPLY = f'🪙 Rune supply'
     BUTTON_METR_DEX_STATS = f'🤹 DEX Aggr. Stats'
+    BUTTON_METR_SECURED = f'🔐 Secured assets'
 
     TEXT_METRICS_INTRO = 'What metrics would you like to know?'
 
@@ -2508,6 +2509,8 @@ class BaseLocalization(ABC):  # == English
             f'RUJIRA Merge stats $RUJI\n'
             f'https://rujira.network/merge/'
         )
+
+    TEXT_SECURED_ASSETS_NO_DATA = '😩 Sorry. We have not gotten any data for secured assets yet.'
 
     @staticmethod
     def notification_text_secured_asset_summary(e: AlertSecuredAssetSummary):

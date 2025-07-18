@@ -645,6 +645,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_CEX_FLOW = '🌬 Поток бирж'
     BUTTON_METR_SUPPLY = f'🪙 Rune предложение'
     BUTTON_METR_DEX_STATS = f'🤹 DEX Агр. статы'
+    BUTTON_METR_SECURED = f'🔐 Секьюред активы'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 
@@ -1807,13 +1808,15 @@ class RussianLocalization(BaseLocalization):
             f'({bold(pretty_dollar(e.last_24h_burned_usd))})'
         )
 
+    TEXT_SECURED_ASSETS_NO_DATA = '😩 Пока нет данных о секьюред активах.'
+
     @staticmethod
     def notification_rujira_merge_stats(e: AlertRujiraMergeStats):
         return f'RUJIRA Статистика слияния'
 
     @staticmethod
     def notification_text_secured_asset_summary(e: AlertSecuredAssetSummary):
-        return 'Сводка безопасных активов'
+        return 'Сводка секьюред активов'
 
     # ------ Bond providers alerts ------
 

@@ -70,7 +70,7 @@ class MetricsDialog(BaseDialog):
         await MetricsStates.SECTION_FINANCE.set()
         reply_markup = kbd([
             [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_POL, self.loc.BUTTON_METR_STATS],
-            [self.loc.BUTTON_METR_TOP_POOLS, self.loc.BUTTON_METR_CEX_FLOW],
+            [self.loc.BUTTON_METR_TOP_POOLS, self.loc.BUTTON_METR_CEX_FLOW, self.loc.BUTTON_METR_SECURED],
             [self.loc.BUTTON_METR_SUPPLY, self.loc.BUTTON_METR_DEX_STATS, self.loc.BUTTON_BACK],
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
@@ -111,6 +111,8 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_METR_DEX_STATS:
             await self.ask_generic_duration(message, 'dex_aggr', back_state)
             return
+        elif message.text == self.loc.BUTTON_METR_SECURED:
+            await self.show_secured_assets_stats(message)
         await self.show_menu_financial(message)
 
     @message_handler(state=MetricsStates.SECTION_NET_OP)
@@ -379,6 +381,22 @@ class MetricsDialog(BaseDialog):
 
         text = self.loc.notification_rujira_merge_stats(event)
         photo, photo_name = await self.deps.alert_presenter.render_rujira_merge_graph(None, event)
+        await message.answer_photo(img_to_bio(photo, photo_name), caption=text, disable_notification=True)
+
+    async def show_secured_assets_stats(self, message: Message):
+        await self.start_typing(message)
+
+        if not self.deps.secured_asset_notifier:
+            await message.answer("This method is disabled.", disable_notification=True)
+            return
+
+        event = self.deps.secured_asset_notifier.last_event
+        if not event:
+            await message.answer(self.loc.TEXT_SECURED_ASSETS_NO_DATA, disable_notification=True)
+            return
+
+        photo, photo_name = await self.deps.alert_presenter.render_secured_asset_summary(self.loc, event)
+        text = self.loc.notification_text_secured_asset_summary(event)
         await message.answer_photo(img_to_bio(photo, photo_name), caption=text, disable_notification=True)
 
     # ---- Ask for duration (universal)
