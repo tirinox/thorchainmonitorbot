@@ -22,7 +22,6 @@ def print_top_merges(top_txs):
 
 async def dbg_switch_event_continuous(app: LpAppFramework, force_start_block=None, catch_up=0, one_block=False):
     d = app.deps
-    d.block_scanner = BlockScanner(d)
     d.block_scanner.initial_sleep = 0
 
     await d.pool_fetcher.run_once()

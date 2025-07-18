@@ -18,7 +18,6 @@ async def prepare_once(app):
     global prepared
     if not prepared:
         d = app.deps
-        d.block_scanner = BlockScanner(d)
 
         await d.pool_fetcher.run_once()
         await d.last_block_fetcher.run_once()

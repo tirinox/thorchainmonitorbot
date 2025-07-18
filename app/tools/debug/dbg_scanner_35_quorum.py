@@ -7,7 +7,6 @@ from tools.lib.lp_common import LpAppFramework
 
 async def demo_one_block(app: LpAppFramework, block_no):
     d = app.deps
-    d.block_scanner = BlockScanner(d)
     d.block_scanner.initial_sleep = 0
 
     # await d.pool_fetcher.run_once()

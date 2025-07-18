@@ -1,6 +1,7 @@
 import logging
 import os
 
+from jobs.scanner.native_scan import BlockScanner
 from main import App
 from comm.telegram.telegram import telegram_send_message_basic, TG_TEST_USER
 from comm.twitter.twitter_bot import twitter_text_length, TwitterBotMock
@@ -39,6 +40,7 @@ class LpAppFramework(App):
         d.twitter_bot = TwitterBotMock(d.cfg)
         d.last_block_fetcher = LastBlockFetcher(d)
         d.last_block_store = LastBlockStore(d)
+        d.block_scanner = BlockScanner(d)
 
         self.rune_yield: AsgardConsumerConnectorBase
         self.rune_yield_class = rune_yield_class
