@@ -10,6 +10,7 @@ from jobs.fetch.streaming_swaps import StreamingSwapFechter
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.scan_cache import BlockScannerCached
 from jobs.scanner.swap_extractor import SwapExtractorBlock
+from jobs.scanner.swap_start_detector import SwapStartDetector
 from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_filler import VolumeFillerUpdater
 from lib.money import DepthCurve
@@ -215,6 +216,24 @@ async def render_and_safe_stream_swap_start_pic(app, event):
     save_and_show_pic(photo, name=f'../temp/swap_start/{event.tx_id}.png')
 
 
+async def demo_show_swap_picture_by_tx_id(app, tx_id):
+    detector = SwapStartDetector(app.deps)
+
+    tx_details = await app.deps.thor_connector.query_tx_details(tx_id)
+    block_no = tx_details['consensus_height']
+
+    block = await app.deps.block_scanner.fetch_one_block(block_no)
+
+    swaps = detector.detect_swaps(block)
+
+    event = next(s for s in swaps if s.tx_id == tx_id)
+
+    if not event.quote:
+        await StreamingSwapStartTxNotifier(app.deps).load_quote(event)
+
+    await render_and_safe_stream_swap_start_pic(app, event)
+
+
 async def dbg_spam_any_active_swap_start(app, refresh=False, post=False):
     event = load_pickle(FILE_SWAP_START_PICKLE)
     if not event or refresh:
@@ -299,52 +318,22 @@ async def run():
         #                           swap_start_enabled=False)
 
         # 102K RUNE -> 171K USDC
-        await debug_full_pipeline(app,
-                                  start=21491631,
-                                  tx_id="33C70AE3E503CE33A3B24FC780F6F681882BE27C0524FC06B8882DA943D56238",
-                                  swap_start_enabled=False)
+        # await debug_full_pipeline(app,
+        #                           start=21491631,
+        #                           tx_id="33C70AE3E503CE33A3B24FC780F6F681882BE27C0524FC06B8882DA943D56238",
+        #                           swap_start_enabled=False)
+
+        # await debug_full_pipeline(app,
+        #                           start=21991374,
+        #                           tx_id="7B216BA6B2680B56A7FEEF491D358D6E48BB5BA8541F4129619A04106D905751",
+        #                           swap_start_enabled=False)
+
+        # await dbg_spam_any_active_swap_start(app, refresh=False)
+
+        await demo_show_swap_picture_by_tx_id(app, '33240581051F41ADA006A7F81139AA81B2E68A585C2A34643A2C46A03676974E')
 
         # await debug_full_pipeline(app, start=-200)
 
 
 if __name__ == '__main__':
     asyncio.run(run())
-
-# ------- old stuff to remember ----
-
-# await debug_full_pipeline_search_start(app, "DC5E005D6AB304532038EA6946A4CBB3ECFB2C77A695F219ABFABC905E860840")
-
-
-# await debug_full_pipeline(app, start=-5000)
-
-# await debug_fetch_ss(app)
-# await debug_block_analyse(app, block=17361911)
-# await debug_full_pipeline(app, start=16387377, single_block=True,
-#                           tx_id='BE7B085E50DE86CD9BD8959ABF3EA924AC60302330888D484219B8B7385F7B1D')
-# await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
-
-# await debug_tx_records(app, '62065183022E32395A1538DE9AE28CCCD81247327971990D8A57FD88BE2594EC')
-
-# ------------------- trade to trade no stream -------------------
-# await debug_full_pipeline(
-#     app,
-#     start=16908330,
-#     tx_id='BAB65D6A6A2D7AC127FDF36DF2B1219AC5F44732804848DB4FCEFC72AD5BCE77',
-#     single_block=True
-# )
-
-# ------------------- trade to trade with stream -------------------
-# await debug_full_pipeline(
-#     app,
-#     start=16908744 - 1,
-#     tx_id='4824290D3C7AE55F9915D4F0FEC46C93BB87604BD403649AD5BA208940218522',
-#     single_block=False
-# )
-
-# await debug_full_pipeline(
-#     app, start=12802333,
-#     tx_id='2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
-
-# await debug_full_pipeline(
-#     app, start=12802040,
-#     tx_id='63218D1F853AEB534B3469C4E0236F43E04BFEE99832DF124425454B8DB1528E')

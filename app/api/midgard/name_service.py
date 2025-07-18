@@ -402,7 +402,7 @@ class AffiliateManager(WithLogger):
         """
         name = self.get_affiliate_name(address_or_name)
         name = self._simplify_name(name)
-        return self.name_to_logo.get(name)
+        return self.name_to_logo.get(name, "")
 
     def remove_space_and_lowercase(self, d: dict) -> dict:
         """
