@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import struct
 from typing import Optional, List, Iterable, Dict, NamedTuple
 
@@ -380,13 +381,18 @@ class AffiliateManager(WithLogger):
             self.name_to_logo = self.remove_space_and_lowercase(data['affiliates']['logos'])
             self.logger.info(f'Loaded {len(self.thorname_to_name)} affiliate names and '
                              f'{len(self.name_to_logo)} logos from {self.FILE}')
+            self.check_integrity()
+
+    @staticmethod
+    def _simplify_name(name: str) -> str:
+        return name.replace(' ', '').lower()
 
     def get_affiliate_name(self, address_or_name: str) -> str:
         """
         Returns the affiliate name for a given address or ThorName.
         If the address or name is not found, it returns the address or name itself.
         """
-        name = address_or_name.replace(' ', '').lower()
+        name = self._simplify_name(address_or_name)
         return self.thorname_to_name.get(name, name)
 
     def get_affiliate_logo(self, address_or_name: str) -> Optional[str]:
@@ -395,14 +401,45 @@ class AffiliateManager(WithLogger):
         If the address or name is not found, it returns None.
         """
         name = self.get_affiliate_name(address_or_name)
-        name = name.replace(' ', '').lower()
+        name = self._simplify_name(name)
         return self.name_to_logo.get(name)
 
-    @staticmethod
-    def remove_space_and_lowercase(d: dict) -> dict:
+    def remove_space_and_lowercase(self, d: dict) -> dict:
         """
         Removes spaces and converts the name to lowercase.
         """
         return {
-            k.replace(' ', '').lower(): v for k, v in d.items()
+            self._simplify_name(k): v for k, v in d.items()
         }
+
+    def check_integrity(self):
+        """
+        Checks the integrity of the affiliate data.
+        Ensures that all keys in thorname_to_name are present in name_to_logo.
+        """
+        missing_logos = []
+        for name in self.thorname_to_name.values():
+            name = self._simplify_name(name)
+            if name not in self.name_to_logo:
+                missing_logos.append(name)
+
+        if missing_logos:
+            missing_logos = ', '.join(missing_logos)
+            raise ValueError(f'Affiliate names {missing_logos} are missing logos in {self.FILE}. '
+                             f'Please add them to the logos section of the file.')
+
+        missing_logos = []
+        for logo in self.name_to_logo.values():
+            logo = logo.strip()
+            if logo.startswith('http'):
+                continue
+            elif not logo:
+                self.logger.warning(f'Affiliate logo for {logo} is deliberately empty. ')
+            else:
+                if not os.path.exists(f"data/renderer/static/img/ecosystem/{logo}"):
+                    missing_logos.append(logo)
+
+        if missing_logos:
+            missing_logos = ', '.join(missing_logos)
+            raise ValueError(f'Affiliate logos {missing_logos} are missing files in {self.FILE}. '
+                             f'Please add them to the logos section of the file.')

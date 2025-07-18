@@ -16,18 +16,31 @@
             border-radius: 8px;
             object-fit: cover;
         }
+
+        .main-container {
+            scale: 0.3;
+        }
     </style>
 
-    {% with title="DBG POOL LOGO" %}
+    {% with title="DBG AFF LOGO" %}
         {% include "components/header.jinja2" %}
     {% endwith %}
 
     <div class="main-container">
-        <div class="grid">
-            {% for img_url in pools %}
-                <img src="renderer/logo/{{ img_url }}.png" alt="Image {{ img_url }}">
-            {% endfor %}
-        </div>
+        {#        <div class="grid">#}
+        {#            {% for thorname in thorname_to_name %}#}
+        {#                {% with logo = name_to_logo[thorname.lower()] %}#}
+        {##}
+        {#                {% endwith %}#}
+        {#            {% endfor %}#}
+        {#        </div>#}
+        {% with affiliate_fee=0 %}
+            {% include "components/aff-logo.jinja2" %}
+        {% endwith %}
     </div>
+
+    <script>
+
+    </script>
 
 {% endblock %}

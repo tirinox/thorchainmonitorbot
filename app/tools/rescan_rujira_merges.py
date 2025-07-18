@@ -37,7 +37,6 @@ class ReceiveRujiraMerge(INotified, WithLogger):
 
 async def rescan_rujira_merges(app: LpAppFramework):
     d = app.deps
-    d.block_scanner = BlockScanner(d)
     d.block_scanner.initial_sleep = 0
 
     await d.pool_fetcher.run_once()
