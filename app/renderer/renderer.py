@@ -93,7 +93,7 @@ class Renderer:
             elif self._resource_base_url:
                 rendered_html = rendered_html.replace('renderer', self._resource_base_url)
 
-            logging.info(f"Template {template_name} rendered with parameters: {parameters}")
+            logging.info(f"Finished rendering HTML template {template_name!r}. {len(rendered_html)} bytes.")
             return rendered_html
         except Exception as e:
             logging.error(f"Error rendering template '{template_name}': {e}")
@@ -124,7 +124,8 @@ class Renderer:
             # Close the page
             await page.close()
 
-            logging.info(f"HTML content rendered to PNG successfully with viewport size: {width=}, {height=}")
+            logging.info(f"HTML content {len(html_content)} bytes long rendered to PNG successfully"
+                         f" with viewport size: {width=}, {height=}")
             return png_bytes
         except Exception as e:
             logging.error(f"Error rendering HTML to PNG: {e}")
@@ -151,7 +152,7 @@ class Renderer:
         try:
             msg_type = message.type
             msg_text = message.text
-            args = [arg.to_string() for arg in message.args]
+            args = [str(arg) for arg in message.args]
             full_message = f"Console {msg_type}: {msg_text} Args: {args}"
             logging.info(full_message)
         except Exception as e:

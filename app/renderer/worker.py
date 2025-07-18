@@ -98,12 +98,14 @@ async def render_full_pipeline(template_name, parameters):
     start_time = time.monotonic()
     png_bytes = await renderer.render_html_to_png(rendered_html, width, height)
     end_time = time.monotonic()
-    print(f"Rendered Demo PNG image in {end_time - start_time:.2f} seconds.")
+    print(f"Rendered Demo PNG image {template_name!r} in {end_time - start_time:.2f} seconds.")
     return Response(png_bytes)
 
 
 @app.get("/render/demo-html/{name}")
 async def render_just_html(name: str, req: Request):
+    logging.info(f"Rendering Demo HTML {name}")
+
     template_name, parameters = demo_template_parameters(name)
     if not template_name:
         return Response(status_code=404,
@@ -134,6 +136,7 @@ async def render_html_to_png(request: RenderRequest):
     """
     template_name = request.template_name
     parameters = request.parameters
+    logging.info(f"Rendering '{template_name}' with parameters: {parameters}")
     return await render_full_pipeline(template_name, parameters)
 
 

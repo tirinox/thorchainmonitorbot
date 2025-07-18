@@ -83,20 +83,25 @@
 </div>
 
 <script>
+    const UNKNOWN_LOGO = 'renderer/logo/unknown.png';
     const affiliateLogos = {{ affiliate_logos | safe }};
     const affiliateNames = {{ affiliate_names | safe }};
     for (let i = 0; i < affiliateNames.length; i++) {
         const name = affiliateNames[i];
         const affiliateLogo = document.querySelector(`.affiliate-logo-${i}`);
         affiliateLogo.onerror = function () {
-            affiliateLogo.src = 'renderer/logo/unknown.png'
+            affiliateLogo.src = UNKNOWN_LOGO
         }
         let logoPath = affiliateLogos[i]
         console.log(`Affiliate name is ${name} (${logoPath})`)
 
         // if it does not start with 'https', this is local path, prepend local path
         if (!logoPath.startsWith('https://') && !logoPath.startsWith('http://')) {
-            logoPath = 'renderer/static/img/ecosystem/' + logoPath;
+            if(logoPath === "") {
+               logoPath = UNKNOWN_LOGO
+            } else {
+                logoPath = 'renderer/static/img/ecosystem/' + logoPath;
+            }
         }
         affiliateLogo.src = logoPath;
     }
