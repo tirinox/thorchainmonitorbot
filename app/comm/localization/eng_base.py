@@ -2527,7 +2527,7 @@ class BaseLocalization(ABC):  # == English
     def notification_text_bond_provider_alert(self, bp_to_node_to_event, name_map: NameMap):
         message = ''
         for bp_address, nodes in bp_to_node_to_event.items():
-            bp_link = '👤' + self.link_to_address(bp_address, name_map)
+            bp_link = self.link_to_address(bp_address, name_map)
             message += f'🔔 <b>{self.TEXT_BOND_PROVIDER_ALERT_FOR} {bp_link}</b>\n'
 
             for node_address, events in nodes.items():
