@@ -61,13 +61,6 @@ async def demo_top_pools(app: LpAppFramework):
     await fetcher_pool_info.run_once()
 
 
-async def demo_old_price_graph(app, fill=False):
-    if fill:
-        await fill_rune_price_from_gecko(app.deps.db, include_fake_det=True)
-    loc = app.deps.loc_man.default
-    graph, graph_name = await price_graph_from_db(app.deps, loc)
-    save_and_show_pic(graph, graph_name)
-
 
 async def _create_price_alert(app, fill=False):
     # use: redis_copy_keys.py to copy redis keys from prod to local

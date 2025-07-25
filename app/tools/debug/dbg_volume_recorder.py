@@ -2,8 +2,6 @@ import asyncio
 import logging
 
 from api.w3.aggregator import AggregatorDataExtractor
-from comm.picture.price_picture import price_graph_from_db
-from jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from jobs.fetch.pool_price import PoolFetcher
 from jobs.fetch.tx import TxFetcher
 from jobs.scanner.native_scan import BlockScanner
@@ -72,13 +70,6 @@ async def continuous_volume_recording(lp_app):
         d.pool_fetcher.run(),
         d.last_block_fetcher.run(),
     )
-
-
-async def make_price_graph(lp_app, fill=False):
-    if fill:
-        await fill_rune_price_from_gecko(lp_app.deps.db, include_fake_det=True)
-    loc = lp_app.deps.loc_man.default
-    return await price_graph_from_db(lp_app.deps, loc)
 
 
 async def debug_post_price_graph_to_discord(app: LpAppFramework):

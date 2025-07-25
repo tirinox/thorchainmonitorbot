@@ -429,12 +429,12 @@ class AffiliateManager(WithLogger):
                              f'Please add them to the logos section of the file.')
 
         missing_logos = []
-        for logo in self.name_to_logo.values():
+        for name, logo in self.name_to_logo.items():
             logo = logo.strip()
             if logo.startswith('http'):
                 continue
             elif not logo:
-                self.logger.warning(f'Affiliate logo for {logo} is deliberately empty. ')
+                self.logger.warning(f'Affiliate logo for {name!r} is deliberately empty.')
             else:
                 if not os.path.exists(f"data/renderer/static/img/ecosystem/{logo}"):
                     missing_logos.append(logo)
