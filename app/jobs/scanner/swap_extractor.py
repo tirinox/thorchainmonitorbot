@@ -98,8 +98,9 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             # just hash of object
             hash_key = hash_of_string_repr(event, block_no)
 
-        short_hash_key = hash_key[:7]
-        return f"ev_{event.original.type}_{short_hash_key}"
+        short_hash_key = hash_key[:4]
+        block_id = int(block_no) % 10_000
+        return f"ev_{event.original.type}_{block_id}_{short_hash_key}"
 
     async def register_swap_events(self, block: BlockResult, interesting_events: List[TypeEventSwapAndOut]):
         for event in interesting_events:
