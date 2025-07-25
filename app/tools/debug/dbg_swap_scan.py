@@ -104,13 +104,24 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, i
             await asyncio.sleep(5.9)
 
 
+async def dbg_one_finished_swap(app, tx_id):
+    native_action_extractor = SwapExtractorBlock(app.deps)
+    tx = await native_action_extractor.build_tx_from_database(tx_id)
+    print(tx)
+
+
 async def run():
     app = LpAppFramework(log_level=logging.DEBUG)
     async with app(brief=True):
-        await app.deps.last_block_fetcher.run_once()
-        await app.deps.pool_fetcher.run_once()
+        # await app.deps.last_block_fetcher.run_once()
+        # await app.deps.pool_fetcher.run_once()
 
-        await debug_full_pipeline(app, ignore_traders=True, start=-2000)
+        # out_asset is turned out "secured" but it is not. investigate!
+        await dbg_one_finished_swap(app, "59E9DEA85C268338266D76E872DF9D07DB362FB2C06AB34D3AA7F65FF4E79757")
+
+        # issue: when finalized, the rune outbound is sent, and only after decent delay, there goes L1 outbound
+        # await debug_full_pipeline(app, ignore_traders=True, start=21912489,
+        #                           tx_id="59E9DEA85C268338266D76E872DF9D07DB362FB2C06AB34D3AA7F65FF4E79757")
         #
         # await debug_full_pipeline(
         #     app,

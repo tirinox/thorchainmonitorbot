@@ -330,7 +330,8 @@ async def run():
 
         # await dbg_spam_any_active_swap_start(app, refresh=False)
 
-        await demo_show_swap_picture_by_tx_id(app, '33240581051F41ADA006A7F81139AA81B2E68A585C2A34643A2C46A03676974E')
+        # await demo_show_swap_picture_by_tx_id(app, '33240581051F41ADA006A7F81139AA81B2E68A585C2A34643A2C46A03676974E')
+        await demo_show_swap_picture_by_tx_id(app, '59E9DEA85C268338266D76E872DF9D07DB362FB2C06AB34D3AA7F65FF4E79757')
 
         # await debug_full_pipeline(app, start=-200)
 

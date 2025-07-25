@@ -96,16 +96,21 @@ class AssetKind(Enum):
                 return _DELIMITER_TABLE[char]
         return cls.UNKNOWN
 
-    @staticmethod
-    def restore_asset_type(original: str, name: str):
+    @classmethod
+    def restore_asset_type(cls, original: str, name: str):
         if not name or not original:
             return name
 
-        if Delimiter.TRADE in original:
+        if original == name:
+            return original
+
+        asset_type = cls.recognize(original)
+
+        if asset_type == AssetKind.TRADE:
             return name.replace(Delimiter.NATIVE, Delimiter.TRADE, 1)
-        elif Delimiter.SYNTH in original:
+        elif asset_type == AssetKind.SYNTH:
             return name.replace(Delimiter.NATIVE, Delimiter.SYNTH, 1)
-        elif Delimiter.SECURED in original:
+        elif asset_type == AssetKind.SECURED:
             return name.replace(Delimiter.NATIVE, Delimiter.SECURED, 1)
         else:
             return name

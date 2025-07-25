@@ -59,6 +59,7 @@ def test_restore_asset():
     assert AssetKind.restore_asset_type('BSC~BNB', 'XRP.XRP') == 'XRP~XRP'
     assert AssetKind.restore_asset_type('XRP.XRP', 'XRP.XRP') == 'XRP.XRP'
     assert AssetKind.restore_asset_type('ETH/USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48', 'XRP.XRP') == 'XRP/XRP'
+    assert AssetKind.restore_asset_type('ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48', 'ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48') == 'ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48'
 
 
 def test_recognize_kind():
