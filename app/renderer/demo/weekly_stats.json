@@ -1,0 +1,8 @@
+{
+  "template_name": "weekly_stats.jinja2",
+  "parameters": {
+
+    "_width": 1280,
+    "_height": 720
+  }
+}
