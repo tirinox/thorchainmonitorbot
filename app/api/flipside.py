@@ -30,7 +30,7 @@ class FlipsideConnector(WithLogger):
                     raise IOError('No data from Flipside')
 
                 max_date = aff_collectors[0].date
-                if max_date - datetime.datetime.utcnow() > datetime.timedelta(days=2):
+                if max_date - datetime.datetime.now() > datetime.timedelta(days=2):
                     self.logger.error("FS data is too old")
                     if self.emergency:
                         self.emergency.report('WeeklyStats', 'FS Aff data is too old',

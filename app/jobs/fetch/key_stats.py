@@ -28,9 +28,6 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         self._swap_route_recorder = SwapRouteRecorder(deps.db)
         self._runepool = RunePoolFetcher(deps)
 
-        # x3 days (this week + previous week + spare days)
-        self.trim_max_days = deps.cfg.as_int('key_metrics.trim_max_days', self.tally_days_period * 3)
-
     @property
     def tally_period_in_sec(self):
         return self.tally_days_period * DAY
@@ -92,7 +89,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         runepool_prev_depth = prev_runepool.providers.current_deposit_float if prev_runepool else 0.0
 
         # Done. Construct the resulting event
-        end = datetime.datetime.utcnow()
+        end = datetime.datetime.now()
         start = end - datetime.timedelta(days=self.tally_days_period)
         return AlertKeyStats(
             routes=routes,

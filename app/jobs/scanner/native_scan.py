@@ -4,7 +4,7 @@ from typing import Optional
 from jobs.fetch.base import BaseFetcher
 from jobs.scanner.block_result import BlockResult
 from lib.constants import THOR_BLOCK_TIME
-from lib.date_utils import now_ts_utc
+from lib.date_utils import now_ts
 from lib.depcont import DepContainer
 from lib.utils import safe_get
 
@@ -89,7 +89,7 @@ class BlockScanner(BaseFetcher):
                        last_available=block.error.last_available_block)
 
     def should_run_aggressive_scan(self):
-        time_since_last_block = now_ts_utc() - self._last_block_ts
+        time_since_last_block = now_ts() - self._last_block_ts
         if time_since_last_block > self._time_tolerance_for_aggressive_scan:
             self.logger.info(f'😡 time_since_last_block = {time_since_last_block:.3f} sec. Run aggressive scan!')
             return True
@@ -126,7 +126,7 @@ class BlockScanner(BaseFetcher):
 
                 # if block_result.timestamp:
                 #     self._last_block_ts = block_result.timestamp
-                self._last_block_ts = now_ts_utc()
+                self._last_block_ts = now_ts()
 
                 if block_result.is_error:
                     if self.allow_jumps:
