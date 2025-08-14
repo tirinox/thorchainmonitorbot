@@ -96,6 +96,11 @@ class SettingsManager(WithDelegates, WithLogger):
         keys = await self.db.redis.keys(pattern)
         return [str(k).split(':', 3)[2] for k in keys]
 
+    async def bot_user_count(self):
+        pattern = 'Bot:User:*'
+        keys = await self.db.redis.keys(pattern)
+        return len(keys)
+
 
 class SettingsContext:
     def __init__(self, manager: SettingsManager, user_id):
