@@ -18,7 +18,6 @@ async def prepare_once(app):
     global prepared
     if not prepared:
         await app.deps.pool_fetcher.run_once()
-        await app.deps.last_block_fetcher.run_once()
         await app.deps.mimir_const_fetcher.run_once()
         prepared = True
 

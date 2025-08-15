@@ -20,7 +20,6 @@ async def prepare_once(app):
         d = app.deps
 
         await d.pool_fetcher.run_once()
-        await d.last_block_fetcher.run_once()
         await d.mimir_const_fetcher.run_once()
         prepared = True
 

@@ -28,7 +28,6 @@ async def dbg_repopulate(app: LpAppFramework, notifier):
 async def run():
     app = LpAppFramework(log_level='INFO')
     async with app(brief=True):
-        await app.deps.last_block_fetcher.run_once()
         await app.deps.mimir_const_fetcher.run_once()
         await app.deps.pool_fetcher.run_once()
         notifier = BurnNotifier(app.deps)

@@ -163,11 +163,10 @@ class MimirMockChangesFetcher(ConstMimirFetcher):
         return r._replace(mimir=ThorMimir({}))
 
     async def _dbg_pause_global(self, r: MimirTuple):
-        await self.deps.last_block_fetcher.run_once()
 
         key = MIMIR_PAUSE_GLOBAL
         self.prev = r.mimir.constants[key]
-        thor_block = self.deps.last_block_store.thor
+        thor_block = await self.deps.last_block_cache.get_thor_block()
         next_block = thor_block + random.randint(10, 10000)
 
         current = r.mimir.constants[key] = next_block

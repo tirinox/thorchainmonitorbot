@@ -37,7 +37,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, i
     d = app.deps
 
     if start is not None and start < 0:
-        thor = app.deps.last_block_store.thor
+        thor = await app.deps.last_block_cache.get_thor_block()
         assert thor > 0
         start = thor + start
 
@@ -113,8 +113,6 @@ async def dbg_one_finished_swap(app, tx_id):
 async def run():
     app = LpAppFramework(log_level=logging.DEBUG)
     async with app(brief=True):
-        # await app.deps.last_block_fetcher.run_once()
-        # await app.deps.pool_fetcher.run_once()
 
         # out_asset is turned out "secured" but it is not. investigate!
         await dbg_one_finished_swap(app, "59E9DEA85C268338266D76E872DF9D07DB362FB2C06AB34D3AA7F65FF4E79757")

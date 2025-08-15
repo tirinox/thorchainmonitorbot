@@ -15,9 +15,6 @@ async def dbg_get_block(app, block):
     d = app.deps
     scanner = BlockScanner(d, sleep_period=10.0)
 
-    d.last_block_fetcher.add_subscriber(d.last_block_store)
-    await d.last_block_fetcher.run_once()
-
     block = await scanner.fetch_one_block(block)
     print(block)
 

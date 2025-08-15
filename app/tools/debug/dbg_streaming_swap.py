@@ -294,7 +294,6 @@ async def dbg_look_into_tx_props(app, tx_id):
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        await app.deps.last_block_fetcher.run_once()
         await app.deps.pool_fetcher.run_once()
 
         # await dbg_look_into_tx_props(app, "C35BBEEE5D3466B5C6227A41789041EC544C5DEDC4E10236A138220206406E16")

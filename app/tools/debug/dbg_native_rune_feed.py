@@ -49,10 +49,6 @@ async def demo_block_scanner_active(app, send_alerts=False, catch_up=0, force_st
     detector = RuneTransferDetector()
     scanner.add_subscriber(detector)
 
-    d.last_block_fetcher.add_subscriber(d.last_block_store)
-    # noinspection PyAsyncCall
-    asyncio.create_task(d.last_block_fetcher.run())
-
     if print_txs:
         detector.add_subscriber(Receiver('Transfer'))
 

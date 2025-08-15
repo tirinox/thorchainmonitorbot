@@ -25,8 +25,6 @@ async def dbg_switch_event_continuous(app: LpAppFramework, force_start_block=Non
     d.block_scanner.initial_sleep = 0
 
     await d.pool_fetcher.run_once()
-    d.last_block_fetcher.add_subscriber(d.last_block_store)
-    await d.last_block_fetcher.run_once()
 
     ruji_merge_tracker = RujiMergeTracker(d)
     d.block_scanner.add_subscriber(ruji_merge_tracker)

@@ -24,7 +24,6 @@ async def continuous_volume_recording(lp_app):
     d.pool_fetcher = PoolFetcher(d)
     await d.pool_fetcher.run_once()
     await d.mimir_const_fetcher.run_once()
-    await d.last_block_fetcher.run_once()
 
     main_tx_types = [
         # ThorTxType.TYPE_SWAP,
@@ -68,7 +67,6 @@ async def continuous_volume_recording(lp_app):
         fetcher_tx.run(),
         d.block_scanner.run(),
         d.pool_fetcher.run(),
-        d.last_block_fetcher.run(),
     )
 
 
