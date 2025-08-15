@@ -47,11 +47,11 @@ class PoolFetcher(BaseFetcher):
             if height is None:
                 # latest
                 pool_map = await self._fetch_current_pool_data_from_thornode()
-                cache_key = self.deps.last_block_store.thor
+                cache_key = await self.deps.last_block_cache.get_thor_block()
                 if cache_key:
                     await self.cache.put(cache_key, pool_map)
                 else:
-                    self.logger.error(f'last_block_store.thor = {cache_key}. Cannot save to cache!')
+                    self.logger.error(f'Last thor block = {cache_key}. Cannot save to cache!')
             else:
                 pool_map = await self.cache.get(subkey=height)
                 if not pool_map:
@@ -85,9 +85,9 @@ class PoolFetcher(BaseFetcher):
                                  forced=False,
                                  group_size=10,
                                  use_tqdm=False):
-        current_block = self.deps.last_block_store.thor
+        current_block = await self.deps.last_block_cache.get_thor_block()
         if not current_block:
-            raise RuntimeError(f'last_block_store.thor = {current_block}. Cannot load historic data!')
+            raise RuntimeError(f'current_block = {current_block}. Cannot load historic data!')
 
         block_heights = list(range(current_block, current_block - blocks_ago, -abs(block_interval)))
 
@@ -152,7 +152,7 @@ class PoolCache(WithLogger):
     async def clear(self, max_age=1000 * DAY):
         r: Redis = await self.deps.db.get_redis()
 
-        top_block = self.deps.last_block_store.thor
+        top_block = await self.deps.last_block_cache.get_thor_block()
         if top_block is None or top_block < 1:
             self.logger.warning(f'Failed to get top block from the store ({top_block = })')
             return
@@ -172,6 +172,10 @@ class PoolCache(WithLogger):
     async def put(self, subkey, pool_map: PoolInfoMap):
         if not pool_map:
             self.logger.warning(f'Pool map is empty for {subkey = }. Cannot save to cache!')
+            return
+
+        if not subkey:
+            self.logger.error('Subkey is empty! Cannot save to cache!')
             return
 
         r: Redis = await self.deps.db.get_redis()

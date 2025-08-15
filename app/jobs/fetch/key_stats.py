@@ -37,7 +37,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
 
     async def fetch(self) -> AlertKeyStats:
         # Find block height a week ago
-        previous_block = self.deps.last_block_store.block_time_ago(self.tally_period_in_sec)
+        previous_block = await self.deps.last_block_cache.get_thor_block_time_ago(self.tally_period_in_sec)
 
         if previous_block < 0:
             raise ValueError(f'Previous block is negative {previous_block}!')
@@ -92,7 +92,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         runepool_prev_depth = prev_runepool.providers.current_deposit_float if prev_runepool else 0.0
 
         # Done. Construct the resulting event
-        end = datetime.datetime.utcnow()
+        end = datetime.datetime.now()
         start = end - datetime.timedelta(days=self.tally_days_period)
         return AlertKeyStats(
             routes=routes,
@@ -129,7 +129,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         )
 
     async def get_lock_value(self, sec_ago=0) -> LockedValue:
-        height = self.deps.last_block_store.block_time_ago(sec_ago)
+        height = await self.deps.last_block_cache.get_thor_block_time_ago(sec_ago)
         pools = await self.deps.pool_fetcher.load_pools(height=height)
         price_holder = self.deps.price_holder.clone().update_pools(pools)
 

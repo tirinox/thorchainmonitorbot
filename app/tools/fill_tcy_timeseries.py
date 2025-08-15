@@ -14,9 +14,7 @@ from tools.lib.lp_common import LpAppFramework, ask_yes_no
 async def fill_tcy_timeseries_task(app):
     pf: PoolFetcher = app.deps.pool_fetcher
 
-    await app.deps.last_block_fetcher.run_once()
-
-    last_block = app.deps.last_block_store.thor
+    last_block = await app.deps.last_block_cache.get_thor_block()
     if not last_block:
         print("Last block not found. Exiting.")
         return

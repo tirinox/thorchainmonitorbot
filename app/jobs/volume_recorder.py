@@ -15,7 +15,7 @@ from models.vol_n import TxCountStats, TxMetricType
 from notify.dup_stop import TxDeduplicator
 
 
-def convert_trade_actions_to_txs(txs, d: DepContainer) -> List[ThorAction]:
+def convert_trade_actions_to_txs(txs, last_thor_block: int, pool_info_map) -> List[ThorAction]:
     """
     The classes below are able to handle both ThorTx and AlertTradeAccountAction, AlertRunePoolAction
      thanks to this function.
@@ -25,8 +25,8 @@ def convert_trade_actions_to_txs(txs, d: DepContainer) -> List[ThorAction]:
     """
     if isinstance((event := txs), (AlertTradeAccountAction, AlertRunePoolAction)):
         tx = event.as_thor_tx
-        tx.calc_full_rune_amount(d.price_holder.pool_info_map)
-        tx.height = int(d.last_block_store)
+        tx.calc_full_rune_amount(pool_info_map)
+        tx.height = last_thor_block
         tx.date = int(now_ts() * 1e9)
         return [tx]
     else:
@@ -92,7 +92,8 @@ class TxCountRecorder(INotified, WithLogger):
 
     async def on_data(self, sender, txs: Union[List[ThorAction], AlertTradeAccountAction]):
         try:
-            txs = convert_trade_actions_to_txs(txs, self.deps)
+            last_thor_block = await self.deps.last_block_cache.get_thor_block()
+            txs = convert_trade_actions_to_txs(txs, last_thor_block, self.deps.price_holder.pool_info_map)
             txs = await self._deduplicator.only_new_txs(txs, logs=True)
             await self._write_tx_count(txs)
             await self._deduplicator.mark_as_seen_txs(txs)
@@ -128,7 +129,8 @@ class VolumeRecorder(INotified, WithLogger):
 
     async def on_data(self, sender, txs: Union[List[ThorAction], AlertTradeAccountAction]):
         try:
-            txs = convert_trade_actions_to_txs(txs, self.deps)
+            last_thor_block = await self.deps.last_block_cache.get_thor_block()
+            txs = convert_trade_actions_to_txs(txs, last_thor_block, self.deps.price_holder.pool_info_map)
             txs = await self._deduplicator.only_new_txs(txs, logs=True)
             await self.handle_txs_unsafe(txs)
             await self._deduplicator.mark_as_seen_txs(txs)

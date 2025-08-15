@@ -35,7 +35,7 @@ class RunePoolFetcher(BaseFetcher):
     async def load_runepool(self, ago_sec=0) -> ThorRunePool:
         height = 0
         if ago_sec:
-            height = self.deps.last_block_store.block_time_ago(ago_sec)
+            height = await self.deps.last_block_cache.get_thor_block_time_ago(ago_sec)
         runepool = await self.deps.thor_connector.query_runepool(height)
         return runepool
 

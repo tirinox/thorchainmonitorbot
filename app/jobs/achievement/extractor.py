@@ -16,8 +16,8 @@ from models.price import RuneMarketInfo
 from models.runepool import AlertPOLState, AlertRunePoolAction
 from models.trade_acc import AlertTradeAccountStats, AlertTradeAccountAction
 from models.tx import ThorAction
-from notify.public.block_notify import LastBlockStore
 from .ach_list import A, EventTestAchievement, Achievement
+from ..fetch.cached.last_block import EventLastBlock
 
 
 class AchievementsExtractor(WithLogger):
@@ -28,7 +28,8 @@ class AchievementsExtractor(WithLogger):
     async def extract_events_by_type(self, sender, data) -> List[Achievement]:
         if isinstance(data, NetworkStats):
             kv_events = self.on_network_stats(data)
-        elif isinstance(sender, LastBlockStore):
+        # fixme
+        elif isinstance(sender, EventLastBlock):
             kv_events = self.on_block(sender)  # sender not data!
         elif isinstance(data, NodeSetChanges):
             kv_events = self.on_node_changes(data)
@@ -87,11 +88,11 @@ class AchievementsExtractor(WithLogger):
         return events
 
     @staticmethod
-    def on_block(sender: LastBlockStore):
+    def on_block(block_ev: EventLastBlock):
         years_old = full_years_old_ts(THORCHAIN_BIRTHDAY)
 
         achievements = [
-            Achievement(A.BLOCK_NUMBER, int(sender.last_thor_block)),
+            Achievement(A.BLOCK_NUMBER, block_ev.thor_block),
             Achievement(A.ANNIVERSARY, years_old),
         ]
         return achievements

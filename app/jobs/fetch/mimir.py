@@ -42,8 +42,10 @@ class ConstMimirFetcher(BaseFetcher):
         if votes is None:
             raise FileNotFoundError('Failed to get Mimir Votes data from THOR')
 
+        last_block = await self.deps.last_block_cache.get_thor_block()
+
         return MimirTuple(
             constants, mimir, accepted_node_mimir, votes,
             active_nodes=self.deps.node_holder.active_nodes,
-            last_thor_block=int(self.deps.last_block_store),
+            last_thor_block=last_block,
         )

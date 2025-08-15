@@ -1,7 +1,5 @@
-from jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from lib.config import SubConfig
 from lib.cooldown import Cooldown
-from lib.date_utils import parse_timespan_to_seconds
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -18,7 +16,7 @@ class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
         self.spam_cd = Cooldown(self.deps.db, 'PoolChurnNotifier-spam', cooldown_sec)
         self.ignore_pool_removed = cfg.as_bool('notification.ignore_pool_removed', True)
 
-    async def on_data(self, sender: PoolInfoFetcherMidgard, data: PoolInfoMap):
+    async def on_data(self, sender, data: PoolInfoMap):
         # compare starting w 2nd iteration
         if not self.old_pool_dict:
             self.old_pool_dict = data

@@ -15,13 +15,13 @@ from comm.telegram.telegram import TelegramBot
 from comm.twitter.twitter_bot import TwitterBot, TwitterBotMock
 from jobs.achievement.notifier import AchievementsNotifier
 from jobs.fetch.account_number import AccountNumberFetcher
+from jobs.fetch.cached.last_block import LastBlockCached, LastBlockEventGenerator
 from jobs.fetch.cached.swap_history import SwapHistoryFetcher
 from jobs.fetch.cap import CapInfoFetcher
 from jobs.fetch.chain_id import ChainIdFetcher
 from jobs.fetch.chains import ChainStateFetcher
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.fetch.key_stats import KeyStatsFetcher
-from jobs.fetch.last_block import LastBlockFetcher
 from jobs.fetch.mimir import ConstMimirFetcher
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from jobs.fetch.node_info import NodeInfoFetcher
@@ -67,7 +67,6 @@ from notify.personal.personal_main import NodeChangePersonalNotifier
 from notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from notify.personal.scheduled import PersonalPeriodicNotificationService
 from notify.public.best_pool_notify import BestPoolsNotifier
-from notify.public.block_notify import BlockHeightNotifier, LastBlockStore
 from notify.public.burn_notify import BurnNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.chain_id_notify import ChainIdNotifier
@@ -114,9 +113,6 @@ class App(WithLogger):
         d.mimir_const_fetcher.add_subscriber(d.mimir_const_holder)
 
         d.pool_fetcher = PoolFetcher(d)
-
-        d.last_block_fetcher = LastBlockFetcher(d)
-        d.last_block_store = LastBlockStore(d)
 
         d.rune_market_fetcher = RuneMarketInfoFetcher(d)
         d.trade_acc_fetcher = TradeAccountFetcher(d)
@@ -193,6 +189,7 @@ class App(WithLogger):
         )
 
         d.swap_history_cache = SwapHistoryFetcher(d.midgard_connector)
+        d.last_block_cache = LastBlockCached(d.thor_connector)
 
         d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_holder)
         d.alert_presenter.name_service = d.name_service
@@ -221,7 +218,9 @@ class App(WithLogger):
 
                 # update pools for bootstrap (other components need them)
                 self.logger.info('Loading last block...')
-                await d.last_block_fetcher.run_once()
+                block_no = await d.last_block_cache.get_thor_block()
+                self.logger.info(f'THORNode block is {block_no}')
+                assert block_no > 0
                 await asyncio.sleep(sleep_step)
 
                 self.logger.info('Loading pools...')
@@ -257,12 +256,10 @@ class App(WithLogger):
         fetcher_queue.add_subscriber(store_queue)
 
         d.pool_fetcher.add_subscriber(d.price_holder)
-        d.last_block_fetcher.add_subscriber(d.last_block_store)
 
         tasks = [
             d.pool_fetcher,
             d.mimir_const_fetcher,
-            d.last_block_fetcher,
             fetcher_queue,
             d.emergency,
         ]
@@ -273,9 +270,6 @@ class App(WithLogger):
         achievements = AchievementsNotifier(d)
         if achievements_enabled:
             achievements.add_subscriber(d.alert_presenter)
-
-            # achievements will subscribe to other components later in this method
-            d.last_block_store.add_subscriber(achievements)
 
         if d.cfg.get('native_scanner.enabled', True):
             # The block scanner itself
@@ -302,6 +296,11 @@ class App(WithLogger):
                 d.rune_move_notifier = RuneMoveNotifier(d)
                 d.rune_move_notifier.add_subscriber(d.alert_presenter)
                 transfer_decoder.add_subscriber(d.rune_move_notifier)
+
+            if achievements_enabled:
+                ev_gen = LastBlockEventGenerator(d.last_block_cache)
+                d.block_scanner.add_subscriber(ev_gen)
+                ev_gen.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('tx.enabled', True):
             main_tx_types = [
@@ -406,11 +405,6 @@ class App(WithLogger):
 
             if achievements_enabled:
                 fetcher_stats.add_subscriber(achievements)
-
-        if d.cfg.get('last_block.enabled', True):
-            d.block_notifier = BlockHeightNotifier(d)
-            d.last_block_store.add_subscriber(d.block_notifier)
-            d.block_notifier.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('node_info.enabled', True):
             churn_detector = NodeChurnDetector(d)

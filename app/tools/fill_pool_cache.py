@@ -8,8 +8,6 @@ from tools.lib.lp_common import LpAppFramework
 async def load_historic_data_task(app):
     pf: PoolFetcher = app.deps.pool_fetcher
 
-    await app.deps.last_block_fetcher.run_once()
-
     block_distance = int(input("Enter distance in blocks (default 10): ") or 5)
     max_blocks = int(input("Enter maximum blocks to scan (default 1000): ") or 1000)
 

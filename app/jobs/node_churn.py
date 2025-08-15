@@ -68,10 +68,7 @@ class NodeChurnDetector(WithDelegates, INotified, WithLogger):
             # Fill out some additional data
             if sender:
                 result.vault_migrating = sender.thor_network.vaults_migrating
-
-            if self.deps.last_block_store.last_thor_block == 0:
-                await self.deps.last_block_fetcher.run_once()
-            result.block_no = self.deps.last_block_store.last_thor_block
+            result.block_no = await self.deps.last_block_cache.get_thor_block()
 
         except AttributeError:
             self.logger.error(f'Cannot get vault_migrating from {sender}')

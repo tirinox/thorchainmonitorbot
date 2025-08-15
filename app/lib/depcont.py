@@ -11,6 +11,7 @@ from api.midgard.connector import MidgardConnector
 from api.midgard.name_service import NameService
 from comm.telegram.telegram import TelegramBot
 from comm.twitter.twitter_bot import TwitterBot
+from jobs.fetch.cached.last_block import LastBlockCached
 from jobs.fetch.cached.swap_history import SwapHistoryFetcher
 from lib.config import Config
 from lib.db import DB
@@ -56,8 +57,8 @@ class DepContainer:
     pool_fetcher = None  # type: 'PoolFetcher'
     node_info_fetcher = None  # type: 'NodeInfoFetcher'
     mimir_const_fetcher = None  # type: 'ConstMimirFetcher'
-    last_block_fetcher = None  # type: 'LastBlockFetcher'
-    fetcher_chain_state = None # type: 'ChainStateFetcher'
+
+    fetcher_chain_state = None  # type: 'ChainStateFetcher'
     data_controller = None
     lend_stats_fetcher = None
     trade_acc_fetcher = None  # type: 'TradeAccountFetcher'
@@ -89,7 +90,9 @@ class DepContainer:
     slack_bot = None
     twitter_bot: Optional[TwitterBot] = None
 
-    # shared data holders
+    # shared data holders and caches
+
+    last_block_cache: LastBlockCached = None
 
     price_holder: LastPriceHolder = field(default_factory=LastPriceHolder)
     queue_holder: QueueInfo = field(default_factory=QueueInfo.error)
@@ -97,7 +100,6 @@ class DepContainer:
     chain_info: ChainInfoHolder = field(default_factory=ChainInfoHolder)
     node_holder: NodeListHolder = field(default_factory=NodeListHolder)
     net_stats: NetworkStats = field(default_factory=NetworkStats)
-    last_block_store = None
 
     emergency: Optional[EmergencyReport] = None
 

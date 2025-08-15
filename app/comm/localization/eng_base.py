@@ -885,7 +885,6 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_CHAINS = '⛓️ Chains'
     BUTTON_METR_MIMIR = '🎅 Mimir consts'
     BUTTON_METR_VOTING = '🏛️ Voting'
-    BUTTON_METR_BLOCK_TIME = '⏱️ Block time'
     BUTTON_METR_TOP_POOLS = '🏊 Top Pools'
     BUTTON_METR_CEX_FLOW = '🌬 CEX Flow'
     BUTTON_METR_SUPPLY = f'🪙 Rune supply'

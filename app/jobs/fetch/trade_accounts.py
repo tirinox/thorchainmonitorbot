@@ -70,16 +70,16 @@ class TradeAccountFetcher(BaseFetcher):
         traders = await self._get_traders(trade_units, height)
         return TradeAccountVaults.from_trade_units(trade_units, pools, traders, vault_balances)
 
-    @property
-    def previous_block_height(self):
-        return self.deps.last_block_store.block_time_ago(self.tally_period_sec)
+    async def get_previous_block_height(self):
+        return await self.deps.last_block_cache.get_thor_block_time_ago(self.tally_period_sec)
 
     async def fetch(self) -> AlertTradeAccountStats:
         # State of Trade Account vaults
+        previous_block_height = await self.get_previous_block_height()
         current: TradeAccountVaults = await self.load_summary_for_height()
-        previous: TradeAccountVaults = await self.load_summary_for_height(self.previous_block_height)
+        previous: TradeAccountVaults = await self.load_summary_for_height(previous_block_height)
         if not previous:
-            self.logger.warning(f'No previous Trade Acc summary data at #{self.previous_block_height}')
+            self.logger.warning(f'No previous Trade Acc summary data at #{previous_block_height}')
 
         # Volume stats
         volume_recorder: VolumeRecorder = self.deps.volume_recorder
