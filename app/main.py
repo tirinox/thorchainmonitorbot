@@ -207,8 +207,6 @@ class App(WithLogger):
 
         self.logger.info('Loading procedure start.')
 
-        await self.create_thor_node_connector()
-
         sleep_step = self.sleep_step
         retry_after = sleep_step * 5
         while True:
@@ -659,6 +657,8 @@ class App(WithLogger):
         try:
             # noinspection PyAsyncCall
             asyncio.create_task(self.deps.data_controller.run_save_job(self.deps.db))
+
+            await self.create_thor_node_connector()
 
             tasks = await self._prepare_task_graph()
             await self._preloading()
