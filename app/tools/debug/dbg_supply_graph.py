@@ -67,8 +67,6 @@ async def debug_get_rune_market_data(app):
 
     await d.node_info_fetcher.run_once()
 
-    await d.mimir_const_fetcher.fetch()  # get constants beforehand
-
     rune_market_info: RuneMarketInfo = await d.rune_market_fetcher.fetch()
     return d.net_stats, rune_market_info
 

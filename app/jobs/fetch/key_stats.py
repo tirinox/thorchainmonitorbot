@@ -7,7 +7,6 @@ from api.aionode.types import thor_to_float
 from api.flipside import FlipsideConnector
 from jobs.fetch.base import BaseFetcher
 from jobs.fetch.pol import RunePoolFetcher
-from jobs.fetch.pool_price import PoolFetcher
 from jobs.scanner.swap_routes import SwapRouteRecorder
 from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
@@ -43,7 +42,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             raise ValueError(f'Previous block is negative {previous_block}!')
 
         # Load pool data for BTC/ETH value in the pools
-        pf: PoolFetcher = self.deps.pool_fetcher
+        pf = self.deps.pool_cache
         curr_pools, prev_pools = await asyncio.gather(
             pf.load_pools(),
             pf.load_pools(height=previous_block)
@@ -130,8 +129,8 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
 
     async def get_lock_value(self, sec_ago=0) -> LockedValue:
         height = await self.deps.last_block_cache.get_thor_block_time_ago(sec_ago)
-        pools = await self.deps.pool_fetcher.load_pools(height=height)
-        price_holder = self.deps.price_holder.clone().update_pools(pools)
+
+        price_holder = await self.deps.pool_cache.load_as_price_holder(height=height)
 
         total_pooled_rune = price_holder.total_pooled_value_rune
         total_pooled_usd = price_holder.total_pooled_value_usd

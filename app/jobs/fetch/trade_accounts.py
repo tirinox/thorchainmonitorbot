@@ -56,14 +56,13 @@ class TradeAccountFetcher(BaseFetcher):
 
     async def load_summary_for_height(self, height=0) -> Optional[TradeAccountVaults]:
         if not height:
-            pools = self.deps.price_holder.pool_info_map
-            if not pools:
+            ph = await self.deps.pool_cache.get()
+            if not ph or not ph.pool_info_map:
                 self.logger.error('No pool info map yet. Skipping.')
                 return None
         else:
-            pools = await self.deps.pool_fetcher.load_pools(height)
-            # this fills asset prices in usd
-            pools = self.deps.price_holder.clone().update_pools(pools).pool_info_map
+            ph = await self.deps.pool_cache.load_as_price_holder(height)
+        pools = ph.pool_info_map
 
         vault_balances = await self.deps.thor_connector.query_vault(height=height)
         trade_units = await self.deps.thor_connector.query_trade_units(height)

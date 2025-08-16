@@ -152,6 +152,8 @@ class DexAnalyticsCollector(WithLogger, INotified):
                 name=aggr_name
             )
 
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+
         return DexReport(
             total=self.make_dex_report_entry(all_points),
             by_outer_asset=by_outer_asset,
@@ -159,6 +161,6 @@ class DexAnalyticsCollector(WithLogger, INotified):
             swap_ins=swap_in_report,
             swap_outs=swap_out_report,
             period_sec=period,
-            usd_per_rune=self.deps.price_holder.usd_per_rune,
+            usd_per_rune=usd_per_rune,
             points=all_points,
         )

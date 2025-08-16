@@ -52,9 +52,6 @@ async def run():
         return
 
     async with app(brief=True):
-        await app.deps.mimir_const_fetcher.run_once()
-        await app.deps.pool_fetcher.run_once()
-
         notifier = BurnNotifier(app.deps)
         await notifier.erase_and_populate_from_history(
             period=args.time_step,

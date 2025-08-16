@@ -3,9 +3,7 @@ import asyncio
 import logging
 import os
 
-from comm.localization.manager import BaseLocalization
 from lib.texts import sep
-from models.node_info import NodeListHolder
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -22,7 +20,8 @@ async def main():
         loc = lp_app.deps.loc_man.default
 
         sep()
-        text = loc.text_balances(balances, 'Balances', lp_app.deps.price_holder)
+        ph = await lp_app.deps.pool_cache.get()
+        text = loc.text_balances(balances, 'Balances', ph)
         print(text)
         sep()
         await lp_app.send_test_tg_message(text)
@@ -31,7 +30,7 @@ async def main():
         # bonds = [bp for _, bp in bond_and_nodes]
 
         sep()
-        usd_per_rune = lp_app.deps.price_holder.usd_per_rune
+        usd_per_rune = ph.usd_per_rune
         text = loc.text_bond_provision(bond_and_nodes, usd_per_rune=usd_per_rune)
         print(text)
         sep()

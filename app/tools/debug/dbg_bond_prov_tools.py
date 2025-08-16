@@ -200,7 +200,6 @@ async def debug_fee_change(app: LpAppFramework):
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
-        await app.deps.pool_fetcher.run_once()
         app.deps.thor_connector.env.timeout = 100
         # await demo_run_churn_sim_continuously(app)
         # await run_realtime(app)

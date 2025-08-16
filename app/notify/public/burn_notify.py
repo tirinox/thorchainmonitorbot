@@ -72,11 +72,13 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
         all_points_resampled = await self.resample(all_points)
         points_deltas = self._extract_only_burned_rune_delta(all_points_resampled)
 
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+
         return EventRuneBurn(
             curr_max_rune=curr_max_supply,
             prev_max_rune=prev_supply,
             points=points_deltas,
-            usd_per_rune=self.deps.price_holder.usd_per_rune,
+            usd_per_rune=usd_per_rune,
             system_income_burn_percent=system_income_burn_bp / THOR_BASIS_POINT_MAX * 100.0,
             period_seconds=self.cd.cooldown,
             start_ts=ADR17_TIMESTAMP,

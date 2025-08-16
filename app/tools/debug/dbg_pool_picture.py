@@ -32,7 +32,8 @@ async def main():
         print(pools)
         # loc = lp_app.deps.loc_man.default
         loc = lp_app.deps.loc_man[Language.ENGLISH]
-        usd_per_rune = lp_app.deps.price_holder.calculate_rune_price_here(pools)
+        ph = await lp_app.deps.pool_cache.get()
+        usd_per_rune = ph.calculate_rune_price_here(pools)
         event = EventPools(pools, prev_pools, earnings, usd_per_rune=usd_per_rune)
         pool_pic_gen = PoolPictureGenerator(loc, event)
         pool_pic, _ = await pool_pic_gen.get_picture()

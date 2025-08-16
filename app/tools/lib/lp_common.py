@@ -86,15 +86,11 @@ class LpAppFramework(App):
         if self.emergency:
             d.emergency.run_in_background()
 
-        d.pool_fetcher.add_subscriber(d.price_holder)
-
         brief = brief if self.brief is None else self.brief
         if brief:
             return
 
         await d.node_info_fetcher.run_once()  # get nodes beforehand
-        await d.mimir_const_fetcher.run_once()  # get constants beforehand
-        await d.pool_fetcher.run_once()
 
     async def close(self):
         await self.deps.session.close()

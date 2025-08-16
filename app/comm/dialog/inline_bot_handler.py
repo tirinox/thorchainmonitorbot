@@ -119,7 +119,9 @@ class InlineBotHandlerDialog(BaseDialog):
         if not LPAddress.validate_address(address):
             return await self._answer_invalid_address(inline_query)
 
-        pools_variants = self.deps.price_holder.pool_fuzzy_search(pool_query)
+        ph = await self.deps.pool_cache.get()
+
+        pools_variants = ph.pool_fuzzy_search(pool_query)
 
         if not pools_variants:
             return await self._answer_pool_not_found(inline_query, pool_query)
@@ -133,7 +135,7 @@ class InlineBotHandlerDialog(BaseDialog):
         # summary = await rune_yield.generate_yield_summary(address, pools)
 
         # GENERATE A PICTURE
-        picture = await generate_yield_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=False)
+        picture = await generate_yield_picture(ph, lp_report, self.loc, value_hidden=False)
         picture_bio = img_to_bio(picture, f'Thorchain_LP_{exact_pool}_{today_str()}.png')
 
         # UPLOAD AND SEND RESULT

@@ -40,7 +40,8 @@ class AchievementsExtractor(WithLogger):
         elif isinstance(sender, AccountNumberFetcher):
             kv_events = [Achievement(A.WALLET_COUNT, int(data))]
         elif is_list_of_type(data, ThorAction):
-            kv_events = self.on_thor_tx_list(data)
+            usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+            kv_events = self.on_thor_tx_list(data, usd_per_rune)
         elif isinstance(data, AlertPOLState):
             kv_events = self.on_thor_pol(data)
             kv_events += self.on_runepool_stats(data)
@@ -123,13 +124,14 @@ class AchievementsExtractor(WithLogger):
         ]
         return events
 
-    def on_thor_tx_list(self, txs: List[ThorAction]):
+    @staticmethod
+    def on_thor_tx_list(txs: List[ThorAction], usd_per_rune):
         results = defaultdict(float)
 
         def update(key, value, spec=''):
             results[(key, spec)] = max(results[(key, spec)], value)
 
-        price = self.deps.price_holder.usd_per_rune or 0.0
+        price = usd_per_rune or 0.0
 
         for tx in txs:
             this_volume = tx.get_usd_volume(price)

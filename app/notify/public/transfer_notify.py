@@ -9,6 +9,7 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.asset import Asset
+from models.price import PriceHolder
 from models.time_series import TimeSeries
 from models.transfer import NativeTokenTransfer, RuneCEXFlow
 
@@ -84,25 +85,24 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
             if not self._is_to_be_ignored(transfer):
                 yield transfer
 
-    def _fill_asset_prices(self, transfers: List[NativeTokenTransfer]):
-        usd_per_rune = self.deps.price_holder.usd_per_rune
+    def _fill_asset_prices(self, transfers: List[NativeTokenTransfer], ph: PriceHolder):
+        usd_per_rune = ph.usd_per_rune
         for transfer in transfers:
             if transfer.is_rune:
                 transfer.usd_per_asset = usd_per_rune
             else:
                 pool_name = Asset.from_string(transfer.asset).native_pool_name
-                transfer.usd_per_asset = self.deps.price_holder.usd_per_asset(pool_name)
+                transfer.usd_per_asset = ph.usd_per_asset(pool_name)
         return transfers
 
     async def on_data(self, sender, transfers: List[NativeTokenTransfer]):
-        usd_per_rune = self.deps.price_holder.usd_per_rune
-
+        ph = await self.deps.pool_cache.get()
         transfers = list(self._filter_transfers(transfers))
-        transfers = self._fill_asset_prices(transfers)
+        transfers = self._fill_asset_prices(transfers, ph)
 
         for transfer in transfers:
             try:
-                await self.handle_big_transfer(transfer, usd_per_rune)
+                await self.handle_big_transfer(transfer, ph.usd_per_rune)
             except Exception as e:
                 self.logger.exception(f"Error handling transfer: {e}", exc_info=e)
 
@@ -110,7 +110,7 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
 
         if self.flow_enabled:
             if transfers:
-                await self._notify_cex_flow(usd_per_rune)
+                await self._notify_cex_flow(ph.usd_per_rune)
 
     async def _notify_cex_flow(self, usd_per_rune):
         if await self.summary_cd.can_do():
@@ -155,10 +155,11 @@ class CEXFlowTracker:
             inflow += float(p['in'])
             outflow += float(p['out'])
         overflow = len(points) >= self.MAX_POINTS
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
         return RuneCEXFlow(
             inflow, outflow,
             len(points),
             overflow,
-            usd_per_rune=self.deps.price_holder.usd_per_rune,
+            usd_per_rune=usd_per_rune,
             period_sec=period
         )

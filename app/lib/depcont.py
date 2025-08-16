@@ -12,6 +12,7 @@ from api.midgard.name_service import NameService
 from comm.telegram.telegram import TelegramBot
 from comm.twitter.twitter_bot import TwitterBot
 from jobs.fetch.cached.last_block import LastBlockCached
+from jobs.fetch.cached.mimir import MimirCached
 from jobs.fetch.cached.swap_history import SwapHistoryFetcher
 from lib.config import Config
 from lib.db import DB
@@ -25,7 +26,6 @@ from models.mimir import MimirHolder
 from models.net_stats import NetworkStats
 from models.node_info import NodeListHolder
 from models.node_watchers import AlertWatchers
-from models.price import LastPriceHolder
 from models.queue import QueueInfo
 from notify.channel import Messengers
 
@@ -38,6 +38,7 @@ class DepContainer:
     loc_man = None  # type: 'LocalizationManager'
     broadcaster = None  # type: 'Broadcaster'
     alert_presenter = None
+    data_controller = None
 
     session: Optional[ClientSession] = None
 
@@ -46,9 +47,6 @@ class DepContainer:
     midgard_connector: Optional[MidgardConnector] = None
 
     name_service: Optional[NameService] = None
-
-    # new cached ones
-    swap_history_cache: Optional[SwapHistoryFetcher] = None
 
     block_scanner = None  # type: 'BlockScanner'
 
@@ -59,7 +57,6 @@ class DepContainer:
     mimir_const_fetcher = None  # type: 'ConstMimirFetcher'
 
     fetcher_chain_state = None  # type: 'ChainStateFetcher'
-    data_controller = None
     lend_stats_fetcher = None
     trade_acc_fetcher = None  # type: 'TradeAccountFetcher'
 
@@ -68,6 +65,10 @@ class DepContainer:
     best_pools_notifier = None  # type: 'BestPoolsNotifier'
     rune_move_notifier = None  # type: 'RuneMoveNotifier'
     tr_acc_summary_notifier = None  # type: 'TradeAccSummaryNotifier'
+    swap_notifier_tx = None
+    refund_notifier_tx = None
+    liquidity_notifier_tx = None
+    donate_notifier_tx = None
     volume_recorder = None  # type: 'VolumeRecorder'
     tx_count_recorder = None  # type: 'TxCountRecorder'
     user_counter = None  # type: 'UserCounterMiddleware'
@@ -91,10 +92,12 @@ class DepContainer:
     twitter_bot: Optional[TwitterBot] = None
 
     # shared data holders and caches
-
     last_block_cache: LastBlockCached = None
+    mimir_cache: Optional[MimirCached] = None
+    swap_history_cache: Optional[SwapHistoryFetcher] = None
+    pool_cache = None
 
-    price_holder: LastPriceHolder = field(default_factory=LastPriceHolder)
+    # price_holder: PriceHolder = field(default_factory=PriceHolder)
     queue_holder: QueueInfo = field(default_factory=QueueInfo.error)
     mimir_const_holder: Optional[MimirHolder] = None
     chain_info: ChainInfoHolder = field(default_factory=ChainInfoHolder)

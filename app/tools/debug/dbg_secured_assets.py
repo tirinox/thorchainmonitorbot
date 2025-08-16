@@ -67,8 +67,6 @@ async def dbg_continuous_secured_assets(app):
 async def run():
     app = LpAppFramework(log_level='DEBUG')
     async with app(brief=True):
-        await app.deps.pool_fetcher.run_once()
-
         # await dbg_fetch_secured_assets(app)
         # await dbg_fetch_secured_volumes(app)
         await dbg_continuous_secured_assets(app)

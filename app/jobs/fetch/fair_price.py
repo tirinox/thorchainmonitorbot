@@ -18,7 +18,6 @@ RUNE_MARKET_INFO_CACHE_TIME = 3 * MINUTE
 
 class RuneMarketInfoFetcher(BaseFetcher):
     async def fetch(self) -> RuneMarketInfo:
-        await self.deps.pool_fetcher.run_once()
         market_info = await self.get_rune_market_info_cached()
         # await self.price_recorder.write(market_info)
         return market_info
@@ -104,7 +103,7 @@ class RuneMarketInfoFetcher(BaseFetcher):
         if circulating_rune <= 0:
             raise ValueError(f"circulating is invalid ({circulating_rune})")
 
-        price_holder = self.deps.price_holder
+        price_holder = await self.deps.pool_cache.get()
         if not price_holder.pool_info_map or not price_holder.usd_per_rune:
             raise ValueError(f"pool_info_map is empty!")
 
@@ -122,6 +121,7 @@ class RuneMarketInfoFetcher(BaseFetcher):
             total_trade_volume_usd=trade_volume,
             total_supply=total_supply,
             supply_info=supply_info,
+            stable_coins=self.deps.cfg.stable_coins,
         )
         self.logger.info(result)
         result.pools = price_holder.pool_info_map

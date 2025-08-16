@@ -29,10 +29,6 @@ async def demo_cap_test(app: LpAppFramework):
     print(r)
 
 
-async def demo_mimir_consensus(app: LpAppFramework):
-    await app.deps.mimir_const_fetcher.run_once()
-
-
 async def demo_voting(app: LpAppFramework):
     mimir_to_test = 'CHURNINTERVAL'.upper()
     # mimir_to_test = NEXT_CHAIN_KEY
@@ -201,11 +197,12 @@ async def run():
     app = LpAppFramework()
     await app.prepare(brief=True)
 
+    mimir = await app.deps.mimir_cache.get()
+    print(mimir)
+
     await app.deps.node_info_fetcher.run_once()
-    await app.deps.mimir_const_fetcher.run_once()
 
     # await demo_cap_test(app)
-    # await demo_mimir_consensus(app)
     # await demo_mimir_spam_filter(app, mode=MimirMockChangesFetcher.PAUSE_GLOBAL)
     # await demo_mimir_spam_filter(app, mode=MimirMockChangesFetcher.GENERAL)
     await demo_voting(app)

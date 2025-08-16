@@ -13,6 +13,7 @@ from lib.logs import WithLogger
 from lib.money import pretty_dollar
 from lib.utils import get_ttl_hash
 from models.asset import Asset
+from models.price import PriceHolder
 from models.tx import ThorAction
 
 
@@ -25,7 +26,7 @@ def order_book_evaluate(action: str, order_book: dict, amount: float) -> Optiona
     :return: asset_out float
     """
     if not order_book:
-        return
+        return None
 
     buy = action == 'buy'
     book_side = order_book['asks'] if buy else order_book['bids']
@@ -146,7 +147,9 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
 
         tx.meta_swap.cex_out_amount = asset_out_amount
 
-        self._finalize_tx(tx)
+        ph = await self.deps.pool_cache.get()
+
+        self._finalize_tx(tx, ph)
 
     async def get_cex_data_v1(self, tx: ThorAction):
         """
@@ -159,6 +162,8 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
         if not asset_in or not asset_out:
             return
 
+        ph = await self.deps.pool_cache.get()
+
         url = self.url_cex(asset_in, asset_out, thor_to_float(tx.first_input_tx.first_amount))
         async with self.deps.session.get(url) as resp:
             data = await resp.json()
@@ -166,11 +171,11 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
 
             tx.meta_swap.cex_out_amount = float(data['result'])
 
-            self._finalize_tx(tx)
+            self._finalize_tx(tx, ph)
 
-    def _finalize_tx(self, tx: ThorAction):
-        savings_usd = tx.get_profit_vs_cex_in_usd(self.deps.price_holder)
-        volume_usd = tx.get_usd_volume(self.deps.price_holder.usd_per_rune)
+    def _finalize_tx(self, tx: ThorAction, ph: PriceHolder):
+        savings_usd = tx.get_profit_vs_cex_in_usd(ph)
+        volume_usd = tx.get_usd_volume(ph.usd_per_rune)
 
         if savings_usd is None:
             return

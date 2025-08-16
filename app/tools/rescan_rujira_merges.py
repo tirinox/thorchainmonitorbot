@@ -38,8 +38,6 @@ async def rescan_rujira_merges(app: LpAppFramework):
     d = app.deps
     d.block_scanner.initial_sleep = 0
 
-    await d.pool_fetcher.run_once()
-
     last_block = await d.last_block_cache.get_thor_block()
 
     force_start_block = last_block - int(INTERVAL)

@@ -265,7 +265,7 @@ class MetricsDialog(BaseDialog):
     async def show_cex_flow(self, message: Message, period=DAY):
         notifier: RuneMoveNotifier = self.deps.rune_move_notifier
         flow = await notifier.tracker.read_within_period(period=period)
-        flow.usd_per_rune = self.deps.price_holder.usd_per_rune
+        flow.usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
         text = self.loc.notification_text_cex_flow(flow)
         await message.answer(text, disable_notification=True)
 

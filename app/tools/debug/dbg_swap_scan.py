@@ -86,7 +86,8 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, i
     swap_notifier_tx.curve_mult = 0.0001
     swap_notifier_tx.dbg_ignore_traders = ignore_traders
 
-    swap_notifier_tx.dbg_evaluate_curve_for_pools()
+    ph = await d.pool_cache.get()
+    swap_notifier_tx.dbg_evaluate_curve_for_pools(ph)
     volume_filler.add_subscriber(swap_notifier_tx)
     swap_notifier_tx.add_subscriber(d.alert_presenter)
 

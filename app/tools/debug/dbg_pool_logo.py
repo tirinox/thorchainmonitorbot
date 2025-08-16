@@ -9,7 +9,8 @@ DEMO_POOL_LOGO_FILENAME = "./renderer/demo/dbg_pool_logo.json"
 async def main():
     app = LpAppFramework()
     async with app:
-        pools = list(app.deps.price_holder.pool_names)
+        ph = await app.deps.pool_cache.get()
+        pools = list(ph.pool_names)
         print(pools)
 
         with open(DEMO_POOL_LOGO_FILENAME, "w") as f:

@@ -39,7 +39,7 @@ from models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent,
     EventBlockHeight, EventDataSlash, EventProviderBondChange, \
     EventProviderStatus, NodeListHolder, BondProvider
 from models.pool_info import PoolInfo, PoolChanges, EventPools
-from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge, LastPriceHolder
+from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge, PriceHolder
 from models.queue import QueueInfo
 from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
@@ -368,7 +368,7 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_TOTAL = 'Total'
 
-    def text_balances(self, balances: ThorBalances, title, price_holder: LastPriceHolder):
+    def text_balances(self, balances: ThorBalances, title, price_holder: PriceHolder):
         if not balances or not len(balances.assets):
             return ''
 
@@ -422,7 +422,7 @@ class BaseLocalization(ABC):  # == English
     def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain,
                                     thor_name: Optional[ThorName], local_name, clout: Optional[ThorSwapperClout],
                                     bond_prov: List[Tuple[NodeInfo, BondProvider]],
-                                    price_holder: LastPriceHolder):
+                                    price_holder: PriceHolder):
         acc_caption = ''
         if thor_name:
             acc_caption += f' | THORName: {pre(add_thor_suffix(thor_name))}'

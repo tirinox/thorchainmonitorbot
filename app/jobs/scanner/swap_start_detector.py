@@ -9,6 +9,7 @@ from lib.utils import safe_get
 from models.asset import Asset, is_rune
 from models.memo import ActionType
 from models.memo import THORMemo
+from models.price import PriceHolder
 from models.s_swap import StreamingSwap, AlertSwapStart
 
 
@@ -16,6 +17,7 @@ class SwapStartDetector(WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
+        self.ph = None
 
     def make_swap_start_event(self, msg: dict, tx_hash, height, is_deposit) -> Optional[AlertSwapStart]:
         """
@@ -36,14 +38,13 @@ class SwapStartDetector(WithLogger):
             self.logger.error(f'No coins in swap tx: {msg}')
             return None
 
-        prices = self.deps.price_holder
-        assert prices, 'PriceHolder is required!'
-        assert prices.pool_info_map, 'PriceHolder must have non-empty pool_info_map!'
+        assert self.ph, 'PriceHolder is required!'
+        assert self.ph.pool_info_map, 'PriceHolder must have non-empty pool_info_map!'
 
         if is_rune(memo.asset):
             out_asset_name = NATIVE_RUNE_SYMBOL
         else:
-            out_asset_name = prices.pool_fuzzy_first(memo.asset, restore_type=True)
+            out_asset_name = self.ph.pool_fuzzy_first(memo.asset, restore_type=True)
             if not out_asset_name:
                 out_asset_name = memo.asset
                 self.logger.error(f'{out_asset_name = }: asset not found in the pool list!')
@@ -59,14 +60,14 @@ class SwapStartDetector(WithLogger):
         from_address = msg.get('from_address', None) or msg.get('signer', '') or safe_get(msg, 'tx', 'from_address')
 
         if str(in_asset) == NATIVE_RUNE_SYMBOL:
-            volume_usd = in_amount * prices.usd_per_rune
+            volume_usd = in_amount * self.ph.usd_per_rune
         else:
-            in_pool_name = prices.pool_fuzzy_first(in_asset.native_pool_name)
+            in_pool_name = self.ph.pool_fuzzy_first(in_asset.native_pool_name)
             if not in_pool_name:
                 self.logger.warning(f'{in_asset.native_pool_name}: pool if inbound asset not found!')
                 return None
 
-            in_pool_info = prices.find_pool(in_pool_name)
+            in_pool_info = self.ph.find_pool(in_pool_name)
             volume_usd = in_amount * in_pool_info.usd_per_asset
 
             if is_deposit and not in_asset.is_synth:
@@ -112,7 +113,8 @@ class SwapStartDetector(WithLogger):
             except Exception as e:
                 self.logger.error(f'Could not parse Observed In TX ({obs_tx}): {e!r}')
 
-    def detect_swaps(self, b: BlockResult):
+    def detect_swaps(self, b: BlockResult, ph: PriceHolder):
+        self.ph = ph
         deposits = b.find_tx_by_type(ThorTxMessage.MsgDeposit)
         deposit_swap_starts = list(self.handle_deposits(deposits, b.block_no))
 

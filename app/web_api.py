@@ -37,8 +37,6 @@ class AppSettingsAPI:
 
         logging.info(f'Starting Web API for THORChain monitoring bot @ "{d.cfg.network_id}".')
 
-        d.price_holder.load_stable_coins(d.cfg)
-
         d.loop = asyncio.get_event_loop()
         d.db = DB()
 
@@ -59,6 +57,7 @@ class AppSettingsAPI:
             routes=self._routes(),
             on_startup=[self._on_startup]
         )
+        # noinspection PyTypeChecker
         self.web_app.add_middleware(
             CORSMiddleware,
             allow_origins='*',

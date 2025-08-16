@@ -9,7 +9,7 @@ from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from lib.depcont import DepContainer
 from lib.texts import sep
 from lib.utils import recursive_asdict
-from models.price import LastPriceHolder
+from models.price import PriceHolder
 from notify.alert_presenter import AlertPresenter
 from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.price_notify import PriceNotifier
@@ -36,7 +36,7 @@ async def demo_get_pool_info_midgard(d: DepContainer):
 
 
 async def demo_cache_blocks(app: LpAppFramework):
-    pf: PoolFetcher = app.deps.pool_fetcher
+    pf = app.deps.pool_cache
     pools = await pf.load_pools(7_000_000, caching=True)
     print(pools)
 
@@ -63,7 +63,6 @@ async def _create_price_alert(app, fill=False):
     if fill:
         await fill_rune_price_from_gecko(app.deps.db, include_fake_det=True)
 
-    await app.deps.pool_fetcher.run_once()
     await app.deps.fetcher_chain_state.run_once()
 
     print(f'All chains: {app.deps.chain_info.state_list}')
@@ -109,7 +108,7 @@ async def dbg_load_latest_price_data_and_save_as_demo(app, fill=False):
 
 async def find_anomaly(app, start=13225800, steps=200):
     block = start
-    holder = LastPriceHolder()
+    holder = PriceHolder(app.deps.cfg.stable_coins)
     while block < start + steps:
         pools = await app.deps.pool_fetcher.load_pools(block, caching=True)
         holder.update_pools(pools)
@@ -120,7 +119,7 @@ async def find_anomaly(app, start=13225800, steps=200):
 
 
 async def debug_load_pools(app: LpAppFramework):
-    pf = app.deps.pool_fetcher
+    pf = app.deps.pool_cache
     pools = await pf.load_pools(13345278)
     print(len(pools))
     pools = await pf.load_pools(13345278)
@@ -150,8 +149,6 @@ async def dbg_new_price_picture(app):
 
 
 async def dbg_price_picture_continuously(app):
-    await app.deps.pool_fetcher.run_once()
-
     mf: RuneMarketInfoFetcher = app.deps.rune_market_fetcher
 
     price_notifier = PriceNotifier(app.deps)

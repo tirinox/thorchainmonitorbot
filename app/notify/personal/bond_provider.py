@@ -228,9 +228,10 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
     async def generate_message_text(self, loc: BaseLocalization, group, settings, user, user_watch_addy_list, name_map):
         # regroup events into a hierarchy: BP -> Node -> Event
         bp_to_node_to_event = defaultdict(lambda: defaultdict(list))
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
         for event in group:
             event: NodeEvent
-            event = event._replace(usd_per_rune=self.deps.price_holder.usd_per_rune)  # fill Rune price
+            event = event._replace(usd_per_rune=usd_per_rune)  # fill Rune price
             bp_to_node_to_event[event.data.bond_provider][event.node.node_address].append(event)
 
         return loc.notification_text_bond_provider_alert(bp_to_node_to_event, name_map)

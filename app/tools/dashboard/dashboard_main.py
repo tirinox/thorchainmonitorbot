@@ -18,7 +18,6 @@ async def load_data():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
         d = app.deps
-        await d.pool_fetcher.run_once()
 
         return {
             'dedup_data': await dedup_dashboard_info(d),

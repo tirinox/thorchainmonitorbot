@@ -10,6 +10,7 @@ from lib.logs import WithLogger
 from lib.money import DepthCurve, pretty_dollar, short_dollar, pretty_money
 from models.asset import Asset
 from models.memo import ActionType
+from models.price import PriceHolder
 from models.tx import ThorAction, EventLargeTransaction
 from notify.dup_stop import TxDeduplicator, TxDeduplicatorSenderCooldown
 from notify.public.cap_notify import LiquidityCapNotifier
@@ -56,18 +57,18 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
             return
 
         # 3. Select only large transactions
-        usd_per_rune = self.deps.price_holder.usd_per_rune
-        if not usd_per_rune:
+        ph = await self.deps.pool_cache.get()
+        if not ph.usd_per_rune:
             self.logger.error(f'Can not filter Txs, no USD/Rune price')
             return
 
-        min_rune_volume = self.min_usd_total / usd_per_rune
+        min_rune_volume = self.min_usd_total / ph.usd_per_rune
 
         if self.dbg_just_pass_only_tx_id:
             self.logger.warning(f'Debug mode is on, passing only Tx with ID: {self.dbg_just_pass_only_tx_id}')
             large_txs = [tx for tx in txs if tx.tx_hash == self.dbg_just_pass_only_tx_id]
         else:
-            large_txs = [tx for tx in txs if self.is_tx_suitable(tx, min_rune_volume, usd_per_rune)]
+            large_txs = [tx for tx in txs if self.is_tx_suitable(tx, min_rune_volume, ph)]
 
         if not large_txs:
             return
@@ -84,13 +85,13 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         has_liquidity = any(tx.is_liquidity_type for tx in large_txs)
 
         for tx in large_txs:
-            pool_info = self.deps.price_holder.pool_info_map.get(tx.first_pool_l1)
+            pool_info = ph.pool_info_map.get(tx.first_pool_l1)
 
             clout = await self._get_clout(tx.sender_address)
 
             is_last = tx == large_txs[-1]
             event = EventLargeTransaction(
-                tx, usd_per_rune,
+                tx, ph.usd_per_rune,
                 pool_info,
                 cap_info=(cap_info if has_liquidity and is_last else None),
                 mimir=self.deps.mimir_const_holder,
@@ -130,7 +131,8 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
             self.logger.error(f'Error getting clout for {address}: {e}')
             return None
 
-    def _get_min_usd_depth(self, tx: ThorAction, usd_per_rune):
+    @staticmethod
+    def _get_min_usd_depth(tx: ThorAction, ph: PriceHolder):
         pools = tx.pools
         if not pools:
             # in case of refund maybe
@@ -138,14 +140,14 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
 
         pools = [Asset.to_L1_pool_name(p) for p in pools]
 
-        pool_info_list = list(filter(bool, (self.deps.price_holder.pool_info_map.get(pool) for pool in pools)))
+        pool_info_list = list(filter(bool, (ph.pool_info_map.get(pool) for pool in pools)))
         if not pool_info_list:
             return 0.0
-        min_pool_depth = min(p.usd_depth(usd_per_rune) for p in pool_info_list)
+        min_pool_depth = min(p.usd_depth(ph.usd_per_rune) for p in pool_info_list)
         return min_pool_depth
 
-    def is_tx_suitable(self, tx: ThorAction, min_rune_volume, usd_per_rune, curve_mult=None):
-        pool_usd_depth = self._get_min_usd_depth(tx, usd_per_rune)
+    def is_tx_suitable(self, tx: ThorAction, min_rune_volume, ph: PriceHolder, curve_mult=None):
+        pool_usd_depth = self._get_min_usd_depth(tx, ph)
         if pool_usd_depth == 0.0:
             if not tx.is_of_type(ActionType.REFUND):
                 self.logger.warning(f'No pool depth for Tx: {tx}.')
@@ -154,16 +156,16 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
             if self.curve:
                 curve_mult = curve_mult or self.curve_mult
                 min_pool_share = self.curve.evaluate(pool_usd_depth) * curve_mult
-                min_share_rune_volume = pool_usd_depth / usd_per_rune * min_pool_share
+                min_share_rune_volume = pool_usd_depth / ph.usd_per_rune * min_pool_share
             else:
                 min_share_rune_volume = 0.0
 
         if tx.full_volume_in_rune >= min_rune_volume and tx.full_volume_in_rune >= min_share_rune_volume:
             return True
 
-    def dbg_evaluate_curve_for_pools(self, max_pools=20):
-        pools = sorted(self.deps.price_holder.pool_info_map.values(), key=lambda p: p.balance_rune, reverse=True)
-        usd_per_rune = self.deps.price_holder.usd_per_rune
+    def dbg_evaluate_curve_for_pools(self, ph, max_pools=20):
+        pools = sorted(ph.pool_info_map.values(), key=lambda p: p.balance_rune, reverse=True)
+        usd_per_rune = ph.usd_per_rune
 
         summary = " --- Threshold curve evaluation ---\n"
         pool_thresholds = []
@@ -192,9 +194,6 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
 class LiquidityTxNotifier(GenericTxNotifier):
     def __init__(self, deps: DepContainer, params: SubConfig, curve: DepthCurve):
         super().__init__(deps, params, (ActionType.WITHDRAW, ActionType.ADD_LIQUIDITY), curve)
-
-    def is_tx_suitable(self, tx: ThorAction, min_rune_volume, usd_per_rune, curve_mult=None):
-        return super().is_tx_suitable(tx, min_rune_volume, usd_per_rune, curve_mult)
 
 
 class SwapTxNotifier(GenericTxNotifier):
@@ -264,8 +263,8 @@ class SwapTxNotifier(GenericTxNotifier):
 
         begin_height, end_height = event.begin_height, event.end_height
         if begin_height > 0:
-            begin_pools = await self.deps.pool_fetcher.load_pools(begin_height)
-            begin_ph = self.deps.price_holder.clone().update_pools(begin_pools)
+            begin_ph = await self.deps.pool_cache.load_as_price_holder(height=begin_height)
+
             in_tx = event.transaction.first_input_tx
             in_amt = thor_to_float(in_tx.first_amount)
             event.usd_volume_input = begin_ph.convert_to_usd(in_amt, in_tx.first_asset)
@@ -274,8 +273,8 @@ class SwapTxNotifier(GenericTxNotifier):
                              f'({pretty_money(in_amt)} {in_tx.first_asset}) {pretty_dollar(event.usd_volume_input)}')
 
         if end_height > 0:
-            end_pools = await self.deps.pool_fetcher.load_pools(end_height)
-            end_ph = self.deps.price_holder.clone().update_pools(end_pools)
+            end_ph = await self.deps.pool_cache.load_as_price_holder(height=end_height)
+
             out_tx = event.transaction.recipients_output
             out_amt = thor_to_float(out_tx.first_amount)
             event.usd_volume_output = end_ph.convert_to_usd(out_amt, out_tx.first_asset)
@@ -290,7 +289,7 @@ class SwapTxNotifier(GenericTxNotifier):
         await self.adjust_liquidity_fee_through_midgard(event)
         return event
 
-    def is_tx_suitable(self, tx: ThorAction, min_rune_volume, usd_per_rune, curve_mult=None):
+    def is_tx_suitable(self, tx: ThorAction, min_rune_volume, ph: PriceHolder, curve_mult=None):
         # 0) debug mode
         if self.dbg_ignore_traders and tx.is_trade_asset_involved:
             self.logger.warning(f'dbg_ignore_traders = True, thus ignoring trader Tx: {tx.tx_hash}')
@@ -298,16 +297,16 @@ class SwapTxNotifier(GenericTxNotifier):
 
         # a) It is interesting if a steaming swap
         if tx.is_streaming:
-            if tx.full_volume_in_rune >= self.min_streaming_swap_usd / usd_per_rune:
+            if tx.full_volume_in_rune >= self.min_streaming_swap_usd / ph.usd_per_rune:
                 return True
 
         # b) It is interesting if paid much to affiliate fee collector
         affiliate_fee_rune = tx.meta_swap.affiliate_fee * tx.full_volume_in_rune
-        if affiliate_fee_rune >= self.aff_fee_min_usd / usd_per_rune:
+        if affiliate_fee_rune >= self.aff_fee_min_usd / ph.usd_per_rune:
             return True
 
         # c) It is interesting if the Dex aggregator used
-        if tx.dex_aggregator_used and tx.full_volume_in_rune >= self.dex_min_usd / usd_per_rune:
+        if tx.dex_aggregator_used and tx.full_volume_in_rune >= self.dex_min_usd / ph.usd_per_rune:
             return True
 
         # d) If we announce that the streaming swap has started, then we should announce that it's finished,
@@ -317,11 +316,11 @@ class SwapTxNotifier(GenericTxNotifier):
 
         # e) If trade asset involved
         if tx.is_trade_asset_involved:
-            if tx.full_volume_in_rune >= self.min_trade_asset_swap_usd / usd_per_rune:
+            if tx.full_volume_in_rune >= self.min_trade_asset_swap_usd / ph.usd_per_rune:
                 return True
 
         # f) Regular rules are applied
-        return super().is_tx_suitable(tx, min_rune_volume, usd_per_rune, curve_mult)
+        return super().is_tx_suitable(tx, min_rune_volume, ph, curve_mult)
 
 
 class RefundTxNotifier(GenericTxNotifier):

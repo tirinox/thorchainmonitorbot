@@ -6,7 +6,7 @@ from jobs.fetch.base import BaseFetcher
 from lib.date_utils import DAY
 from lib.depcont import DepContainer
 from models.asset import Asset
-from models.price import LastPriceHolder
+from models.price import PriceHolder
 from models.secured import SecuredAssetsStats, SecureAssetInfo, AlertSecuredAssetSummary
 
 
@@ -38,7 +38,7 @@ class SecuredAssetAssetFetcher(BaseFetcher):
         # s = swap_stats.meta.from_trade_volume_usd + swap_stats.meta.to_trade_volume_usd
         return previous_volume, current_volume
 
-    def get_total_vaults_usd(self, asgards: List[ThorVault], ph: LastPriceHolder):
+    def get_total_vaults_usd(self, asgards: List[ThorVault], ph: PriceHolder):
         total_vault_usd = 0.0
         for asgard in asgards:
             for coin in asgard.coins:
@@ -57,8 +57,8 @@ class SecuredAssetAssetFetcher(BaseFetcher):
         return await self.deps.thor_connector.query_secured_assets(height)
 
     async def load_for_height(self, height=0):
-        ph = self.deps.price_holder
-        if not ph.pool_info_map:
+        ph = await self.deps.pool_cache.get()
+        if not ph or not ph.pool_info_map:
             self.logger.error("No pools found")
             return
 

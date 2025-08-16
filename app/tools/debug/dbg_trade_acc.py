@@ -11,20 +11,8 @@ from models.trade_acc import AlertTradeAccountAction
 from notify.public.trade_acc_notify import TradeAccSummaryNotifier, TradeAccTransactionNotifier
 from tools.lib.lp_common import LpAppFramework
 
-prepared = False
-
-
-async def prepare_once(app):
-    global prepared
-    if not prepared:
-        await app.deps.pool_fetcher.run_once()
-        await app.deps.mimir_const_fetcher.run_once()
-        prepared = True
-
 
 async def demo_trade_balance(app: LpAppFramework):
-    await prepare_once(app)
-
     f: TradeAccountFetcher = app.deps.trade_acc_fetcher
     address = 'thor14mh37ua4vkyur0l5ra297a4la6tmf95mt96a55'
     balances = await f.get_whole_balances(address)
@@ -47,10 +35,7 @@ TX_WITHDRAW_USDC = '4466C745450161E0B8BE30D0429267E88CE0BAB7BBF5310734990CB7AEFC
 TX_ID_DEPOSIT_BTC = '442371c470efb32c1d91651889da5af900306dcff43cfdbf678d56ce2a84be2b'
 
 
-
 async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
-    await prepare_once(app)
-
     scanner = BlockScanner(app.deps)
 
     tx = await app.deps.thor_connector.query_tx_details(tx_id)
@@ -58,7 +43,7 @@ async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
 
     block = await scanner.fetch_one_block(height)
 
-    dcd = TradeAccEventDecoder(app.deps.price_holder)
+    dcd = TradeAccEventDecoder(app.deps.pool_cache)
     r = await dcd.on_data(None, block)
 
     if not r:
@@ -78,13 +63,11 @@ async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
 
 
 async def demo_trade_acc_decode_continuous(app: LpAppFramework, b=0):
-    await prepare_once(app)
-
     d = app.deps
     scanner = BlockScanner(d, last_block=b)
     # scanner.one_block_per_run = b > 0
 
-    dcd = TradeAccEventDecoder(d.price_holder)
+    dcd = TradeAccEventDecoder(d.pool_cache)
     dcd.sleep_period = 60
     dcd.initial_sleep = 0
     scanner.add_subscriber(dcd)
@@ -104,16 +87,12 @@ async def demo_trade_acc_decode_continuous(app: LpAppFramework, b=0):
 
 
 async def demo_top_trade_asset_holders(app: LpAppFramework):
-    await prepare_once(app)
-
     f: TradeAccountFetcher = app.deps.trade_acc_fetcher
     r = await f.fetch()
     print(r)
 
 
 async def demo_trade_acc_summary_continuous(app: LpAppFramework):
-    await prepare_once(app)
-
     d = app.deps
     trade_acc_fetcher = TradeAccountFetcher(d)
     trade_acc_fetcher.sleep_period = 60
@@ -141,7 +120,6 @@ async def demo_trade_acc_summary_single(app: LpAppFramework, reset_cache=False):
     cache_path = '../temp/trade_acc_summary_v4.pickle'
     data = None if reset_cache else load_pickle(cache_path)
     if not data:
-        await prepare_once(app)
         data = await trade_acc_fetcher.fetch()
         save_pickle(cache_path, data)
 

@@ -21,8 +21,6 @@ def get_reserve_address(app: LpAppFramework):
 
 
 async def demo_pol_1(app: LpAppFramework):
-    await app.deps.pool_fetcher.run_once()
-    await app.deps.mimir_const_fetcher.run_once()
     pol_fetcher = RunePoolFetcher(app.deps, reserve_address=get_reserve_address(app))
     r = await pol_fetcher.fetch()
     pprint(r)

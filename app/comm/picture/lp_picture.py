@@ -16,7 +16,7 @@ from lib.plot_graph import PlotBarGraph
 from lib.utils import async_wrap, grouper
 from models.asset import Asset, is_rune
 from models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
-from models.price import LastPriceHolder
+from models.price import PriceHolder
 
 LP_PIC_WIDTH, LP_PIC_HEIGHT = 1200, 1600
 
@@ -34,7 +34,7 @@ def hor_line_lp(draw, y, width=2, w=LP_PIC_WIDTH, h=LP_PIC_HEIGHT):
     hor_line(draw, y, width, w, h)
 
 
-async def generate_yield_picture(price_holder: LastPriceHolder,
+async def generate_yield_picture(price_holder: PriceHolder,
                                  report: LiquidityPoolReport,
                                  loc: BaseLocalization,
                                  value_hidden=False):
@@ -55,7 +55,7 @@ def put_title(draw, title, fonts):
 
 
 @async_wrap
-def _generate_lp_pool_picture(price_holder: LastPriceHolder,
+def _generate_lp_pool_picture(price_holder: PriceHolder,
                               report: LiquidityPoolReport,
                               loc: BaseLocalization,
                               rune_image, asset_image,

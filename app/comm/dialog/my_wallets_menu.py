@@ -231,16 +231,9 @@ class MyWalletsMenu(DialogWithSettings):
 
             if edit:
                 await message.edit_text(text=self.loc.text_lp_loading_pools(address))
-            # else:
-            #     loading_message = await message.answer(text=self.loc.text_lp_loading_pools(address),
-            #                                            reply_markup=ReplyKeyboardRemove(),
-            #                                            disable_notification=True)
 
             my_pools = await self._load_my_pools(address)
             self.data[self.KEY_MY_POOLS] = my_pools
-
-            # if loading_message:
-            #     await self.safe_delete(loading_message)
 
         await self._present_wallet_contents_menu(message, edit=edit)
 
@@ -273,11 +266,13 @@ class MyWalletsMenu(DialogWithSettings):
             self.get_clout(address)
         )
 
+        ph = await self.deps.pool_cache.get()
+
         text = self.loc.text_inside_my_wallet_title(address, my_pools, balances,
                                                     min_limit if track_balance else None,
                                                     chain, thor_name, local_name,
                                                     clout, bond_prov,
-                                                    price_holder=self.deps.price_holder)
+                                                    price_holder=ph)
         inline_kbd = self._keyboard_inside_wallet_menu().keyboard()
         if edit:
             await message.edit_text(text=text,
@@ -582,7 +577,8 @@ class MyWalletsMenu(DialogWithSettings):
         # GENERATE A PICTURE
         value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
 
-        picture = await generate_yield_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=value_hidden)
+        ph = await self.deps.pool_cache.get()
+        picture = await generate_yield_picture(ph, lp_report, self.loc, value_hidden=value_hidden)
         picture_bio = img_to_bio(picture, f'Thorchain_LP_{pool}_{today_str()}.png')
 
         # ANSWER

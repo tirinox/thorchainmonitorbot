@@ -15,7 +15,7 @@ from .memo import ActionType, is_action
 from .memo import THORMemo
 from .mimir import MimirHolder
 from .pool_info import PoolInfo, PoolInfoMap
-from .price import LastPriceHolder
+from .price import PriceHolder
 from .s_swap import StreamingSwap
 
 logger = logging.getLogger('ThorTx')
@@ -580,7 +580,7 @@ class ThorAction:
         cex_out = self.meta_swap.cex_out_amount
         return (real_out - cex_out) / cex_out * 100.0 if cex_out else None
 
-    def get_profit_vs_cex_in_usd(self, price_holder: LastPriceHolder):
+    def get_profit_vs_cex_in_usd(self, price_holder: PriceHolder):
         profit_out_asset = self.swap_profit_vs_cex
         if profit_out_asset is None:
             return

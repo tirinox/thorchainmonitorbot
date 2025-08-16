@@ -9,8 +9,6 @@ from tools.lib.lp_common import LpAppFramework
 async def dbg_aff_record1(app, send_alerts=False, catch_up=0, force_start_block=None, one_block=False):
     d = app.deps
 
-    await d.pool_fetcher.run_once()
-
     # AffiliateRecorder
     d.affiliate_recorder = AffiliateRecorder(d)
     d.block_scanner.add_subscriber(d.affiliate_recorder)
