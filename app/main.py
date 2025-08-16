@@ -16,6 +16,8 @@ from comm.twitter.twitter_bot import TwitterBot, TwitterBotMock
 from jobs.achievement.notifier import AchievementsNotifier
 from jobs.fetch.account_number import AccountNumberFetcher
 from jobs.fetch.cached.last_block import LastBlockCached, LastBlockEventGenerator
+from jobs.fetch.cached.mimir import MimirCached
+from jobs.fetch.cached.pool import PoolCache
 from jobs.fetch.cached.swap_history import SwapHistoryFetcher
 from jobs.fetch.cap import CapInfoFetcher
 from jobs.fetch.chain_id import ChainIdFetcher
@@ -58,6 +60,7 @@ from models.memo import ActionType
 from models.mimir import MimirHolder
 from models.mimir_naming import MIMIR_DICT_FILENAME
 from models.node_watchers import AlertWatchers
+from models.price import PriceHolder
 from notify.alert_presenter import AlertPresenter
 from notify.broadcast import Broadcaster
 from notify.channel import BoardMessage
@@ -122,11 +125,6 @@ class App(WithLogger):
         self._init_settings()
         self._init_messaging()
 
-        self.swap_notifier_tx = None
-        self.refund_notifier_tx = None
-        self.liquidity_notifier_tx = None
-        self.donate_notifier_tx = None
-
     def _init_configuration(self, log_level=None):
         d = self.deps
         d.cfg = Config()
@@ -143,8 +141,6 @@ class App(WithLogger):
         self.logger.info('-' * 100)
         self.logger.info(f'Starting THORChainMonitoringBot for "{d.cfg.network_id}".')
         self.logger.info(f"Log level: {log_level}")
-
-        d.price_holder.load_stable_coins(d.cfg)
 
         self.sleep_step = d.cfg.sleep_step
 
@@ -190,6 +186,8 @@ class App(WithLogger):
 
         d.swap_history_cache = SwapHistoryFetcher(d.midgard_connector)
         d.last_block_cache = LastBlockCached(d.thor_connector)
+        d.mimir_cache = MimirCached(d.thor_connector, d.last_block_cache)
+        d.pool_cache = PoolCache(d)
 
         d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_holder)
         d.alert_presenter.name_service = d.name_service
@@ -222,10 +220,11 @@ class App(WithLogger):
                 await asyncio.sleep(sleep_step)
 
                 self.logger.info('Loading pools...')
-                await d.pool_fetcher.run_once()
-                current_pools = d.price_holder.pool_info_map
-                if not current_pools:
+                current_pools: PriceHolder = await d.pool_cache.get()
+                if not current_pools or not current_pools.pool_info_map:
                     raise Exception("No pool data at startup!")
+                else:
+                    self.logger.info(f'Loaded {len(current_pools.pool_info_map)} pools.')
                 await asyncio.sleep(sleep_step)
 
                 self.logger.info('Loading node info...')
@@ -252,8 +251,6 @@ class App(WithLogger):
         fetcher_queue = QueueFetcher(d)
         store_queue = QueueStoreMetrics(d)
         fetcher_queue.add_subscriber(store_queue)
-
-        d.pool_fetcher.add_subscriber(d.price_holder)
 
         tasks = [
             d.pool_fetcher,
@@ -352,21 +349,21 @@ class App(WithLogger):
             curve = DepthCurve(curve_pts)
 
             if d.cfg.tx.liquidity.get('enabled', True):
-                self.liquidity_notifier_tx = LiquidityTxNotifier(d, d.cfg.tx.liquidity, curve=curve)
-                volume_filler.add_subscriber(self.liquidity_notifier_tx)
-                self.liquidity_notifier_tx.add_subscriber(d.alert_presenter)
+                d.liquidity_notifier_tx = LiquidityTxNotifier(d, d.cfg.tx.liquidity, curve=curve)
+                volume_filler.add_subscriber(d.liquidity_notifier_tx)
+                d.liquidity_notifier_tx.add_subscriber(d.alert_presenter)
 
             if d.cfg.tx.donate.get('enabled', True):
-                self.donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate, tx_types=(ActionType.DONATE,),
-                                                            curve=curve)
+                d.donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate, tx_types=(ActionType.DONATE,),
+                                                         curve=curve)
 
-                volume_filler.add_subscriber(self.donate_notifier_tx)
-                self.donate_notifier_tx.add_subscriber(d.alert_presenter)
+                volume_filler.add_subscriber(d.donate_notifier_tx)
+                d.donate_notifier_tx.add_subscriber(d.alert_presenter)
 
             if d.cfg.tx.swap.get('enabled', True):
-                self.swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
-                volume_filler.add_subscriber(self.swap_notifier_tx)
-                self.swap_notifier_tx.add_subscriber(d.alert_presenter)
+                d.swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
+                volume_filler.add_subscriber(d.swap_notifier_tx)
+                d.swap_notifier_tx.add_subscriber(d.alert_presenter)
 
                 if d.cfg.tx.swap.also_trigger_when.streaming_swap.get('notify_start', True):
                     stream_swap_notifier = StreamingSwapStartTxNotifier(d)
@@ -374,10 +371,10 @@ class App(WithLogger):
                     stream_swap_notifier.add_subscriber(d.alert_presenter)
 
             if d.cfg.tx.refund.get('enabled', True):
-                self.refund_notifier_tx = RefundTxNotifier(d, d.cfg.tx.refund, curve=curve)
+                d.refund_notifier_tx = RefundTxNotifier(d, d.cfg.tx.refund, curve=curve)
 
-                volume_filler.add_subscriber(self.refund_notifier_tx)
-                self.refund_notifier_tx.add_subscriber(d.alert_presenter)
+                volume_filler.add_subscriber(d.refund_notifier_tx)
+                d.refund_notifier_tx.add_subscriber(d.alert_presenter)
 
             tasks.append(fetcher_tx)
 
@@ -496,7 +493,7 @@ class App(WithLogger):
 
             if d.cfg.get('supply.rune_burn.notification.enabled', True):
                 burn_notifier = BurnNotifier(d)
-                d.mimir_const_fetcher.add_subscriber(burn_notifier)
+                d.rune_market_fetcher.add_subscriber(burn_notifier)
                 burn_notifier.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('wallet_counter.enabled', True) and achievements_enabled:  # only used along with achievements
@@ -516,7 +513,7 @@ class App(WithLogger):
 
         if d.cfg.get('trade_accounts.enabled', True):
             # Trade account actions
-            traed = TradeAccEventDecoder(d.price_holder)
+            traed = TradeAccEventDecoder(d.pool_cache)
             d.block_scanner.add_subscriber(traed)
 
             traed.add_subscriber(d.volume_recorder)
@@ -537,7 +534,7 @@ class App(WithLogger):
                 d.trade_acc_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('runepool.actions.enabled', True):
-            runepool_decoder = RunePoolEventDecoder(d.db, d.price_holder)
+            runepool_decoder = RunePoolEventDecoder(d.db, d.pool_cache)
             d.block_scanner.add_subscriber(runepool_decoder)
 
             runepool_decoder.add_subscriber(d.volume_recorder)
@@ -638,14 +635,16 @@ class App(WithLogger):
 
     async def _print_curves(self):
         # print some information about threshold curves
-        if self.refund_notifier_tx:
-            self.refund_notifier_tx.dbg_evaluate_curve_for_pools()
-        if self.swap_notifier_tx:
-            self.swap_notifier_tx.dbg_evaluate_curve_for_pools()
-        if self.liquidity_notifier_tx:
-            self.liquidity_notifier_tx.dbg_evaluate_curve_for_pools()
-        if self.donate_notifier_tx:
-            self.donate_notifier_tx.dbg_evaluate_curve_for_pools()
+        d = self.deps
+        ph = await d.pool_cache.get()
+        if d.refund_notifier_tx:
+            d.refund_notifier_tx.dbg_evaluate_curve_for_pools(ph)
+        if d.swap_notifier_tx:
+            d.swap_notifier_tx.dbg_evaluate_curve_for_pools(ph)
+        if d.liquidity_notifier_tx:
+            d.liquidity_notifier_tx.dbg_evaluate_curve_for_pools(ph)
+        if d.donate_notifier_tx:
+            d.donate_notifier_tx.dbg_evaluate_curve_for_pools(ph)
 
     def die(self, code=-100):
         if self._bg_task:
