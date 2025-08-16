@@ -189,13 +189,14 @@ class MimirTuple(NamedTuple):
     mimir: ThorMimir
     node_mimir: dict  # accepted by nodes
     votes: List[ThorMimirVote]
-    active_nodes: List[NodeInfo]
     last_thor_block: int
 
 
 class MimirHolder(INotified, WithLogger):
     async def on_data(self, sender, data: MimirTuple):
-        self.update(data)
+        # test it!
+        active_nodes = sender.deps.node_holder.active_nodes
+        self.update(data, active_nodes)
 
     def __init__(self):
         super().__init__()
@@ -239,7 +240,7 @@ class MimirHolder(INotified, WithLogger):
     def pretty_name(self, name):
         return self.hard_coded_pretty_names.get(name) or self.mimir_rules.name_to_human(name)
 
-    def update(self, data: MimirTuple):
+    def update(self, data: MimirTuple, active_nodes: List[NodeInfo]):
         if not data.mimir.constants:
             self.logger.error('Mimir data is empty!')
             return
@@ -252,7 +253,7 @@ class MimirHolder(INotified, WithLogger):
 
         self.last_thor_block = data.last_thor_block
 
-        self.voting_manager = MimirVoteManager(data.votes, data.active_nodes, self.mimir_rules.excluded_from_voting)
+        self.voting_manager = MimirVoteManager(data.votes, active_nodes, self.mimir_rules.excluded_from_voting)
 
         hard_coded_constants = {n.upper(): v for n, v in data.constants.constants.items()}
         self.hard_coded_pretty_names = {
