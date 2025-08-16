@@ -51,7 +51,8 @@ class CachedDataSource(Generic[T], WithLogger, metaclass=ABCMeta):
             last_exception = None
             for attempt in range(1, self.retry_times + 1):
                 try:
-                    self.logger.info(f"Loading data (attempt {attempt}/{self.retry_times})...")
+                    if attempt > 1:
+                        self.logger.info(f"Loading data (attempt {attempt}/{self.retry_times})...")
                     data = await self._load()
 
                     # On success, cache it and update timestamp

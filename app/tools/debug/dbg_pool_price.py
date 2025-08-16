@@ -56,7 +56,6 @@ async def demo_top_pools(app: LpAppFramework):
     await fetcher_pool_info.run_once()
 
 
-
 async def _create_price_alert(app, fill=False):
     # use: redis_copy_keys.py to copy redis keys from prod to local
 
@@ -161,14 +160,21 @@ async def dbg_price_picture_continuously(app):
 
 async def demo_load_historic_data(app):
     await app.deps.pool_fetcher.load_historic_data(10000, block_interval=10)
-    
-    
+
+
 async def dbg_thin_out_pool_cache(app):
     pf: PoolFetcher = app.deps.pool_fetcher
     keys = await pf.cache.get_thin_out_keys(min_distance=5, scan_batch_size=1000)
     print(keys)
     print(f"Total keys: {len(keys)}")
-    
+
+
+async def dbg_pool_cache(app: LpAppFramework):
+    while True:
+        ph: PriceHolder = await app.deps.pool_cache.get()
+        print(f'Loaded {len(ph.pool_info_map)} pools, rune price = {ph.usd_per_rune:.7f}')
+        await asyncio.sleep(1.0)
+
 
 async def main():
     app = LpAppFramework(log_level=logging.DEBUG)
@@ -176,13 +182,14 @@ async def main():
         # await find_anomaly(app)
         # await demo_cache_blocks(app)
         # await demo_top_pools(app)
-        await dbg_load_latest_price_data_and_save_as_demo(app, fill=True)
+        # await dbg_load_latest_price_data_and_save_as_demo(app, fill=True)
         # await debug_load_pools(app)
         # await dbg_save_market_info(app)
         # await dbg_new_price_picture(app)
         # await dbg_price_picture_continuously(app)
         # await demo_load_historic_data(app)
         # await dbg_thin_out_pool_cache(app)
+        await dbg_pool_cache(app)
 
 
 if __name__ == '__main__':

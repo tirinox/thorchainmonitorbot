@@ -166,11 +166,12 @@ async def main():
     # await test_geo_ip_thor_2()
     # await test_donuts()
     # await demo_get_node_stats()
-    lp_app = LpAppFramework()
-    async with lp_app:
-        await demo_test_new_geo_chart(lp_app)
-    # await demo_last_block()
-    # await demo_test_parallel_fetch()
+    await demo_test_parallel_fetch()
+    # lp_app = LpAppFramework()
+    # async with lp_app:
+    #     # await demo_test_new_geo_chart(lp_app)
+    #     # await demo_last_block()
+    #     await demo_test_parallel_fetch()
 
 
 if __name__ == "__main__":

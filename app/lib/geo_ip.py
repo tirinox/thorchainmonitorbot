@@ -77,8 +77,11 @@ class GeoIPManager(WithLogger):
 
         data = await self.get_ip_info_from_external_api(ip)
 
-        if cached and data:
-            await self._set_ip_info(ip, data)
+        if cached:
+            if data:
+                await self._set_ip_info(ip, data)
+            else:
+                self.logger.warning(f'No data could be fetched for IP: {ip}.')
 
         return data
 
