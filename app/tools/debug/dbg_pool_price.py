@@ -68,8 +68,7 @@ async def _create_price_alert(app, fill=False):
 
     price_notifier = PriceNotifier(app.deps)
 
-    market_fetcher = RuneMarketInfoFetcher(app.deps)
-    market_info = await market_fetcher.fetch()
+    market_info = await app.deps.rune_market_fetcher.fetch()
 
     event = await price_notifier.make_event(
         market_info,

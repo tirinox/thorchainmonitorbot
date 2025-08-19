@@ -4,9 +4,9 @@ from collections import Counter
 from copy import copy
 from typing import Optional, List
 
-from api.aionode.types import ThorNetwork
 from semver import VersionInfo
 
+from api.aionode.types import ThorNetwork
 from comm.localization.languages import Language
 from comm.localization.manager import LocalizationManager
 from jobs.achievement.notifier import AchievementsNotifier
@@ -16,7 +16,7 @@ from jobs.node_churn import NodeChurnDetector
 from lib.depcont import DepContainer
 from lib.texts import sep
 from models.node_db import NodeStateDatabase
-from models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
+from models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo, NetworkNodes
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from notify.public.node_churn_notify import NodeChurnNotifier
 from notify.public.version_notify import VersionNotifier
@@ -246,13 +246,12 @@ class NodeFetcherSimulator(BaseFetcher):
 async def demo_churn_simulator(app: LpAppFramework, version=False):
     d = app.deps
 
-    await d.node_info_fetcher.run_once()
-    print(f"There are {len(d.node_holder.nodes)} nodes")
+    nodes: NetworkNodes = await d.deps.node_cache.get()
+    print(f"There are {len(nodes)} nodes")
 
     await d.broadcaster.broadcast_to_all('---------')
 
     # simulator
-    # node_fetcher_simulator = NodeFetcherSimulator(d, d.node_holder.nodes)
     # node_fetcher_simulator.set_thor_network(d.node_info_fetcher.thor_network)
 
     # churn_detector

@@ -26,7 +26,9 @@ async def main():
         sep()
         await lp_app.send_test_tg_message(text)
 
-        bond_and_nodes = list(lp_app.deps.node_holder.find_bond_providers(address))
+        nodes = await lp_app.deps.node_cache.get()
+
+        bond_and_nodes = list(nodes.find_bond_providers(address))
         # bonds = [bp for _, bp in bond_and_nodes]
 
         sep()

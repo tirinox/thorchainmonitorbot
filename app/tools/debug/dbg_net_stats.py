@@ -1,11 +1,9 @@
 import asyncio
 import json
-import logging
 from copy import copy
 from dataclasses import Field
 
 from api.aionode.types import ThorPool
-
 from comm.localization.manager import BaseLocalization
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from jobs.fetch.pool_price import PoolFetcher
@@ -15,6 +13,7 @@ from lib.money import distort_randomly
 from lib.texts import up_down_arrow
 from lib.utils import load_pickle, save_pickle
 from models.net_stats import NetworkStats, AlertNetworkStats
+from models.node_info import NetworkNodes
 from models.pool_info import PoolInfoMap, parse_thor_pools
 from notify.public.stats_notify import NetworkStatsNotifier
 from tools.lib.lp_common import LpAppFramework
@@ -40,11 +39,11 @@ def randomize_all_fields(old: NetworkStats, dev=10):
     return new
 
 
-async def print_message(old_info: NetworkStats, new_info: NetworkStats, deps: DepContainer, post_tg=True, loc=None):
+async def print_message(old_info: NetworkStats, new_info: NetworkStats, deps: DepContainer, nodes, loc=None):
     loc: BaseLocalization = loc or deps.loc_man.default
 
     message = loc.notification_text_network_summary(AlertNetworkStats(
-        old_info, new_info, deps.node_holder.nodes
+        old_info, new_info, nodes,
     ))
     print('OLD:')
     print(old_info)
@@ -78,27 +77,6 @@ class MockPPF(PoolFetcher):
 
             return pool_map
 
-
-async def demo_pool_consistency():
-    lpgen = LpAppFramework()
-
-    async with lpgen:
-        # 1. new_info is from JSON file (contains just pool list)
-        ppf_mock = lpgen.deps.pool_fetcher = MockPPF(lpgen.deps)
-        nsf = NetworkStatisticsFetcher(lpgen.deps)
-        new_info = await nsf.fetch()
-
-        # 2. remove on of the pools, HEGIC e.g
-        ppf_mock.pool_name_to_delete = 'ETH.HEGIC-0X584BC13C7D411C00C01A62E8019472DE68768430'
-
-        # 3. new info has 1 less pending pools
-        old_info = await nsf.fetch()
-
-        assert old_info.pending_pool_count == 5
-        assert new_info.pending_pool_count == 6
-
-    await print_message(old_info, new_info, lpgen.deps, post_tg=False, loc=lpgen.deps.loc_man.get_from_lang('rus'))
-    await print_message(old_info, new_info, lpgen.deps, post_tg=False, loc=lpgen.deps.loc_man.get_from_lang('eng'))
 
 
 async def demo_generic_pool_message():
@@ -166,12 +144,14 @@ async def demo_pool_stats_direct():
         old_info = randomize_all_fields(new_info, 10)
         old_info.date_ts = new_info.date_ts - 2 * DAY
 
+        nodes: NetworkNodes = await app.deps.node_cache.get()
+
         await app.test_all_locs(BaseLocalization.notification_text_network_summary,
                                 None,
                                 AlertNetworkStats(
                                     old_info,
                                     new_info,
-                                    app.deps.node_holder.nodes
+                                    nodes.node_info_list
                                 ))
 
 
