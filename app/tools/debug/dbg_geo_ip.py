@@ -5,12 +5,11 @@ import random
 from eth_utils.humanize import WEEK
 
 from comm.picture.nodes_pictures import NodePictureGenerator
-from jobs.fetch.node_info import NodeInfoFetcher
 from lib.date_utils import now_ts, DAY, HOUR
 from lib.draw_utils import make_donut_chart
 from lib.geo_ip import GeoIPManager
 from lib.utils import load_pickle, save_pickle
-from models.node_info import NetworkNodeIpInfo, NodeStatsItem
+from models.node_info import NetworkNodes, NodeStatsItem
 from notify.public.node_churn_notify import NodeChurnNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
@@ -26,30 +25,18 @@ async def demo_test_geo_ip_google():
         assert result['country'] == 'US'
 
 
-async def get_ip_infos_pickled(lp_app, path='node_geo_new_full.pickle') -> NetworkNodeIpInfo:
+async def get_ip_infos_pickled(lp_app, path='node_geo_new_full_v2.pickle') -> NetworkNodes:
+    result_network_info = None
     if path:
         path = os.path.join('../../tmp/', path)
         result_network_info = load_pickle(path)
-    else:
-        result_network_info = None
 
     if not result_network_info:
-        geo_ip = GeoIPManager(lp_app.deps)
+        result_network_info: NetworkNodes = await lp_app.deps.node_cache.get()
 
-        node_info_fetcher = NodeInfoFetcher(lp_app.deps)
-        node_list = await node_info_fetcher.fetch_current_node_list()
-
-        ip_addresses = [node.ip_address for node in node_list if node.ip_address]
+        ip_addresses = result_network_info.ip_addresses
         print('IP addresses = ')
         print(*ip_addresses, sep=', ')
-
-        ip_info_list = await geo_ip.get_ip_info_bulk(ip_addresses)
-        ip_info_dict = {n["ip"]: n for n in ip_info_list if n and 'ip' in n}
-
-        result_network_info = NetworkNodeIpInfo(
-            node_list,
-            ip_info_dict
-        )
 
         if result_network_info and path:
             save_pickle(path, result_network_info)
@@ -64,18 +51,19 @@ async def demo_get_node_stats():
         print(r)
 
 
+CLEAR = False
+
+
 async def demo_test_parallel_fetch():
-    lp_app = LpAppFramework()
-    async with lp_app:
-        geo_ip = GeoIPManager(lp_app.deps)
+    app = LpAppFramework()
+    async with app:
+        geo_ip = GeoIPManager(app.deps)
+        nodes: NetworkNodes = await app.deps.node_cache.get()
+        ip_addresses = [node.ip_address for node in nodes.node_info_list if node.ip_address]
 
-        node_info_fetcher = NodeInfoFetcher(lp_app.deps)
-        result = await node_info_fetcher.fetch_current_node_list()
-
-        ip_addresses = [node.ip_address for node in result if node.ip_address]
-
-        for ip in ip_addresses:
-            await geo_ip.clear_info(ip)
+        if CLEAR:
+            for ip in ip_addresses:
+                await geo_ip.clear_info(ip)
 
         print('IP addresses = ')
         print(*ip_addresses, sep=', ')
@@ -136,11 +124,11 @@ async def demo_test_new_geo_chart(app: LpAppFramework):
     # chart_pts = list(make_random_node_chart())
 
     # infos = await get_ip_infos_pickled(app, 'nodes_new_10.pickle')
-    infos = await get_ip_infos_pickled(app, path=None)
+    infos = await get_ip_infos_pickled(app)
     gen = NodePictureGenerator(infos, chart_pts, app.deps.loc_man.default)
 
     pic = await gen.generate()
-
+    
     save_and_show_pic(pic, name='new_node_pic.png')
 
     # usage
@@ -162,14 +150,12 @@ async def demo_last_block():
 
 
 async def main():
-    # await test_geo_ip_google()
-    # await test_geo_ip_thor_2()
     # await test_donuts()
     # await demo_get_node_stats()
-    await demo_test_parallel_fetch()
-    # lp_app = LpAppFramework()
-    # async with lp_app:
-    #     # await demo_test_new_geo_chart(lp_app)
+    # await demo_test_parallel_fetch()
+    lp_app = LpAppFramework()
+    async with lp_app:
+        await demo_test_new_geo_chart(lp_app)
     #     # await demo_last_block()
     #     await demo_test_parallel_fetch()
 
