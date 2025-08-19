@@ -34,7 +34,8 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         if self.min_streaming_swap_usd <= 0.0:
             return
 
-        swaps = self.detector.detect_swaps(data)
+        ph = await self.deps.pool_cache.get()
+        swaps = self.detector.detect_swaps(data, ph)
 
         self.logger.info(f'Found {len(swaps)} swap starts in block #{data.block_no}')
 
