@@ -43,7 +43,7 @@ class CapInfoFetcher(BaseFetcher):
         if max_lp_rune <= 1 or current_lp_rune < 0:
             return ThorCapInfo.error()
 
-        price = self.deps.pool_cache.get_usd_per_rune()
+        price = await self.deps.pool_cache.get_usd_per_rune()
 
         r = ThorCapInfo(
             cap=int(max_lp_rune),
