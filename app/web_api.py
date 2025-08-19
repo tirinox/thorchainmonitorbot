@@ -48,7 +48,7 @@ class AppSettingsAPI:
             public_url=thor_env.midgard_url
         )
 
-        d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_holder)
+        d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_cache)
 
         self._node_watcher = NodeWatcherStorage(d.db)
 

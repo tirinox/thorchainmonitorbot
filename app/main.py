@@ -17,6 +17,7 @@ from jobs.achievement.notifier import AchievementsNotifier
 from jobs.fetch.account_number import AccountNumberFetcher
 from jobs.fetch.cached.last_block import LastBlockCached, LastBlockEventGenerator
 from jobs.fetch.cached.mimir import MimirCached
+from jobs.fetch.cached.nodes import NodeCache
 from jobs.fetch.cached.pool import PoolCache
 from jobs.fetch.cached.swap_history import SwapHistoryFetcher
 from jobs.fetch.cap import CapInfoFetcher
@@ -188,8 +189,9 @@ class App(WithLogger):
         d.last_block_cache = LastBlockCached(d.thor_connector)
         d.mimir_cache = MimirCached(d.thor_connector, d.last_block_cache)
         d.pool_cache = PoolCache(d)
+        d.node_cache = NodeCache(d)
 
-        d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_holder)
+        d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_cache)
         d.alert_presenter.name_service = d.name_service
         d.loc_man.set_name_service(d.name_service)
 
