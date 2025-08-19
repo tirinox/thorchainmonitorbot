@@ -306,7 +306,8 @@ class ThorConnector:
                         raise
                     else:
                         err_type = type(e).__name__
-                        self.logger.warning(f'#{attempt}. Failed to query {client} for "{path}" (err: {err_type}).')
+                        self.logger.warning(
+                            f'#{attempt}. Failed to query {client} for "{client.connection_url(path, is_rpc)}" (err: {err_type}).')
                 if d := client.env.retry_delay:
                     self.logger.debug(f'#{attempt}. Delay before retry: {d} sec...')
                     await asyncio.sleep(d)

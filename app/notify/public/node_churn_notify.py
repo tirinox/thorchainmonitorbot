@@ -1,7 +1,6 @@
 from typing import List
 
 from comm.picture.nodes_pictures import NodePictureGenerator
-from jobs.fetch.node_info import NodeInfoFetcher
 from jobs.node_churn import NodeChurnDetector
 from lib.cooldown import Cooldown
 from lib.date_utils import HOUR, now_ts
@@ -9,7 +8,7 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.node_db import NodeStateDatabase
-from models.node_info import NodeSetChanges, NetworkNodeIpInfo, NodeStatsItem, AlertNodeChurn
+from models.node_info import NodeSetChanges, NetworkNodes, NodeStatsItem, AlertNodeChurn
 from models.time_series import TimeSeries
 
 
@@ -38,13 +37,13 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
         await self._record_statistics(changes)
 
         if changes.has_churn_happened:
-            if changes.vault_migrating:
+            if changes.vaults_migrating:
                 await self._start_churn(changes)
             else:
                 self.logger.warning('Churn without Vault migration!')
                 await self._notify_when_node_churn_finished(changes)
         else:
-            if not changes.vault_migrating:
+            if not changes.vaults_migrating:
                 stage = await self.get_churning_stage()
                 if stage == self.MIGRATION:
                     await self._finish_churn()
@@ -57,7 +56,7 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
         await self._set_last_churn_start_ts()
         await self._persist_node_churn(event)
 
-        stage = self.MIGRATION if event.vault_migrating else ''
+        stage = self.MIGRATION if event.vaults_migrating else ''
         await self._set_churning_stage(stage)
 
     async def _finish_churn(self):
@@ -80,8 +79,7 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
             with_picture = changes.count_of_changes >= self._min_changes_to_post_picture
 
             if with_picture:
-                node_fetcher = NodeInfoFetcher(self.deps)
-                result_network_info = await node_fetcher.get_node_list_and_geo_info(node_list=changes.nodes_all)
+                result_network_info = await self.deps.node_cache.load_geo_info_for_nodes(changes.nodes_all)
                 chart_pts = await NodeChurnNotifier(self.deps).load_last_statistics(NodePictureGenerator.CHART_PERIOD)
 
                 if not changes or not result_network_info:
@@ -139,7 +137,7 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
         if not await self._record_metrics_cd.can_do():
             return
 
-        node_set = NetworkNodeIpInfo(changes.nodes_all)
+        node_set = NetworkNodes(changes.nodes_all)
 
         active_nodes = node_set.active_nodes
         n_active_nodes = len(active_nodes)

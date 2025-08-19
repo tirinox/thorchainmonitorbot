@@ -7,7 +7,7 @@ from redis.asyncio import Redis
 from tqdm import tqdm
 
 from jobs.fetch.cached.base import CachedDataSource
-from lib.constants import THOR_BLOCK_TIME, STABLE_COIN_POOLS
+from lib.constants import THOR_BLOCK_TIME
 from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.depcont import DepContainer
 from lib.utils import grouper, parallel_run_in_groups

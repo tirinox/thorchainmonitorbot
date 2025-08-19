@@ -179,32 +179,6 @@ class NodeVersionConsensus(NamedTuple):
 MapAddressToPrevAndCurrNode = Dict[str, Tuple[NodeInfo, NodeInfo]]
 
 
-@dataclass
-class NodeListHolder:
-    nodes: List[NodeInfo] = field(default_factory=list)
-
-    @property
-    def active_nodes(self):
-        return [n for n in self.nodes if n.is_active]
-
-    def is_ip_nodes(self, ip_address):
-        return any(ip_address == n.ip_address for n in self.nodes)
-
-    def calculate_security_cap_rune(self, full=False):
-        active_bonds = [float_to_thor(node.bond) for node in self.nodes if node.is_active]
-        if full:
-            cap = sum(active_bonds)
-        else:
-            cap = get_effective_security_bond(active_bonds)
-        return thor_to_float(cap)
-
-    def find_bond_providers(self, address: str) -> Iterator[Tuple[NodeInfo, BondProvider]]:
-        for node in self.nodes:
-            for bp in node.bond_providers:
-                if bp.address == address:
-                    yield node, bp
-
-
 class EventBondProviderPayout(NamedTuple):
     node_address: str
     bond_provider: BondProvider
@@ -230,7 +204,7 @@ class NodeSetChanges:
     nodes_all: List[NodeInfo] = field(default_factory=list)  # all current nodes
     nodes_previous: List[NodeInfo] = field(default_factory=list)  # previous node set
 
-    vault_migrating: bool = False
+    vaults_migrating: bool = False
     block_no: int = 0
     churn_duration: float = 0.0
 
@@ -336,7 +310,7 @@ class NodeSetChanges:
         """
         active_nodes = self.active_only_nodes
         if not active_nodes:
-            return
+            return None
 
         counter = self.version_counter(active_nodes)
         top_version = self.max_active_version
@@ -393,12 +367,16 @@ class NodeSetChanges:
 
 
 @dataclass
-class NetworkNodeIpInfo:
-    UNKNOWN_PROVIDER = 'Unknown'
-
+class NetworkNodes:
     node_info_list: List[NodeInfo] = field(default_factory=list)
     ip_info_dict: Dict[str, dict] = field(default_factory=dict)  # IP -> Geo Info
-    total_rune_supply: float = 301e6  # todo: set it correctly dynamically
+    total_rune_supply: float = 425e6  # todo: set it correctly dynamically
+
+    def __len__(self):
+        return len(self.node_info_list)
+
+    def __bool__(self):
+        return bool(self.node_info_list)
 
     @property
     def standby_nodes(self):
@@ -415,38 +393,23 @@ class NetworkNodeIpInfo:
     def select_ip_info_for_nodes(self, nodes: List[NodeInfo]) -> List[dict]:
         return [self.ip_info_dict.get(n.ip_address, None) for n in nodes]
 
-    def get_general_provider(self, data: dict):
-        org = data.get('org')
-        if org is None:
-            return self.UNKNOWN_PROVIDER
-        try:
-            components = re.split('[ -]', org)
-        except TypeError:
-            return self.UNKNOWN_PROVIDER
+    def is_ip_nodes(self, ip_address):
+        return any(ip_address == n.ip_address for n in self.node_info_list)
 
-        if components:
-            return str(components[0]).upper()
-        return org
+    @staticmethod
+    def calculate_security_cap_rune(nodes, full=False):
+        active_bonds = [float_to_thor(node.bond) for node in nodes if node.is_active]
+        if full:
+            cap = sum(active_bonds)
+        else:
+            cap = get_effective_security_bond(active_bonds)
+        return thor_to_float(cap)
 
-    def get_feature_by_f(self, f, nodes: List[NodeInfo] = None, unknown=UNKNOWN_PROVIDER) -> List[str]:
-        if not nodes:
-            nodes = self.node_info_list  # all nodes from this class
-
-        collection = []
-        for node in nodes:
-            ip_info = self.ip_info_dict.get(node.ip_address, None)
-            if ip_info:
-                collection.append(f(ip_info) if f else ip_info)
-            else:
-                collection.append(unknown)
-
-        return collection
-
-    def get_providers(self, nodes: List[NodeInfo] = None, unknown=UNKNOWN_PROVIDER) -> List[str]:
-        return self.get_feature_by_f(self.get_general_provider, nodes, unknown)
-
-    def get_countries(self, nodes: List[NodeInfo] = None, unknown=UNKNOWN_PROVIDER) -> List[str]:
-        return self.get_feature_by_f(lambda info: info.get('country_name', self.UNKNOWN_PROVIDER), nodes, unknown)
+    def find_bond_providers(self, address: str) -> Iterator[Tuple[NodeInfo, BondProvider]]:
+        for node in self.node_info_list:
+            for bp in node.bond_providers:
+                if bp.address == address:
+                    yield node, bp
 
     @staticmethod
     def get_min_median_max_total_bond(nodes: List[NodeInfo]) -> Tuple[float, float, float, float]:
@@ -461,6 +424,10 @@ class NetworkNodeIpInfo:
     @property
     def total_bond(self):
         return sum(n.bond for n in self.node_info_list)
+
+    @property
+    def ip_addresses(self):
+        return [node.ip_address for node in self.node_info_list]
 
 
 class EventNodeOnline(NamedTuple):
@@ -614,5 +581,5 @@ class AlertNodeChurn(NamedTuple):
     changes: NodeSetChanges
     finished: bool
     with_picture: bool
-    network_info: Optional[NetworkNodeIpInfo] = None
+    network_info: Optional[NetworkNodes] = None
     bond_chart: Optional[List[NodeStatsItem]] = None

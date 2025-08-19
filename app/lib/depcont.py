@@ -24,7 +24,6 @@ from lib.settings_manager import SettingsManager
 from models.chains import ChainInfoHolder
 from models.mimir import MimirHolder
 from models.net_stats import NetworkStats
-from models.node_info import NodeListHolder
 from models.node_watchers import AlertWatchers
 from models.queue import QueueInfo
 from notify.channel import Messengers
@@ -96,12 +95,12 @@ class DepContainer:
     mimir_cache: Optional[MimirCached] = None
     swap_history_cache: Optional[SwapHistoryFetcher] = None
     pool_cache = None
+    node_cache = None
 
     # price_holder: PriceHolder = field(default_factory=PriceHolder)
     queue_holder: QueueInfo = field(default_factory=QueueInfo.error)
     mimir_const_holder: Optional[MimirHolder] = None
     chain_info: ChainInfoHolder = field(default_factory=ChainInfoHolder)
-    node_holder: NodeListHolder = field(default_factory=NodeListHolder)
     net_stats: NetworkStats = field(default_factory=NetworkStats)
 
     emergency: Optional[EmergencyReport] = None

@@ -4,6 +4,7 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.pool_info import PoolInfoMap, PoolChanges, PoolChange
+from models.price import PriceHolder
 
 
 class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
@@ -16,13 +17,13 @@ class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
         self.spam_cd = Cooldown(self.deps.db, 'PoolChurnNotifier-spam', cooldown_sec)
         self.ignore_pool_removed = cfg.as_bool('notification.ignore_pool_removed', True)
 
-    async def on_data(self, sender, data: PoolInfoMap):
+    async def on_data(self, sender, data: PriceHolder):
         # compare starting w 2nd iteration
         if not self.old_pool_dict:
-            self.old_pool_dict = data
+            self.old_pool_dict = data.pool_info_map
             return
 
-        pool_changes = self.compare_pool_sets(data)
+        pool_changes = self.compare_pool_sets(data.pool_info_map)
 
         # self._dbg_pool_changes(pool_changes) # fixme: debug (!)
 

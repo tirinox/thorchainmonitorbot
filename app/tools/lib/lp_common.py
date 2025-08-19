@@ -25,6 +25,8 @@ class LpAppFramework(App):
         super().__init__(log_level)
         self.brief = brief
 
+        self.enable_aiohttp_debug_mode()
+
         d = self.deps
 
         self.emergency = emergency
@@ -81,16 +83,8 @@ class LpAppFramework(App):
 
         await self.create_thor_node_connector()
 
-        d.rune_market_fetcher = RuneMarketInfoFetcher(d)
-
         if self.emergency:
             d.emergency.run_in_background()
-
-        brief = brief if self.brief is None else self.brief
-        if brief:
-            return
-
-        await d.node_info_fetcher.run_once()  # get nodes beforehand
 
     async def close(self):
         await self.deps.session.close()
@@ -125,6 +119,12 @@ class LpAppFramework(App):
     async def test_locs_except_tw(self, f, *args, **kwargs):
         locs = [loc for loc in self.deps.loc_man.all if 'Twitter' not in loc.__class__.__name__]
         await self.test_all_locs(f, locs, *args, **kwargs)
+
+    @staticmethod
+    def enable_aiohttp_debug_mode():
+        logging.getLogger("aiohttp.client").setLevel(logging.DEBUG)
+        logging.getLogger("aiohttp.client_reqrep").setLevel(logging.DEBUG)
+        logging.getLogger("aiohttp.connector").setLevel(logging.DEBUG)
 
 
 class LpGenerator(LpAppFramework):

@@ -1,9 +1,10 @@
 import logging
-import math
 import operator
 from dataclasses import dataclass
 from itertools import chain
 from typing import Dict, List, Optional, NamedTuple
+
+import math
 
 from api.aionode.types import ThorConstants, ThorMimir, ThorMimirVote
 from lib.constants import bp_to_float
@@ -13,7 +14,7 @@ from lib.texts import split_by_camel_case
 from .base import BaseModelMixin
 from .mimir_naming import MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, MimirNameRules, EXTRA_AUTO_SOLVENCY_MIMIRS, \
     MIMIR_PAUSE_GLOBAL
-from .node_info import NodeInfo
+from .node_info import NodeInfo, NetworkNodes
 
 # for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
 ADMIN_VALUE = 1
@@ -195,8 +196,8 @@ class MimirTuple(NamedTuple):
 class MimirHolder(INotified, WithLogger):
     async def on_data(self, sender, data: MimirTuple):
         # test it!
-        active_nodes = sender.deps.node_holder.active_nodes
-        self.update(data, active_nodes)
+        nodes: NetworkNodes = await sender.deps.node_cache.get()
+        self.update(data, nodes.active_nodes)
 
     def __init__(self):
         super().__init__()

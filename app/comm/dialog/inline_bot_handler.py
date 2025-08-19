@@ -4,6 +4,7 @@ from uuid import uuid4
 from aiogram.types import InlineQuery, InputTextMessageContent, InlineQueryResultArticle, InlineQueryResultCachedPhoto
 
 from comm.localization.manager import BaseLocalization
+from models.node_info import NetworkNodes
 from .base import BaseDialog, inline_bot_handler
 from comm.picture.lp_picture import generate_yield_picture
 from comm.picture.price_picture import price_graph_from_db
@@ -83,11 +84,13 @@ class InlineBotHandlerDialog(BaseDialog):
             await self._answer_error(inline_query, q_ident, self.loc.ERROR, self.loc.NOT_READY, self.loc.NOT_READY)
             return
 
+        nodes: NetworkNodes = await self.deps.node_cache.get()
+
         loc: BaseLocalization = self.get_localization()
         text = loc.notification_text_network_summary(
             AlertNetworkStats(
                 old_info, new_info,
-                self.deps.node_holder.nodes
+                nodes.node_info_list
             )
         )
 

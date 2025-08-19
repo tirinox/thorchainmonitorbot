@@ -64,15 +64,16 @@ class RuneMarketInfoFetcher(BaseFetcher):
         else:
             self.logger.warning('No net stats! Failed to enrich circulating supply data with pool/bonding info!')
 
-        nodes = self.deps.node_holder.nodes
-        if nodes:
-            for node in nodes:
-                if node.bond > 0:
-                    supply.set_holder(
-                        RuneHoldEntry(node.node_address, int(node.bond), node.status, ThorRealms.BONDED_NODE)
-                    )
-        else:
-            self.logger.warning('No nodes available! Failed to enrich circulating supply data with node info!')
+        # note: do we really need it?
+        # nodes = self.deps.node_holder.nodes
+        # if nodes:
+        #     for node in nodes:
+        #         if node.bond > 0:
+        #             supply.set_holder(
+        #                 RuneHoldEntry(node.node_address, int(node.bond), node.status, ThorRealms.BONDED_NODE)
+        #             )
+        # else:
+        #     self.logger.warning('No nodes available! Failed to enrich circulating supply data with node info!')
         return supply
 
     async def get_rune_market_info_from_api(self) -> RuneMarketInfo:

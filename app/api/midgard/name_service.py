@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import struct
+from contextlib import suppress
 from typing import Optional, List, Iterable, Dict, NamedTuple
 
 import yaml
@@ -14,7 +15,7 @@ from lib.logs import WithLogger
 from lib.utils import filter_none_values
 from models.memo import THORMemo
 from models.name import ThorName, make_virtual_thor_name, ThorNameAlias
-from models.node_info import NodeListHolder
+from models.node_info import NetworkNodes
 from .connector import MidgardConnector
 
 
@@ -53,11 +54,11 @@ class NameMap(NamedTuple):
 # Here we basically don't care about owners of ThorNames.
 # We must have API for Address -> ThorName, and ThorName -> [Address] resolution
 class NameService(WithLogger):
-    def __init__(self, db: DB, cfg: Config, midgard: MidgardConnector, node_holder: NodeListHolder):
+    def __init__(self, db: DB, cfg: Config, midgard: MidgardConnector, node_cache):
         super().__init__()
         self.db = db
         self.cfg = cfg
-        self.node_holder = node_holder
+        self.node_cache = node_cache
 
         self._api = THORNameAPIClient(midgard)
         self._cache = THORNameCache(db, cfg)
@@ -101,7 +102,11 @@ class NameService(WithLogger):
                             break
 
             name_map = NameMap(thorname_by_name, thorname_by_address)
-            name_map = self.enrich_name_map_with_nodes(name_map, addresses)
+
+            with suppress(Exception):
+                nodes: NetworkNodes = await self.node_cache.get()
+                name_map = self.enrich_name_map_with_nodes(name_map, addresses, nodes)
+
             return name_map
         except Exception as e:
             self.logger.exception(f'Something went wrong. That is OK. {e!r}', exc_info=True)
@@ -173,11 +178,12 @@ class NameService(WithLogger):
     def get_local_service(self, user_id):
         return LocalWalletNameDB(self.db, user_id)
 
-    def enrich_name_map_with_nodes(self, name_map: NameMap, addresses: Iterable):
-        if not self.node_holder and not self.node_holder.nodes:
+    @staticmethod
+    def enrich_name_map_with_nodes(name_map: NameMap, addresses: Iterable, nodes):
+        if not nodes:
             return
 
-        for node in self.node_holder.nodes:
+        for node in nodes:
             for bp in node.bond_providers:
                 if bp.address in name_map.by_address:
                     continue

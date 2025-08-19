@@ -440,7 +440,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     def notification_churn_started(self, changes: NodeSetChanges):
         text = f'♻️ Node churn have started at block #{changes.block_no}'
-        if changes.vault_migrating:
+        if changes.vaults_migrating:
             text += '\nVaults are migrating.'
         return text
 

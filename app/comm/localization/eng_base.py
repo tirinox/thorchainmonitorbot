@@ -37,7 +37,7 @@ from models.name import ThorName
 from models.net_stats import NetworkStats, AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash, EventProviderBondChange, \
-    EventProviderStatus, NodeListHolder, BondProvider
+    EventProviderStatus, BondProvider, NetworkNodes
 from models.pool_info import PoolInfo, PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge, PriceHolder
 from models.queue import QueueInfo
@@ -963,7 +963,7 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def get_network_security_ratio(stats: NetworkStats, nodes: List[NodeInfo]) -> float:
-        security_cap = NodeListHolder(nodes).calculate_security_cap_rune(full=True)
+        security_cap = NetworkNodes.calculate_security_cap_rune(nodes, full=True)
 
         if not security_cap:
             logging.warning('Security cap is zero!')
@@ -1258,7 +1258,7 @@ class BaseLocalization(ABC):  # == English
 
     def notification_churn_started(self, changes: NodeSetChanges):
         text = f'♻️ <b>Node churn started at block #{changes.block_no}</b>'
-        if changes.vault_migrating:
+        if changes.vaults_migrating:
             text += '\nVaults are migrating.'
         return text
 

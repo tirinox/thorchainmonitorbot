@@ -9,13 +9,12 @@ from comm.picture.pools_picture import PoolPictureGenerator
 from comm.picture.queue_picture import queue_graph
 from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
-from jobs.fetch.node_info import NodeInfoFetcher
 from jobs.ruji_merge import RujiMergeTracker
 from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from lib.draw_utils import img_to_bio
 from lib.texts import kbd
 from models.net_stats import AlertNetworkStats
-from models.node_info import NodeInfo
+from models.node_info import NodeInfo, NetworkNodes
 from models.ruji import AlertRujiraMergeStats
 from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.burn_notify import BurnNotifier
@@ -149,11 +148,13 @@ class MetricsDialog(BaseDialog):
             await message.answer(f"{loc.ERROR} {loc.NOT_READY}", disable_notification=True)
             return
 
+        nodes: NetworkNodes = await self.deps.node_cache.get()
+
         await message.answer(
             loc.notification_text_network_summary(
                 AlertNetworkStats(
                     old_info, new_info,
-                    self.deps.node_holder.nodes
+                    nodes.node_info_list,
                 ),
             ),
             disable_web_page_preview=True,
@@ -163,8 +164,7 @@ class MetricsDialog(BaseDialog):
     async def show_node_list(self, message: Message):
         await self.start_typing(message)
 
-        node_fetcher = NodeInfoFetcher(self.deps)
-        result_network_info = await node_fetcher.get_node_list_and_geo_info()  # todo: switch to NodeChurnDetector (DB)
+        result_network_info = await self.deps.node_cache.load_geo_info_for_nodes()
         node_list = result_network_info.node_info_list
 
         active_node_messages = self.loc.node_list_text(node_list, NodeInfo.ACTIVE)

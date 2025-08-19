@@ -17,11 +17,6 @@ class NodeChurnDetector(WithDelegates, INotified, WithLogger):
     async def get_last_node_info(self) -> List[NodeInfo]:
         return await self._node_db.get_last_node_info_list()
 
-    async def compare_with_new_nodes(self, new_nodes: List[NodeInfo]) -> NodeSetChanges:
-        old_nodes = await self.get_last_node_info()
-        changes = self.extract_changes(new_nodes, old_nodes)
-        return changes
-
     @staticmethod
     def extract_changes(new_nodes: List[NodeInfo], old_nodes: List[NodeInfo]) -> NodeSetChanges:
         if not old_nodes:
@@ -59,18 +54,19 @@ class NodeChurnDetector(WithDelegates, INotified, WithLogger):
         )
 
     async def on_data(self, sender: NodeInfoFetcher, info_list: List[NodeInfo]):
-        result = await self.compare_with_new_nodes(info_list)
+        old_nodes = await self.get_last_node_info()
+        changes: NodeSetChanges = self.extract_changes(info_list, old_nodes)
 
         await self._node_db.save_node_info_list(info_list)
         self.logger.info(f'Saved state of THORNode set: {len(info_list)} nodes.')
 
         try:
             # Fill out some additional data
-            if sender:
-                result.vault_migrating = sender.thor_network.vaults_migrating
-            result.block_no = await self.deps.last_block_cache.get_thor_block()
-
+            network_info = await self.deps.thor_connector.query_network()
+            changes.vaults_migrating = network_info.vaults_migrating
         except AttributeError:
-            self.logger.error(f'Cannot get vault_migrating from {sender}')
+            self.logger.error(f'Cannot get vaults_migrating from {sender}')
 
-        await self.pass_data_to_listeners(result, (sender, self))
+        changes.block_no = await self.deps.last_block_cache.get_thor_block()
+
+        await self.pass_data_to_listeners(changes, (sender, self))

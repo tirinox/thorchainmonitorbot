@@ -707,7 +707,8 @@ class MyWalletsMenu(DialogWithSettings):
     async def get_bond_provision(self, address: str):
         if LPAddress.is_thor_prefix(address):
             with suppress(Exception):
-                return list(self.deps.node_holder.find_bond_providers(address))
+                nodes = await self.deps.node_cache.get()
+                return list(nodes.find_bond_providers(address))
             return 'Failed to load bond provision data'
 
     async def get_clout(self, address: str) -> Optional[ThorSwapperClout]:
