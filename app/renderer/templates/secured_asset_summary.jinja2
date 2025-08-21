@@ -1,8 +1,19 @@
-{% do set_viewport_size(1200, 1200) %}
+{% set _width, _height = set_viewport_size(1200, 1400) %}
 {% extends "base.jinja2" %}
 
 {% block content %}
     <style>
+        .main-container {
+            top: 12% !important;
+        }
+
+        .flex-all-center {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+        }
+
         .logo-box {
             min-width: 50px;
         }
@@ -11,6 +22,7 @@
             width: 40px;
             height: 40px;
             filter: drop-shadow(0 0 4px #0af);
+            display: flex;
         }
 
         .main-container {
@@ -35,10 +47,10 @@
             display: flex;
             flex-direction: row;
             gap: 0;
-            padding-top: 8px;
+            padding-top: 6px;
             font-size: 24px;
             border-bottom: 1px solid #5a5a5a;
-            padding-bottom: 8px;
+            padding-bottom: 6px;
         }
 
         .one_asset_container:last-child {
@@ -58,7 +70,9 @@
         .col-name {
             min-width: 220px;
             justify-content: left;
-            font-weight: bold;
+            font-weight: bolder;
+            padding-left: 10px;
+            font-size: 1.5em;
         }
 
         .col-holders {
@@ -132,6 +146,7 @@
 
         .small {
             font-size: 0.1em;
+            font-weight: lighter;
         }
 
     </style>
@@ -144,8 +159,7 @@
 
         <div class="pane">
             <div class="one_asset_container table-head">
-                <div class="flex logo-box">
-                </div>
+                <div class="flex logo-box"></div>
                 <div class="flex t col-name">
                     Name
                 </div>
@@ -167,16 +181,18 @@
                 % set curr_a = current.assets[asset_name]
                 % set prev_a = previous.assets.get(asset_name, {})
                 <div class="one_asset_container">
-                    <div class="flex logo-box">
+
+                    <div class="logo-box flex-all-center">
                         <img class="asset_logo"
                              src="renderer/logo/{{ curr_a['l1_name'] }}.png"
                              alt="{{ curr_a['l1_name'] }} logo"
                         >
                     </div>
 
-                    <div class="flex t col-name">{{ curr_a["display_name"] }}</div>
-                    <div class="flex vert t">
-                        <div class="flex">
+                    <div class="flex col-name flex-all-center">{{ curr_a["display_name"] }}</div>
+
+                    <div class="flex vert">
+                        <div class="flex t">
                             {{ short_money(curr_a["supply"]) }}
                         </div>
                         <div class="flex small">
@@ -186,8 +202,8 @@
                         </div>
                     </div>
 
-                    <div class="flex t vert">
-                        <div class="flex">
+                    <div class="flex vert">
+                        <div class="flex t">
                             {{ short_dollar(curr_a["value_usd"]) }}
                         </div>
                         <div class="flex small">
@@ -197,17 +213,28 @@
                         </div>
                     </div>
 
-                    <div class="flex t col-holders vert">
-                        <div class="flex">
+                    <div class="flex col-holders vert">
+                        <div class="flex t">
                             {{ short_money(curr_a["holders"], integer=True) }}
                         </div>
-                        <div class="flex t">
+                        <div class="flex small">
                             {% with curr=curr_a["holders"], prev=prev_a.get("holders", curr) %}
                                 {% include "components/price_delta.jinja2" %}
                             {% endwith %}
                         </div>
                     </div>
-                    <div class="flex t">{{ short_dollar(curr_a["volume_24h_usd"]) }}</div>
+
+                    <div class="flex t vert">
+                        <div class="flex">
+                            {{ short_dollar(curr_a["volume_24h_usd"]) }}
+                        </div>
+
+                        <div class="flex small">
+                            {% with curr=curr_a["volume_24h_usd"], prev=prev_a.get("volume_24h_usd", curr) %}
+                                {% include "components/price_delta.jinja2" %}
+                            {% endwith %}
+                        </div>
+                    </div>
                 </div>
             {% endfor %}
         </div>
