@@ -21,7 +21,7 @@ async def dbg_fetch_secured_assets(app):
     print("Secured Assets Fetch:")
     print(f"total_pool_usd = {pretty_dollar(secured_asset_info.current.total_pool_usd)}")
     print(f"total_vault_usd = {pretty_dollar(secured_asset_info.current.total_vault_usd)}")
-    for asset in secured_asset_info.current.assets:
+    for asset in secured_asset_info.current.assets.values():
         sep(asset.asset)
         print(asset)
 
@@ -67,9 +67,9 @@ async def dbg_continuous_secured_assets(app):
 async def run():
     app = LpAppFramework(log_level='DEBUG')
     async with app(brief=True):
-        # await dbg_fetch_secured_assets(app)
+        await dbg_fetch_secured_assets(app)
         # await dbg_fetch_secured_volumes(app)
-        await dbg_continuous_secured_assets(app)
+        # await dbg_continuous_secured_assets(app)
         # await dbg_send_picture_of_secured_assets(app)
 
 
