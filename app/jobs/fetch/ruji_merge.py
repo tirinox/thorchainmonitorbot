@@ -1,7 +1,7 @@
 from jobs.fetch.base import BaseFetcher
+from lib.cache import async_cache_ignore_arguments
 from lib.depcont import DepContainer
 from lib.money import short_dollar
-from lib.utils import a_result_cached
 from models.ruji import MergeSystem, MergeContract
 
 
@@ -28,7 +28,7 @@ class RujiMergeStatsFetcher(BaseFetcher):
 
         return self.system
 
-    @a_result_cached(ttl=120.0)
+    @async_cache_ignore_arguments(ttl=120.0)
     async def get_prices_usd_from_gecko(self):
         url = "https://api.coingecko.com/api/v3/simple/price"
         coin_ids = {

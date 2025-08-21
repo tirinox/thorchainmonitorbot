@@ -7,10 +7,10 @@ from jobs.fetch.ruji_merge import RujiMergeStatsFetcher
 from jobs.scanner.block_result import BlockResult
 from jobs.scanner.tx import NativeThorTx
 from jobs.scanner.wasm_execute import CosmwasmExecuteDecoder
+from lib.cache import async_cache_ignore_arguments
 from lib.delegates import WithDelegates, INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from lib.utils import a_result_cached
 from models.ruji import EventRujiMerge, MergeSystem
 
 
@@ -27,7 +27,7 @@ class RujiMergeTracker(WithDelegates, INotified, WithLogger):
             await self._store_event(ev)
             await self.pass_data_to_listeners(ev)
 
-    @a_result_cached(ttl=120)
+    @async_cache_ignore_arguments(ttl=120)
     async def get_merge_system(self):
         return await self.stats_fetcher.fetch()
 

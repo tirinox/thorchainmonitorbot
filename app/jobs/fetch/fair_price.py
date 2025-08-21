@@ -7,10 +7,11 @@ from jobs.fetch.circulating import RuneCirculatingSupplyFetcher, RuneCirculating
     ThorRealms
 from jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_cap_rank, gecko_ticker_price, \
     gecko_market_volume
+from lib.cache import async_cache_ignore_arguments
 from lib.constants import thor_to_float, DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
 from lib.date_utils import MINUTE
 from lib.depcont import DepContainer
-from lib.utils import a_result_cached, retries
+from lib.utils import retries
 from models.price import RuneMarketInfo
 
 RUNE_MARKET_INFO_CACHE_TIME = 3 * MINUTE
@@ -131,7 +132,7 @@ class RuneMarketInfoFetcher(BaseFetcher):
 
         return result
 
-    @a_result_cached(RUNE_MARKET_INFO_CACHE_TIME)
+    @async_cache_ignore_arguments(RUNE_MARKET_INFO_CACHE_TIME)
     async def get_rune_market_info_cached(self) -> RuneMarketInfo:
         try:
             result = await self.get_rune_market_info_from_api()
