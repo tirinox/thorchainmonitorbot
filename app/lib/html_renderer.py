@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 from lib.logs import WithLogger
 from lib.utils import random_hex
@@ -12,6 +13,7 @@ class InfographicRendererRPC(WithLogger):
         self._step_timeout = 1.0
         self.deps = deps
         self.url = url
+        self.dbg_log_full_requests = False
 
     async def render(self, template_name: str, parameters: dict):
         for attempt in range(self._count):
@@ -31,6 +33,10 @@ class InfographicRendererRPC(WithLogger):
             'parameters': parameters,
             'correlation_id': correlation_id,
         }
+
+        if self.dbg_log_full_requests:
+            json_data = json.dumps(message, indent=2)
+            self.logger.info(f"Request:\n\n{json_data}\n\n")
 
         async with self.deps.session.post(self.url, json=message) as response:
             self.logger.info(f'Rendering {template_name = }')

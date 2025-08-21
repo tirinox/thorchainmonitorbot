@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import signal
@@ -33,8 +34,9 @@ logging.basicConfig(
 
 
 class RenderRequest(BaseModel):
-    template_name: str = Field(..., example="example.jinja2")
-    parameters: Dict = Field(..., example={"title": "Test", "heading": "Hello", "message": "This is a test."})
+    template_name: str = Field(..., json_schema_extra={"example": "example.jinja2"})
+    parameters: Dict = Field(..., json_schema_extra={
+        "example": {"title": "Test", "heading": "Hello", "message": "This is a test."}})
 
 
 renderer = RendererEngine(templates_dir=TEMPLATES_DIR, device_scale_factor=DEVICE_SCALE_FACTOR,
@@ -125,7 +127,7 @@ async def render_html_to_png(request: RenderRequest):
     """
     template_name = request.template_name
     parameters = request.parameters
-    logging.info(f"Rendering '{template_name}' with parameters: {parameters}")
+    logging.info(f"Rendering '{template_name}' with parameters:\n{json.dumps(parameters, indent=4)}")
     return await render_full_pipeline(template_name, parameters)
 
 
