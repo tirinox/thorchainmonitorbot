@@ -311,9 +311,6 @@ class AlertPresenter(INotified, WithLogger):
             "swap_quantity": data.ss.quantity,
             "swap_interval": data.ss.interval,
             "total_estimated_time_sec": data.expected_total_swap_sec,
-
-            "_width": 1280,
-            "_height": 720
         }
         photo = await self.renderer.render('swap_start.jinja2', parameters)
         photo_name = 'swap_start.png'
@@ -380,9 +377,6 @@ class AlertPresenter(INotified, WithLogger):
 
             "refund": tx.has_refund_output,
             "refund_rate": refund_rate,
-
-            "_width": 1280,
-            "_height": 720
         }
         photo = await self.renderer.render('swap_finished.jinja2', parameters)
         photo_name = 'swap_finished.png'
@@ -402,12 +396,7 @@ class AlertPresenter(INotified, WithLogger):
         await self.deps.broadcaster.broadcast_to_all(message_gen)
 
     async def render_price_graph(self, loc: BaseLocalization, event: AlertPrice):
-        raw_data = recursive_asdict(event, add_properties=True)
-        parameters = {
-            **raw_data,
-            "_width": 1200,
-            "_height": 1200,
-        }
+        parameters = recursive_asdict(event, add_properties=True)
         photo = await self.renderer.render('price.jinja2', parameters)
         photo_name = 'price.png'
         return photo, photo_name
@@ -563,8 +552,6 @@ class AlertPresenter(INotified, WithLogger):
     async def render_secured_asset_summary(self, loc: BaseLocalization, data: AlertSecuredAssetSummary):
         photo = await self.renderer.render('secured_asset_summary.jinja2', {
             **namedtuple_to_dict(data),
-            "_width": 1280,
-            "_height": 920,
         })
         photo_name = 'secured_asset_summary.png'
         return photo, photo_name

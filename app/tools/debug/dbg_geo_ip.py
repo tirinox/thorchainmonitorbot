@@ -128,7 +128,7 @@ async def demo_test_new_geo_chart(app: LpAppFramework):
     gen = NodePictureGenerator(infos, chart_pts, app.deps.loc_man.default)
 
     pic = await gen.generate()
-    
+
     save_and_show_pic(pic, name='new_node_pic.png')
 
     # usage
