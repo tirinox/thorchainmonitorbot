@@ -1,8 +1,6 @@
 {
   "template_name": "dbg_aff_logo.jinja2",
   "parameters": {
-    "_width": 1280,
-    "_height": 920,
     "affiliate_logos": [
       "fox.png",
       "tps.png",

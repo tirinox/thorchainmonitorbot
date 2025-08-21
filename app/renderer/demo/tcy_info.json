@@ -2,7 +2,5 @@
   "template_name": "tcy_info.jinja2",
   "parameters": {
 
-    "_width": 1280,
-    "_height": 720
   }
 }

@@ -20,9 +20,7 @@
         "affiliate_fee": 0.0,
         "swap_quantity": 1440,
         "swap_interval": 10,
-        "total_estimated_time_sec": 86484,
-        "_width": 1280,
-        "_height": 720
+        "total_estimated_time_sec": 86484
     },
     "correlation_id": "b'72bb8ccd2c327dd913ed0396'"
 }
