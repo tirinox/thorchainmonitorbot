@@ -49,7 +49,7 @@ class RendererEngine:
             'int': int,
             'float': float,
             'round': round,
-            'set_viewport_size': lambda w, h: self._set_viewport(w, h),
+            'set_viewport_size': self._set_viewport,
         })
         self._resource_base_url = resource_base_url
         logging.info(f"Renderer initialized with templates directory: {self.templates_dir}")
@@ -57,6 +57,7 @@ class RendererEngine:
     def _set_viewport(self, width: int, height: int):
         self._viewport_w = width
         self._viewport_h = height
+        return width, height
 
     async def start(self):
         """
