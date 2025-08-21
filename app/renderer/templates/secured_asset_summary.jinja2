@@ -1,3 +1,4 @@
+{% do set_viewport_size(1200, 1200) %}
 {% extends "base.jinja2" %}
 
 {% block content %}
@@ -80,7 +81,7 @@
 
         .indicator-box {
             display: flex;
-            padding: 10px;
+            padding: 1px 1px 10px;
 
             background: rgba(52, 51, 51, 0.21);
             border-radius: 12px;
@@ -106,19 +107,32 @@
             font-weight: bolder;
             font-size: 24px;
             color: #eee;
-            margin-bottom: 3px;
             letter-spacing: 2px;
             text-shadow: none;
         }
 
         .indicator-value {
             font-weight: bold;
-            font-size: 48px;
+            font-size: 42px;
             color: #ffffff; /* Bright orange color */
-            margin-bottom: 3px;
+            margin-bottom: -3px;
             letter-spacing: 2px;
         }
 
+        .price-delta {
+            font-size: 20px !important;
+        }
+
+        .vert {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .small {
+            font-size: 0.1em;
+        }
 
     </style>
 
@@ -149,18 +163,51 @@
                 </div>
             </div>
 
-            {% for a in current.assets[:10] %}
+            {% for asset_name in current.asset_names_sorted[:9] %}
+                % set curr_a = current.assets[asset_name]
+                % set prev_a = previous.assets.get(asset_name, {})
                 <div class="one_asset_container">
                     <div class="flex logo-box">
-                        <img class="asset_logo" src="renderer/logo/{{ a['l1_name'] }}.png"
-                             alt="{{ a['l1_name'] }} logo">
+                        <img class="asset_logo"
+                             src="renderer/logo/{{ curr_a['l1_name'] }}.png"
+                             alt="{{ curr_a['l1_name'] }} logo"
+                        >
                     </div>
 
-                    <div class="flex t col-name">{{ a["display_name"] }}</div>
-                    <div class="flex t">{{ short_money(a["supply"]) }}</div>
-                    <div class="flex t">{{ short_dollar(a["value_usd"]) }}</div>
-                    <div class="flex t col-holders">{{ short_money(a["holders"], integer=True) }}</div>
-                    <div class="flex t">{{ short_dollar(a["volume_24h_usd"]) }}</div>
+                    <div class="flex t col-name">{{ curr_a["display_name"] }}</div>
+                    <div class="flex vert t">
+                        <div class="flex">
+                            {{ short_money(curr_a["supply"]) }}
+                        </div>
+                        <div class="flex small">
+                            {% with curr=curr_a["supply"], prev=prev_a.get("supply", curr) %}
+                                {% include "components/price_delta.jinja2" %}
+                            {% endwith %}
+                        </div>
+                    </div>
+
+                    <div class="flex t vert">
+                        <div class="flex">
+                            {{ short_dollar(curr_a["value_usd"]) }}
+                        </div>
+                        <div class="flex small">
+                            {% with curr=curr_a["value_usd"], prev=prev_a.get("value_usd", curr) %}
+                                {% include "components/price_delta.jinja2" %}
+                            {% endwith %}
+                        </div>
+                    </div>
+
+                    <div class="flex t col-holders vert">
+                        <div class="flex">
+                            {{ short_money(curr_a["holders"], integer=True) }}
+                        </div>
+                        <div class="flex t">
+                            {% with curr=curr_a["holders"], prev=prev_a.get("holders", curr) %}
+                                {% include "components/price_delta.jinja2" %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                    <div class="flex t">{{ short_dollar(curr_a["volume_24h_usd"]) }}</div>
                 </div>
             {% endfor %}
         </div>
@@ -170,22 +217,42 @@
     <div class="indicator-container">
         <div class="indicator-box cbox">
             <div class="indicator-value"> {{ current.total_assets }}</div>
+            <div class="indicator-subvalue">
+                {% with prev=previous.total_assets, curr=current.total_assets, abs_value=True %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
+            </div>
             <div class="indicator-label">Total secured assets</div>
         </div>
 
         <div class="indicator-box cbox">
             <div class="indicator-value"> {{ short_dollar(current.total_value_usd) }}</div>
-            <div class="indicator-subvalue">{# todo: delta#} </div>
+            <div class="indicator-subvalue">
+                {% with prev=previous.total_value_usd, curr=current.total_value_usd %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
+            </div>
             <div class="indicator-label">Total secured depth</div>
         </div>
 
         <div class="indicator-box cbox">
             <div class="indicator-value"> {{ "%.1f"|format(current.total_secured_to_pool_percentage) }} %</div>
+            <div class="indicator-subvalue">
+                {% with prev=previous.total_secured_to_pool_percentage, curr=current.total_secured_to_pool_percentage,
+                        abs_value=True, epilogue=' p.p.' %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
+            </div>
             <div class="indicator-label">Secured / pool</div>
         </div>
 
         <div class="indicator-box cbox">
             <div class="indicator-value"> {{ short_dollar(current.total_volume_24h_usd) }}</div>
+            <div class="indicator-subvalue">
+                {% with prev=previous.total_volume_24h_usd, curr=current.total_volume_24h_usd %}
+                    {% include "components/price_delta.jinja2" %}
+                {% endwith %}
+            </div>
             <div class="indicator-label">Volume 24H</div>
         </div>
     </div>

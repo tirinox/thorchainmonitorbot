@@ -9,12 +9,6 @@
     {% endblock %}
 
     <style>
-        /* add some adjustments based on template parameters */
-        html, body {
-            width: {{ _width }}px;
-            height: {{ _height }}px;
-        }
-
         body {
         {% if debug %}
             outline: 1px darkcyan dashed;
@@ -27,11 +21,6 @@
         {% endif %}
         }
 
-        .container {
-            max-width: {{ _width }}px;
-            max-height: {{ _height }}px;
-        }
-
     </style>
     <script src="renderer/static/js/chart.umd.min.js"></script>
 
@@ -41,6 +30,13 @@
 
     {% block content %}
     {% endblock %}
+
+    <style>
+        .container {
+            max-width: {{ _width }}px;
+            max-height: {{ _height }}px;
+        }
+    </style>
 
     <footer>
         THORChain Infobot <span id="today-date"></span>
@@ -69,6 +65,7 @@
         }, 3000);
     {% endif %}
 </script>
+
 
 </body>
 </html>

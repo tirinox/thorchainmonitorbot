@@ -1,3 +1,4 @@
+{% do set_viewport_size(1280, 720) %}
 {% extends "base.jinja2" %}
 
 {% block content %}
@@ -53,8 +54,7 @@
 
             font-weight: normal;
             font-size: 18px;
-            {#color: #a3a3a3;#}
-            color: rgb(40 244 175);
+        {#color: #a3a3a3;#} color: rgb(40 244 175);
             letter-spacing: 1px;
             text-transform: uppercase;
         }
@@ -96,7 +96,7 @@
 
     <div class="header-box">
         <img class="logo" src="renderer/static/img/tc_logo_transparent.png?rv=1" alt="THORChain logo">
-        <div class="title">THORCHAIN 🔥 BURNED RUNE </div>
+        <div class="title">THORCHAIN 🔥 BURNED RUNE</div>
     </div>
 
     <div class="indicator-container">
@@ -125,7 +125,8 @@
         </div>
 
         <div class="indicator-box cbox">
-            <div class="indicator-value"><span class="fire fire-over"></span>{{ short_rune(yearly_burn_prediction) }}</div>
+            <div class="indicator-value"><span class="fire fire-over"></span>{{ short_rune(yearly_burn_prediction) }}
+            </div>
             <div class="indicator-subvalue">({{ short_dollar(yearly_burn_prediction * usd_per_rune) }})</div>
             <div class="indicator-label">Prediction for 1 year</div>
         </div>
@@ -164,7 +165,7 @@
 //            const hours = date.getHours().toString().padStart(2, '0');
 //            const minutes = date.getMinutes().toString().padStart(2, '0');even
             const label = `${day}.${month}`
-            if(prevDate === label) {
+            if (prevDate === label) {
                 return ' '
             } else {
                 prevDate = label
