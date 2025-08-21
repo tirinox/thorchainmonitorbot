@@ -1,32 +1,9 @@
-# Use official Python image as base
-FROM python:3.11-slim
+# Use official Playwright image (Ubuntu Noble, Playwright 1.54.0, Python preinstalled)
+FROM mcr.microsoft.com/playwright/python:v1.54.0-noble
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
-
-
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    wget \
-    libnss3 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libxkbcommon0 \
-    libgbm1 \
-    libgtk-3-0 \
-    libasound2 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxrandr2 \
-    libpangocairo-1.0-0 \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Playwright and browsers
-RUN pip install playwright
-RUN playwright install --with-deps
 
 # Set working directory
 WORKDIR /app
@@ -35,10 +12,11 @@ WORKDIR /app
 COPY app/renderer/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the port FastAPI will run on
+# Copy the rest of the application
+COPY app/renderer/ /app/
+
+# Expose FastAPI port
 EXPOSE 8404
 
-CMD ["uvicorn", "renderer.worker:app", "--host", "0.0.0.0", "--port", "8404", "--workers", "1"]
-
-# Note! In order to debug the container, you can run the following command:
-#    docker compose run renderer bash
+# Start server
+CMD ["uvicorn", "renderer.main_renderer:app", "--host", "0.0.0.0", "--port", "8404", "--workers", "1"]
