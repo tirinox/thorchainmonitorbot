@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from api.aionode.types import ThorSwapperClout, thor_to_float
+from jobs.scanner.arb_detector import ArbBotDetector
 from jobs.scanner.event_db import EventDatabase
 from lib.config import SubConfig
 from lib.date_utils import parse_timespan_to_seconds, MINUTE
@@ -68,7 +69,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
             self.logger.warning(f'Debug mode is on, passing only Tx with ID: {self.dbg_just_pass_only_tx_id}')
             large_txs = [tx for tx in txs if tx.tx_hash == self.dbg_just_pass_only_tx_id]
         else:
-            large_txs = [tx for tx in txs if self.is_tx_suitable(tx, min_rune_volume, ph)]
+            large_txs = [tx for tx in txs if await self.is_tx_suitable(tx, min_rune_volume, ph)]
 
         if not large_txs:
             return
@@ -146,7 +147,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         min_pool_depth = min(p.usd_depth(ph.usd_per_rune) for p in pool_info_list)
         return min_pool_depth
 
-    def is_tx_suitable(self, tx: ThorAction, min_rune_volume, ph: PriceHolder, curve_mult=None):
+    async def is_tx_suitable(self, tx: ThorAction, min_rune_volume, ph: PriceHolder, curve_mult=None):
         pool_usd_depth = self._get_min_usd_depth(tx, ph)
         if pool_usd_depth == 0.0:
             if not tx.is_of_type(ActionType.REFUND):
@@ -203,10 +204,12 @@ class SwapTxNotifier(GenericTxNotifier):
         self.aff_fee_min_usd = params.as_float('also_trigger_when.affiliate_fee_usd_greater', 500)
         self.min_streaming_swap_usd = params.as_float('also_trigger_when.streaming_swap.volume_greater', 2500)
         self.min_trade_asset_swap_usd = params.as_float('also_trigger_when.trade_asset_swap.volume_greater', 100_000)
+        self.hide_arb_bots = params.as_bool('hide_arbitrage_bots', True)
         self._ss_txs_started = []  # Fill it every tick before is_tx_suitable is called.
         self._ev_db = EventDatabase(deps.db)
         self.swap_start_deduplicator = TxDeduplicator(deps.db, DB_KEY_ANNOUNCED_SS_START)
         self.dbg_ignore_traders = False
+        self.arb_detector = ArbBotDetector(deps)
 
     async def _check_if_they_announced_as_started(self, txs: List[ThorAction]):
         if not txs:
@@ -252,10 +255,19 @@ class SwapTxNotifier(GenericTxNotifier):
             return
 
         tx_id = event.transaction.tx_hash
-        try:
-            event.details = await self.deps.thor_connector.query_tx_details(tx_id)
-        except Exception as e:
-            self.logger.warning(f'Failed to load status for {tx_id}: {e}')
+
+        if self.hide_arb_bots:
+            try:
+                await self.arb_detector.try_to_detect_arb_bot(event.transaction.sender_address)
+                if recipient := event.transaction.recipient_address:
+                    await self.arb_detector.try_to_detect_arb_bot(recipient)
+            except Exception as e:
+                self.logger.error(f'Error loading Arbitrage bot details for {tx_id}: {e}')
+
+        # try:
+        #     event.details = await self.deps.thor_connector.query_tx_details(tx_id)
+        # except Exception as e:
+        #     self.logger.warning(f'Failed to load status for {tx_id}: {e}')
 
     async def _load_tx_volumes(self, event: EventLargeTransaction):
         event.usd_volume_input = 0.0
@@ -284,16 +296,21 @@ class SwapTxNotifier(GenericTxNotifier):
 
     async def _event_transform(self, event: EventLargeTransaction) -> EventLargeTransaction:
         # for eligible Txs we load extra information
-        # await self.load_extra_tx_details(event)
+        await self.load_extra_tx_details(event)
         await self._load_tx_volumes(event)
         await self.adjust_liquidity_fee_through_midgard(event)
         return event
 
-    def is_tx_suitable(self, tx: ThorAction, min_rune_volume, ph: PriceHolder, curve_mult=None):
+    async def is_tx_suitable(self, tx: ThorAction, min_rune_volume, ph: PriceHolder, curve_mult=None):
         # 0) debug mode
         if self.dbg_ignore_traders and tx.is_trade_asset_involved:
             self.logger.warning(f'dbg_ignore_traders = True, thus ignoring trader Tx: {tx.tx_hash}')
             return False
+
+        if self.hide_arb_bots:
+            if await self.arb_detector.is_marked_as_arb(tx.sender_address):
+                self.logger.warning(f'Ignoring Tx from Arb bot: {tx.tx_hash} by {tx.sender_address}')
+                return False
 
         # a) It is interesting if a steaming swap
         if tx.is_streaming:
@@ -320,7 +337,7 @@ class SwapTxNotifier(GenericTxNotifier):
                 return True
 
         # f) Regular rules are applied
-        return super().is_tx_suitable(tx, min_rune_volume, ph, curve_mult)
+        return await super().is_tx_suitable(tx, min_rune_volume, ph, curve_mult)
 
 
 class RefundTxNotifier(GenericTxNotifier):

@@ -1,7 +1,7 @@
 # THORChain monitoring bot configuration file
 # Rename it to "config.yaml"
 
-logs: # (!) new
+logs:
   level: INFO
 
   # style: normal | json | colorful
@@ -12,7 +12,7 @@ sleep_before_start: 3
 startup_step_delay: 3.0
 
 
-infographic_renderer: # (!) new
+infographic_renderer:
   use_html_renderer: true
   renderer_url: "http://renderer:8404/render"
 
@@ -267,6 +267,8 @@ tx:
     min_usd_total: 50
     curve_mult: 0.3
 
+    hide_arbitrage_bots: true  # (!) new
+
     also_trigger_when:
       dex_aggregator_used:
         min_usd_total: 1000
@@ -396,6 +398,7 @@ token_transfer: # (!) renamed from rune_transfer
     - thor1mtqtupwgjwn397w3dx9fqmqgzrfzq3240frash
 
   ignore_cex2cex: true
+  hide_arbitrage_bots: true  # (!) new
 
 
 cap:
@@ -475,7 +478,7 @@ constants:
   mimir_change:
     enabled: true
     cooldown: 20m
-    max_hits_before_cd: 5  # (!) new
+    max_hits_before_cd: 5
   fetch_period: 130s
 
   voting:
@@ -488,7 +491,7 @@ chain_halt_state:
   enabled: true
   fetch_period: 67s
   cooldown: 1h
-  max_hits_before_cd: 5  # (!) new
+  max_hits_before_cd: 5
 
 
 best_pools:
@@ -582,7 +585,7 @@ rujira:
       enabled: false
 
 
-secured_assets:  # (!) new
+secured_assets:
   enabled: true
   period: 1h
 

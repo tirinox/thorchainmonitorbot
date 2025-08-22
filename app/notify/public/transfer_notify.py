@@ -42,6 +42,7 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
         self.ignore_cex2cex = bool(cfg.get('ignore_cex2cex', True))
         self.tracker = CEXFlowTracker(deps)
         self.arb_detector = ArbBotDetector(deps)
+        self.hide_arb_bots = cfg.as_bool('hide_arbitrage_bots', True)
 
     def is_cex2cex(self, transfer: NativeTokenTransfer):
         return self.is_cex(transfer.from_addr) and self.is_cex(transfer.to_addr)
@@ -59,14 +60,22 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
 
                 await self.pass_data_to_listeners(transfer)
 
-    def _is_to_be_ignored(self, transfer: NativeTokenTransfer):
+    async def _is_to_be_ignored(self, transfer: NativeTokenTransfer):
         if transfer.comment:
             comment = transfer.comment.lower()
             for ignore_comment in self.IGNORE_COMMENTS:
                 # fixme issue: bond is deposit, it is ignored
                 if ignore_comment in comment:
-                    self.logger.debug(f'ignore comment: {comment} in {transfer}')
+                    self.logger.debug(f'Ignore comment: {comment} in {transfer}')
                     return True
+
+        if self.hide_arb_bots:
+            if await self.arb_detector.is_marked_as_arb(transfer.from_addr):
+                self.logger.debug(f'Ignore arb bot: from address = {transfer.from_addr}')
+                return True
+            if await self.arb_detector.is_marked_as_arb(transfer.to_addr):
+                self.logger.debug(f'Ignore arb bot: to address = {transfer.to_addr}')
+                return True
 
         # bug fix, ignore tcy stake and similar things
         if transfer.to_addr == SYNTH_MODULE:
@@ -80,12 +89,15 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
 
         return False
 
-    def _filter_transfers(self, transfers: List[NativeTokenTransfer]):
+    async def _filter_transfers(self, transfers: List[NativeTokenTransfer]):
+        results = []
         for transfer in transfers:
-            if not self._is_to_be_ignored(transfer):
-                yield transfer
+            if not await self._is_to_be_ignored(transfer):
+                results.append(transfer)
+        return results
 
-    def _fill_asset_prices(self, transfers: List[NativeTokenTransfer], ph: PriceHolder):
+    @staticmethod
+    def _fill_asset_prices(transfers: List[NativeTokenTransfer], ph: PriceHolder):
         usd_per_rune = ph.usd_per_rune
         for transfer in transfers:
             if transfer.is_rune:
@@ -97,7 +109,7 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
 
     async def on_data(self, sender, transfers: List[NativeTokenTransfer]):
         ph = await self.deps.pool_cache.get()
-        transfers = list(self._filter_transfers(transfers))
+        transfers = list(await self._filter_transfers(transfers))
         transfers = self._fill_asset_prices(transfers, ph)
 
         for transfer in transfers:

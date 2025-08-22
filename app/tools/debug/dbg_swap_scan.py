@@ -114,9 +114,8 @@ async def dbg_one_finished_swap(app, tx_id):
 async def run():
     app = LpAppFramework(log_level=logging.DEBUG)
     async with app(brief=True):
-
         # out_asset is turned out "secured" but it is not. investigate!
-        await dbg_one_finished_swap(app, "59E9DEA85C268338266D76E872DF9D07DB362FB2C06AB34D3AA7F65FF4E79757")
+        # await dbg_one_finished_swap(app, "59E9DEA85C268338266D76E872DF9D07DB362FB2C06AB34D3AA7F65FF4E79757")
 
         # issue: when finalized, the rune outbound is sent, and only after decent delay, there goes L1 outbound
         # await debug_full_pipeline(app, ignore_traders=True, start=21912489,
@@ -137,6 +136,8 @@ async def run():
         #     # start=20059078 - 10,
         #     ignore_traders=True,
         # )
+
+        await debug_full_pipeline(app)
 
 
 if __name__ == '__main__':
