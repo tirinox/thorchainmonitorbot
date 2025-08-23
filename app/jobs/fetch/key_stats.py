@@ -6,6 +6,7 @@ from typing import List
 from api.aionode.types import thor_to_float
 from api.flipside import FlipsideConnector
 from jobs.fetch.base import BaseFetcher
+from jobs.fetch.cached.pool import PoolCache
 from jobs.fetch.pol import RunePoolFetcher
 from jobs.scanner.swap_routes import SwapRouteRecorder
 from jobs.user_counter import UserCounterMiddleware
@@ -42,7 +43,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             raise ValueError(f'Previous block is negative {previous_block}!')
 
         # Load pool data for BTC/ETH value in the pools
-        pf = self.deps.pool_cache
+        pf: PoolCache = self.deps.pool_cache
         curr_pools, prev_pools = await asyncio.gather(
             pf.load_pools(),
             pf.load_pools(height=previous_block)

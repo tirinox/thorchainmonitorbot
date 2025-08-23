@@ -63,7 +63,8 @@ class NetworkStatisticsFetcher(BaseFetcher):
     KEY_CONST_MIN_RUNE_POOL_DEPTH = 'MinRunePoolDepth'
 
     async def _get_pools(self, ns: NetworkStats):
-        pools = await self.deps.pool_fetcher.load_pools()
+        ph = await self.deps.pool_cache.get()
+        pools = ph.pool_info_map
 
         active_pools = [p for p in pools.values() if p.is_enabled]
         pending_pools = [p for p in pools.values() if not p.is_enabled]
