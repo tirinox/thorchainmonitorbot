@@ -253,44 +253,42 @@ class SwapTxNotifier(GenericTxNotifier):
     #     if not event or not event.transaction:
     #         self.logger.error('No event or transaction!')
     #         return
-        # tx_id = event.transaction.tx_hash
-        #
-        # if self.hide_arb_bots:
-        #     try:
-        #         await self.arb_detector.try_to_detect_arb_bot(event.transaction.sender_address)
-        #         if recipient := event.transaction.recipient_address:
-        #             await self.arb_detector.try_to_detect_arb_bot(recipient)
-        #     except Exception as e:
-        #         self.logger.error(f'Error loading Arbitrage bot details for {tx_id}: {e}')
+    # tx_id = event.transaction.tx_hash
+    #
+    # if self.hide_arb_bots:
+    #     try:
+    #         await self.arb_detector.try_to_detect_arb_bot(event.transaction.sender_address)
+    #         if recipient := event.transaction.recipient_address:
+    #             await self.arb_detector.try_to_detect_arb_bot(recipient)
+    #     except Exception as e:
+    #         self.logger.error(f'Error loading Arbitrage bot details for {tx_id}: {e}')
 
-        # try:
-        #     event.details = await self.deps.thor_connector.query_tx_details(tx_id)
-        # except Exception as e:
-        #     self.logger.warning(f'Failed to load status for {tx_id}: {e}')
+    # try:
+    #     event.details = await self.deps.thor_connector.query_tx_details(tx_id)
+    # except Exception as e:
+    #     self.logger.warning(f'Failed to load status for {tx_id}: {e}')
 
     async def _load_tx_volumes(self, event: EventLargeTransaction):
         event.usd_volume_input = 0.0
         event.usd_volume_output = 0.0
 
-        begin_height, end_height = event.begin_height, event.end_height
-        if begin_height > 0:
-            begin_ph = await self.deps.pool_cache.load_as_price_holder(height=begin_height)
+        if event.begin_height > 0:
+            begin_ph = await self.deps.pool_cache.load_as_price_holder(height=event.begin_height)
 
             in_tx = event.transaction.first_input_tx
             in_amt = thor_to_float(in_tx.first_amount)
             event.usd_volume_input = begin_ph.convert_to_usd(in_amt, in_tx.first_asset)
 
-            self.logger.info(f'Input for {event.transaction.tx_hash} at #{begin_height}: '
+            self.logger.info(f'Input for {event.transaction.tx_hash} at #{event.begin_height}: '
                              f'({pretty_money(in_amt)} {in_tx.first_asset}) {pretty_dollar(event.usd_volume_input)}')
 
-        if end_height > 0:
-            end_ph = await self.deps.pool_cache.load_as_price_holder(height=end_height)
-
+        end_ph = await self.deps.pool_cache.load_as_price_holder(height=None)
+        if end_ph:
             out_tx = event.transaction.recipients_output
             out_amt = thor_to_float(out_tx.first_amount)
             event.usd_volume_output = end_ph.convert_to_usd(out_amt, out_tx.first_asset)
 
-            self.logger.info(f'Output for {event.transaction.tx_hash} at #{end_height}: '
+            self.logger.info(f'Output for {event.transaction.tx_hash} '
                              f'({pretty_money(out_amt)} {out_tx.first_asset}) {pretty_dollar(event.usd_volume_output)}')
 
     async def _event_transform(self, event: EventLargeTransaction) -> EventLargeTransaction:

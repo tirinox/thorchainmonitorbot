@@ -653,12 +653,5 @@ class EventLargeTransaction:
         return self.transaction.height
 
     @property
-    def end_height(self):
-        # outbound_height = self.details.get('outbound_height') if self.details else 0
-        # outbound_height = outbound_height or self.details.get('finalised_height')
-        # return outbound_height or max(tx.height for tx in self.transaction.out_tx)
-        return self.transaction.latest_outbound_height
-
-    @property
     def duration(self):
         return self.transaction.duration

@@ -375,7 +375,7 @@ class AlertPresenter(INotified, WithLogger):
 
             "total_time_sec": duration,
 
-            "refund": tx.has_refund_output,
+            "refund": refund_rate > 0 or tx.has_refund_output,
             "refund_rate": refund_rate,
         }
         photo = await self.renderer.render('swap_finished.jinja2', parameters)

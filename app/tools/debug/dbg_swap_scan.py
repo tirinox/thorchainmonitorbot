@@ -85,6 +85,9 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, i
     swap_notifier_tx.no_repeat_protection = False
     swap_notifier_tx.curve_mult = 0.0001
     swap_notifier_tx.dbg_ignore_traders = ignore_traders
+    swap_notifier_tx.hide_arb_bots = False
+    if tx_id:
+        swap_notifier_tx.dbg_just_pass_only_tx_id = tx_id
 
     ph = await d.pool_cache.get()
     swap_notifier_tx.dbg_evaluate_curve_for_pools(ph)
@@ -118,8 +121,8 @@ async def run():
         # await dbg_one_finished_swap(app, "59E9DEA85C268338266D76E872DF9D07DB362FB2C06AB34D3AA7F65FF4E79757")
 
         # issue: when finalized, the rune outbound is sent, and only after decent delay, there goes L1 outbound
-        # await debug_full_pipeline(app, ignore_traders=True, start=21912489,
-        #                           tx_id="59E9DEA85C268338266D76E872DF9D07DB362FB2C06AB34D3AA7F65FF4E79757")
+        await debug_full_pipeline(app, ignore_traders=True, start=22523132 - 2,
+                                  tx_id="B86319DB7E0A33D1F51C2AE714EC22BF83F46436A4F59C8ADA5D698D2F44E9CC")
         #
         # await debug_full_pipeline(
         #     app,
@@ -137,7 +140,7 @@ async def run():
         #     ignore_traders=True,
         # )
 
-        await debug_full_pipeline(app)
+        # await debug_full_pipeline(app)
 
 
 if __name__ == '__main__':
