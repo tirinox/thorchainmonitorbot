@@ -4,6 +4,7 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.net_stats import NetworkStats, AlertNetworkStats
+from models.node_info import NetworkNodes
 from models.time_series import TimeSeries
 
 
@@ -37,7 +38,8 @@ class NetworkStatsNotifier(INotified, WithDelegates, WithLogger):
 
     async def notify_right_now(self, new_info: NetworkStats):
         old_info = await self.get_previous_stats(ago=DAY)  # 24 ago!
-        await self.pass_data_to_listeners(AlertNetworkStats(old_info, new_info, self.deps.node_holder.nodes))
+        nodes: NetworkNodes = await self.deps.node_cache.get()
+        await self.pass_data_to_listeners(AlertNetworkStats(old_info, new_info, nodes.node_info_list))
 
     async def clear_cd(self):
         await self.notify_cd.clear()

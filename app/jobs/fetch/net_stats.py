@@ -19,7 +19,9 @@ class NetworkStatisticsFetcher(BaseFetcher):
     async def _get_stats(self, ns: NetworkStats):
         j = await self.deps.midgard_connector.request(free_url_gen.url_stats())
 
-        ns.usd_per_rune = float(j.get('runePriceUSD', self.deps.price_holder.usd_per_rune))
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+
+        ns.usd_per_rune = usd_per_rune
 
         ns.add_count = int(j['addLiquidityCount'])
         ns.added_rune = thor_to_float(j['addLiquidityVolume'])
@@ -61,7 +63,8 @@ class NetworkStatisticsFetcher(BaseFetcher):
     KEY_CONST_MIN_RUNE_POOL_DEPTH = 'MinRunePoolDepth'
 
     async def _get_pools(self, ns: NetworkStats):
-        pools = await self.deps.pool_fetcher.load_pools()
+        ph = await self.deps.pool_cache.get()
+        pools = ph.pool_info_map
 
         active_pools = [p for p in pools.values() if p.is_enabled]
         pending_pools = [p for p in pools.values() if not p.is_enabled]
@@ -110,7 +113,8 @@ class NetworkStatisticsFetcher(BaseFetcher):
 
     async def fetch(self) -> NetworkStats:
         ns = NetworkStats()
-        ns.usd_per_rune = self.deps.price_holder.usd_per_rune
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+        ns.usd_per_rune = usd_per_rune
 
         await self._get_stats(ns),
         await asyncio.sleep(self.step_sleep)

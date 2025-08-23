@@ -93,17 +93,17 @@ async def load_tx(app, mdg, q_path, find_aff=False):
 
 
 async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
-    await app.deps.pool_fetcher.run_once()
     pool = ex_tx.first_pool_l1
-    pool_info: PoolInfo = app.deps.price_holder.pool_info_map.get(pool)
-    full_rune = ex_tx.calc_full_rune_amount(app.deps.price_holder.pool_info_map)
+    ph = await app.deps.pool_cache.get()
+    pool_info: PoolInfo = ph.pool_info_map.get(pool)
+    full_rune = ex_tx.calc_full_rune_amount(ph.pool_info_map)
 
     # profit_calc = StreamingSwapVsCexProfitCalculator(app.deps)
     # if ex_tx.is_of_type(ActionType.SWAP):
     #     await profit_calc.get_cex_data_v2(ex_tx)
 
     print(f'{ex_tx.affiliate_fee = }')
-    rune_price = app.deps.price_holder.usd_per_rune
+    rune_price = ph.usd_per_rune
     print(f'{ex_tx.get_affiliate_fee_usd(rune_price) = } $')
     print(f'{full_rune = } R')
 
@@ -136,8 +136,6 @@ async def demo_full_tx_pipeline(app: LpAppFramework, announce=True,
                                 tx_types=(ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW, ActionType.SWAP),
                                 only_asset=None, clear=True):
     d = app.deps
-
-    await d.mimir_const_fetcher.run_once()
 
     fetcher_tx = TxFetcher(d, tx_types=tx_types, only_asset=only_asset)
     fetcher_tx.deduplicator = foo_dedup(d)
@@ -325,7 +323,6 @@ async def dbg_refund_spam(app):
     # block_start = 13813213
 
     d = app.deps
-    await d.pool_fetcher.run_once()
 
     q_path = free_url_gen.url_for_tx(0, 20, address='thor1wx5av89rghsmgh2vh40aknx7csvs7xj2cr474n',
                                      tx_type=ActionType.REFUND)
@@ -353,8 +350,6 @@ async def dbg_refund_spam(app):
 async def main():
     app = LpAppFramework()
     await app.prepare(brief=True)
-    await app.deps.mimir_const_fetcher.run_once()
-    await app.deps.pool_fetcher.run_once()
 
     # await midgard_test_donate(app, mdg, tx_parser)
     # await midgard_test_1(app, mdg, tx_parser)

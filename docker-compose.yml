@@ -5,8 +5,8 @@ services:
       dockerfile: app/Dockerfile
     restart: always
     depends_on:
-      - redis
-      - dozzle
+      redis:
+        condition: service_healthy
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
@@ -27,7 +27,8 @@ services:
     ports:
       - "8404:8404"
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
@@ -47,6 +48,13 @@ services:
     networks:
       - redis-net
     restart: always
+    healthcheck:
+      # Ready only when Redis is up AND done loading RDB/AOF
+      test: [ "CMD-SHELL", "redis-cli -p ${REDIS_PORT} -a '${REDIS_PASSWORD}' ping | grep -q PONG && redis-cli -p ${REDIS_PORT} -a '${REDIS_PASSWORD}' info persistence | grep -q '^loading:0'" ]
+      interval: 2s
+      timeout: 2s
+      retries: 120
+      start_period: 2s
     ports:
       - "${REDIS_PORT}:${REDIS_PORT}"
     expose:
@@ -85,7 +93,7 @@ services:
     volumes:
       - ./web/frontend/:/web/frontend/
       - ./web/${NGINX_CFG_NAME:-nginx.conf}:/etc/nginx/nginx.conf:ro
-#      - ./web/nginx-test.conf:/etc/nginx/nginx.conf:ro
+      #      - ./web/nginx-test.conf:/etc/nginx/nginx.conf:ro
       - "./web/letsencrypt/${DOMAIN}:/etc/letsencrypt:ro"
     environment:
       CERTBOT_EMAIL: developer@tirinox.ru
@@ -96,7 +104,8 @@ services:
       dockerfile: web/Dockerfile-api
     restart: always
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     ports:
       - "8077:8077"
     environment:
@@ -117,7 +126,9 @@ services:
       dockerfile: web/Dockerfile-dashboard
     restart: always
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+
     ports:
       - "8501:8501"
     environment:

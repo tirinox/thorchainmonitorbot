@@ -6,6 +6,7 @@ from lib.money import ABSURDLY_LARGE_NUMBER
 from lib.utils import safe_get
 from models.asset import Asset
 from models.node_watchers import UserWatchlist
+from models.price import PriceHolder
 from models.transfer import NativeTokenTransfer
 from .base import BasePersonalNotifier
 from .helpers import GeneralSettings, Props
@@ -24,7 +25,8 @@ class PersonalBalanceNotifier(BasePersonalNotifier):
         super().__init__(d, watcher)
 
     async def on_data(self, sender, transfers: List[NativeTokenTransfer]):
-        self._fill_asset_price(transfers)
+        ph = await self.deps.pool_cache.get()
+        self._fill_asset_price(transfers, ph)
 
         # Collect all listed addresses
         addresses = set()
@@ -37,15 +39,16 @@ class PersonalBalanceNotifier(BasePersonalNotifier):
         # Group, filter and send
         await self.group_and_send_messages(addresses, transfers)
 
-    def _fill_asset_price(self, transfers):
-        usd_per_rune = self.deps.price_holder.usd_per_rune
+    @staticmethod
+    def _fill_asset_price(transfers, ph: PriceHolder):
+        usd_per_rune = ph.usd_per_rune
         for tr in transfers:
             tr: NativeTokenTransfer
             if tr.is_rune:
                 tr.usd_per_asset = usd_per_rune
             else:
                 pool_name = Asset.from_string(tr.asset).native_pool_name
-                tr.usd_per_asset = self.deps.price_holder.usd_per_asset(pool_name) or 0.0
+                tr.usd_per_asset = ph.usd_per_asset(pool_name) or 0.0
 
     @staticmethod
     def _get_min_rune_threshold(balance_settings: dict, address):
@@ -56,7 +59,8 @@ class PersonalBalanceNotifier(BasePersonalNotifier):
         # else:
         return ABSURDLY_LARGE_NUMBER
 
-    async def filter_events(self, event_list: List[NativeTokenTransfer], user_id, settings: dict) -> List[NativeTokenTransfer]:
+    async def filter_events(self, event_list: List[NativeTokenTransfer], user_id, settings: dict) -> List[
+        NativeTokenTransfer]:
         balance_settings = safe_get(settings, GeneralSettings.BALANCE_TRACK, Props.KEY_ADDRESSES)
         if not isinstance(balance_settings, dict):
             # no preferences: return all!
@@ -64,7 +68,7 @@ class PersonalBalanceNotifier(BasePersonalNotifier):
 
         results = []
 
-        usd_per_rune = self.deps.price_holder.usd_per_rune
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
 
         for transfer in event_list:
             min_threshold_rune = min(

@@ -10,7 +10,9 @@ async def curve_dashboard_info(d: DepContainer):
     swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
     liquidity_notifier_tx = LiquidityTxNotifier(d, d.cfg.tx.liquidity, curve=curve)
 
+    ph = await d.pool_cache.get()
+
     return (
-        swap_notifier_tx.dbg_evaluate_curve_for_pools() +
-        liquidity_notifier_tx.dbg_evaluate_curve_for_pools()
+        swap_notifier_tx.dbg_evaluate_curve_for_pools(ph) +
+        liquidity_notifier_tx.dbg_evaluate_curve_for_pools(ph)
     )

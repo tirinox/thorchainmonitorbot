@@ -183,7 +183,7 @@ def draw_arc_aa(image, bounds, start, end, width=1, outline=TC_WHITE, antialias=
 
     # downsample the mask using PIL.Image.LANCZOS
     # (a high-quality downsampling filter).
-    mask = mask.resize(image.size, Image.LANCZOS)
+    mask = mask.resize(image.size, Image.Resampling.LANCZOS)
     # paste outline color to input image through the mask
     image.paste(outline, mask=mask)
 

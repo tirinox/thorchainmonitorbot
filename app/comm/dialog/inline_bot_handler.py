@@ -4,6 +4,7 @@ from uuid import uuid4
 from aiogram.types import InlineQuery, InputTextMessageContent, InlineQueryResultArticle, InlineQueryResultCachedPhoto
 
 from comm.localization.manager import BaseLocalization
+from models.node_info import NetworkNodes
 from .base import BaseDialog, inline_bot_handler
 from comm.picture.lp_picture import generate_yield_picture
 from comm.picture.price_picture import price_graph_from_db
@@ -83,11 +84,13 @@ class InlineBotHandlerDialog(BaseDialog):
             await self._answer_error(inline_query, q_ident, self.loc.ERROR, self.loc.NOT_READY, self.loc.NOT_READY)
             return
 
+        nodes: NetworkNodes = await self.deps.node_cache.get()
+
         loc: BaseLocalization = self.get_localization()
         text = loc.notification_text_network_summary(
             AlertNetworkStats(
                 old_info, new_info,
-                self.deps.node_holder.nodes
+                nodes.node_info_list
             )
         )
 
@@ -119,7 +122,9 @@ class InlineBotHandlerDialog(BaseDialog):
         if not LPAddress.validate_address(address):
             return await self._answer_invalid_address(inline_query)
 
-        pools_variants = self.deps.price_holder.pool_fuzzy_search(pool_query)
+        ph = await self.deps.pool_cache.get()
+
+        pools_variants = ph.pool_fuzzy_search(pool_query)
 
         if not pools_variants:
             return await self._answer_pool_not_found(inline_query, pool_query)
@@ -133,7 +138,7 @@ class InlineBotHandlerDialog(BaseDialog):
         # summary = await rune_yield.generate_yield_summary(address, pools)
 
         # GENERATE A PICTURE
-        picture = await generate_yield_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=False)
+        picture = await generate_yield_picture(ph, lp_report, self.loc, value_hidden=False)
         picture_bio = img_to_bio(picture, f'Thorchain_LP_{exact_pool}_{today_str()}.png')
 
         # UPLOAD AND SEND RESULT

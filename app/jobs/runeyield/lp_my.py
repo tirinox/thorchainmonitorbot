@@ -19,6 +19,7 @@ from models.lp_info import LiquidityPoolReport, LiquidityInOutSummary, FeeReport
 from models.memo import ActionType
 from models.pool_info import PoolInfoMap, PoolInfo, pool_share
 from models.pool_member import PoolMemberDetails
+from models.price import PriceHolder
 from models.tx import ThorAction
 
 HeightToAllPools = Dict[int, PoolInfoMap]
@@ -103,16 +104,18 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                                                      withdraw_fee_rune=self.withdraw_fee_rune)
         liq = await self.get_current_liquidity_from_node(address, pool_name)
 
-        fees = self._get_fee_report(user_txs, pool_name, historic_all_pool_states)
+        ph = await self.deps.pool_cache.get()
+
+        fees = self._get_fee_report(user_txs, pool_name, historic_all_pool_states, ph)
 
         usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(user_txs, historic_all_pool_states)
 
-        pool_info = self.deps.price_holder.pool_info_map.get(summary.pool)
+        pool_info = ph.pool_info_map.get(summary.pool)
 
         liq_report = LiquidityPoolReport(
             liq,
-            self.deps.price_holder.usd_per_asset(summary.pool),
-            self.deps.price_holder.usd_per_rune,
+            ph.usd_per_asset(summary.pool),
+            ph.usd_per_rune,
             usd_per_asset_start, usd_per_rune_start,
             in_out=summary, fees=fees,
             pool=pool_info,
@@ -125,14 +128,15 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(user_txs, historic_all_pool_states)
 
         l1_pool = Asset.to_L1_pool_name(summary.pool)
-        pool_info = self.deps.price_holder.pool_info_map.get(l1_pool)
+        ph = await self.deps.pool_cache.get()
+        pool_info = ph.pool_info_map.get(l1_pool)
 
         liq = await self.get_current_liquidity_from_node(address, pool)
 
         liq_report = LiquidityPoolReport(
             liq,
-            self.deps.price_holder.usd_per_asset(l1_pool),
-            self.deps.price_holder.usd_per_rune,
+            ph.usd_per_asset(l1_pool),
+            ph.usd_per_rune,
             usd_per_asset_start, usd_per_rune_start,
             in_out=summary,
             fees=FeeReport(),
@@ -211,8 +215,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
     async def _fetch_historical_pool_states(self, txs: List[ThorAction]) -> HeightToAllPools:
         heights = list(set(tx.height for tx in txs))
-        ppf = self.deps.pool_fetcher
-        tasks = [ppf.load_pools(h, caching=True) for h in heights]
+        tasks = [self.deps.pool_cache.load_pools(h, caching=True) for h in heights]
         pool_states = await asyncio.gather(*tasks)
         return dict(zip(heights, pool_states))
 
@@ -293,15 +296,17 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         history is not available.
         """
         pool_name = Asset.to_L1_pool_name(pool_name).upper()
-        pool_info = self.deps.price_holder.find_pool(pool_name)
-        usd_per_rune = self.deps.price_holder.usd_per_rune
+        ph = await self.deps.pool_cache.get()
+        pool_info = ph.find_pool(pool_name)
+        usd_per_rune = ph.usd_per_rune
 
         state = await self.deps.thor_connector.query_liquidity_provider(pool_name, address)
 
         return LPPosition.create(pool_info, state.units, usd_per_rune)
 
     def _calculate_weighted_rune_price_in_usd(self, pool_map: PoolInfoMap) -> Optional[float]:
-        price = self.deps.price_holder.calculate_rune_price_here(pool_map)
+        ph = PriceHolder(self.deps.pool_cache.stable_coins)
+        price = ph.calculate_rune_price_here(pool_map)
         if not price:
             raise ValueError('No USD price can be extracted. Perhaps USD pools are missing at that point')
         return price
@@ -338,9 +343,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         return LPPosition.create(pool_info, my_units, usd_per_rune)
 
-    def _create_final_lp_position(self, pool, my_units: int) -> LPPosition:
-        pool_info = self.deps.price_holder.find_pool(pool)
-        usd_per_rune = self.deps.price_holder.usd_per_rune
+    def _create_final_lp_position(self, pool, my_units: int, ph: PriceHolder) -> LPPosition:
+        pool_info = ph.find_pool(pool)
+        usd_per_rune = ph.usd_per_rune
         return LPPosition.create(pool_info, my_units, usd_per_rune)
 
     @staticmethod
@@ -354,7 +359,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     def _get_fee_report(self,
                         txs: List[ThorAction],
                         pool: str,
-                        pool_historic: HeightToAllPools):
+                        pool_historic: HeightToAllPools,
+                        ph: PriceHolder):
 
         if not txs:
             return FeeReport(pool)  # empty
@@ -385,7 +391,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         units = self._update_units(units, last_tx)
         position_pairs.append((
             self._create_lp_position(pool, last_tx.height, units, pool_historic),
-            self._create_final_lp_position(pool, units)
+            self._create_final_lp_position(pool, units, ph)
         ))
 
         # collect and accumulate all metrics
@@ -393,9 +399,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             return_metrics += ReturnMetrics.from_position_window(p0, p1)
 
         # some aux calculations for FeeReport
-        current_pool = self.deps.price_holder.find_pool(pool)
-
-        curr_usd_per_rune = self.deps.price_holder.usd_per_rune
+        current_pool = ph.find_pool(pool)
+        curr_usd_per_rune = ph.usd_per_rune
         curr_usd_per_asset = curr_usd_per_rune * current_pool.runes_per_asset
 
         # fixme: negative fee!
@@ -442,9 +447,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return day_to_units
 
     async def get_last_thorchain_block(self):
-        self.last_block = self.deps.last_block_store.last_thor_block
-        if not self.last_block:
-            self.last_block = await self.block_mapper.get_last_thorchain_block()
+        self.last_block = await self.deps.last_block_cache.get_thor_block()
         return self.last_block
 
     async def _get_charts(self,
@@ -458,7 +461,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         self.last_block = await self.get_last_thorchain_block()
         results = {}
         now = datetime.datetime.now()
-        ppf = self.deps.pool_fetcher
+
         for pool, pool_txs in tx_by_pool_map.items():
             day_to_units = self._pool_units_by_day(pool_txs, days=days)  # List of (day_no, timestamp, units)
 
@@ -466,7 +469,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             for day, ts, units in day_to_units:
                 that_day = now - datetime.timedelta(days=day)
                 height = await self.block_mapper.get_block_height_by_date(that_day.date(), self.last_block)
-                pools_at_height = await ppf.load_pools(height, caching=True)
+                pools_at_height = await self.deps.pool_cache.load_pools(height, caching=True)
                 pool_info = pools_at_height.get(pool, None)
 
                 if pool_info:

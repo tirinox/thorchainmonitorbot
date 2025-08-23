@@ -55,7 +55,6 @@ async def simulate_pool_cache_clear(app: LpAppFramework):
     iterations = 1
     while True:
         print(f'Iteration #{iterations}')
-        await app.deps.last_block_fetcher.run_once()
         await pf.run_once()
         await asyncio.sleep(1)
         iterations += 1

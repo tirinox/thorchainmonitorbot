@@ -39,7 +39,7 @@ class DbgChurnSimulator(WithDelegates, INotified):
 
     def toggle_migration(self, data: NodeSetChanges, in_progress: bool):
         self.vaults_migrating = in_progress
-        data.vault_migrating = in_progress
+        data.vaults_migrating = in_progress
         if self.vaults_migrating:
             sep('🍯Node churn: vaults migration started')
             self.simulate_churn(data)

@@ -2,9 +2,7 @@ import asyncio
 import logging
 from copy import deepcopy
 
-import aiohttp
-
-from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
+from jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from lib.constants import DOGE_SYMBOL
 from lib.depcont import DepContainer
 from models.pool_info import PoolInfo
@@ -20,15 +18,15 @@ async def dbg_simulate_pool_churn(d: DepContainer):
     notifier_pool_churn = PoolChurnNotifier(d)
     notifier_pool_churn.add_subscriber(d.alert_presenter)
 
-    ppf_old = PoolFetcher(d)
-    d.price_holder.pool_info_map = await ppf_old.load_pools(caching=False)
+    ph = await d.pool_cache.get()
+
     await ppf.get_pool_info_midgard()
 
     # feed original pools
-    await notifier_pool_churn.on_data(ppf, None)
-    await notifier_pool_churn.on_data(ppf, d.price_holder.pool_info_map)  # must notify about changes above ^^^
+    await notifier_pool_churn.on_data(ppf, {})
+    await notifier_pool_churn.on_data(ppf, ph.pool_info_map)  # must notify about changes above ^^^
 
-    pool_info_map = deepcopy(d.price_holder.pool_info_map)  # make a copy
+    pool_info_map = deepcopy(ph.pool_info_map)  # make a copy
     del pool_info_map['ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7']  # deleted pool
     pool_info_map[DOGE_SYMBOL].status = PoolInfo.STAGED  # staged pool
     # pool_info_map[DOGE_SYMBOL] = PoolInfo(DOGE_SYMBOL, 18555, 18555, 100, PoolInfo.STAGED)

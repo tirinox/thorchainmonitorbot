@@ -16,8 +16,8 @@ from models.price import RuneMarketInfo
 from models.runepool import AlertPOLState, AlertRunePoolAction
 from models.trade_acc import AlertTradeAccountStats, AlertTradeAccountAction
 from models.tx import ThorAction
-from notify.public.block_notify import LastBlockStore
 from .ach_list import A, EventTestAchievement, Achievement
+from ..fetch.cached.last_block import EventLastBlock
 
 
 class AchievementsExtractor(WithLogger):
@@ -28,7 +28,8 @@ class AchievementsExtractor(WithLogger):
     async def extract_events_by_type(self, sender, data) -> List[Achievement]:
         if isinstance(data, NetworkStats):
             kv_events = self.on_network_stats(data)
-        elif isinstance(sender, LastBlockStore):
+        # fixme
+        elif isinstance(sender, EventLastBlock):
             kv_events = self.on_block(sender)  # sender not data!
         elif isinstance(data, NodeSetChanges):
             kv_events = self.on_node_changes(data)
@@ -39,7 +40,8 @@ class AchievementsExtractor(WithLogger):
         elif isinstance(sender, AccountNumberFetcher):
             kv_events = [Achievement(A.WALLET_COUNT, int(data))]
         elif is_list_of_type(data, ThorAction):
-            kv_events = self.on_thor_tx_list(data)
+            usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+            kv_events = self.on_thor_tx_list(data, usd_per_rune)
         elif isinstance(data, AlertPOLState):
             kv_events = self.on_thor_pol(data)
             kv_events += self.on_runepool_stats(data)
@@ -87,11 +89,11 @@ class AchievementsExtractor(WithLogger):
         return events
 
     @staticmethod
-    def on_block(sender: LastBlockStore):
+    def on_block(block_ev: EventLastBlock):
         years_old = full_years_old_ts(THORCHAIN_BIRTHDAY)
 
         achievements = [
-            Achievement(A.BLOCK_NUMBER, int(sender.last_thor_block)),
+            Achievement(A.BLOCK_NUMBER, block_ev.thor_block),
             Achievement(A.ANNIVERSARY, years_old),
         ]
         return achievements
@@ -122,13 +124,14 @@ class AchievementsExtractor(WithLogger):
         ]
         return events
 
-    def on_thor_tx_list(self, txs: List[ThorAction]):
+    @staticmethod
+    def on_thor_tx_list(txs: List[ThorAction], usd_per_rune):
         results = defaultdict(float)
 
         def update(key, value, spec=''):
             results[(key, spec)] = max(results[(key, spec)], value)
 
-        price = self.deps.price_holder.usd_per_rune or 0.0
+        price = usd_per_rune or 0.0
 
         for tx in txs:
             this_volume = tx.get_usd_volume(price)

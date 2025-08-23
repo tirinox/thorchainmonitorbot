@@ -1,9 +1,11 @@
-import math
 import random
+import re
 from collections import defaultdict
 from typing import List
 
+import math
 from PIL import Image, ImageDraw
+from web3.types import NodeInfo
 
 from comm.localization.eng_base import BaseLocalization
 from comm.picture.resources import Resources
@@ -15,7 +17,8 @@ from lib.money import clamp, short_rune, format_percent
 from lib.plot_graph import plot_legend, PlotGraphLines
 from lib.texts import bracketify
 from lib.utils import async_wrap, Singleton, most_common_and_other, linear_transform
-from models.node_info import NetworkNodeIpInfo, NodeStatsItem
+from models.geo_ip import LocationInfo
+from models.node_info import NetworkNodes, NodeStatsItem
 
 
 class ResourcesNodePic(metaclass=Singleton):
@@ -60,7 +63,7 @@ class WorldMap:
         y = (90.0 - lat) / 180.0 * self.h
         return x, y
 
-    def draw(self, data: NetworkNodeIpInfo, color_map) -> Image:
+    def draw(self, data: NetworkNodes, color_map) -> Image:
         # color_map: ip_address => (prov_name, color)
         data.sort_by_status()
         pic = self.r.world_map.copy()
@@ -88,11 +91,11 @@ class WorldMap:
         remember_clusters = {}
 
         for node in data.node_info_list:
-            geo = data.ip_info_dict.get(node.ip_address) or {}
-            lat, long = geo.get('latitude'), geo.get('longitude')
+            geo = data.ip_info_dict.get(node.ip_address) or LocationInfo(node.ip_address)
+            lat, long = geo.latitude, geo.longitude
 
-            country = geo.get('country_name')
-            city = geo.get('city')
+            country = geo.country_name
+            city = geo.city
             if country:
                 countries.append(country)
 
@@ -124,7 +127,7 @@ class WorldMap:
             source_image = self.r.circle if node.is_active else self.r.circle_dim
 
             point_image = source_image.copy()
-            point_image.thumbnail((point_size, point_size), Image.LANCZOS)
+            point_image.thumbnail((point_size, point_size), Image.Resampling.LANCZOS)
 
             x, y = int(x), int(y)
 
@@ -199,7 +202,7 @@ class WorldMap:
 
 
 class BondRuler:
-    def __init__(self, loc: BaseLocalization, data: NetworkNodeIpInfo, width=800):
+    def __init__(self, loc: BaseLocalization, data: NetworkNodes, width=800):
         self.data = data
         self.width = width
         self.loc = loc
@@ -253,7 +256,7 @@ class NodePictureGenerator:
     def proper_name():
         return f'THORChain-world-{today_str()}.png'
 
-    def __init__(self, data: NetworkNodeIpInfo, node_stats_points: List[NodeStatsItem],
+    def __init__(self, data: NetworkNodes, node_stats_points: List[NodeStatsItem],
                  loc: BaseLocalization, max_categories=MAX_CATEGORIES):
         self.data = data
         self.node_stats_points = node_stats_points
@@ -279,9 +282,9 @@ class NodePictureGenerator:
     @async_wrap
     def generate(self):
         active_nodes = self.data.active_nodes
-        providers_all = self.data.get_providers(self.data.node_info_list, unknown=self.loc.TEXT_PIC_UNKNOWN)
-        providers = self.data.get_providers(active_nodes, unknown=self.loc.TEXT_PIC_UNKNOWN)
-        countries = self.data.get_countries(active_nodes, unknown=self.loc.TEXT_PIC_UNKNOWN)
+        providers_all = self.get_providers(self.data.node_info_list, unknown=self.loc.TEXT_PIC_UNKNOWN)
+        providers = self.get_providers(active_nodes, unknown=self.loc.TEXT_PIC_UNKNOWN)
+        countries = self.get_countries(active_nodes, unknown=self.loc.TEXT_PIC_UNKNOWN)
 
         _, counted_providers = self._categorize(providers, active_nodes)
         color_map_providers, _ = self._categorize(providers_all, self.data.node_info_list)
@@ -296,7 +299,7 @@ class NodePictureGenerator:
         # world map
         world = WorldMap(self.loc)
         big_map = world.draw(self.data, color_map_providers)
-        big_map.thumbnail((w, h), Image.LANCZOS)
+        big_map.thumbnail((w, h), Image.Resampling.LANCZOS)
         image.paste(big_map, (0, 80))
 
         donut_y = 1020
@@ -437,3 +440,38 @@ class NodePictureGenerator:
         gr.min_x = now_ts() - period
         gr.max_x = now_ts()
         return gr.finalize()
+
+    UNKNOWN_PROVIDER = 'Unknown'
+
+    def get_feature_by_f(self, f, nodes: List[NodeInfo] = None, unknown=UNKNOWN_PROVIDER) -> List[str]:
+        if not nodes:
+            nodes = self.data.node_info_list  # all nodes from this class
+
+        collection = []
+        for node in nodes:
+            ip_info = self.data.ip_info_dict.get(node.ip_address, None)
+            if ip_info:
+                collection.append(f(ip_info) if f else ip_info)
+            else:
+                collection.append(unknown)
+
+        return collection
+
+    def get_providers(self, nodes: List[NodeInfo] = None, unknown=UNKNOWN_PROVIDER) -> List[str]:
+        return self.get_feature_by_f(self.get_general_provider, nodes, unknown)
+
+    def get_countries(self, nodes: List[NodeInfo] = None, unknown=UNKNOWN_PROVIDER) -> List[str]:
+        return self.get_feature_by_f(lambda info: info.country_name or self.UNKNOWN_PROVIDER, nodes, unknown)
+
+    def get_general_provider(self, data: LocationInfo):
+        org = data.org
+        if org is None:
+            return self.UNKNOWN_PROVIDER
+        try:
+            components = re.split('[ -]', org)
+        except TypeError:
+            return self.UNKNOWN_PROVIDER
+
+        if components:
+            return str(' '.join(components[:2])).upper()
+        return org

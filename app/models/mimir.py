@@ -1,9 +1,10 @@
 import logging
-import math
 import operator
 from dataclasses import dataclass
 from itertools import chain
 from typing import Dict, List, Optional, NamedTuple
+
+import math
 
 from api.aionode.types import ThorConstants, ThorMimir, ThorMimirVote
 from lib.constants import bp_to_float
@@ -13,7 +14,7 @@ from lib.texts import split_by_camel_case
 from .base import BaseModelMixin
 from .mimir_naming import MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, MimirNameRules, EXTRA_AUTO_SOLVENCY_MIMIRS, \
     MIMIR_PAUSE_GLOBAL
-from .node_info import NodeInfo
+from .node_info import NodeInfo, NetworkNodes
 
 # for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
 ADMIN_VALUE = 1
@@ -189,13 +190,14 @@ class MimirTuple(NamedTuple):
     mimir: ThorMimir
     node_mimir: dict  # accepted by nodes
     votes: List[ThorMimirVote]
-    active_nodes: List[NodeInfo]
     last_thor_block: int
 
 
 class MimirHolder(INotified, WithLogger):
     async def on_data(self, sender, data: MimirTuple):
-        self.update(data)
+        # test it!
+        nodes: NetworkNodes = await sender.deps.node_cache.get()
+        self.update(data, nodes.active_nodes)
 
     def __init__(self):
         super().__init__()
@@ -239,7 +241,7 @@ class MimirHolder(INotified, WithLogger):
     def pretty_name(self, name):
         return self.hard_coded_pretty_names.get(name) or self.mimir_rules.name_to_human(name)
 
-    def update(self, data: MimirTuple):
+    def update(self, data: MimirTuple, active_nodes: List[NodeInfo]):
         if not data.mimir.constants:
             self.logger.error('Mimir data is empty!')
             return
@@ -252,7 +254,7 @@ class MimirHolder(INotified, WithLogger):
 
         self.last_thor_block = data.last_thor_block
 
-        self.voting_manager = MimirVoteManager(data.votes, data.active_nodes, self.mimir_rules.excluded_from_voting)
+        self.voting_manager = MimirVoteManager(data.votes, active_nodes, self.mimir_rules.excluded_from_voting)
 
         hard_coded_constants = {n.upper(): v for n, v in data.constants.constants.items()}
         self.hard_coded_pretty_names = {

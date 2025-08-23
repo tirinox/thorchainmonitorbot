@@ -3,18 +3,17 @@ import json
 import logging
 
 from api.aionode.connector import ThorConnector
-from comm.picture.price_picture import price_graph_from_db
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from lib.depcont import DepContainer
 from lib.texts import sep
 from lib.utils import recursive_asdict
-from models.price import LastPriceHolder
+from models.price import PriceHolder
 from notify.alert_presenter import AlertPresenter
 from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.price_notify import PriceNotifier
-from tools.lib.lp_common import LpAppFramework, save_and_show_pic
+from tools.lib.lp_common import LpAppFramework
 
 
 def set_network(d: DepContainer, network_id: str):
@@ -37,11 +36,7 @@ async def demo_get_pool_info_midgard(d: DepContainer):
 
 
 async def demo_cache_blocks(app: LpAppFramework):
-    await app.deps.last_block_fetcher.run_once()
-    last_block = app.deps.last_block_store.last_thor_block
-    print(last_block)
-
-    pf: PoolFetcher = app.deps.pool_fetcher
+    pf = app.deps.pool_cache
     pools = await pf.load_pools(7_000_000, caching=True)
     print(pools)
 
@@ -61,22 +56,19 @@ async def demo_top_pools(app: LpAppFramework):
     await fetcher_pool_info.run_once()
 
 
-
 async def _create_price_alert(app, fill=False):
     # use: redis_copy_keys.py to copy redis keys from prod to local
 
     if fill:
         await fill_rune_price_from_gecko(app.deps.db, include_fake_det=True)
 
-    await app.deps.pool_fetcher.run_once()
     await app.deps.fetcher_chain_state.run_once()
 
     print(f'All chains: {app.deps.chain_info.state_list}')
 
     price_notifier = PriceNotifier(app.deps)
 
-    market_fetcher = RuneMarketInfoFetcher(app.deps)
-    market_info = await market_fetcher.fetch()
+    market_info = await app.deps.rune_market_fetcher.fetch()
 
     event = await price_notifier.make_event(
         market_info,
@@ -86,8 +78,6 @@ async def _create_price_alert(app, fill=False):
 
 
 async def dbg_load_latest_price_data_and_save_as_demo(app, fill=False):
-    await app.deps.last_block_fetcher.run_once()
-
     event = await _create_price_alert(app, fill)
     sep()
 
@@ -116,7 +106,7 @@ async def dbg_load_latest_price_data_and_save_as_demo(app, fill=False):
 
 async def find_anomaly(app, start=13225800, steps=200):
     block = start
-    holder = LastPriceHolder()
+    holder = PriceHolder(app.deps.cfg.stable_coins)
     while block < start + steps:
         pools = await app.deps.pool_fetcher.load_pools(block, caching=True)
         holder.update_pools(pools)
@@ -127,9 +117,7 @@ async def find_anomaly(app, start=13225800, steps=200):
 
 
 async def debug_load_pools(app: LpAppFramework):
-    await app.deps.last_block_fetcher.run_once()
-
-    pf = app.deps.pool_fetcher
+    pf = app.deps.pool_cache
     pools = await pf.load_pools(13345278)
     print(len(pools))
     pools = await pf.load_pools(13345278)
@@ -159,8 +147,6 @@ async def dbg_new_price_picture(app):
 
 
 async def dbg_price_picture_continuously(app):
-    await app.deps.pool_fetcher.run_once()
-
     mf: RuneMarketInfoFetcher = app.deps.rune_market_fetcher
 
     price_notifier = PriceNotifier(app.deps)
@@ -172,16 +158,22 @@ async def dbg_price_picture_continuously(app):
 
 
 async def demo_load_historic_data(app):
-    await app.deps.last_block_fetcher.run_once()
     await app.deps.pool_fetcher.load_historic_data(10000, block_interval=10)
-    
-    
+
+
 async def dbg_thin_out_pool_cache(app):
     pf: PoolFetcher = app.deps.pool_fetcher
     keys = await pf.cache.get_thin_out_keys(min_distance=5, scan_batch_size=1000)
     print(keys)
     print(f"Total keys: {len(keys)}")
-    
+
+
+async def dbg_pool_cache(app: LpAppFramework):
+    while True:
+        ph: PriceHolder = await app.deps.pool_cache.get()
+        print(f'Loaded {len(ph.pool_info_map)} pools, rune price = {ph.usd_per_rune:.7f}')
+        await asyncio.sleep(1.0)
+
 
 async def main():
     app = LpAppFramework(log_level=logging.DEBUG)
@@ -189,13 +181,14 @@ async def main():
         # await find_anomaly(app)
         # await demo_cache_blocks(app)
         # await demo_top_pools(app)
-        await dbg_load_latest_price_data_and_save_as_demo(app, fill=True)
+        # await dbg_load_latest_price_data_and_save_as_demo(app, fill=True)
         # await debug_load_pools(app)
         # await dbg_save_market_info(app)
         # await dbg_new_price_picture(app)
         # await dbg_price_picture_continuously(app)
         # await demo_load_historic_data(app)
         # await dbg_thin_out_pool_cache(app)
+        await dbg_pool_cache(app)
 
 
 if __name__ == '__main__':

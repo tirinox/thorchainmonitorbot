@@ -2,9 +2,8 @@ import asyncio
 
 from jobs.ruji_merge import RujiMergeTracker
 from jobs.scanner.block_result import BlockResult
-from jobs.scanner.native_scan import BlockScanner
 from lib.constants import THOR_BLOCK_TIME
-from lib.date_utils import DAY, HOUR
+from lib.date_utils import DAY
 from lib.delegates import INotified
 from lib.logs import WithLogger
 from models.ruji import EventRujiMerge
@@ -39,12 +38,10 @@ async def rescan_rujira_merges(app: LpAppFramework):
     d = app.deps
     d.block_scanner.initial_sleep = 0
 
-    await d.pool_fetcher.run_once()
-    d.last_block_fetcher.add_subscriber(d.last_block_store)
-    await d.last_block_fetcher.run_once()
+    last_block = await d.last_block_cache.get_thor_block()
 
-    force_start_block = d.last_block_store.thor - int(INTERVAL)
-    recv = ReceiveRujiraMerge(app, start=force_start_block, end=d.last_block_store.thor)
+    force_start_block = last_block - int(INTERVAL)
+    recv = ReceiveRujiraMerge(app, start=force_start_block, end=last_block)
 
     ruji_merge_tracker = RujiMergeTracker(d)
     d.block_scanner.add_subscriber(ruji_merge_tracker)

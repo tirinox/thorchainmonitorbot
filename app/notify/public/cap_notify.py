@@ -25,6 +25,7 @@ class LiquidityCapNotifier(INotified, WithLogger, WithDelegates):
         super().__init__()
         self.deps = deps
 
+        # todo: remove this
         raise_stickers = deps.cfg.cap.raised.stickers.as_list()
         self.raise_sticker_iter = make_stickers_iterator(raise_stickers)
 

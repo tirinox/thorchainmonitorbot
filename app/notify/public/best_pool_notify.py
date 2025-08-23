@@ -11,6 +11,7 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.pool_info import PoolInfoMap, EventPools
+from models.price import PriceHolder
 from notify.channel import BoardMessage
 
 
@@ -60,7 +61,7 @@ class BestPoolsNotifier(INotified, WithDelegates, WithLogger):
         earnings = await self.deps.midgard_connector.query_earnings(count=self.income_intervals * 2 + 1,
                                                                     interval=self.income_period)
 
-        usd_per_rune = self.deps.price_holder.calculate_rune_price_here(data)
+        usd_per_rune = PriceHolder(self.deps.cfg.stable_coins).calculate_rune_price_here(data)
         self.last_pool_detail = EventPools(data, prev, earnings, usd_per_rune=usd_per_rune)
 
         if await self._cooldown.can_do():

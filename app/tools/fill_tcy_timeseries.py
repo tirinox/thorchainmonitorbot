@@ -7,16 +7,14 @@ from jobs.price_recorder import PriceRecorder
 from lib.constants import TCY_SYMBOL, THOR_BLOCK_TIME
 from lib.date_utils import now_ts
 from lib.money import pretty_dollar
-from models.price import LastPriceHolder
+from models.price import PriceHolder
 from tools.lib.lp_common import LpAppFramework, ask_yes_no
 
 
 async def fill_tcy_timeseries_task(app):
     pf: PoolFetcher = app.deps.pool_fetcher
 
-    await app.deps.last_block_fetcher.run_once()
-
-    last_block = app.deps.last_block_store.thor
+    last_block = await app.deps.last_block_cache.get_thor_block()
     if not last_block:
         print("Last block not found. Exiting.")
         return
@@ -40,7 +38,7 @@ async def fill_tcy_timeseries_task(app):
     for block_no in all_keys:
         pools = await pf.cache.get(block_no)
         if TCY_SYMBOL in pools:
-            price_holder = LastPriceHolder().update_pools(pools)
+            price_holder = PriceHolder(app.deps.cfg.stable_coins).update_pools(pools)
 
             tcy_price = price_holder.get_asset_price_in_usd(TCY_SYMBOL)
 

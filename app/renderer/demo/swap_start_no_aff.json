@@ -24,9 +24,7 @@
 
     "swap_quantity": 100,
     "swap_interval": 5,
-    "total_estimated_time_sec": 4242,
+    "total_estimated_time_sec": 4242
 
-    "_width": 1280,
-    "_height": 720
   }
 }

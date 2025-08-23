@@ -9,6 +9,7 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.asset import Asset
+from models.price import PriceHolder
 from models.time_series import TimeSeries
 from models.transfer import NativeTokenTransfer, RuneCEXFlow
 
@@ -41,6 +42,7 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
         self.ignore_cex2cex = bool(cfg.get('ignore_cex2cex', True))
         self.tracker = CEXFlowTracker(deps)
         self.arb_detector = ArbBotDetector(deps)
+        self.hide_arb_bots = cfg.as_bool('hide_arbitrage_bots', True)
 
     def is_cex2cex(self, transfer: NativeTokenTransfer):
         return self.is_cex(transfer.from_addr) and self.is_cex(transfer.to_addr)
@@ -58,14 +60,22 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
 
                 await self.pass_data_to_listeners(transfer)
 
-    def _is_to_be_ignored(self, transfer: NativeTokenTransfer):
+    async def _is_to_be_ignored(self, transfer: NativeTokenTransfer):
         if transfer.comment:
             comment = transfer.comment.lower()
             for ignore_comment in self.IGNORE_COMMENTS:
                 # fixme issue: bond is deposit, it is ignored
                 if ignore_comment in comment:
-                    self.logger.debug(f'ignore comment: {comment} in {transfer}')
+                    self.logger.debug(f'Ignore comment: {comment} in {transfer}')
                     return True
+
+        if self.hide_arb_bots:
+            if await self.arb_detector.is_marked_as_arb(transfer.from_addr):
+                self.logger.debug(f'Ignore arb bot: from address = {transfer.from_addr}')
+                return True
+            if await self.arb_detector.is_marked_as_arb(transfer.to_addr):
+                self.logger.debug(f'Ignore arb bot: to address = {transfer.to_addr}')
+                return True
 
         # bug fix, ignore tcy stake and similar things
         if transfer.to_addr == SYNTH_MODULE:
@@ -79,30 +89,32 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
 
         return False
 
-    def _filter_transfers(self, transfers: List[NativeTokenTransfer]):
+    async def _filter_transfers(self, transfers: List[NativeTokenTransfer]):
+        results = []
         for transfer in transfers:
-            if not self._is_to_be_ignored(transfer):
-                yield transfer
+            if not await self._is_to_be_ignored(transfer):
+                results.append(transfer)
+        return results
 
-    def _fill_asset_prices(self, transfers: List[NativeTokenTransfer]):
-        usd_per_rune = self.deps.price_holder.usd_per_rune
+    @staticmethod
+    def _fill_asset_prices(transfers: List[NativeTokenTransfer], ph: PriceHolder):
+        usd_per_rune = ph.usd_per_rune
         for transfer in transfers:
             if transfer.is_rune:
                 transfer.usd_per_asset = usd_per_rune
             else:
                 pool_name = Asset.from_string(transfer.asset).native_pool_name
-                transfer.usd_per_asset = self.deps.price_holder.usd_per_asset(pool_name)
+                transfer.usd_per_asset = ph.usd_per_asset(pool_name)
         return transfers
 
     async def on_data(self, sender, transfers: List[NativeTokenTransfer]):
-        usd_per_rune = self.deps.price_holder.usd_per_rune
-
-        transfers = list(self._filter_transfers(transfers))
-        transfers = self._fill_asset_prices(transfers)
+        ph = await self.deps.pool_cache.get()
+        transfers = list(await self._filter_transfers(transfers))
+        transfers = self._fill_asset_prices(transfers, ph)
 
         for transfer in transfers:
             try:
-                await self.handle_big_transfer(transfer, usd_per_rune)
+                await self.handle_big_transfer(transfer, ph.usd_per_rune)
             except Exception as e:
                 self.logger.exception(f"Error handling transfer: {e}", exc_info=e)
 
@@ -110,7 +122,7 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
 
         if self.flow_enabled:
             if transfers:
-                await self._notify_cex_flow(usd_per_rune)
+                await self._notify_cex_flow(ph.usd_per_rune)
 
     async def _notify_cex_flow(self, usd_per_rune):
         if await self.summary_cd.can_do():
@@ -155,10 +167,11 @@ class CEXFlowTracker:
             inflow += float(p['in'])
             outflow += float(p['out'])
         overflow = len(points) >= self.MAX_POINTS
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
         return RuneCEXFlow(
             inflow, outflow,
             len(points),
             overflow,
-            usd_per_rune=self.deps.price_holder.usd_per_rune,
+            usd_per_rune=usd_per_rune,
             period_sec=period
         )

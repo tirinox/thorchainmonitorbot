@@ -5,7 +5,7 @@ from api.aionode.types import float_to_thor, ThorRunePool, ThorRunePoolPOL
 from lib.constants import NATIVE_RUNE_SYMBOL, THOR_BASIS_POINT_MAX, thor_to_float
 from .memo import ActionType, THORMemo
 from .pool_member import PoolMemberDetails
-from .price import LastPriceHolder
+from .price import PriceHolder
 from .tx import ThorAction, SUCCESS, ThorSubTx, ThorCoin
 
 
@@ -156,7 +156,7 @@ class AlertPOLState(NamedTuple):
     current: POLState
     membership: List[PoolMemberDetails]
     previous: Optional[POLState] = None
-    prices: Optional[LastPriceHolder] = None
+    prices: Optional[PriceHolder] = None
     runepool: Optional[RunepoolState] = None
     mimir_synth_target_ptc: float = 45.0  # %
     mimir_max_deposit: float = 10_000.0  # Rune

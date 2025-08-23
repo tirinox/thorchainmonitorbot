@@ -10,7 +10,7 @@ from jobs.node_churn import NodeChurnDetector
 from lib.date_utils import now_ts, DAY
 from lib.texts import sep
 from models.node_info import NodeEvent, NodeEventType, EventProviderStatus, EventNodeFeeChange, \
-    EventProviderBondChange
+    EventProviderBondChange, NetworkNodes
 from notify.personal.bond_provider import PersonalBondProviderNotifier
 from tools.debug.dbg_record_nodes import NodesDBRecorder, NodePlayer
 from tools.lib.churn_sim import DbgChurnSimulator
@@ -29,9 +29,9 @@ async def demo_run_churn_sim_continuously(app: LpAppFramework):
 
 
 async def demo_all_kinds_of_messages(app: LpAppFramework):
-    await app.deps.node_info_fetcher.run_once()
+    nodes: NetworkNodes = await app.deps.node_cache.get()
 
-    node = next(n for n in app.deps.node_holder.nodes if n.is_active and n.bond_providers)
+    node = next(n for n in nodes.node_info_list if n.is_active and n.bond_providers)
     bond_provider = random.choice(node.bond_providers)
     bp_address = bond_provider.address
 
@@ -200,7 +200,6 @@ async def debug_fee_change(app: LpAppFramework):
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
-        await app.deps.pool_fetcher.run_once()
         app.deps.thor_connector.env.timeout = 100
         # await demo_run_churn_sim_continuously(app)
         # await run_realtime(app)

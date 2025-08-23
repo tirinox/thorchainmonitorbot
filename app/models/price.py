@@ -3,7 +3,6 @@ import logging
 from dataclasses import dataclass, field
 from typing import List, Optional, NamedTuple, Tuple
 
-from lib.config import Config
 from lib.constants import BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float, RUNE_IDEAL_SUPPLY, TCY_SYMBOL
 from lib.date_utils import now_ts, DAY, HOUR, YEAR
 from lib.delegates import INotified
@@ -28,6 +27,7 @@ class RuneMarketInfo:
     supply_info: RuneCirculatingSupply = RuneCirculatingSupply.zero()
     prev_supply_info: RuneCirculatingSupply = RuneCirculatingSupply.zero()
     pools: PoolInfoMap = None
+    stable_coins: List[str] = field(default_factory=lambda: list(STABLE_COIN_POOLS))
 
     @property
     def market_cap(self):
@@ -68,7 +68,7 @@ class RuneMarketInfo:
 
     @property
     def tcy_price(self):
-        return LastPriceHolder().update_pools(self.pools).get_asset_price_in_usd(TCY_SYMBOL)
+        return PriceHolder(self.stable_coins).update_pools(self.pools).get_asset_price_in_usd(TCY_SYMBOL)
 
 
 REAL_REGISTERED_ATH = 20.87  # $ / Rune
@@ -134,11 +134,9 @@ class AlertPrice:
         return self.hist_prices.get(YEAR)
 
 
-class LastPriceHolder(INotified):
+class PriceHolder(INotified):
     async def on_data(self, sender, data):
-        if isinstance(data, RuneMarketInfo):
-            self.market_info = data
-        elif isinstance(data, dict):  # PoolInfoMap
+        if isinstance(data, dict):  # PoolInfoMap
             self.update_pools(data)
             logging.info(f'Fresh rune price is ${self.usd_per_rune:.3f}, {len(self.pool_info_map)} total pools')
 
@@ -149,17 +147,12 @@ class LastPriceHolder(INotified):
         self.pool_info_map: PoolInfoMap = {}
         self.last_update_ts = 0
         self.stable_coins = list(stable_coins or STABLE_COIN_POOLS)
-        self.market_info = RuneMarketInfo()
 
     def clone(self):
         return copy.deepcopy(self)
 
     def is_stable_coin(self, c):
         return c in self.stable_coins
-
-    def load_stable_coins(self, cfg: Config):
-        self.stable_coins = cfg.get_pure('thor.stable_coins', default=STABLE_COIN_POOLS)
-        logging.info(f'Stable coins are {", ".join(self.stable_coins)}')
 
     def calculate_rune_price_here(self, pool_map: PoolInfoMap) -> float:
         return self.calculate_rune_price(self.stable_coins, pool_map)

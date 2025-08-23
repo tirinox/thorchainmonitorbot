@@ -640,7 +640,6 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_CHAINS = '⛓️ Блокчейны'
     BUTTON_METR_MIMIR = '🎅 Мимир'
     BUTTON_METR_VOTING = '🏛️ Голосование'
-    BUTTON_METR_BLOCK_TIME = '⏱️ Время блоков'
     BUTTON_METR_TOP_POOLS = '🏊 Топ Пулов'
     BUTTON_METR_CEX_FLOW = '🌬 Поток бирж'
     BUTTON_METR_SUPPLY = f'🪙 Rune предложение'
@@ -1028,7 +1027,7 @@ class RussianLocalization(BaseLocalization):
 
     def notification_churn_started(self, changes: NodeSetChanges):
         text = f'♻️ <b>Процесс перемешивания нод начался на блоке #{changes.block_no}</b>'
-        if changes.vault_migrating:
+        if changes.vaults_migrating:
             text += '\nХранилища мигрируют.'
         return text
 

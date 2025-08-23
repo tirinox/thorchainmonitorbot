@@ -5,7 +5,7 @@
     <title>{{ title }}</title>
     <link rel="stylesheet" href="renderer/static/css/common.css?r={{ range(-100, 100) | random }}">
 
-    {% block extra_head %}
+    {%- block extra_head %}
     {% endblock %}
 
     <style>
@@ -15,23 +15,19 @@
             height: {{ _height }}px;
         }
 
-        body {
-        {% if debug %}
-            outline: 1px darkcyan dashed;
-        {% endif %}
-        }
-
-        div {
-        {% if debug %}
-            outline: #083a34 1px dashed;
-        {% endif %}
-        }
-
         .container {
             max-width: {{ _width }}px;
             max-height: {{ _height }}px;
         }
 
+        {%- if debug %}
+            body {
+                outline: 1px darkcyan dashed;
+            }
+            div {
+                outline: #083a34 1px dashed;
+            }
+        {% endif %}
     </style>
     <script src="renderer/static/js/chart.umd.min.js"></script>
 
@@ -41,6 +37,7 @@
 
     {% block content %}
     {% endblock %}
+
 
     <footer>
         THORChain Infobot <span id="today-date"></span>
@@ -69,6 +66,7 @@
         }, 3000);
     {% endif %}
 </script>
+
 
 </body>
 </html>

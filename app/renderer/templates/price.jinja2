@@ -1,3 +1,4 @@
+{% set _width, _height = set_viewport_size(1200, 1200) %}
 {% extends "base.jinja2" %}
 
 {% block content %}
@@ -127,6 +128,9 @@
             justify-content: space-around;
             min-width: 10%;
             padding-right: 14px;
+
+            font-size: 30px;
+            font-weight: bolder;
         }
 
         .price-box {
@@ -239,23 +243,23 @@
             </div>
 
             <div class="indicator-box price-delta-box cbox">
-                {% with label='1H', price=market_info.pool_rune_price, old_price=price_1h %}
+                {% with label='1H', curr=market_info.pool_rune_price, prev=price_1h %}
                     {% include "components/price_delta.jinja2" %}
                 {% endwith %}
 
-                {% with label='24H', price=market_info.pool_rune_price, old_price=price_24h %}
+                {% with label='24H', curr=market_info.pool_rune_price, prev=price_24h %}
                     {% include "components/price_delta.jinja2" %}
                 {% endwith %}
 
-                {% with label='7D', price=market_info.pool_rune_price, old_price=price_7d %}
+                {% with label='7D', curr=market_info.pool_rune_price, prev=price_7d %}
                     {% include "components/price_delta.jinja2" %}
                 {% endwith %}
 
-                {% with label='30D', price=market_info.pool_rune_price, old_price=price_30d %}
+                {% with label='30D', curr=market_info.pool_rune_price, prev=price_30d %}
                     {% include "components/price_delta.jinja2" %}
                 {% endwith %}
 
-                {% with label='1Y', price=market_info.pool_rune_price, old_price=price_1y %}
+                {% with label='1Y', curr=market_info.pool_rune_price, prev=price_1y %}
                     {% include "components/price_delta.jinja2" %}
                 {% endwith %}
             </div>

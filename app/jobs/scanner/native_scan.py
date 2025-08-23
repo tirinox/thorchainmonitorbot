@@ -4,7 +4,7 @@ from typing import Optional
 from jobs.fetch.base import BaseFetcher
 from jobs.scanner.block_result import BlockResult
 from lib.constants import THOR_BLOCK_TIME
-from lib.date_utils import now_ts
+from lib.date_utils import now_ts_utc
 from lib.depcont import DepContainer
 from lib.utils import safe_get
 
@@ -88,13 +88,14 @@ class BlockScanner(BaseFetcher):
                        message=block.error.message,
                        last_available=block.error.last_available_block)
 
-    def should_run_aggressive_scan(self):
-        time_since_last_block = now_ts() - self._last_block_ts
+    async def should_run_aggressive_scan(self):
+        time_since_last_block = now_ts_utc() - self._last_block_ts
         if time_since_last_block > self._time_tolerance_for_aggressive_scan:
             self.logger.info(f'😡 time_since_last_block = {time_since_last_block:.3f} sec. Run aggressive scan!')
             return True
 
-        lag_behind_node_block = int(self.deps.last_block_store) - self._last_block
+        last_block = await self.deps.last_block_cache.get_thor_block()
+        lag_behind_node_block = last_block - self._last_block
         if lag_behind_node_block > 2:
             self.logger.info(f"😡 {lag_behind_node_block = }. Run aggressive scan!")
             return True
@@ -111,7 +112,7 @@ class BlockScanner(BaseFetcher):
 
         self._block_cycle = 0
 
-        aggressive = self.should_run_aggressive_scan()
+        aggressive = await self.should_run_aggressive_scan()
         if aggressive:
             self.logger.info('Aggressive scan will be run at this tick.')
 
@@ -126,7 +127,7 @@ class BlockScanner(BaseFetcher):
 
                 # if block_result.timestamp:
                 #     self._last_block_ts = block_result.timestamp
-                self._last_block_ts = now_ts()
+                self._last_block_ts = now_ts_utc()
 
                 if block_result.is_error:
                     if self.allow_jumps:

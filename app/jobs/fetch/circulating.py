@@ -30,7 +30,7 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         thor_rune_max_supply = await self.get_max_supply_from_mimir()  # 500M - burned income part = mimir MaxRuneSupply
 
         result = RuneCirculatingSupply(
-            thor_rune_supply,
+            int(thor_rune_supply),
             thor_rune_max_supply, {}
         )
 
@@ -46,23 +46,15 @@ class RuneCirculatingSupplyFetcher(WithLogger):
             #     self.logger.info(f'Treasury LP balance ({address}): {lp_balance} Rune')
             #     balance += lp_balance
 
-            result.set_holder(RuneHoldEntry(address, balance, wallet_name, realm))
+            result.set_holder(RuneHoldEntry(address, int(balance), wallet_name, realm))
 
         maya_pool_balance = await self.maya.get_maya_pool_rune()
         result.set_holder(RuneHoldEntry('Maya pool', int(maya_pool_balance), 'Maya pool', ThorRealms.MAYA_POOL))
 
         return result
 
-        # locked_rune = sum(
-        #     w.amount for w in result.holders.values()
-        #     if w.realm in (ThorRealms.RESERVES, ThorRealms.STANDBY_RESERVES)
-        # )
-        # circulating_rune = thor_rune_supply - locked_rune
-        #
-        # return result._replace(circulating=circulating_rune)
-
     @staticmethod
-    def get_pure_rune_from_thor_array(arr):
+    def get_pure_rune_from_thor_array(arr) -> float:
         if arr:
             thor_rune = next((item['amount'] for item in arr if item['denom'] == RUNE_DENOM), 0)
             return int(thor_to_float(thor_rune))

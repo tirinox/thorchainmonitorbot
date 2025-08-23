@@ -1,8 +1,6 @@
 {
   "template_name": "dbg_pool_logo.jinja2",
   "parameters": {
-    "_width": 1280,
-    "_height": 920,
     "pools": [
       "ETH.WBTC-0X2260FAC5E5542A773AA44FBCFEDF7C193BC2C599",
       "ETH.LUSD-0X5F98805A4E8BE255A32880FDEC7F6728C6568BA0",

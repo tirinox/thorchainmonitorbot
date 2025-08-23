@@ -60,7 +60,7 @@ class PriceNotifier(INotified, WithDelegates, WithLogger):
             return ''
 
     async def make_event(self, market_info, ath, last_ath=None):
-        btc_per_rune = self.deps.price_holder.btc_per_rune
+        ph = await self.deps.pool_cache.get()
 
         hist_prices = await self.get_historical_price_dict()
         pool_prices, cex_prices, det_prices = await self.price_recorder.get_prices(self.price_graph_period)
@@ -76,7 +76,7 @@ class PriceNotifier(INotified, WithDelegates, WithLogger):
             volumes=volumes,
             market_info=market_info,
             last_ath=last_ath,
-            btc_pool_rune_price=btc_per_rune,
+            btc_pool_rune_price=ph.btc_per_rune,
             is_ath=ath,
             ath_sticker=self._next_ath_sticker(),
             chain_state=self.deps.chain_info.state_list,

@@ -114,7 +114,8 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
 
         # Convert it to a picture
         value_hidden = False
-        picture = await generate_yield_picture(self.deps.price_holder, lp_report, loc, value_hidden=value_hidden)
+        ph = await self.deps.pool_cache.get()
+        picture = await generate_yield_picture(ph, lp_report, loc, value_hidden=value_hidden)
         picture_bio = img_to_bio(picture, f'Thorchain_LP_{tr.pool}_{today_str()}.png')
 
         caption = loc.notification_text_regular_lp_report(tr.user_id, tr.address, tr.pool, lp_report, local_name,

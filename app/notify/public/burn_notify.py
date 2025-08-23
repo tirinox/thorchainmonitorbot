@@ -13,7 +13,6 @@ from models.circ_supply import EventRuneBurn
 from models.mimir import MimirTuple
 from models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY, MIMIR_KEY_SYSTEM_INCOME_BURN_RATE
 from models.time_series import TimeSeries
-from notify.public.block_notify import LastBlockStore
 
 
 class BurnNotifier(INotified, WithDelegates, WithLogger):
@@ -35,22 +34,22 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
         mimir = self.deps.mimir_const_holder
         if not mimir:
             self.logger.error('Mimir constants are not loaded yet!')
-            return
+            return None
 
         curr_max_supply_8 = mimir[MIMIR_KEY_MAX_RUNE_SUPPLY]
         if not curr_max_supply_8:
             self.logger.error(f'Max supply ({MIMIR_KEY_MAX_RUNE_SUPPLY}) is not set!')
-            return
+            return None
 
         system_income_burn_bp = int(mimir[MIMIR_KEY_SYSTEM_INCOME_BURN_RATE])
         if not system_income_burn_bp:
             self.logger.error(f'System income burn rate {MIMIR_KEY_SYSTEM_INCOME_BURN_RATE} is not set!')
-            return
+            return None
 
         if curr_max_supply_8 <= 0:
             # fixes jumps of chart if got "-1" here
             self.logger.error(f'Invalid max supply: {curr_max_supply_8}. Not recording it!')
-            return
+            return None
 
         # save current max supply (as int, no decimal)
         await self.ts.add(max_supply=curr_max_supply_8)
@@ -73,11 +72,13 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
         all_points_resampled = await self.resample(all_points)
         points_deltas = self._extract_only_burned_rune_delta(all_points_resampled)
 
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+
         return EventRuneBurn(
             curr_max_rune=curr_max_supply,
             prev_max_rune=prev_supply,
             points=points_deltas,
-            usd_per_rune=self.deps.price_holder.usd_per_rune,
+            usd_per_rune=usd_per_rune,
             system_income_burn_percent=system_income_burn_bp / THOR_BASIS_POINT_MAX * 100.0,
             period_seconds=self.cd.cooldown,
             start_ts=ADR17_TIMESTAMP,
@@ -116,7 +117,7 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
         return await self.ts.get_last_value('max_supply')
 
     async def erase_and_populate_from_history(self, period=60, max_points=1000):
-        last_block = self.deps.last_block_store.thor
+        last_block = await self.deps.last_block_cache.get_thor_block()
         if not last_block:
             self.logger.error('Last block is not set!')
             return
@@ -148,6 +149,5 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
         if data and 'max_supply' in data:
             return data['max_supply']
         else:
-            store: LastBlockStore = self.deps.last_block_store
-            block = store.block_time_ago(sec_ago)
+            block = await self.deps.last_block_cache.get_thor_block_time_ago(sec_ago)
             return await self.get_supply_at_block(block)

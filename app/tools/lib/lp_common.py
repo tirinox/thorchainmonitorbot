@@ -1,22 +1,20 @@
 import logging
 import os
 
-from jobs.scanner.native_scan import BlockScanner
-from main import App
+from api.midgard.parser import MidgardParserV2
 from comm.telegram.telegram import telegram_send_message_basic, TG_TEST_USER
 from comm.twitter.twitter_bot import twitter_text_length, TwitterBotMock
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
-from jobs.fetch.last_block import LastBlockFetcher
-from jobs.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from jobs.fetch.tx import TxFetcher
+from jobs.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
+from jobs.scanner.native_scan import BlockScanner
 from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from lib.constants import NetworkIdents
 from lib.delegates import INotified
 from lib.draw_utils import img_to_bio
-from api.midgard.parser import MidgardParserV2
 from lib.texts import sep
 from lib.utils import load_json
-from notify.public.block_notify import LastBlockStore
+from main import App
 
 
 class LpAppFramework(App):
@@ -26,6 +24,8 @@ class LpAppFramework(App):
 
         super().__init__(log_level)
         self.brief = brief
+
+        self.enable_aiohttp_debug_mode()
 
         d = self.deps
 
@@ -38,8 +38,6 @@ class LpAppFramework(App):
 
         d.loc_man.set_name_service(d.name_service)
         d.twitter_bot = TwitterBotMock(d.cfg)
-        d.last_block_fetcher = LastBlockFetcher(d)
-        d.last_block_store = LastBlockStore(d)
         d.block_scanner = BlockScanner(d)
 
         self.rune_yield: AsgardConsumerConnectorBase
@@ -85,23 +83,8 @@ class LpAppFramework(App):
 
         await self.create_thor_node_connector()
 
-        d.rune_market_fetcher = RuneMarketInfoFetcher(d)
-
-        d.last_block_fetcher.add_subscriber(d.last_block_store)
-
         if self.emergency:
             d.emergency.run_in_background()
-
-        d.pool_fetcher.add_subscriber(d.price_holder)
-
-        brief = brief if self.brief is None else self.brief
-        if brief:
-            return
-
-        await d.last_block_fetcher.run_once()
-        await d.node_info_fetcher.run_once()  # get nodes beforehand
-        await d.mimir_const_fetcher.run_once()  # get constants beforehand
-        await d.pool_fetcher.run_once()
 
     async def close(self):
         await self.deps.session.close()
@@ -136,6 +119,12 @@ class LpAppFramework(App):
     async def test_locs_except_tw(self, f, *args, **kwargs):
         locs = [loc for loc in self.deps.loc_man.all if 'Twitter' not in loc.__class__.__name__]
         await self.test_all_locs(f, locs, *args, **kwargs)
+
+    @staticmethod
+    def enable_aiohttp_debug_mode():
+        logging.getLogger("aiohttp.client").setLevel(logging.DEBUG)
+        logging.getLogger("aiohttp.client_reqrep").setLevel(logging.DEBUG)
+        logging.getLogger("aiohttp.connector").setLevel(logging.DEBUG)
 
 
 class LpGenerator(LpAppFramework):

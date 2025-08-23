@@ -18,11 +18,11 @@ async def main():
 
         stagenet_pools = await stagenet_thor.query_pools()
 
-        await d.pool_fetcher.run_once()
+        ph = await d.pool_cache.get()
 
         for pool in stagenet_pools:
             sep(pool.asset)
-            real_price = d.price_holder.get_asset_price_in_usd(pool.asset)
+            real_price = ph.get_asset_price_in_usd(pool.asset)
             s_runes = thor_to_float(pool.balance_rune)
             s_asset = thor_to_float(pool.balance_asset)
             print(f"Stagenet pool contains {pretty_money(s_runes)} sRUNE")

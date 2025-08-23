@@ -8,7 +8,7 @@ import yaml
 from dotenv import load_dotenv
 
 from api.aionode.env import ThorEnvironment, MAINNET, MULTICHAIN_STAGENET_ENVIRONMENT
-from lib.constants import NetworkIdents
+from lib.constants import NetworkIdents, STABLE_COIN_POOLS
 from lib.date_utils import parse_timespan_to_seconds
 from lib.path import get_app_path
 from lib.utils import strip_trailing_slash
@@ -200,3 +200,7 @@ class Config(SubConfig):
     @property
     def is_debug_mode(self):
         return bool(self.get_pure('debug_mode', False))
+
+    @property
+    def stable_coins(self):
+        return self.get_pure('thor.stable_coins', default=STABLE_COIN_POOLS)

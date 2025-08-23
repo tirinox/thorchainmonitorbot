@@ -1,4 +1,4 @@
-from typing import NamedTuple, List, Optional
+from typing import NamedTuple, List, Optional, Dict
 
 
 class SecureAssetInfo(NamedTuple):
@@ -21,7 +21,8 @@ class SecureAssetInfo(NamedTuple):
 
 
 class SecuredAssetsStats(NamedTuple):
-    assets: List[SecureAssetInfo]
+    asset_names_sorted: List[str]
+    assets: Dict[str, SecureAssetInfo]
     total_vault_usd: float
     total_pool_usd: float
     total_volume_24h_usd: float = 0.0
@@ -32,7 +33,7 @@ class SecuredAssetsStats(NamedTuple):
 
     @property
     def total_value_usd(self) -> float:
-        return sum(asset.value_usd for asset in self.assets)
+        return sum(asset.value_usd for asset in self.assets.values())
 
     @property
     def total_secured_to_pool_percentage(self) -> float:

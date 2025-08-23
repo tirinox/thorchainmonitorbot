@@ -1,4 +1,5 @@
 import logging
+from typing import NamedTuple
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from playwright.async_api import async_playwright, Page, ConsoleMessage
@@ -7,7 +8,13 @@ from lib.money import short_rune, short_dollar, short_money, pretty_money
 from lib.texts import shorten_text, shorten_text_middle
 
 
-class Renderer:
+class HTMLRenderResult(NamedTuple):
+    html_content: str
+    viewport_width: int
+    viewport_height: int
+
+
+class RendererEngine:
     """
     Renderer class to manage Playwright browser instance and render HTML to PNG.
     Supports dynamic viewport sizes per rendering request.
@@ -17,7 +24,9 @@ class Renderer:
                  device_scale_factor: int = 1,
                  resource_base_url=''):
         self.templates_dir = templates_dir
-        self.default_viewport = {'width': 1280, 'height': 720}
+        self.default_width = 1280
+        self.default_height = 720
+        self._set_viewport(self.default_width, self.default_height)
         self.device_scale_factor = device_scale_factor
         self.playwright = None
         self.browser = None
@@ -25,7 +34,10 @@ class Renderer:
         self.render_timeout = 1900  # mSec
         self.jinja_env = Environment(
             loader=FileSystemLoader(self.templates_dir),
-            autoescape=select_autoescape(['html', 'xml', 'jinja2'])
+            autoescape=select_autoescape(['html', 'xml', 'jinja2']),
+            line_statement_prefix='%',
+            line_comment_prefix='##',
+            extensions=["jinja2.ext.do"],
         )
         self.jinja_env.globals.update({
             'short_rune': short_rune,
@@ -37,9 +49,15 @@ class Renderer:
             'int': int,
             'float': float,
             'round': round,
+            'set_viewport_size': self._set_viewport,
         })
         self._resource_base_url = resource_base_url
         logging.info(f"Renderer initialized with templates directory: {self.templates_dir}")
+
+    def _set_viewport(self, width: int, height: int):
+        self._viewport_w = width
+        self._viewport_h = height
+        return width, height
 
     async def start(self):
         """
@@ -55,12 +73,21 @@ class Renderer:
                 "--disable-blink-features=AutomationControlled"
             ]
         )
+
+        if not (100 < self._viewport_w < 4096) or not (100 < self._viewport_h < 4096):
+            raise ValueError(f"Invalid viewport size: {self._viewport_w}x{self._viewport_h}. "
+                             "Width and height must be between 100 and 4096 pixels.")
+
         self.browser_context = await self.browser.new_context(
-            viewport=self.default_viewport,
+            viewport={
+                'width': self._viewport_w,
+                'height': self._viewport_h
+            },
             device_scale_factor=self.device_scale_factor
         )
         self.browser_context.on("page", self.on_new_page)
-        logging.info(f"Browser launched and context created with default viewport: {self.default_viewport}")
+        logging.info(
+            f"Browser launched and context created with default viewport: {self._viewport_w}x{self._viewport_h}")
 
     async def stop(self):
         """
@@ -76,16 +103,15 @@ class Renderer:
             await self.playwright.stop()
             logging.info("Playwright stopped.")
 
-    def render_template(self, template_name: str, parameters: dict, override_resource_dir=None) -> str:
+    def render_template_to_html(self, template_name: str, parameters: dict,
+                                override_resource_dir=None) -> HTMLRenderResult:
         """
         Render a Jinja2 template with the given parameters.
         """
         try:
             template = self.jinja_env.get_template(template_name)
 
-            parameters.setdefault('_width', self.default_viewport['width'])
-            parameters.setdefault('_height', self.default_viewport['height'])
-
+            self._set_viewport(self.default_width, self.default_height)
             rendered_html = template.render(parameters)
 
             if override_resource_dir is not None:
@@ -93,13 +119,16 @@ class Renderer:
             elif self._resource_base_url:
                 rendered_html = rendered_html.replace('renderer', self._resource_base_url)
 
-            logging.info(f"Finished rendering HTML template {template_name!r}. {len(rendered_html)} bytes.")
-            return rendered_html
+            w, h = self._viewport_w, self._viewport_h
+            logging.info(f"Finished rendering HTML template {template_name!r}. "
+                         f"Produced {len(rendered_html)} bytes. "
+                         f"Reported viewport size: {w} x {h}")
+            return HTMLRenderResult(rendered_html, w, h)
         except Exception as e:
             logging.error(f"Error rendering template '{template_name}': {e}")
             raise e
 
-    async def render_html_to_png(self, html_content: str, width: int = 0, height: int = 0) -> bytes:
+    async def render_html_to_png(self, r: HTMLRenderResult) -> bytes:
         """
         Render HTML content to PNG using Playwright with dynamic viewport sizes.
         If width and height are not provided, use the default viewport from the context.
@@ -108,15 +137,14 @@ class Renderer:
             # Create a new page
             page: Page = await self.browser_context.new_page()
 
+            width, height = r.viewport_width, r.viewport_height
+
             # If width and height are specified, set the viewport for this page
-            if width and height:
-                await page.set_viewport_size({'width': int(width), 'height': int(height)})
-                logging.info(f"Set viewport size to {width=}, {height=}")
-            else:
-                await page.set_viewport_size(self.default_viewport)
+            await page.set_viewport_size({'width': int(width), 'height': int(height)})
+            logging.info(f"Set viewport size to {width} x {height}")
 
             # Set the HTML content
-            await page.set_content(html_content, wait_until='networkidle', timeout=self.render_timeout)
+            await page.set_content(r.html_content, wait_until='networkidle', timeout=self.render_timeout)
 
             # Take a screenshot
             png_bytes = await page.screenshot(full_page=True)
@@ -124,8 +152,8 @@ class Renderer:
             # Close the page
             await page.close()
 
-            logging.info(f"HTML content {len(html_content)} bytes long rendered to PNG successfully"
-                         f" with viewport size: {width=}, {height=}")
+            logging.info(f"HTML content {len(r.html_content)} bytes long rendered to PNG successfully"
+                         f" with viewport size: {width} x {height}")
             return png_bytes
         except Exception as e:
             logging.error(f"Error rendering HTML to PNG: {e}")

@@ -152,7 +152,7 @@ class AdminMessages:
 
     async def get_message_about_scanner(self):
         scanner: BlockScanner = self.deps.block_scanner
-        last_thor_block = int(self.deps.last_block_store)
+        last_thor_block = await self.deps.last_block_cache.get_thor_block()
         block_diff = (last_thor_block - scanner.last_block)
 
         return (

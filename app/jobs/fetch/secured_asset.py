@@ -3,10 +3,10 @@ from typing import List
 
 from api.aionode.types import ThorVault, thor_to_float
 from jobs.fetch.base import BaseFetcher
-from lib.date_utils import DAY
+from lib.cache import async_cache
 from lib.depcont import DepContainer
 from models.asset import Asset
-from models.price import LastPriceHolder
+from models.price import PriceHolder
 from models.secured import SecuredAssetsStats, SecureAssetInfo, AlertSecuredAssetSummary
 
 
@@ -14,6 +14,7 @@ class SecuredAssetAssetFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
         sleep_period = deps.cfg.as_interval("secured_assets.period", "10m")
         super().__init__(deps, sleep_period=sleep_period)
+        self.delta_period = deps.cfg.as_interval("secured_assets.delta_period", "1d")
 
     async def load_asgard_assets(self, height=0):
         asgards = await self.deps.thor_connector.query_vault(ThorVault.TYPE_ASGARD, height)
@@ -25,6 +26,7 @@ class SecuredAssetAssetFetcher(BaseFetcher):
 
         return results
 
+    @async_cache(ttl=40)
     async def load_volumes_usd_prev_curr(self, pool, days=1):
         swap_stats = await self.deps.midgard_connector.query_swap_stats(count=days * 2 + 1, interval='day', pool=pool)
         swap_stats = swap_stats.with_last_day_dropped
@@ -38,7 +40,7 @@ class SecuredAssetAssetFetcher(BaseFetcher):
         # s = swap_stats.meta.from_trade_volume_usd + swap_stats.meta.to_trade_volume_usd
         return previous_volume, current_volume
 
-    def get_total_vaults_usd(self, asgards: List[ThorVault], ph: LastPriceHolder):
+    def get_total_vaults_usd(self, asgards: List[ThorVault], ph: PriceHolder):
         total_vault_usd = 0.0
         for asgard in asgards:
             for coin in asgard.coins:
@@ -56,11 +58,14 @@ class SecuredAssetAssetFetcher(BaseFetcher):
     async def load_supply(self, height=None):
         return await self.deps.thor_connector.query_secured_assets(height)
 
-    async def load_for_height(self, height=0):
-        ph = self.deps.price_holder
-        if not ph.pool_info_map:
+    async def load_epoch(self, *, current=False, previous=False):
+        assert current or previous
+        ph = await self.deps.pool_cache.get()
+        if not ph or not ph.pool_info_map:
             self.logger.error("No pools found")
             return
+
+        height = None if current else await self.deps.last_block_cache.get_thor_block_time_ago(self.delta_period)
 
         asgards = await self.deps.thor_connector.query_vault(ThorVault.TYPE_ASGARD, height)
         supply_now = await self.load_supply(height)
@@ -97,17 +102,26 @@ class SecuredAssetAssetFetcher(BaseFetcher):
         total_pool_usd = ph.total_pooled_value_usd * 0.5  # non-Rune assets are half of the total pool value
 
         assets.sort(key=lambda a: a.value_usd, reverse=True)
+        asset_names_sorted = [asset.l1_name for asset in assets]
+        asset_dict = {asset.l1_name: asset for asset in assets}
 
-        return AlertSecuredAssetSummary(
-            period_seconds=DAY,
-            current=SecuredAssetsStats(
-                assets=assets,
-                total_pool_usd=total_pool_usd,
-                total_vault_usd=total_vault_usd,
-                total_volume_24h_usd=total_volume_usd,
-            ),
-            previous=None
+        return SecuredAssetsStats(
+            assets=asset_dict,
+            asset_names_sorted=asset_names_sorted,
+            total_pool_usd=total_pool_usd,
+            total_vault_usd=total_vault_usd,
+            total_volume_24h_usd=total_volume_usd,
         )
 
     async def fetch(self) -> AlertSecuredAssetSummary:
-        return await self.load_for_height()
+        current = await self.load_epoch(current=True)
+        previous = await self.load_epoch(previous=True)
+
+        if previous is None:
+            previous = current
+
+        return AlertSecuredAssetSummary(
+            current=current,
+            previous=previous,
+            period_seconds=self.delta_period,
+        )

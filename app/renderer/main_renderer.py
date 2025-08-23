@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import signal
@@ -13,9 +14,9 @@ from jinja2 import TemplateNotFound
 from pydantic import BaseModel, Field
 from starlette.responses import JSONResponse
 
-from .demo import demo_template_parameters, available_demo_templates
-from .renderer import Renderer
 from .const import DEVICE_SCALE_FACTOR
+from .demo import demo_template_parameters, available_demo_templates
+from .engine import RendererEngine
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 
@@ -33,12 +34,13 @@ logging.basicConfig(
 
 
 class RenderRequest(BaseModel):
-    template_name: str = Field(..., example="example.jinja2")
-    parameters: Dict = Field(..., example={"title": "Test", "heading": "Hello", "message": "This is a test."})
+    template_name: str = Field(..., json_schema_extra={"example": "example.jinja2"})
+    parameters: Dict = Field(..., json_schema_extra={
+        "example": {"title": "Test", "heading": "Hello", "message": "This is a test."}})
 
 
-renderer = Renderer(templates_dir=TEMPLATES_DIR, device_scale_factor=DEVICE_SCALE_FACTOR,
-                    resource_base_url=LOC_HOST_BASE)
+renderer = RendererEngine(templates_dir=TEMPLATES_DIR, device_scale_factor=DEVICE_SCALE_FACTOR,
+                          resource_base_url=LOC_HOST_BASE)
 
 
 # Initialize FastAPI with Lifespan
@@ -70,36 +72,26 @@ app.mount("/static", StaticFiles(directory="data/renderer/static"), name="static
 app.mount("/logo", StaticFiles(directory="data/asset_logo"), name="asset_logo")
 
 
-async def render_html_to_png(browser, html_content, w=1280, h=720):
-    start = time.monotonic()
-    # async with async_playwright() as p:
-    #     browser = await p.chromium.launch()
-    page = await browser.new_page(
-        viewport={'width': w, 'height': h},
-        device_scale_factor=2,
-    )
-    await page.set_content(html_content)
-    png_bytes = await page.screenshot()
-    print(f"Rendered PNG image in {time.monotonic() - start:.2f} seconds.")
-    return png_bytes
-
-
 async def render_full_pipeline(template_name, parameters):
-    width = parameters.get('_width', 1280)
-    height = parameters.get('_height', 720)
-
     # Render the template
     try:
-        rendered_html = renderer.render_template(template_name, parameters)
+        result = renderer.render_template_to_html(template_name, parameters)
     except TemplateNotFound:
         return Response(status_code=404, content=f"Template '{template_name}' not found.")
 
     # Render the HTML to PNG
     start_time = time.monotonic()
-    png_bytes = await renderer.render_html_to_png(rendered_html, width, height)
+    png_bytes = await renderer.render_html_to_png(result)
     end_time = time.monotonic()
     print(f"Rendered Demo PNG image {template_name!r} in {end_time - start_time:.2f} seconds.")
     return Response(png_bytes)
+
+
+def _response_no_template_found(template_name: str):
+    return Response(status_code=404,
+                    content=f"Template '{template_name}' not found. Available templates:\n "
+                            f"{'\n'.join(available_demo_templates())}",
+                    media_type="text/text")
 
 
 @app.get("/render/demo-html/{name}")
@@ -108,8 +100,7 @@ async def render_just_html(name: str, req: Request):
 
     template_name, parameters = demo_template_parameters(name)
     if not template_name:
-        return Response(status_code=404,
-                        content=f"Demo template '{name}' not found. Available templates: {available_demo_templates()}")
+        return _response_no_template_found(name)
 
     if req and req.query_params:
         logging.info(f"Query parameters: {req.query_params}")
@@ -125,8 +116,8 @@ async def render_just_html(name: str, req: Request):
             else:
                 parameters[key] = value
 
-    rendered_html = renderer.render_template(template_name, parameters, override_resource_dir='')
-    return Response(content=rendered_html, media_type="text/html")
+    rendered_html = renderer.render_template_to_html(template_name, parameters, override_resource_dir='')
+    return Response(content=rendered_html.html_content, media_type="text/html")
 
 
 @app.post("/render", response_class=Response, responses={200: {"content": {"image/png": {}}}})
@@ -136,7 +127,7 @@ async def render_html_to_png(request: RenderRequest):
     """
     template_name = request.template_name
     parameters = request.parameters
-    logging.info(f"Rendering '{template_name}' with parameters: {parameters}")
+    logging.info(f"Rendering '{template_name}' with parameters:\n{json.dumps(parameters, indent=4)}")
     return await render_full_pipeline(template_name, parameters)
 
 
@@ -153,8 +144,8 @@ async def render_demo_template(name: str, req: Request):
         parameters.update(req.query_params)
 
     if not template_name:
-        return Response(status_code=404,
-                        content=f"Demo template '{name}' not found. Available templates: {available_demo_templates()}")
+        return _response_no_template_found(name)
+
     return await render_full_pipeline(template_name, parameters)
 
 

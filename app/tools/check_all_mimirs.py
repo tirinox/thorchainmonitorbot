@@ -10,8 +10,6 @@ async def main():
 
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
-        await lp_app.deps.mimir_const_fetcher.run_once()
-
         rules = lp_app.deps.mimir_const_holder.mimir_rules
 
         current_names = set([k.upper() for k in lp_app.deps.mimir_const_holder.all_names])

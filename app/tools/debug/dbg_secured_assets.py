@@ -21,7 +21,7 @@ async def dbg_fetch_secured_assets(app):
     print("Secured Assets Fetch:")
     print(f"total_pool_usd = {pretty_dollar(secured_asset_info.current.total_pool_usd)}")
     print(f"total_vault_usd = {pretty_dollar(secured_asset_info.current.total_vault_usd)}")
-    for asset in secured_asset_info.current.assets:
+    for asset in secured_asset_info.current.assets.values():
         sep(asset.asset)
         print(asset)
 
@@ -47,6 +47,7 @@ async def dbg_fetch_secured_volumes(app):
 async def dbg_send_picture_of_secured_assets(app):
     f = SecuredAssetAssetFetcher(app.deps)
     secured_asset_info = await f.fetch()
+    app.deps.alert_presenter.renderer.dbg_log_full_requests = True
     img, img_name = await app.deps.alert_presenter.render_secured_asset_summary(None, secured_asset_info)
     await app.deps.broadcaster.broadcast_to_all(
         BoardMessage.make_photo(img, caption="Secured assets", photo_file_name=img_name)
@@ -67,13 +68,10 @@ async def dbg_continuous_secured_assets(app):
 async def run():
     app = LpAppFramework(log_level='DEBUG')
     async with app(brief=True):
-        await app.deps.last_block_fetcher.run_once()
-        await app.deps.pool_fetcher.run_once()
-
         # await dbg_fetch_secured_assets(app)
         # await dbg_fetch_secured_volumes(app)
-        await dbg_continuous_secured_assets(app)
-        # await dbg_send_picture_of_secured_assets(app)
+        # await dbg_continuous_secured_assets(app)
+        await dbg_send_picture_of_secured_assets(app)
 
 
 if __name__ == '__main__':

@@ -37,9 +37,9 @@ from models.name import ThorName
 from models.net_stats import NetworkStats, AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash, EventProviderBondChange, \
-    EventProviderStatus, NodeListHolder, BondProvider
+    EventProviderStatus, BondProvider, NetworkNodes
 from models.pool_info import PoolInfo, PoolChanges, EventPools
-from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge, LastPriceHolder
+from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge, PriceHolder
 from models.queue import QueueInfo
 from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
@@ -368,7 +368,7 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_TOTAL = 'Total'
 
-    def text_balances(self, balances: ThorBalances, title, price_holder: LastPriceHolder):
+    def text_balances(self, balances: ThorBalances, title, price_holder: PriceHolder):
         if not balances or not len(balances.assets):
             return ''
 
@@ -422,7 +422,7 @@ class BaseLocalization(ABC):  # == English
     def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain,
                                     thor_name: Optional[ThorName], local_name, clout: Optional[ThorSwapperClout],
                                     bond_prov: List[Tuple[NodeInfo, BondProvider]],
-                                    price_holder: LastPriceHolder):
+                                    price_holder: PriceHolder):
         acc_caption = ''
         if thor_name:
             acc_caption += f' | THORName: {pre(add_thor_suffix(thor_name))}'
@@ -885,7 +885,6 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_CHAINS = '⛓️ Chains'
     BUTTON_METR_MIMIR = '🎅 Mimir consts'
     BUTTON_METR_VOTING = '🏛️ Voting'
-    BUTTON_METR_BLOCK_TIME = '⏱️ Block time'
     BUTTON_METR_TOP_POOLS = '🏊 Top Pools'
     BUTTON_METR_CEX_FLOW = '🌬 CEX Flow'
     BUTTON_METR_SUPPLY = f'🪙 Rune supply'
@@ -964,7 +963,7 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def get_network_security_ratio(stats: NetworkStats, nodes: List[NodeInfo]) -> float:
-        security_cap = NodeListHolder(nodes).calculate_security_cap_rune(full=True)
+        security_cap = NetworkNodes.calculate_security_cap_rune(nodes, full=True)
 
         if not security_cap:
             logging.warning('Security cap is zero!')
@@ -1259,7 +1258,7 @@ class BaseLocalization(ABC):  # == English
 
     def notification_churn_started(self, changes: NodeSetChanges):
         text = f'♻️ <b>Node churn started at block #{changes.block_no}</b>'
-        if changes.vault_migrating:
+        if changes.vaults_migrating:
             text += '\nVaults are migrating.'
         return text
 

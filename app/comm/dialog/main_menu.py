@@ -49,7 +49,7 @@ class MainMenuDialog(BaseDialog):
             await SettingsDialog(self.loc, self.data, self.deps, self.message).ask_language(message)
         else:
             info = await LiquidityCapNotifier.get_last_cap_from_db(self.deps.db)
-            info.price = self.deps.price_holder.usd_per_rune
+            info.price = (await self.deps.pool_cache.get()).usd_per_rune
 
             keyboard = kbd([
                 # 1st row

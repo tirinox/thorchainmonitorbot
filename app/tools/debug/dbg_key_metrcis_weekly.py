@@ -16,7 +16,6 @@ from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
 async def demo_load(app: LpAppFramework):
-    await app.deps.last_block_fetcher.run_once()
     f = KeyStatsFetcher(app.deps)
     d = await f.fetch()
     print(d)
@@ -94,7 +93,6 @@ async def demo_picture(app: LpAppFramework):
 
 
 async def debug_locked_value(app: LpAppFramework):
-    await app.deps.last_block_fetcher.run_once()
     f = KeyStatsFetcher(app.deps)
     sep()
     curr = await f.get_lock_value()
@@ -132,8 +130,6 @@ async def main():
     async with lp_app(brief=True):
         await lp_app.deps.db.get_redis()
         lp_app.deps.user_counter = UserCounterMiddleware(lp_app.deps)
-        await lp_app.deps.last_block_fetcher.run_once()
-        # await lp_app.prepare(brief=True)
 
         # await demo_analyse_and_show(lp_app)
         await demo_picture(lp_app)

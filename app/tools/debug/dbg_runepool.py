@@ -17,11 +17,6 @@ prepared = False
 async def prepare_once(app):
     global prepared
     if not prepared:
-        d = app.deps
-
-        await d.pool_fetcher.run_once()
-        await d.last_block_fetcher.run_once()
-        await d.mimir_const_fetcher.run_once()
         prepared = True
 
 
@@ -41,7 +36,7 @@ async def demo_decode_runepool_deposit(app: LpAppFramework, height):
 
     block = await scanner.fetch_one_block(height)
 
-    decoder = RunePoolEventDecoder(app.deps.db, app.deps.price_holder)
+    decoder = RunePoolEventDecoder(app.deps.db, app.deps.pool_cache)
     r = await decoder.on_data(None, block)
 
     if not r:
@@ -101,7 +96,7 @@ async def demo_runepool_continuous(app: LpAppFramework, b=0):
     d.block_scanner = BlockScanner(d, last_block=b)
     d.block_scanner.one_block_per_run = b > 0
 
-    runepool_decoder = RunePoolEventDecoder(d.db, d.price_holder)
+    runepool_decoder = RunePoolEventDecoder(d.db, d.pool_cache)
     d.block_scanner.add_subscriber(runepool_decoder)
 
     runepool_decoder.add_subscriber(d.volume_recorder)
@@ -151,10 +146,12 @@ async def demo_runepool_stats(app: LpAppFramework):
     )
     # previous = None
 
+    usd_per_rune = await app.deps.pool_cache.get_usd_per_rune()
+
     new_event = AlertRunepoolStats(
         e.runepool,
         previous,
-        usd_per_rune=app.deps.price_holder.usd_per_rune,
+        usd_per_rune=usd_per_rune,
     )
 
     await app.test_all_locs(BaseLocalization.notification_runepool_stats, [
@@ -162,7 +159,6 @@ async def demo_runepool_stats(app: LpAppFramework):
     ], new_event)
 
     # await notifier.cd.clear()
-    # await runepool_fetcher.run_once()
     # await asyncio.sleep(5.0)
 
 

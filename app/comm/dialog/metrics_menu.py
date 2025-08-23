@@ -3,24 +3,20 @@ from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
 from comm.localization.manager import BaseLocalization
-from comm.picture.block_height_picture import block_speed_chart
 from comm.picture.key_stats_picture import KeyStatsPictureGenerator
 from comm.picture.nodes_pictures import NodePictureGenerator
 from comm.picture.pools_picture import PoolPictureGenerator
 from comm.picture.queue_picture import queue_graph
 from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
-from jobs.fetch.node_info import NodeInfoFetcher
 from jobs.ruji_merge import RujiMergeTracker
-from lib.constants import THOR_BLOCKS_PER_MINUTE
 from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from lib.draw_utils import img_to_bio
 from lib.texts import kbd
 from models.net_stats import AlertNetworkStats
-from models.node_info import NodeInfo
+from models.node_info import NodeInfo, NetworkNodes
 from models.ruji import AlertRujiraMergeStats
 from notify.public.best_pool_notify import BestPoolsNotifier
-from notify.public.block_notify import BlockHeightNotifier
 from notify.public.burn_notify import BurnNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.node_churn_notify import NodeChurnNotifier
@@ -81,7 +77,7 @@ class MetricsDialog(BaseDialog):
         await MetricsStates.SECTION_NET_OP.set()
         reply_markup = kbd([
             [self.loc.BUTTON_METR_NODES, self.loc.BUTTON_METR_VOTING, self.loc.BUTTON_METR_MIMIR],
-            [self.loc.BUTTON_METR_BLOCK_TIME, self.loc.BUTTON_METR_QUEUE, self.loc.BUTTON_METR_CHAINS],
+            [self.loc.BUTTON_METR_QUEUE, self.loc.BUTTON_METR_CHAINS],
             [self.loc.BUTTON_BACK],
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
@@ -132,9 +128,6 @@ class MetricsDialog(BaseDialog):
             await self.show_mimir_info(message)
         elif message.text == self.loc.BUTTON_METR_VOTING:
             await self.show_voting_info(message)
-        elif message.text == self.loc.BUTTON_METR_BLOCK_TIME:
-            await self.ask_generic_duration(message, 'block_time', back_state)
-            return
         await self.show_menu_net_op(message)
 
     async def show_cap(self, message: Message):
@@ -155,11 +148,13 @@ class MetricsDialog(BaseDialog):
             await message.answer(f"{loc.ERROR} {loc.NOT_READY}", disable_notification=True)
             return
 
+        nodes: NetworkNodes = await self.deps.node_cache.get()
+
         await message.answer(
             loc.notification_text_network_summary(
                 AlertNetworkStats(
                     old_info, new_info,
-                    self.deps.node_holder.nodes
+                    nodes.node_info_list,
                 ),
             ),
             disable_web_page_preview=True,
@@ -169,8 +164,7 @@ class MetricsDialog(BaseDialog):
     async def show_node_list(self, message: Message):
         await self.start_typing(message)
 
-        node_fetcher = NodeInfoFetcher(self.deps)
-        result_network_info = await node_fetcher.get_node_list_and_geo_info()  # todo: switch to NodeChurnDetector (DB)
+        result_network_info = await self.deps.node_cache.get()
         node_list = result_network_info.node_info_list
 
         active_node_messages = self.loc.node_list_text(node_list, NodeInfo.ACTIVE)
@@ -247,28 +241,6 @@ class MetricsDialog(BaseDialog):
                                  disable_web_page_preview=True,
                                  disable_notification=True)
 
-    async def show_block_time(self, message: Message, period=2 * DAY):
-        await self.start_typing(message)
-
-        block_notifier: BlockHeightNotifier = self.deps.block_notifier
-        points = await block_notifier.get_block_time_chart(period, convert_to_blocks_per_minute=True)
-
-        # SLOW?
-        chart, chart_name = await block_speed_chart(points, self.loc, normal_bpm=THOR_BLOCKS_PER_MINUTE,
-                                                    time_scale_mode='time')
-        last_block = block_notifier.last_thor_block
-        last_block_ts = block_notifier.last_thor_block_update_ts
-
-        recent_bps = await block_notifier.get_recent_blocks_per_second()
-        state = await block_notifier.get_block_alert_state()
-
-        d = now_ts() - last_block_ts if last_block_ts else 0
-
-        # SLOW?
-        await message.answer_photo(img_to_bio(chart, chart_name),
-                                   caption=self.loc.text_block_time_report(last_block, d, recent_bps, state),
-                                   disable_notification=True)
-
     async def show_top_pools(self, message: Message):
         await self.start_typing(message)
 
@@ -293,7 +265,7 @@ class MetricsDialog(BaseDialog):
     async def show_cex_flow(self, message: Message, period=DAY):
         notifier: RuneMoveNotifier = self.deps.rune_move_notifier
         flow = await notifier.tracker.read_within_period(period=period)
-        flow.usd_per_rune = self.deps.price_holder.usd_per_rune
+        flow.usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
         text = self.loc.notification_text_cex_flow(flow)
         await message.answer(text, disable_notification=True)
 
@@ -467,7 +439,5 @@ class MetricsDialog(BaseDialog):
             await self.show_cex_flow(message, period)
         elif next_state == 'dex_aggr':
             await self.show_dex_aggr(message, period)
-        elif next_state == 'block_time':
-            await self.show_block_time(message, period)
         else:
             raise Exception(f'Unknown next state: "{next_state}"!')

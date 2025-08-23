@@ -1,5 +1,4 @@
 import asyncio
-import dataclasses
 import os
 from pprint import pprint
 
@@ -7,14 +6,12 @@ from comm.localization.eng_base import BaseLocalization
 from comm.localization.languages import Language
 from comm.localization.manager import LocalizationManager
 from comm.picture.supply_picture import SupplyPictureGenerator
-from jobs.fetch.last_block import LastBlockFetcher
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from lib.date_utils import today_str
 from lib.draw_utils import img_to_bio
 from lib.utils import json_cached_to_file_async, load_pickle, save_pickle
 from models.price import RuneMarketInfo
 from notify.channel import BoardMessage
-from notify.public.block_notify import LastBlockStore
 from tools.debug.dbg_discord import debug_prepare_discord_bot
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
@@ -65,17 +62,8 @@ async def debug_get_rune_market_data(app):
     # ns_raw = await get_network_stats(app)
     # ns = NetworkStats(**ns_raw)
 
-    d.last_block_fetcher = LastBlockFetcher(d)
-    d.last_block_store = LastBlockStore(d)
-    d.last_block_fetcher.add_subscriber(d.last_block_store)
-    await d.last_block_fetcher.run_once()
-
     fetcher_stats = NetworkStatisticsFetcher(d)
     d.net_stats = await fetcher_stats.fetch()
-
-    await d.node_info_fetcher.run_once()
-
-    await d.mimir_const_fetcher.fetch()  # get constants beforehand
 
     rune_market_info: RuneMarketInfo = await d.rune_market_fetcher.fetch()
     return d.net_stats, rune_market_info

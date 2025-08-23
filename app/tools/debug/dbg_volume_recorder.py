@@ -10,11 +10,7 @@ from jobs.scanner.trade_acc import TradeAccEventDecoder
 from jobs.volume_filler import VolumeFillerUpdater
 from lib.date_utils import now_ts, DAY
 from lib.depcont import DepContainer
-from lib.draw_utils import save_image_and_show
 from models.memo import ActionType
-from notify.public.price_notify import PriceNotifier
-from tools.debug.dbg_discord import debug_prepare_discord_bot
-from tools.debug.dbg_supply_graph import debug_get_rune_market_data
 from tools.lib.lp_common import LpAppFramework, Receiver
 
 
@@ -22,9 +18,6 @@ async def continuous_volume_recording(lp_app):
     d: DepContainer = lp_app.deps
 
     d.pool_fetcher = PoolFetcher(d)
-    await d.pool_fetcher.run_once()
-    await d.mimir_const_fetcher.run_once()
-    await d.last_block_fetcher.run_once()
 
     main_tx_types = [
         # ThorTxType.TYPE_SWAP,
@@ -53,7 +46,7 @@ async def continuous_volume_recording(lp_app):
     volume_filler.add_subscriber(d.tx_count_recorder)
 
     # Count Trade deposits and withdrawals
-    traed = TradeAccEventDecoder(d.price_holder)
+    traed = TradeAccEventDecoder(d.pool_cache)
     d.block_scanner.add_subscriber(traed)
     traed.add_subscriber(d.volume_recorder)
     traed.add_subscriber(d.tx_count_recorder)
@@ -68,25 +61,9 @@ async def continuous_volume_recording(lp_app):
         fetcher_tx.run(),
         d.block_scanner.run(),
         d.pool_fetcher.run(),
-        d.last_block_fetcher.run(),
     )
 
 
-async def debug_post_price_graph_to_discord(app: LpAppFramework):
-    # graph, graph_name = await make_price_graph(app)
-    await debug_prepare_discord_bot(app)
-
-    sender = PriceNotifier(app.deps)
-    hist_prices = await sender.historical_get_triplet()
-
-    net_stats, market_info = await debug_get_rune_market_data(app)
-
-    await sender.do_notify_price_table(market_info, hist_prices, ath=False)
-
-
-async def demo_show_price_graph(app: LpAppFramework):
-    graph, graph_name = await make_price_graph(app)
-    save_image_and_show(graph, '../temp/price_gr.png')
 
 
 async def tool_get_total_volume_and_tx_count(app: LpAppFramework):

@@ -209,3 +209,9 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
 
     def run_in_background(self):
         return asyncio.create_task(self.run())
+
+
+class PeriodicTask(BaseFetcher):
+    async def fetch(self):
+        # Does nothing, just a placeholder for periodic tasks
+        return True

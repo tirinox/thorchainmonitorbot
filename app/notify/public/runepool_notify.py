@@ -65,10 +65,11 @@ class RunepoolStatsNotifier(INotified, WithDelegates, WithLogger):
     async def on_data(self, sender, e: AlertPOLState):
         if await self.cd.can_do():
             previous = await self.load_last_event()
+            usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
             new_event = AlertRunepoolStats(
                 e.runepool,
                 previous,
-                usd_per_rune=self.deps.price_holder.usd_per_rune,
+                usd_per_rune=usd_per_rune,
             )
             await self.pass_data_to_listeners(new_event)
             await self._save_last_event(e.runepool)

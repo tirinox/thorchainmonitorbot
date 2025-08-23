@@ -4,6 +4,7 @@ from comm.localization.languages import Language
 from api.midgard.name_service import NameService
 from lib.texts import sep
 from models.memo import THORMemo
+from models.node_info import NetworkNodes
 from models.transfer import NativeTokenTransfer
 from tools.lib.lp_common import LpAppFramework
 
@@ -63,8 +64,7 @@ async def t_fix_name_map(ns: NameService):
 
 
 async def demo_node_names(app: LpAppFramework):
-    await app.deps.node_info_fetcher.run_once()
-    nodes = app.deps.node_holder.nodes
+    nodes: NetworkNodes = await app.deps.node_cache.get()
     print(f"Total nodes: {len(nodes)}")
 
     addresses = [

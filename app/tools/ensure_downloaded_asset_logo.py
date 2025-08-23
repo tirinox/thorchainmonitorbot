@@ -5,12 +5,13 @@ import tqdm
 
 from comm.picture.crypto_logo import CryptoLogoDownloader
 from comm.picture.resources import Resources
+from models.price import PriceHolder
 from tools.lib.lp_common import LpAppFramework
 
 
 async def do_download_job(app):
-    await app.deps.pool_fetcher.run_once()
-    pools = app.deps.price_holder.pool_names
+    ph: PriceHolder = await app.deps.pool_cache.get()
+    pools = ph.pool_names
     print(pools)
 
     pools.add('THOR.RUNE')
@@ -18,8 +19,6 @@ async def do_download_job(app):
     logo_downloader = CryptoLogoDownloader(Resources().LOGO_BASE)
     for pool in tqdm.tqdm(pools):
         await logo_downloader.get_or_download_logo_cached(pool)
-
-    # asset_image = await r.logo_downloader.get_or_download_logo_cached(asset)
 
 
 async def main():

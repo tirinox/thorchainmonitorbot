@@ -1,6 +1,5 @@
 from typing import List
 
-from jobs.fetch.pool_price import PoolFetcher
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -27,15 +26,7 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
         if not txs:
             return
 
-        ppf: PoolFetcher = self.deps.pool_fetcher
-
-        if self.update_pools_each_time:
-            # we need here most relevant pool state to estimate % of pool after TX
-            pool_info_map = await ppf.load_pools()
-        else:
-            pool_info_map = self.deps.price_holder.pool_info_map
-            if not pool_info_map:
-                pool_info_map = await ppf.load_pools()
+        ph = await self.deps.pool_cache.get()
 
         for tx in txs:
-            tx.calc_full_rune_amount(pool_info_map)
+            tx.calc_full_rune_amount(ph.pool_info_map)

@@ -51,9 +51,6 @@ async def twitter_post_price(app: LpAppFramework):
 
 
 async def twitter_post_burned_rune(app: LpAppFramework):
-    await app.deps.last_block_fetcher.run_once()
-    await app.deps.mimir_const_fetcher.run_once()
-    await app.deps.pool_fetcher.run_once()
     notifier = BurnNotifier(app.deps)
     event = await notifier.get_event()
     photo, name = app.deps.alert_presenter.render_rune_burn_graph(event)

@@ -64,7 +64,8 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         return txs
 
     async def register_new_swaps(self, block):
-        swaps = self._swap_detector.detect_swaps(block)
+        ph = await self.deps.pool_cache.get()
+        swaps = self._swap_detector.detect_swaps(block, ph)
 
         for swap in swaps:
             props = await self._db.read_tx_status(swap.tx_id)
