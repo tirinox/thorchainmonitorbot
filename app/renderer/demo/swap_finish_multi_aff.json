@@ -22,7 +22,8 @@
     "destination_chain_logo": "BSC.BNB",
     "destination_volume_usd": 4660923,
 
-    "affiliate_names": ["Vultisig", "Swap Kit", "Rango"],
+    "affiliate_names": ["Vultisig", "OKX", "-"],
+    "affiliate_logos": ["vult.svg", "https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/okx/logo.svg", ""],
     "affiliate_fee": 0.5,
 
     "liquidity_fee_percent": 0.222,

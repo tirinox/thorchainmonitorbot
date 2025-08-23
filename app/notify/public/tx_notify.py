@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from api.aionode.types import ThorSwapperClout, thor_to_float
-from jobs.scanner.arb_detector import ArbBotDetector
+from jobs.scanner.arb_detector import ArbBotDetector, ArbStatus
 from jobs.scanner.event_db import EventDatabase
 from lib.config import SubConfig
 from lib.date_utils import parse_timespan_to_seconds, MINUTE
@@ -249,20 +249,19 @@ class SwapTxNotifier(GenericTxNotifier):
         finally:
             return event
 
-    async def load_extra_tx_details(self, event: EventLargeTransaction):
-        if not event or not event.transaction:
-            self.logger.error('No event or transaction!')
-            return
-
-        tx_id = event.transaction.tx_hash
-
-        if self.hide_arb_bots:
-            try:
-                await self.arb_detector.try_to_detect_arb_bot(event.transaction.sender_address)
-                if recipient := event.transaction.recipient_address:
-                    await self.arb_detector.try_to_detect_arb_bot(recipient)
-            except Exception as e:
-                self.logger.error(f'Error loading Arbitrage bot details for {tx_id}: {e}')
+    # async def load_extra_tx_details(self, event: EventLargeTransaction):
+    #     if not event or not event.transaction:
+    #         self.logger.error('No event or transaction!')
+    #         return
+        # tx_id = event.transaction.tx_hash
+        #
+        # if self.hide_arb_bots:
+        #     try:
+        #         await self.arb_detector.try_to_detect_arb_bot(event.transaction.sender_address)
+        #         if recipient := event.transaction.recipient_address:
+        #             await self.arb_detector.try_to_detect_arb_bot(recipient)
+        #     except Exception as e:
+        #         self.logger.error(f'Error loading Arbitrage bot details for {tx_id}: {e}')
 
         # try:
         #     event.details = await self.deps.thor_connector.query_tx_details(tx_id)
@@ -296,7 +295,7 @@ class SwapTxNotifier(GenericTxNotifier):
 
     async def _event_transform(self, event: EventLargeTransaction) -> EventLargeTransaction:
         # for eligible Txs we load extra information
-        await self.load_extra_tx_details(event)
+        # await self.load_extra_tx_details(event)
         await self._load_tx_volumes(event)
         await self.adjust_liquidity_fee_through_midgard(event)
         return event
@@ -308,7 +307,7 @@ class SwapTxNotifier(GenericTxNotifier):
             return False
 
         if self.hide_arb_bots:
-            if await self.arb_detector.is_marked_as_arb(tx.sender_address):
+            if await self.arb_detector.try_to_detect_arb_bot(tx.sender_address) == ArbStatus.ARB:
                 self.logger.warning(f'Ignoring Tx from Arb bot: {tx.tx_hash} by {tx.sender_address}')
                 return False
 

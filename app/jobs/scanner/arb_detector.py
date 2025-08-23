@@ -25,10 +25,13 @@ class ArbBotDetector(WithLogger):
     def _key(address: str) -> str:
         return f'ArbBot:{address}'
 
-    async def is_marked_as_arb(self, address: str) -> str:
+    async def read_arb_status(self, address: str) -> str:
         r = await self.deps.db.get_redis()
         status = await r.get(self._key(address))
         return status or ArbStatus.UNKNOWN
+
+    async def is_marked_as_arb(self, address: str) -> bool:
+        return (await self.read_arb_status(address)) == ArbStatus.ARB
 
     async def mark_as_arb(self, address: str, status: str = ArbStatus.ARB):
         r = await self.deps.db.get_redis()
@@ -42,7 +45,7 @@ class ArbBotDetector(WithLogger):
         @return:
         """
         try:
-            status = await self.is_marked_as_arb(address)
+            status = await self.read_arb_status(address)
             if status == ArbStatus.UNKNOWN:
                 is_arb = await self._is_detect_arb_bot(address)
                 await self.register_new_arb_bot(address, is_arb)
