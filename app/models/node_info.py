@@ -1,6 +1,5 @@
 import json
 import random
-import re
 import secrets
 import typing
 from collections import Counter, defaultdict
@@ -15,6 +14,7 @@ from lib.date_utils import now_ts
 from lib.money import calculate_apy
 from lib.texts import find_country_emoji
 from lib.thor_logic import get_effective_security_bond
+from models.geo_ip import LocationInfo
 from .base import BaseModelMixin
 
 ZERO_VERSION = VersionInfo(0)
@@ -60,7 +60,7 @@ class NodeInfo(BaseModelMixin):
     observe_chains: List = field(default_factory=list)
     jail: Dict = field(default_factory=dict)
 
-    ip_info: Dict[str, Any] = field(default_factory=dict)
+    ip_info: Optional[LocationInfo] = None
 
     @property
     def chain_dict(self):
@@ -165,7 +165,7 @@ class NodeInfo(BaseModelMixin):
     @property
     def flag_emoji(self) -> str:
         if self.ip_info:
-            return find_country_emoji(self.ip_info.get('country', ''))
+            return find_country_emoji(self.ip_info.country_name or '')
         return ''
 
 

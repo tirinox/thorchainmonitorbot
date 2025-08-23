@@ -13,11 +13,11 @@ from lib.date_utils import DAY, now_ts, today_str
 from lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
     make_donut_chart, TC_NIGHT_BLACK, TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index, \
     font_estimate_size
-from lib.geo_ip import LocationInfo
 from lib.money import clamp, short_rune, format_percent
 from lib.plot_graph import plot_legend, PlotGraphLines
 from lib.texts import bracketify
 from lib.utils import async_wrap, Singleton, most_common_and_other, linear_transform
+from models.geo_ip import LocationInfo
 from models.node_info import NetworkNodes, NodeStatsItem
 
 

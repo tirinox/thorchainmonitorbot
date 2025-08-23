@@ -164,7 +164,7 @@ class MetricsDialog(BaseDialog):
     async def show_node_list(self, message: Message):
         await self.start_typing(message)
 
-        result_network_info = await self.deps.node_cache.load_geo_info_for_nodes()
+        result_network_info = await self.deps.node_cache.get()
         node_list = result_network_info.node_info_list
 
         active_node_messages = self.loc.node_list_text(node_list, NodeInfo.ACTIVE)
