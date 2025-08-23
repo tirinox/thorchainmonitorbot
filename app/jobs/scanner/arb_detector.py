@@ -1,3 +1,4 @@
+from lib.constants import Chains
 from lib.date_utils import DAY
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -45,6 +46,9 @@ class ArbBotDetector(WithLogger):
         @return:
         """
         try:
+            if Chains.detect_chain(address) != Chains.THOR:
+                return ArbStatus.NOT_ARB
+
             status = await self.read_arb_status(address)
             if status == ArbStatus.UNKNOWN:
                 is_arb = await self._query_api_to_detect_arb_bot(address)
@@ -65,6 +69,9 @@ class ArbBotDetector(WithLogger):
             return False
 
         sequence = safe_get(account, 'account', 'sequence')
+        if not sequence:
+            self.logger.error(f'Empty sequence for {address}')
+            return False
         sequence = int(sequence)
         if sequence >= self.min_sequence:
             return True
