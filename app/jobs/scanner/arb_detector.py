@@ -47,14 +47,14 @@ class ArbBotDetector(WithLogger):
         try:
             status = await self.read_arb_status(address)
             if status == ArbStatus.UNKNOWN:
-                is_arb = await self._is_detect_arb_bot(address)
+                is_arb = await self._query_api_to_detect_arb_bot(address)
                 await self.register_new_arb_bot(address, is_arb)
             return status
         except Exception as e:
             self.logger.exception(f'Error: {e}')
             return ArbStatus.UNKNOWN
 
-    async def _is_detect_arb_bot(self, address) -> bool:
+    async def _query_api_to_detect_arb_bot(self, address) -> bool:
         if not address:
             self.logger.error('Empty address')
             return False
@@ -72,7 +72,7 @@ class ArbBotDetector(WithLogger):
         return False
 
     async def register_new_arb_bot(self, address: str, is_arb: bool):
-        if not is_arb:
+        if is_arb:
             name = self.NAME_PREFIX + address[-4:]
             await self.deps.name_service.cache.save_custom_name(name, address, expiring=False)
             await self.deps.name_service.cache.save_name_list(address, [name], expiring=False)
