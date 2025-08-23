@@ -215,8 +215,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
     async def _fetch_historical_pool_states(self, txs: List[ThorAction]) -> HeightToAllPools:
         heights = list(set(tx.height for tx in txs))
-        ppf = self.deps.pool_fetcher
-        tasks = [ppf.load_pools(h, caching=True) for h in heights]
+        tasks = [self.deps.pool_cache.load_pools(h, caching=True) for h in heights]
         pool_states = await asyncio.gather(*tasks)
         return dict(zip(heights, pool_states))
 
@@ -306,6 +305,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return LPPosition.create(pool_info, state.units, usd_per_rune)
 
     def _calculate_weighted_rune_price_in_usd(self, pool_map: PoolInfoMap) -> Optional[float]:
+        ph = PriceHolder(self.deps.pool_cache.stable_coins)
         price = ph.calculate_rune_price_here(pool_map)
         if not price:
             raise ValueError('No USD price can be extracted. Perhaps USD pools are missing at that point')
@@ -461,7 +461,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         self.last_block = await self.get_last_thorchain_block()
         results = {}
         now = datetime.datetime.now()
-        ppf = self.deps.pool_fetcher
+
         for pool, pool_txs in tx_by_pool_map.items():
             day_to_units = self._pool_units_by_day(pool_txs, days=days)  # List of (day_no, timestamp, units)
 
@@ -469,7 +469,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             for day, ts, units in day_to_units:
                 that_day = now - datetime.timedelta(days=day)
                 height = await self.block_mapper.get_block_height_by_date(that_day.date(), self.last_block)
-                pools_at_height = await ppf.load_pools(height, caching=True)
+                pools_at_height = await self.deps.pool_cache.load_pools(height, caching=True)
                 pool_info = pools_at_height.get(pool, None)
 
                 if pool_info:

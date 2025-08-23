@@ -33,7 +33,7 @@ class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
                 await self.pass_data_to_listeners(pool_changes)
                 await self.spam_cd.do()
 
-        self.old_pool_dict = data
+        self.old_pool_dict = data.pool_info_map
 
     @staticmethod
     def split_pools_by_status(pim: PoolInfoMap):

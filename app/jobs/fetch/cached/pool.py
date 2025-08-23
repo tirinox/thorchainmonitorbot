@@ -87,6 +87,10 @@ class PoolCache(CachedDataSource[PriceHolder]):
             if not thor_pools:
                 thor_pools = await self.deps.thor_connector_archive.query_pools(height)
 
+            # still empty?
+            if not thor_pools:
+                raise RuntimeError(f'No thor pools found for height {height}!')
+
             return parse_thor_pools(thor_pools)
         except (TypeError, IndexError, JSONDecodeError) as e:
             self.logger.error(f'thor_connector.query_pools failed! Err: {e} at {height = }')
