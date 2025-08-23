@@ -77,6 +77,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             reorder_assets=True,
         )
 
+        # todo: migrate fo mdg/v2/doc#operation/GetAffiliateHistory
         # Affiliates
         affiliates = await FlipsideConnector(self.deps.session, self.deps.emergency).get_affiliates_from_flipside()
         top_affiliates = self.calc_top_affiliates(affiliates)
