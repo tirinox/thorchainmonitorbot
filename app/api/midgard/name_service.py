@@ -91,7 +91,9 @@ class NameService(WithLogger):
             addresses = list(set(addresses))  # make it unique and strictly ordered
 
             thorname_by_address = await self.lookup_multiple_names_by_addresses(addresses)
-            thorname_by_address = filter_none_values(thorname_by_address)
+            thorname_by_address = {
+                k: v for k, v in thorname_by_address.items() if v != self._cache.NO_VALUE
+            }
 
             thorname_by_name = {}
             for address, thorname in thorname_by_address.items():
@@ -105,7 +107,7 @@ class NameService(WithLogger):
 
             with suppress(Exception):
                 nodes: NetworkNodes = await self.node_cache.get()
-                name_map = self.enrich_name_map_with_nodes(name_map, addresses, nodes)
+                name_map = self.enrich_name_map_with_nodes(name_map, addresses, nodes.node_info_list)
 
             return name_map
         except Exception as e:
