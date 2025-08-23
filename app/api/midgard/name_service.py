@@ -12,7 +12,6 @@ from lib.constants import Chains
 from lib.date_utils import parse_timespan_to_seconds
 from lib.db import DB
 from lib.logs import WithLogger
-from lib.utils import filter_none_values
 from models.memo import THORMemo
 from models.name import ThorName, make_virtual_thor_name, ThorNameAlias
 from models.node_info import NetworkNodes
@@ -133,13 +132,18 @@ class NameService(WithLogger):
         if not names:
             return None
 
+        if names == self._cache.NO_VALUE:
+            return None
+
         # todo: find a ThorName locally or pick any of this list
         name = names[0]
         if len(names) > 1:
             self.logger.warning(f'Address {address} resolves to more than 1 ThorNames: "{names}". '
                                 f'I will take the first one "{name}"')
 
-        return await self.lookup_thorname_by_name(name)
+        thorname = await self.lookup_thorname_by_name(name)
+        if thorname == self._cache.NO_VALUE:
+            return None
 
     async def lookup_multiple_names_by_addresses(self, addresses: Iterable) -> Dict[str, ThorName]:
         if not addresses:

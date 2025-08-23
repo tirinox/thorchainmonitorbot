@@ -72,6 +72,6 @@ class NodeCache(CachedDataSource[NetworkNodes]):
             self.logger.warning(f'Failed to get IP info ({len(ip_addresses)} addresses were requested)')
 
         for node in node_list:
-            node.ip_info = ip_info_dict.get(node.ip_address, {})
+            node.ip_info = ip_info_dict.get(node.ip_address)
 
         return ip_info_dict
