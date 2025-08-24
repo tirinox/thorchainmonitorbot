@@ -91,16 +91,19 @@ class NameService(WithLogger):
 
             thorname_by_address = await self.lookup_multiple_names_by_addresses(addresses)
             thorname_by_address = {
-                k: v for k, v in thorname_by_address.items() if v != self._cache.NO_VALUE
+                address: v for address, v in thorname_by_address.items() if v and v != self._cache.NO_VALUE
             }
 
             thorname_by_name = {}
             for address, thorname in thorname_by_address.items():
-                if thorname and thorname != self._cache.NO_VALUE:
-                    for alias in thorname.aliases:
-                        if alias.address == address:
-                            thorname_by_name[thorname.name] = thorname
-                            break
+                if not isinstance(thorname, ThorName):
+                    self.logger.error(f'Address "{address}" is not a ThorName instance')
+                    continue
+
+                for alias in thorname.aliases:
+                    if alias.address == address:
+                        thorname_by_name[thorname.name] = thorname
+                        break
 
             name_map = NameMap(thorname_by_name, thorname_by_address)
 
@@ -142,8 +145,7 @@ class NameService(WithLogger):
                                 f'I will take the first one "{name}"')
 
         thorname = await self.lookup_thorname_by_name(name)
-        if thorname == self._cache.NO_VALUE:
-            return None
+        return None if thorname == self._cache.NO_VALUE else thorname
 
     async def lookup_multiple_names_by_addresses(self, addresses: Iterable) -> Dict[str, ThorName]:
         if not addresses:
