@@ -144,6 +144,14 @@
             font-weight: lighter;
         }
 
+        .large {
+            font-size: 40pt;
+        }
+        .xlarge {
+            padding-top: 8px;
+            font-size: 50pt;
+        }
+
     </style>
 
     {% with title="SECURED ASSETS" %}
@@ -238,17 +246,23 @@
 
     <div class="indicator-container">
         <div class="indicator-box cbox">
-            <div class="indicator-value"> {{ current.total_assets }}</div>
-            <div class="indicator-subvalue">
-                {% with prev=previous.total_assets, curr=current.total_assets, abs_value=True %}
-                    {% include "components/price_delta.jinja2" %}
-                {% endwith %}
-            </div>
+
+            {% if previous.total_assets != current.total_assets %}
+                <div class="indicator-value large"> {{ current.total_assets }}</div>
+                <div class="indicator-subvalue">
+                    {% with prev=previous.total_assets, curr=current.total_assets, abs_value=True %}
+                        {% include "components/price_delta.jinja2" %}
+                    {% endwith %}
+                </div>
+
+            {% else %}
+                <div class="indicator-value xlarge"> {{ current.total_assets }}</div>
+            {% endif %}
             <div class="indicator-label">Total secured assets</div>
         </div>
 
         <div class="indicator-box cbox">
-            <div class="indicator-value"> {{ short_dollar(current.total_value_usd) }}</div>
+            <div class="indicator-value large"> {{ short_dollar(current.total_value_usd) }}</div>
             <div class="indicator-subvalue">
                 {% with prev=previous.total_value_usd, curr=current.total_value_usd %}
                     {% include "components/price_delta.jinja2" %}
