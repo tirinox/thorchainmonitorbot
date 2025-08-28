@@ -59,9 +59,9 @@ class LastBlockEventGenerator(WithDelegates, INotified):
         self.last_block_cached = last_block_cached
 
     async def on_data(self, sender, data):
-        last_block = await self.last_block_cached.get_thor_block()
-        if last_block is None:
-            return None
         block_dict = await self.last_block_cached.get()
+        if not block_dict:
+            return None
+        last_block = next(iter(block_dict.values())).thorchain
         ev = EventLastBlock(thor_block=last_block, block_dict=block_dict)
         await self.pass_data_to_listeners(sender, ev)
