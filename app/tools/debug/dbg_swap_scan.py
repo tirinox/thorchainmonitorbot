@@ -41,6 +41,12 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, i
         assert thor > 0
         start = thor + start
 
+    if tx_id and start is None:
+        tx = await app.deps.thor_connector.query_tx_details(tx_id)
+        height = tx['consensus_height']
+        start = height - 2
+        print(f'TX {tx_id} is at height {height}, will start from {start}')
+
     if start != 0:
         print('Start from block:', start)
 
@@ -121,8 +127,8 @@ async def run():
         # await dbg_one_finished_swap(app, "59E9DEA85C268338266D76E872DF9D07DB362FB2C06AB34D3AA7F65FF4E79757")
 
         # issue: when finalized, the rune outbound is sent, and only after decent delay, there goes L1 outbound
-        await debug_full_pipeline(app, ignore_traders=True, start=22523132 - 2,
-                                  tx_id="B86319DB7E0A33D1F51C2AE714EC22BF83F46436A4F59C8ADA5D698D2F44E9CC")
+        await debug_full_pipeline(app, ignore_traders=True,
+                                  tx_id="97C2DAF7AD2A43BF4CC822A873C980FAF939719361DBD24641368EF32D9D5C27")
         #
         # await debug_full_pipeline(
         #     app,
