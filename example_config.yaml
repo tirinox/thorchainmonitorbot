@@ -372,7 +372,7 @@ price:
     record_tolerance: 1h
 
 
-token_transfer: # (!) renamed from rune_transfer
+token_transfer:
   enabled: true
   fetch_period: 30
 
@@ -383,6 +383,7 @@ token_transfer: # (!) renamed from rune_transfer
   flow_summary:
     enabled: true
     cooldown: 1d
+    min_rune_sum: 1000  # (!) new
 
   cex_list:
     - thor1t60f02r8jvzjrhtnjgfj4ne6rs5wjnejwmj7fh

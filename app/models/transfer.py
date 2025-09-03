@@ -36,6 +36,23 @@ class NativeTokenTransfer:
     def rune_amount(self, usd_per_rune):
         return self.usd_amount / usd_per_rune
 
+    NON_SEND_COMMENTS = (
+        'deposit',
+        'outbound',
+        'solvency',
+        'observedtxout',
+        'observedtxin',
+    )
+
+    def is_comment_non_send(self):
+        if self.comment:
+            comment = self.comment.lower()
+            for ignore_comment in self.NON_SEND_COMMENTS:
+                # fixme issue: bond is deposit, it is ignored
+                if ignore_comment in comment:
+                    return True
+        return False
+
 
 @dataclass
 class RuneCEXFlow:
@@ -45,6 +62,10 @@ class RuneCEXFlow:
     overflow: bool = False
     usd_per_rune: float = 0.0
     period_sec: float = DAY
+
+    @property
+    def total_rune(self):
+        return self.rune_cex_inflow + self.rune_cex_outflow
 
     @property
     def rune_cex_netflow(self):
