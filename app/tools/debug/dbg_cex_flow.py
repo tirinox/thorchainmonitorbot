@@ -26,7 +26,7 @@ async def main():
 
         if d.cfg.get('token_transfer.flow_summary.enabled', True):
             cex_flow_notifier = CEXFlowNotifier(d)
-            cex_flow_notifier.summary_cd.cooldown = 10
+            # cex_flow_notifier.summary_cd.cooldown = 10
             cex_flow_notifier.add_subscriber(d.alert_presenter)
             transfer_decoder.add_subscriber(cex_flow_notifier)
 

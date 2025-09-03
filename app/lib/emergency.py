@@ -61,8 +61,8 @@ class EmergencyReport(WithLogger):
         self._q.put_nowait(ReportedEvent(module, message, datetime.now(), kwargs))
 
     async def _process_item(self, e: ReportedEvent):
-        text = f"❗<b>[{e.date}]</b> Emergency situation at module '<b>{e.module}</b>'\n" \
-               f"<code>{e.message}</code>\n"
+        text = f"❗<b>[{e.date}]</b> Emergency situation at module '<b>{e.module}</b>'\n\n" \
+               f"<code>{e.message}</code>"
 
         if e.kwargs:
             args = []
