@@ -61,11 +61,14 @@ class EmergencyReport(WithLogger):
         self._q.put_nowait(ReportedEvent(module, message, datetime.now(), kwargs))
 
     async def _process_item(self, e: ReportedEvent):
-        text = f"❗<pre>[{e.date}]</pre> at module '<b>{e.module}</b>'\n" \
-               f"<code>{e.message}</code>"
+        text = f"❗<b>[{e.date}]</b> Emergency situation at module '<b>{e.module}</b>'\n" \
+               f"<code>{e.message}</code>\n"
 
         if e.kwargs:
+            args = []
             for i, key in enumerate(sorted(e.kwargs.keys()), start=1):
-                text += f'\n<pre>{i: 2}. {key} = {e.kwargs[key]!r} </pre>'
+                args.append( f'{i: 2}. {key} = {e.kwargs[key]!r}')
+            args_text = '\n'.join(args)
+            text = f'{text}\n\n<b>Details:</b>\n<pre>{args_text}</pre>'
 
         await self._bot.send_message(self._admin_id, text=text, parse_mode=ParseMode.HTML)
