@@ -4,25 +4,16 @@ from typing import List
 from jobs.scanner.arb_detector import ArbBotDetector
 from lib.constants import SYNTH_MODULE
 from lib.cooldown import Cooldown
-from lib.date_utils import parse_timespan_to_seconds, DAY
+from lib.date_utils import parse_timespan_to_seconds
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.asset import Asset
 from models.price import PriceHolder
-from models.time_series import TimeSeries
-from models.transfer import NativeTokenTransfer, RuneCEXFlow
+from models.transfer import NativeTokenTransfer
 
 
 class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
-    IGNORE_COMMENTS = (
-        'deposit',
-        'outbound',
-        'solvency',
-        'observedtxout',
-        'observedtxin',
-    )
-
     def __init__(self, deps: DepContainer):
         super().__init__()
 
@@ -31,23 +22,20 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
 
         move_cd_sec = parse_timespan_to_seconds(cfg.as_str('cooldown', 1))
         self.move_cd = Cooldown(self.deps.db, 'RuneMove', move_cd_sec, max_times=5)
-
-        self.flow_enabled = cfg.get_pure('flow_summary.enabled', True)
-        summary_cd_sec = parse_timespan_to_seconds(cfg.as_str('flow_summary.cooldown', 1))
-        self.summary_cd = Cooldown(self.deps.db, 'RuneMove.Summary', summary_cd_sec)
-
         self.min_usd_native = cfg.as_float('min_usd.native', 1000)
 
         self.cex_list = cfg.as_list('cex_list')
         self.ignore_cex2cex = bool(cfg.get('ignore_cex2cex', True))
-        self.tracker = CEXFlowTracker(deps)
         self.arb_detector = ArbBotDetector(deps)
         self.hide_arb_bots = cfg.as_bool('hide_arbitrage_bots', True)
 
     def is_cex2cex(self, transfer: NativeTokenTransfer):
         return self.is_cex(transfer.from_addr) and self.is_cex(transfer.to_addr)
 
-    async def handle_big_transfer(self, transfer: NativeTokenTransfer, usd_per_rune):
+    def is_cex(self, addr):
+        return addr in self.cex_list
+
+    async def handle_transfer(self, transfer: NativeTokenTransfer, usd_per_rune):
         # compare against min_usd_amount threshold
         min_usd_amount = self.min_usd_native
         if transfer.amount * usd_per_rune >= min_usd_amount:
@@ -61,13 +49,9 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
                 await self.pass_data_to_listeners(transfer)
 
     async def _is_to_be_ignored(self, transfer: NativeTokenTransfer):
-        if transfer.comment:
-            comment = transfer.comment.lower()
-            for ignore_comment in self.IGNORE_COMMENTS:
-                # fixme issue: bond is deposit, it is ignored
-                if ignore_comment in comment:
-                    self.logger.debug(f'Ignore comment: {comment} in {transfer}')
-                    return True
+        if transfer.is_comment_non_send():
+            self.logger.debug(f'Ignore comment: {transfer.comment} in {transfer}')
+            return True
 
         if self.hide_arb_bots:
             if await self.arb_detector.is_marked_as_arb(transfer.from_addr):
@@ -107,71 +91,14 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
                 transfer.usd_per_asset = ph.usd_per_asset(pool_name)
         return transfers
 
-    async def on_data(self, sender, transfers: List[NativeTokenTransfer]):
+    async def on_data(self, sender, all_transfers: List[NativeTokenTransfer]):
+        transfers = list(await self._filter_transfers(all_transfers))
+
         ph = await self.deps.pool_cache.get()
-        transfers = list(await self._filter_transfers(transfers))
         transfers = self._fill_asset_prices(transfers, ph)
 
         for transfer in transfers:
             try:
-                await self.handle_big_transfer(transfer, ph.usd_per_rune)
+                await self.handle_transfer(transfer, ph.usd_per_rune)
             except Exception as e:
                 self.logger.exception(f"Error handling transfer: {e}", exc_info=e)
-
-            await self._store_transfer(transfer)
-
-        if self.flow_enabled:
-            if transfers:
-                await self._notify_cex_flow(ph.usd_per_rune)
-
-    async def _notify_cex_flow(self, usd_per_rune):
-        if await self.summary_cd.can_do():
-            flow = await self.tracker.read_within_period(period=DAY)
-            flow.usd_per_rune = usd_per_rune
-            await self.summary_cd.do()
-            await self.pass_data_to_listeners(flow)
-
-    def is_cex(self, addr):
-        return addr in self.cex_list
-
-    async def _store_transfer(self, transfer: NativeTokenTransfer):
-        if not transfer.is_rune:
-            return
-
-        inflow, outflow = 0.0, 0.0
-        if self.is_cex(transfer.from_addr):
-            outflow = transfer.amount
-        if self.is_cex(transfer.to_addr):
-            inflow = transfer.amount
-        await self.tracker.add(inflow, outflow)
-
-
-class CEXFlowTracker:
-    MAX_POINTS = 100000
-
-    def __init__(self, deps: DepContainer):
-        self.deps = deps
-        self.series = TimeSeries('Rune.CEXFlow', deps.db, self.MAX_POINTS)
-
-    async def add(self, inflow_amount: float, outflow_amount: float):
-        if inflow_amount > 0 or outflow_amount > 0:
-            await self.series.add_as_json(j={
-                'in': inflow_amount,
-                'out': outflow_amount
-            })
-
-    async def read_within_period(self, period=DAY) -> RuneCEXFlow:
-        points = await self.series.get_last_values_json(period, max_points=self.MAX_POINTS)
-        inflow, outflow = 0.0, 0.0
-        for p in points:
-            inflow += float(p['in'])
-            outflow += float(p['out'])
-        overflow = len(points) >= self.MAX_POINTS
-        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
-        return RuneCEXFlow(
-            inflow, outflow,
-            len(points),
-            overflow,
-            usd_per_rune=usd_per_rune,
-            period_sec=period
-        )

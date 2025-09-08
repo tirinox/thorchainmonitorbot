@@ -100,8 +100,10 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             hash_key = hash_of_string_repr(event, block_no)
 
         short_hash_key = hash_key[:4]
-        block_id = int(block_no) % 10_000
-        return f"ev_{event.original.type}_{block_id}_{short_hash_key}"
+        # block_id = int(block_no) % 10_000
+        # return f"ev_{event.original.type}_{block_id}_{short_hash_key}"
+        # bugfix: with high outbound value!
+        return f"ev_{event.original.type}_{short_hash_key}"
 
     async def register_swap_events(self, block: BlockResult, interesting_events: List[TypeEventSwapAndOut]):
         for event in interesting_events:

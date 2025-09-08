@@ -1,7 +1,7 @@
 import asyncio
 
-from comm.localization.languages import Language
 from api.midgard.name_service import NameService
+from comm.localization.languages import Language
 from lib.texts import sep
 from models.memo import THORMemo
 from models.node_info import NetworkNodes
@@ -27,23 +27,17 @@ async def t_names1(lp_app: LpAppFramework):
     print(n)
 
 
-async def t_exists(ns: NameService):
-    # r = await ns.safely_load_thornames_from_address_set([NAMES['vitalik']])
-    # print(r)
-    # r1 = await ns.lookup_name_by_address('thor1e5qhhm93j380xksqpamh74mva2ee6c3wmmrrz4')
-    # print(r1)
-    r = await ns.lookup_thorname_by_name('panda', forced=True)
-    print(r)
-    r = await ns.lookup_thorname_by_name('vitalik')
-    print(r)
+async def dbg_name_to_addr(ns: NameService):
+    for name in ['t', 'vitalik', 'panda']:
+        r = await ns.lookup_thorname_by_name(name, forced=True)
+        print(f'THORName for {name!r}: {r}')
 
 
-async def t_not_exists(ns: NameService):
-    # r = await ns.safely_load_thornames_from_address_set(['fljlfjwljweobo', 'lkelejljjwejlweqq'])
-    # print(r)
-
-    r1 = await ns.lookup_name_by_address('thorNOADDRESS')
-    print(r1)
+async def dbg_addr_to_name(ns: NameService):
+    for address in ['thor166ngekj6ty2plw3n2vqpxk9fzv76rk7v80l2wt', 'thorFake',
+                    'thor1gh4m2vgqcwt52f433797mq8chkr05x3lthcdgv']:
+        r1 = await ns.lookup_name_by_address(address)
+        print(f'THORName for {address!r}: {r1}')
 
 
 async def t_fix_name_map(ns: NameService):
@@ -72,13 +66,16 @@ async def demo_node_names(app: LpAppFramework):
         'thor1puhn8fclwvmmzh7uj7546wnxz5h3zar8adtqp3',  # bp
         'thor160yye65pf9rzwrgqmtgav69n6zlsyfpgm9a7xk',  # not a node (but "t")
         'thor166n4w5039meulfa3p6ydg60ve6ueac7tlt0jws',  # has no name
+        'thor1gz4mhghle57mcy3euesky0cdge6z8gq8pd0zyp',  # vitalik
     ]
 
     name_map = await app.deps.name_service.safely_load_thornames_from_address_set(addresses)
     print(f"Name map is {name_map}")
+    return name_map
 
-    # ------------------------------------
 
+async def demo_token_send_with_name(app: LpAppFramework):
+    name_map = await demo_node_names(app)
     tr = NativeTokenTransfer(
         'thor1puhn8fclwvmmzh7uj7546wnxz5h3zar8adtqp3', 'thor166n4w5039meulfa3p6ydg60ve6ueac7tlt0jws',
         13_123_132, '123456789054321123456789098754321', 222_854.24, 5.29, is_native=True, asset='THOR.RUNE',
@@ -113,16 +110,15 @@ async def dbg_affiliate(app):
         print(f'{name} -> {m}')
 
 
-
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         ns = app.deps.name_service
-        # await t_exists(ns)
-        # await t_not_exists(ns)
+        await dbg_name_to_addr(ns)
+        await dbg_addr_to_name(ns)
         # await t_fix_name_map(ns)
-        # await demo_node_names(app)
-        await dbg_affiliate(app)
+        await demo_node_names(app)
+        # await dbg_affiliate(app)
 
 
 if __name__ == '__main__':

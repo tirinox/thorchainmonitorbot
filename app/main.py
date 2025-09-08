@@ -73,6 +73,7 @@ from notify.personal.scheduled import PersonalPeriodicNotificationService
 from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.burn_notify import BurnNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
+from notify.public.cex_flow import CEXFlowNotifier
 from notify.public.chain_id_notify import ChainIdNotifier
 from notify.public.chain_notify import TradingHaltedNotifier
 from notify.public.dex_report_notify import DexReportNotifier
@@ -293,6 +294,11 @@ class App(WithLogger):
                 d.rune_move_notifier = RuneMoveNotifier(d)
                 d.rune_move_notifier.add_subscriber(d.alert_presenter)
                 transfer_decoder.add_subscriber(d.rune_move_notifier)
+
+            if d.cfg.get('token_transfer.flow_summary.enabled', True):
+                cex_flow_notifier = CEXFlowNotifier(d)
+                cex_flow_notifier.add_subscriber(d.alert_presenter)
+                transfer_decoder.add_subscriber(cex_flow_notifier)
 
             if achievements_enabled:
                 ev_gen = LastBlockEventGenerator(d.last_block_cache)

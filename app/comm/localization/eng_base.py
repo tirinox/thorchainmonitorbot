@@ -1384,7 +1384,7 @@ class BaseLocalization(ABC):  # == English
     MIMIR_STANDARD_VALUE = 'default:'
     MIMIR_OUTRO = f'\n\n🔹 – {ital("Admin Mimir")}\n' \
                   f'🔸 – {ital("Node Mimir")}\n' \
-                  f'▪️ – {ital("Automatic solvency checker")}'
+                  f'▪️ – {ital("Automatic")}'
     MIMIR_NO_DATA = 'No data'
     MIMIR_BLOCKS = 'blocks'
     MIMIR_UNTIL_BLOCK = 'until block'

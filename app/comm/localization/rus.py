@@ -1269,7 +1269,7 @@ class RussianLocalization(BaseLocalization):
             e = change.entry
             if e:
                 if e.source == e.SOURCE_AUTO:
-                    text += bold('[🤖 Автоматика платежеспособности ]  ')
+                    text += bold('[🤖 Автоматика]  ')
                 elif e.source == e.SOURCE_ADMIN:
                     # text += bold('[👩‍💻 Администраторы ]  ')
                     pass  # todo
