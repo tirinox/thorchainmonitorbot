@@ -27,7 +27,7 @@ class CEXFlowNotifier(INotified, WithDelegates, WithLogger):
 
         self.series = TimeSeries('Rune.CEXFlow', deps.db, self.MAX_POINTS)
 
-    async def _is_to_be_ignored(self, transfer: NativeTokenTransfer):
+    def _is_to_be_ignored(self, transfer: NativeTokenTransfer):
         if transfer.is_comment_non_send():
             self.logger.debug(f'Ignore comment: {transfer.comment} in {transfer}')
             return True
@@ -49,7 +49,9 @@ class CEXFlowNotifier(INotified, WithDelegates, WithLogger):
 
     async def on_data(self, sender, transfers: List[NativeTokenTransfer]):
         for transfer in transfers:
-            await self._store_transfer(transfer)
+            if not self._is_to_be_ignored(transfer):
+                await self._store_transfer(transfer)
+
         await self._notify_cex_flow()
 
     async def _notify_cex_flow(self):
@@ -63,7 +65,7 @@ class CEXFlowNotifier(INotified, WithDelegates, WithLogger):
 
             if flow.total_rune < self.min_rune_in_summary:
                 self.deps.emergency.report(
-                    'CEXFlow', 'CEX flow aggregation does not look good.',
+                    'CEXFlow', 'CEX flow is lower than the minimum rune in summary.',
                     flow=flow,
                     min_rune=self.min_rune_in_summary
                 )

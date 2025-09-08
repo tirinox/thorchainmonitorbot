@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from jobs.scanner.native_scan import BlockScanner
+from jobs.scanner.scan_cache import BlockScannerCached
 from jobs.scanner.transfer_detector import RuneTransferDetector
 from notify.public.cex_flow import CEXFlowNotifier
 from notify.public.transfer_notify import RuneMoveNotifier
@@ -12,7 +13,9 @@ async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app:
         d = app.deps
-        d.block_scanner = BlockScanner(d, max_attempts=5)
+        last_block = await d.last_block_cache.get_thor_block()
+        last_block -= 10000
+        d.block_scanner = BlockScannerCached(d, max_attempts=5, last_block=last_block)
 
         reserve_address = d.cfg.as_str('native_scanner.reserve_address')
         transfer_decoder = RuneTransferDetector(reserve_address)
