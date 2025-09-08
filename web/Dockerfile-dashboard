@@ -1,16 +1,42 @@
-FROM python:3.11-slim-buster as production
+FROM python:3.11-slim as production
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
-ADD ../app/requirements.txt .
 
+# Copy only requirements first for better layer caching
+# (Adjust path to where your file actually is)
+COPY app/requirements.txt /app/requirements.txt
+
+# System deps that commonly help build native wheels; prune if unneeded
 RUN apt-get update -y && \
-    apt-get install git build-essential cmake pkg-config -y
+    apt-get install -y --no-install-recommends \
+        build-essential git cmake pkg-config && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir -r requirements.txt
+# Newer pip/setuptools/wheel avoid many build issues on 3.11
+RUN python -m pip install --upgrade pip setuptools wheel packaging
 
-RUN pip install --no-cache-dir streamlit streamlit_autorefresh
+# Optional: strip any accidental "distutils" line from requirements
+# (safe no-op if not present)
+RUN awk 'tolower($0)!="distutils"' requirements.txt > /tmp/reqs.txt
+
+# Install your deps
+RUN pip install -r /tmp/reqs.txt
+
+# If you want Streamlit regardless of requirements.txt, keep this;
+# otherwise add it to requirements.txt and remove this line.
+RUN pip install streamlit streamlit_autorefresh
+
+# Copy the rest of the app
+COPY app/ /app/
 
 EXPOSE 8501
 
-#CMD [ "python", "./dashboard.py", "/config/config.yaml" ]
-CMD ["streamlit", "run", "dashboard.py", "--server.port=8501", "--server.enableCORS=false", "--server.address=0.0.0.0", "/config/config.yaml" ]
+# If dashboard.py expects its own argv, pass them after "--"
+# Example: streamlit run script.py -- --config /config/config.yaml
+CMD ["streamlit", "run", "dashboard.py", \
+     "--server.port=8501", "--server.enableCORS=false", "--server.address=127.0.0.1", \
+     "--", "/config/config.yaml"]
