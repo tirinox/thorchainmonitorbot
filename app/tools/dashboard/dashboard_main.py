@@ -5,13 +5,12 @@ from datetime import datetime
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
+from tools.dashboard.cex_flow import cex_flow_dashboard_info
 from tools.dashboard.curve import curve_dashboard_info
 from tools.dashboard.dedup import dedup_dashboard_info
 from tools.dashboard.fetchers import fetchers_dashboard_info
 from tools.dashboard.stats import stats_dashboard_info
 from tools.lib.lp_common import LpAppFramework
-
-
 
 
 async def load_data():
@@ -24,11 +23,11 @@ async def load_data():
             'fetchers_data': await fetchers_dashboard_info(d),
             'curve_data': await curve_dashboard_info(d),
             'stats_data': await stats_dashboard_info(d),
+            'cex_flow_data': await cex_flow_dashboard_info(d)
         }
 
 
 def dashboard_main():
-
     data = asyncio.run(load_data())
 
     st.set_page_config(layout="wide")
@@ -40,7 +39,9 @@ def dashboard_main():
     # last refresh time: now
     st.write(f"Last refresh: {datetime.now()}")
 
-    tab_dedup, tab_fetchers, tab_curve, tab_stats = st.tabs(["TxDedup", "Fetchers", "Curve", "Stats"])
+    tab_dedup, tab_fetchers, tab_curve, tab_stats, tab_cex_flow = st.tabs([
+        "TxDedup", "Fetchers", "Curve", "Stats", "CEX Flow"
+    ])
 
     with tab_dedup:
         st.subheader('TxDeduplication')
@@ -57,3 +58,7 @@ def dashboard_main():
     with tab_stats:
         st.subheader('Stats')
         st.table(data['stats_data'])
+
+    with tab_cex_flow:
+        st.subheader('CEX Flow')
+        st.table(data['cex_flow_data'])
