@@ -64,6 +64,7 @@ async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
 
 async def demo_trade_acc_decode_continuous(app: LpAppFramework, b=0):
     d = app.deps
+
     scanner = BlockScanner(d, last_block=b)
     # scanner.one_block_per_run = b > 0
 

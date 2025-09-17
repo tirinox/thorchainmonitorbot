@@ -88,8 +88,6 @@ async def dbg_load_latest_price_data_and_save_as_demo(app, fill=False):
         "template_name": "price.jinja2",
         "parameters": {
             **raw_data,
-            "_width": 1200,
-            "_height": 1200
         }
     }
 
