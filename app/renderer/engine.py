@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import NamedTuple
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -39,18 +40,7 @@ class RendererEngine:
             line_comment_prefix='##',
             extensions=["jinja2.ext.do"],
         )
-        self.jinja_env.globals.update({
-            'short_rune': short_rune,
-            'short_dollar': short_dollar,
-            'short_money': short_money,
-            'pretty_money': pretty_money,
-            'shorten_text': shorten_text,
-            'shorten_text_middle': shorten_text_middle,
-            'int': int,
-            'float': float,
-            'round': round,
-            'set_viewport_size': self._set_viewport,
-        })
+        self.setup_helper_functions()
         self._resource_base_url = resource_base_url
         logging.info(f"Renderer initialized with templates directory: {self.templates_dir}")
 
@@ -203,3 +193,22 @@ class RendererEngine:
         Handle page errors (unhandled exceptions in the page).
         """
         logging.error(f"Page error: {error}")
+
+    def setup_helper_functions(self):
+        self.jinja_env.globals.update({
+            'short_rune': short_rune,
+            'short_dollar': short_dollar,
+            'short_money': short_money,
+            'pretty_money': pretty_money,
+            'shorten_text': shorten_text,
+            'shorten_text_middle': shorten_text_middle,
+            'int': int,
+            'float': float,
+            'round': round,
+            'set_viewport_size': self._set_viewport,
+            'datetimeformat': datetimeformat
+        })
+
+
+def datetimeformat(value, fmt="%d.%m.%Y"):
+    return datetime.fromtimestamp(int(value)).strftime(fmt)
