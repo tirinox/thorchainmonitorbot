@@ -1,7 +1,7 @@
+import dataclasses
 from typing import NamedTuple, List
 
 from lib.constants import thor_to_float
-from lib.utils import safe_get
 
 
 class PoolEarnings(NamedTuple):
@@ -54,6 +54,16 @@ class EarningsInterval(NamedTuple):
         )
 
 
+@dataclasses.dataclass
+class EarningsTuple:
+    total_earnings: float
+    block_earnings: float
+    liquidity_earnings: float
+    liquidity_fees: float
+    bonding_earnings: float
+    affiliate_revenue: float = 0.0
+
+
 class EarningHistoryResponse(NamedTuple):
     intervals: List[EarningsInterval]
     meta: EarningsInterval
@@ -67,10 +77,20 @@ class EarningHistoryResponse(NamedTuple):
 
     @staticmethod
     def calc_earnings(intervals: List[EarningsInterval]):
-        """liquidityEarnings + bondingEarnings = earnings
-        blockRewards +  liquidityFees = earnings"""
+        """
+            earning = bondingEarnings + liquidityEarnings
+        """
 
         total_earnings = sum(thor_to_float(e.earnings) * e.rune_price_usd for e in intervals)
         block_earnings = sum(thor_to_float(e.block_rewards) * e.rune_price_usd for e in intervals)
-        organic_fees = sum(thor_to_float(e.liquidity_fees) * e.rune_price_usd for e in intervals)
-        return total_earnings, block_earnings, organic_fees
+        liquidity_fees = sum(thor_to_float(e.liquidity_fees) * e.rune_price_usd for e in intervals)
+        liquidity_earnings = sum(thor_to_float(e.liquidity_earnings) for e in intervals)
+        bonding_earnings = sum(thor_to_float(e.bonding_earnings) * e.rune_price_usd for e in intervals)
+        return EarningsTuple(
+            total_earnings=total_earnings,
+            block_earnings=block_earnings,
+            liquidity_earnings=liquidity_earnings,
+            liquidity_fees=liquidity_fees,
+            bonding_earnings=bonding_earnings,
+            affiliate_revenue=0,
+        )

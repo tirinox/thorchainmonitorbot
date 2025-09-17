@@ -153,8 +153,8 @@ class AchievementsExtractor(WithLogger):
     @staticmethod
     def on_weekly_stats(ev: AlertKeyStats):
         total_locked, _ = ev.locked_value_usd_curr_prev
-        weekly_protocol_revenue = ev.current.protocol_revenue_usd
-        weekly_affiliate_revenue = ev.current.affiliate_revenue_usd
+        weekly_protocol_revenue = ev.current.earnings.total_earnings
+        weekly_affiliate_revenue = ev.current.earnings.affiliate_revenue
         weekly_swap_volume, _ = ev.usd_volume_curr_prev
         total_locked_value_usd = total_locked.total_value_locked_usd
 
