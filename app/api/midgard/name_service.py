@@ -12,6 +12,7 @@ from lib.constants import Chains
 from lib.date_utils import parse_timespan_to_seconds
 from lib.db import DB
 from lib.logs import WithLogger
+from lib.texts import shorten_text
 from models.memo import THORMemo
 from models.name import ThorName, make_virtual_thor_name, ThorNameAlias
 from models.node_info import NetworkNodes
@@ -407,7 +408,10 @@ class AffiliateManager(WithLogger):
         If the address or name is not found, it returns the address or name itself.
         """
         name = self._simplify_name(address_or_name)
-        return self.thorname_to_name.get(name, name)
+
+        display_name = shorten_text(name.capitalize(), 12)
+
+        return self.thorname_to_name.get(name, display_name)
 
     def get_affiliate_logo(self, address_or_name: str) -> Optional[str]:
         """
