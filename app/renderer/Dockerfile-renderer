@@ -1,5 +1,5 @@
-# Use official Playwright image (Ubuntu Noble, Playwright 1.54.0, Python preinstalled)
-FROM mcr.microsoft.com/playwright/python:v1.54.0-noble
+# Use official Playwright image (Ubuntu Noble, Playwright 1.55.0, Python preinstalled)
+FROM mcr.microsoft.com/playwright/python:v1.55.0-noble
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
