@@ -9,7 +9,7 @@ from comm.picture.resources import Resources
 from lib.constants import BTC_SYMBOL, ETH_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL, NATIVE_RUNE_SYMBOL
 from lib.draw_utils import paste_image_masked, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
     COLOR_OF_PROFIT, font_estimate_size, distribution_bar_chart
-from lib.money import pretty_money, short_dollar, format_percent, short_money, RAIDO_GLYPH
+from lib.money import pretty_money, short_dollar, short_money
 from lib.texts import bracketify
 from lib.utils import async_wrap
 from models.asset import Asset
@@ -63,14 +63,10 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         r, loc, e = self.r, self.loc, self.event
         curr_lock, prev_lock = e.locked_value_usd_curr_prev
 
-        total_revenue_usd, prev_total_revenue_usd = e.current.protocol_revenue_usd, e.previous.protocol_revenue_usd
-        block_rewards_usd, prev_block_rewards_usd = e.current.block_rewards_usd, e.previous.block_rewards_usd
-        liq_fee_usd, prev_liq_fee_usd = e.current.fee_rewards_usd, e.previous.fee_rewards_usd
-        aff_fee_usd, prev_aff_fee_usd = e.current.affiliate_revenue_usd, e.previous.affiliate_revenue_usd
+        total_revenue_usd, prev_total_revenue_usd = e.current.earnings.total_earnings, e.previous.earnings.total_earnings
+        aff_fee_usd, prev_aff_fee_usd = e.current.earnings.affiliate_revenue, e.previous.earnings.affiliate_revenue
 
-        block_ratio = e.block_ratio
-        organic_ratio = e.organic_ratio
-        aff_collectors = e.top_affiliate_daily
+        aff_collectors = e.top_affiliates
 
         unique_swap, prev_unique_swap = e.current.swapper_count, e.previous.swapper_count
 
@@ -107,10 +103,9 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
             (e.get_sum((BTC_SYMBOL,), previous=True), e.get_sum((BTC_SYMBOL,))),
             (e.get_sum((ETH_SYMBOL,), previous=True), e.get_sum((ETH_SYMBOL,))),
             (e.get_stables_sum(previous=True), e.get_stables_sum()),
-            (e.runepool_prev_depth, e.runepool_depth,),
         ]
-        vaults_y = [473 + i * 116 for i in range(4)]
-        postfixes = [' ₿', ' Ξ', 'usd', f' {RAIDO_GLYPH}']
+        vaults_y = [473 + i * 116 for i in range(3)]
+        postfixes = [' ₿', ' Ξ', 'usd',]
 
         paste_image_masked(image, self.btc_logo, (coin_x, vaults_y[0]))
         paste_image_masked(image, self.eth_logo, (coin_x, vaults_y[1]))
@@ -118,11 +113,9 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         paste_image_masked(image, self.usdt_logo, (coin_x - 20, vaults_y[2]))
         paste_image_masked(image, self.usdc_logo, (coin_x + 20, vaults_y[2]))
 
-        paste_image_masked(image, self.rune_logo, (coin_x, vaults_y[3]))
-        vaults_y[3] += 16  # Rune is a little bit lower to get room for RUNEPool label
 
         text_x = coin_x + 94
-        draw.text((text_x, vaults_y[3] - 30), 'RUNEPool', fill=self.LABEL_COLOR, font=font_small_n, anchor='ls')
+        # draw.text((text_x, vaults_y[3] - 30), 'RUNEPool', fill=self.LABEL_COLOR, font=font_small_n, anchor='ls')
 
         coin_font = r.fonts.get_font_bold(54)
 
@@ -140,8 +133,8 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         y = 918
 
         self._indicator(draw, 100, y, loc.TEXT_PIC_STATS_NATIVE_ASSET_POOLED,
-                        short_dollar(curr_lock.total_value_pooled_usd),
-                        prev_lock.total_value_pooled_usd, curr_lock.total_value_pooled_usd)
+                        short_dollar(curr_lock.total_non_rune_usd),
+                        prev_lock.total_value_pooled_usd, curr_lock.total_non_rune_usd)
 
         # ------- total network security usd -------
         y += 140
@@ -193,35 +186,37 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
             y += y_margin
 
         # ----- organic fees vs block rewards
+        #
+        # draw.text((x, 1050),
+        #           loc.TEXT_PIC_STATS_ORGANIC_VS_BLOCK_REWARDS,
+        #           fill=self.LABEL_COLOR,
+        #           font=r.fonts.get_font(37))
+        #
+        # font_fee = r.fonts.get_font_bold(32)
+        # x_right = 1283
+        #
+        # y_p, y_bar = 1142, 1105
+        #
+        # distribution_bar_chart(
+        #     draw,
+        #     [liq_fee_usd, block_rewards_usd],
+        #     x, y_bar, width=BAR_WIDTH, height=BAR_HEIGHT,
+        #     palette=[TC_YGGDRASIL_GREEN, TC_LIGHTNING_BLUE], gap=6
+        # )
+        #
+        # draw.text((x, y_p),
+        #           format_percent(organic_ratio, 1, threshold=0.0),
+        #           font=font_fee,
+        #           anchor='lm',
+        #           fill=TC_YGGDRASIL_GREEN)
+        #
+        # draw.text((x_right, y_p),
+        #           format_percent(block_ratio, 1, threshold=0.0),
+        #           font=font_fee,
+        #           anchor='rm',
+        #           fill=TC_LIGHTNING_BLUE)
 
-        draw.text((x, 1050),
-                  loc.TEXT_PIC_STATS_ORGANIC_VS_BLOCK_REWARDS,
-                  fill=self.LABEL_COLOR,
-                  font=r.fonts.get_font(37))
 
-        font_fee = r.fonts.get_font_bold(32)
-        x_right = 1283
-
-        y_p, y_bar = 1142, 1105
-
-        distribution_bar_chart(
-            draw,
-            [liq_fee_usd, block_rewards_usd],
-            x, y_bar, width=BAR_WIDTH, height=BAR_HEIGHT,
-            palette=[TC_YGGDRASIL_GREEN, TC_LIGHTNING_BLUE], gap=6
-        )
-
-        draw.text((x, y_p),
-                  format_percent(organic_ratio, 1, threshold=0.0),
-                  font=font_fee,
-                  anchor='lm',
-                  fill=TC_YGGDRASIL_GREEN)
-
-        draw.text((x_right, y_p),
-                  format_percent(block_ratio, 1, threshold=0.0),
-                  font=font_fee,
-                  anchor='rm',
-                  fill=TC_LIGHTNING_BLUE)
 
         # 3. Block
 
