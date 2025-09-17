@@ -42,7 +42,7 @@ async def dbg_load_data_and_save_as_demo_template(app: LpAppFramework):
     print(json_call_params)
     sep()
 
-    demo_file = './renderer/demo/weely-stats.json'
+    demo_file = './renderer/demo/weekly_stats.json'
     with open(demo_file, 'w') as f:
         f.write(json_call_params)
         print(f'Saved to {demo_file!r}')
@@ -209,10 +209,10 @@ async def main():
         # await dbg_recursive_asdict(app)
         # await demo_analyse_and_show(app)
         # await demo_picture(app)
-        # await dbg_load_data_and_save_as_demo_template(app)
+        await dbg_load_data_and_save_as_demo_template(app)
         # await debug_locked_value(app)
         # await debug_earnings(app)
-        await dbg_affiliate_top(app)
+        # await dbg_affiliate_top(app)
         # await dbg_vanaheimix(app)
 
 
