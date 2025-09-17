@@ -73,5 +73,15 @@ class MidgardURLGenV2:
             return f'{self.base_url}/v2/pools?period={period}'
         return f'{self.base_url}/v2/pools'
 
+    def url_affiliate_history(self, from_ts=0, to_ts=0, count=0, interval='day') -> str:
+        spec = ''
+        if from_ts and to_ts:
+            spec = f'from={from_ts}&to={to_ts}'
+        elif count:
+            spec = f'count={count}'
+        if interval:
+            spec += f"&interval={interval}"
+        return f'{self.base_url}/v2/history/affiliate?{spec}'
+
 
 free_url_gen = MidgardURLGenV2('')

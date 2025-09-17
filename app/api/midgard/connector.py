@@ -112,3 +112,10 @@ class MidgardConnector(WithLogger):
         if not raw_data or raw_data == self.ERROR_RESPONSE:
             return None
         return self.parser.parse_pool_info(raw_data) if parse else raw_data
+
+    async def query_affiliates(self, count=14, interval='day'):
+        j = await self.request(
+            self.urlgen.url_affiliate_history(count=count, interval=interval)
+        )
+        if j and j != self.ERROR_RESPONSE:
+            return self.parser.parse_affiliate_history(j)

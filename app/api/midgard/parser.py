@@ -1,6 +1,7 @@
 import logging
 from typing import NamedTuple, List, Optional
 
+from models.affiliate import AffiliateHistoryResponse
 from models.memo import ActionType, is_action
 from models.pool_info import PoolInfoHistoricEntry, PoolInfoMap, PoolInfo
 from models.pool_member import PoolMemberDetails
@@ -43,7 +44,8 @@ class MidgardParserV2:
                 logger.error(f'failed to parse TX. error: {e!r}; json = {r}')
                 continue
 
-    def parse_one_tx(self, r):
+    @staticmethod
+    def parse_one_tx(r):
         status = r.get('status', '').lower()
         block_height = r.get('height', '0')
         tx_type = r.get('type')
@@ -114,7 +116,8 @@ class MidgardParserV2:
         pools = response.get('pools', [])
         return [PoolMemberDetails.from_json(p) for p in pools if 'pool' in p]
 
-    def parse_pool_info(self, response) -> PoolInfoMap:
+    @staticmethod
+    def parse_pool_info(response) -> PoolInfoMap:
         pm = {}
         for j in response:
             asset = j.get('asset')
@@ -137,6 +140,10 @@ class MidgardParserV2:
                 pool_apr=float(j.get('annualPercentageRate', 0)) * 100.0,
             )
         return pm
+
+    @staticmethod
+    def parse_affiliate_history(response):
+        return AffiliateHistoryResponse(**response)
 
 
 def get_parser_by_network_id(network_id) -> MidgardParserV2:
