@@ -12,8 +12,8 @@ affiliates:
     dph: Delphibets
     ds: Defispot
     dx: Asgardex
-    edge: edge
-    ej: edge
+    edge: Edge
+    ej: Edge
     eld: El Dorito
     is: InstaSwap
     kf: Kensho Finance
@@ -46,6 +46,7 @@ affiliates:
     tps: TokenPocket
     tr: TrustWallet
     ts: THORSwap
+    t1: THORSwap
     tt: Turbo Trade
     v0: Vultisig
     v1: Vultisig
@@ -58,6 +59,7 @@ affiliates:
     elp: "ELLIPAL"
     cs3: "Coinstore Web3 Wallet"
     kns: Keystone
+    origamix: Origamix
   logos:
     shapeshift: fox.png
     tokenpocket: tps.png
@@ -110,3 +112,4 @@ affiliates:
     trust: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/trust/logo.svg
     trustwallet: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/trust/logo.svg
     zengo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/zengo/logo.svg
+    origamix: https://origamix.io/app-logo/origamix-logo.png
