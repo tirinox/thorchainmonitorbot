@@ -49,6 +49,7 @@ class TxCountRecorder(INotified, WithLogger):
             TxMetricType.ADD_LIQUIDITY: DailyActiveUserCounter(r, 'AddLiquidity'),
             TxMetricType.RUNEPOOL_ADD: DailyActiveUserCounter(r, 'RunePoolDeposit'),
             TxMetricType.RUNEPOOL_WITHDRAW: DailyActiveUserCounter(r, 'RunePoolWithdraw'),
+            TxMetricType.SECURED_SWAP: DailyActiveUserCounter(r, 'SecuredSwaps'),
         }
         self._deduplicator = TxDeduplicator(deps.db, 'TxCount')
 
@@ -65,6 +66,8 @@ class TxCountRecorder(INotified, WithLogger):
                     unique_tx_hashes[TxMetricType.SWAP_SYNTH].add(ident)
                 if tx.is_streaming:
                     unique_tx_hashes[TxMetricType.STREAMING].add(ident)
+                if tx.is_secured_asset_involved:
+                    unique_tx_hashes[TxMetricType.SECURED_SWAP].add(ident)
                 unique_tx_hashes[TxMetricType.SWAP].add(ident)
             elif tx.is_of_type(ActionType.TRADE_ACC_DEPOSIT):
                 unique_tx_hashes[TxMetricType.TRADE_DEPOSIT].add(ident)
@@ -157,6 +160,8 @@ class VolumeRecorder(INotified, WithLogger):
                         volumes[TxMetricType.TRADE_SWAP] += volume
                     if tx.is_streaming:
                         volumes[TxMetricType.STREAMING] += volume
+                    if tx.is_secured_asset_involved:
+                        volumes[TxMetricType.SECURED_SWAP] += volume
                 elif tx.is_of_type(ActionType.TRADE_ACC_DEPOSIT):
                     volumes[TxMetricType.TRADE_DEPOSIT] += volume
                 elif tx.is_of_type(ActionType.TRADE_ACC_WITHDRAW):
@@ -228,18 +233,18 @@ class VolumeRecorder(INotified, WithLogger):
         total = s.get(TxMetricType.SWAP, 0)
         if total <= 0:
             self.logger.warning(f'Period {t0}..{t1} has no swaps?')
-            ordinary, trade, synth, total = 0, 0, 0, 1
+            ordinary, trade, secured, total = 0, 0, 0, 1
         else:
             trade = s.get(TxMetricType.TRADE_SWAP, 0)
-            synth = s.get(TxMetricType.SWAP_SYNTH, 0)
-            ordinary = total - trade - synth
+            secured = s.get(TxMetricType.SECURED_SWAP, 0)
+            ordinary = total - trade - secured
             if ordinary < 0:
                 raise ValueError(f'Swap accounting is broken: ordinary < 0')
 
         return {
             TxMetricType.SWAP: ordinary / total,
-            TxMetricType.SWAP_SYNTH: synth / total,
-            TxMetricType.TRADE_SWAP: trade / total
+            TxMetricType.SECURED_SWAP: secured / total,
+            TxMetricType.TRADE_SWAP: trade / total,
         }
 
     async def get_data_range_ago_n(self, ago, n=30):

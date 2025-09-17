@@ -15,6 +15,7 @@ class TxMetricType:
     TRADE_SWAP = 'trade_swap'
     TRADE_DEPOSIT = 'trade_deposit'
     TRADE_WITHDRAWAL = 'trade_withdrawal'
+    SECURED_SWAP = 'secured_swap'
 
     RUNEPOOL_ADD = 'runepool_add'
     RUNEPOOL_WITHDRAW = 'runepool_withdraw'
