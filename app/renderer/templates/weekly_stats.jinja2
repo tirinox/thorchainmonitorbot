@@ -3,29 +3,73 @@
 
 {% block content %}
     <style>
-        #chart-container {
-            width: 100%;
-            height: 70%;
 
-            padding: 10px 10px 10px 20px;
-
-            font-family: ThorFontLight, serif;
-            font-weight: lighter;
+        .block {
+            display: flex;
+            flex: 1;
+            padding: 12px;
+            justify-content: center;
         }
+
+        .main-container {
+            display: flex;
+            flex-direction: row;
+            gap: 24px;
+            align-items: stretch;
+            padding-top: 20px;
+        }
+
+        .date-range {
+            font-weight: bolder;
+            font-size: 20px;
+            letter-spacing: 0.2rem;
+            color: #aaa;
+            right: 8.9%;
+            top: 98px;
+            display: block;
+            position: absolute;
+        }
+
+        .title {
+            letter-spacing: 1.2rem;
+            color: white;
+        }
+
+        .block-title {
+            color: #999;
+            font-size: 24px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+        }
+
 
     </style>
 
 
     {% with title="WEEKLY STATS" %}
         {% include "components/header.jinja2" %}
+
+        <div class="date-range">
+            {{ datetimeformat(start_date_ts, "%d.%m.%Y") }} – {{ datetimeformat(end_date_ts, "%d.%m.%Y") }}
+        </div>
     {% endwith %}
 
     <div class="main-container">
-        todo
+        <div class="block shadow-box">
+            <div class="block-title">Native asset vaults</div>
+        </div>
+        <div class="block shadow-box">
+            <div class="block-title">Protocol revenue</div>
+        </div>
+        <div class="block shadow-box">
+            <div class="block-title">Swap info</div>
+        </div>
     </div>
 
     <script>
         // todo
+
     </script>
 
 {% endblock %}
