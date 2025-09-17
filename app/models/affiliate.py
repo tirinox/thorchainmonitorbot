@@ -60,8 +60,11 @@ class AffiliateHistoryResponse(BaseModel):
     intervals: List[AffiliateInterval]
 
 
-class AffiliateEarnings(BaseModel):
+class AffiliateCollector(BaseModel):
     total_usd: float
+    count: int
     prev_total_usd: float
+    prev_count: int
     thorname: str
     display_name: str
+    logo: str

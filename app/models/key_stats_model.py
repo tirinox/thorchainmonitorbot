@@ -6,7 +6,7 @@ from functools import cached_property
 from typing import NamedTuple, List, Tuple, Optional
 
 from lib.constants import STABLE_COIN_POOLS_ALL, thor_to_float
-from .affiliate import AffiliateEarnings
+from .affiliate import AffiliateCollector
 from .earnings_history import EarningsTuple
 from .pool_info import PoolInfoMap
 from .swap_history import SwapHistoryResponse
@@ -51,7 +51,7 @@ class AlertKeyStats:
     previous: KeyStats  # compound
     routes: List[SwapRouteEntry]  # recorded
     swap_type_distribution: dict  # recorded
-    top_affiliates: List[AffiliateEarnings]
+    top_affiliates: List[AffiliateCollector]
     days: int = 7
 
     mdg_swap_stats: Optional[SwapHistoryResponse] = None
@@ -74,11 +74,6 @@ class AlertKeyStats:
 
     def get_eth(self, previous=False):
         return self.get_sum(('ETH.ETH',), previous)
-
-    @property
-    def top_affiliates(self):
-        collectors = self.top_affiliates_usd
-        return list(sorted(collectors.items(), key=operator.itemgetter(1), reverse=True))
 
     @property
     def swap_routes(self):

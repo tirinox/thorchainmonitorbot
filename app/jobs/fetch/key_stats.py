@@ -1,10 +1,7 @@
 import asyncio
 import datetime
-from collections import defaultdict
-from typing import List
 
 from api.aionode.types import thor_to_float
-from api.flipside import FlipsideConnector
 from jobs.fetch.base import BaseFetcher
 from jobs.fetch.cached.pool import PoolCache
 from jobs.fetch.pol import RunePoolFetcher
@@ -14,8 +11,9 @@ from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
+from models.affiliate import AffiliateInterval, AffiliateCollector
 from models.earnings_history import EarningHistoryResponse
-from models.key_stats_model import AlertKeyStats, KeyStats, LockedValue, AffiliateCollectors
+from models.key_stats_model import AlertKeyStats, KeyStats, LockedValue
 from models.vol_n import TxCountStats
 
 
@@ -64,10 +62,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         swap_count = await self.get_swap_number_stats()
 
         # Earnings
-        (
-            (curr_total_earnings, curr_block_earnings, curr_organic_fees),
-            (prev_total_earnings, prev_block_earnings, prev_organic_fees),
-        ) = await self.get_earnings_curr_prev()
+        curr_earnings, prev_earnings = await self.get_earnings_curr_prev()
 
         # Swap routes
         routes = await self._swap_route_recorder.get_top_swap_routes_by_volume(
@@ -77,17 +72,11 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             reorder_assets=True,
         )
 
-        # todo: migrate fo mdg/v2/doc#operation/GetAffiliateHistory
         # Affiliates
-        affiliates = await FlipsideConnector(self.deps.session, self.deps.emergency).get_affiliates_from_flipside()
-        top_affiliates = self.calc_top_affiliates(affiliates)
-        curr_aff_usd, prev_aff_usd = self.calc_total_affiliate_curr_prev(affiliates)
-
-        # Rune pool depths:
-        curr_runepool = await self._runepool.load_runepool()
-        prev_runepool = await self._runepool.load_runepool(self.tally_period_in_sec)
-        runepool_depth = curr_runepool.providers.current_deposit_float if curr_runepool else 0.0
-        runepool_prev_depth = prev_runepool.providers.current_deposit_float if prev_runepool else 0.0
+        top_affiliates, curr_affiliate_revenue, prev_affiliate_revenue = await self.get_top_affiliates()
+        # Assign affiliate revenue to earnings
+        curr_earnings.affiliate_revenue = curr_affiliate_revenue
+        prev_earnings.affiliate_revenue = prev_affiliate_revenue
 
         # Done. Construct the resulting event
         end = datetime.datetime.now()
@@ -101,10 +90,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
                 curr_swap_vol_dict,
                 swap_count.curr,
                 swapper_count=user_stats.wau,
-                affiliate_revenue_usd=curr_aff_usd,
-                block_rewards_usd=curr_block_earnings,
-                fee_rewards_usd=curr_organic_fees,
-                protocol_revenue_usd=curr_total_earnings,
+                earnings=curr_earnings,
             ),
             previous=KeyStats(
                 prev_pools,
@@ -112,17 +98,12 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
                 prev_swap_vol_dict,
                 swap_count.prev,
                 swapper_count=user_stats.wau_prev_weak,
-                affiliate_revenue_usd=prev_aff_usd,
-                block_rewards_usd=prev_block_earnings,
-                fee_rewards_usd=prev_organic_fees,
-                protocol_revenue_usd=prev_total_earnings,
+                earnings=prev_earnings,
             ),
-            runepool_depth=runepool_depth,
-            runepool_prev_depth=runepool_prev_depth,
             swap_type_distribution=distribution,
             start_date=start,
             end_date=end,
-            top_affiliates_usd=top_affiliates,
+            top_affiliates=top_affiliates,
             mdg_swap_stats=mdg_swap_stats,
         )
 
@@ -170,46 +151,47 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         tx_counter: TxCountRecorder = self.deps.tx_count_recorder
         return await tx_counter.get_stats(self.tally_days_period)
 
-    def calc_top_affiliates(self, aff_collectors: List[AffiliateCollectors]):
-        fee_usd_by_label = defaultdict(float)
-
-        unique_dates = set()
-        for aff in aff_collectors:
-            unique_dates.add(aff.date)
-            if len(unique_dates) > self.tally_days_period:
-                # enough days!
-                break
-
-            fee_usd_by_label[aff.label] += aff.fee_usd
-
-        return dict(sorted(fee_usd_by_label.items(), key=lambda item: item[1], reverse=True))
-
-    def calc_total_affiliate_curr_prev(self, aff_collectors: List[AffiliateCollectors]):
-        curr_usd, prev_usd = 0.0, 0.0
-
-        is_curr = True
-        unique_dates = set()
-        for aff in aff_collectors:
-            unique_dates.add(aff.date)
-            if len(unique_dates) > self.tally_days_period:
-                if is_curr:
-                    is_curr = False
-                    unique_dates = {aff.date}
-                else:
-                    break
-
-            if is_curr:
-                curr_usd += aff.fee_usd
-            else:
-                prev_usd += aff.fee_usd
-
-        return curr_usd, prev_usd
+    @property
+    def double_period(self):
+        return self.tally_days_period * 2
 
     async def get_earnings_curr_prev(self):
-        double_period = self.tally_days_period * 2 + 1
-        earnings = await self.deps.midgard_connector.query_earnings(count=double_period, interval='day')
+        earnings = await self.deps.midgard_connector.query_earnings(count=self.double_period, interval='day')
 
         return (
             EarningHistoryResponse.calc_earnings(intervals=earnings.intervals[0:self.tally_days_period]),
             EarningHistoryResponse.calc_earnings(intervals=earnings.intervals[self.tally_days_period:])
         )
+
+    async def get_top_affiliates(self):
+        affiliates = await self.deps.midgard_connector.query_affiliates(self.double_period, interval='day')
+
+        curr_affiliates = affiliates.intervals[0:self.tally_days_period]
+        prev_affiliates = affiliates.intervals[self.tally_days_period:]
+
+        prev_week_interval = AffiliateInterval.sum_of_intervals_per_thorname(
+            prev_affiliates).sort_thornames_by_usd_volume()
+        curr_week_interval = AffiliateInterval.sum_of_intervals_per_thorname(
+            curr_affiliates).sort_thornames_by_usd_volume()
+
+        prev_names_dict = {tn.thorname: tn for tn in prev_week_interval.thornames} if prev_week_interval.thornames else {}
+
+        curr_aff_revenue = curr_week_interval.volume_usd
+        prev_aff_revenue = prev_week_interval.volume_usd
+        top_affiliates = []
+
+        ns = self.deps.name_service
+
+        for affiliate in curr_week_interval.thornames:
+            prev_record = prev_names_dict.get(affiliate.thorname)
+            top_affiliates.append(AffiliateCollector(
+                total_usd=affiliate.volume_usd,
+                prev_total_usd=(prev_record.volume_usd if prev_record else 0.0),
+                thorname=affiliate.thorname,
+                display_name=ns.get_affiliate_name(affiliate.thorname),
+                count=affiliate.count,
+                prev_count=(prev_record.count if prev_record else 0),
+                logo=ns.get_affiliate_logo(affiliate.thorname),
+            ))
+
+        return top_affiliates, curr_aff_revenue, prev_aff_revenue
