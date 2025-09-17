@@ -1,6 +1,6 @@
 import asyncio
-import binascii
 import dataclasses
+import datetime
 import hashlib
 import inspect
 import itertools
@@ -20,6 +20,8 @@ from itertools import tee
 from typing import Iterable, List, Any, Awaitable
 from urllib.parse import urlparse, urlunparse
 
+import binascii
+from pydantic import BaseModel
 from tqdm import tqdm
 
 from lib.date_utils import today_str
@@ -68,6 +70,7 @@ def async_wrap(func):
         if loop is None:
             loop = asyncio.get_event_loop()
         pfunc = partial(func, *args, **kwargs)
+        # noinspection PyTypeChecker
         return await loop.run_in_executor(executor, pfunc)
 
     return run
@@ -124,6 +127,7 @@ def save_pickle(path, data):
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'wb') as f:
             logging.info(f'Saving pickle to "{path}"...')
+            # noinspection PyTypeChecker
             pickle.dump(data, f)
             logging.info(f'Saving pickle to "{path}" done!')
 
@@ -332,6 +336,7 @@ def json_cached_to_file_async(filename):
             except Exception:
                 result = await func(*args, **kwargs)
                 with open(filename, 'w') as f:
+                    # noinspection PyTypeChecker
                     json.dump(result, f)
                 return result
 
@@ -404,10 +409,10 @@ def str_to_bytes(s: str):
 
 
 async def parallel_run_in_groups(
-    tasks: List[Awaitable[Any]],
-    group_size: int = 10,
-    delay: float = 0.0,
-    use_tqdm: bool = False
+        tasks: List[Awaitable[Any]],
+        group_size: int = 10,
+        delay: float = 0.0,
+        use_tqdm: bool = False
 ) -> List[Any]:
     if not tasks:
         return []
@@ -433,6 +438,7 @@ async def parallel_run_in_groups(
 
 def grouper(n, iterable):
     args = [iter(iterable)] * n
+    # noinspection PyArgumentList
     return ([e for e in t if e is not None] for t in itertools.zip_longest(*args))
 
 
@@ -467,20 +473,76 @@ def add_properties_to_representation(repr, obj):
     return repr
 
 
-def recursive_asdict(j, add_properties=False):
-    if is_named_tuple_instance(j):
-        fields = {k: recursive_asdict(v, add_properties) for k, v in j._asdict().items()}
-        return add_properties_to_representation(fields, j)
-    elif dataclasses.is_dataclass(j):
-        fields = {k: recursive_asdict(v, add_properties) for k, v in dataclasses.asdict(j).items()}
-        return add_properties_to_representation(fields, j)
-    elif isinstance(j, (list, tuple, set)):
-        return [recursive_asdict(v, add_properties) for v in j]
-    elif isinstance(j, dict):
-        return {key: recursive_asdict(value, add_properties) for key, value in j.items()}
+def _to_plain(obj: Any, add_properties: bool):
+    """Phase 1: turn dataclasses/namedtuples into dicts/lists/primitives, recursively."""
+    if is_named_tuple_instance(obj):
+        fields = {k: _to_plain(v, add_properties) for k, v in obj._asdict().items()}
+        return add_properties_to_representation(fields, obj) if add_properties else fields
 
-    else:
-        return j
+    if dataclasses.is_dataclass(obj):
+        fields = {k: _to_plain(v, add_properties) for k, v in dataclasses.asdict(obj).items()}
+        return add_properties_to_representation(fields, obj) if add_properties else fields
+
+    if isinstance(obj, (list, tuple, set)):
+        return [_to_plain(v, add_properties) for v in obj]
+
+    if isinstance(obj, dict):
+        return {k: _to_plain(v, add_properties) for k, v in obj.items()}
+
+    if isinstance(obj, BaseModel):
+        # Pydantic v2 support
+        dump = obj.model_dump()
+        return {k: _to_plain(v, add_properties) for k, v in dump.items()}
+
+    # primitives (int/str/float/bool/None/datetime/etc.) pass through for phase 2
+    return obj
+
+
+def _ensure_ts(dt: datetime.datetime) -> int:
+    """Robust UNIX timestamp; treat naive datetimes as UTC."""
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=datetime.timezone.utc)
+    return int(dt.timestamp())
+
+
+def _inject_datetime_ts(obj: Any):
+    """
+    Phase 2: recursively convert datetimes to ISO strings everywhere.
+    Additionally, when a datetime appears as a dict value, inject <key>_ts with UNIX timestamp.
+    """
+    # datetime directly
+    if isinstance(obj, datetime.datetime):
+        return obj.isoformat()
+
+    # list-like
+    if isinstance(obj, list):
+        return [_inject_datetime_ts(v) for v in obj]
+
+    # dict-like: handle values and add *_ts alongside datetime values
+    if isinstance(obj, dict):
+        out = {}
+        # stage 1: transform values
+        for k, v in obj.items():
+            if isinstance(v, datetime.datetime):
+                out[k] = v.isoformat()
+                out[f"{k}_ts"] = _ensure_ts(v)
+            else:
+                out[k] = _inject_datetime_ts(v)
+        return out
+
+    # everything else unchanged
+    return obj
+
+
+def recursive_asdict(j, add_properties=False, handle_datetime=False):
+    """
+        Convert complex objects to plain structures.
+        If handle_datetime=True:
+          - Every datetime becomes ISO string everywhere
+          - When a datetime is a dict value, also add <key>_ts with UNIX timestamp
+        """
+    plain = _to_plain(j, add_properties)
+    return _inject_datetime_ts(plain) if handle_datetime else plain
 
 
 def strip_trailing_slash(s: str):
@@ -496,6 +558,7 @@ async def say(msg: str):
             os.system(f'say "{msg}"')
 
         async def a_worker():
+            # noinspection PyTypeChecker
             await asyncio.get_event_loop().run_in_executor(None, worker)
 
         # noinspection PyAsyncCall
