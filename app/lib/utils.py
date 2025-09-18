@@ -722,3 +722,12 @@ def shorten_json(data):
             return {k: shorten_json(v) for k, v in data.items()}
     else:
         return data
+
+
+def sizeof_fmt(num: int, suffix="B") -> str:
+    """Convert bytes to human-readable format (KB, MB, GB, etc.)."""
+    for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
+        if abs(num) < 1024.0:
+            return f"{num:3.1f}{unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f}Y{suffix}"

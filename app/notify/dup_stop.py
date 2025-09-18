@@ -7,10 +7,13 @@ from lib.bloom_filt import BloomFilter
 from lib.cooldown import Cooldown
 from lib.db import DB
 from lib.logs import WithLogger
+from lib.utils import sizeof_fmt
 from models.tx import ThorAction
 
 BLOOM_TX_CAPACITY = 100_000_000
 BLOOM_TX_ERROR_RATE = 0.005
+
+MAX_SIZE = 2 * 1024 * 1024 * 1024  # 2 GiB
 
 
 class TxDeduplicator(WithLogger):
@@ -25,8 +28,14 @@ class TxDeduplicator(WithLogger):
         full_key = f'tx:dedup_v2:{key}'
         self._stats_key = f'tx:dedup_v2:{key}:stats'
         self._bf = BloomFilter(self.db.redis, full_key, capacity, error_rate)
+        if self._bf.size > MAX_SIZE:
+            self.logger.critical(f'Bloom filter size {sizeof_fmt(self.size_bytes)} '
+                                 f'exceeds max allowed {sizeof_fmt(MAX_SIZE)}!')
+            raise ValueError(f'Bloom filter size {sizeof_fmt(self.size_bytes)} ')
+
         self.logger.info(
-            f'Initialized with key={key}, capacity={capacity}, error_rate={error_rate}. Size is {self._bf.size} bits')
+            f'Initialized with key={key}, capacity={capacity}, error_rate={error_rate}. Size is {self._bf.size} bits or '
+            f' {sizeof_fmt(self.size_bytes)}.')
 
     async def load_stats(self):
         r: Redis = self.db.redis
@@ -46,6 +55,10 @@ class TxDeduplicator(WithLogger):
     @property
     def size(self):
         return self._bf.size
+
+    @property
+    def size_bytes(self):
+        return self._bf.size // 8
 
     @property
     def key(self):

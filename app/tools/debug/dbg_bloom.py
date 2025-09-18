@@ -34,7 +34,7 @@ def generate_secure_random_sha3_hash(length=64):
 
 # Example usage
 async def main():
-    db = DB(asyncio.get_event_loop())
+    db = DB()
     redis_instance = await db.get_redis()
     # redis_instance = redis.from_url('redis://localhost:6379')
 

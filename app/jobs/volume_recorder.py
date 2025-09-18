@@ -147,6 +147,8 @@ class VolumeRecorder(INotified, WithLogger):
         current_price = ph.usd_per_rune
         total_volume = 0.0
 
+        # todo: use a deduplicator here in order to avoid double counting
+
         volumes = defaultdict(float)
         ts = None
         for tx in txs:
