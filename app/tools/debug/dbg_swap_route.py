@@ -11,7 +11,8 @@ from tools.lib.lp_common import LpAppFramework
 
 async def dbg_print_top_swap_routes(app: LpAppFramework):
     route_recorded = SwapRouteRecorder(app.deps.db)
-    routes = await route_recorded.get_top_swap_routes_by_volume(top_n=12)
+    usd_per_rune = await app.deps.pool_cache.get_usd_per_rune()
+    routes = await route_recorded.get_top_swap_routes_by_volume(usd_per_rune, top_n=12)
 
     sep('NORMAL')
 
@@ -19,13 +20,14 @@ async def dbg_print_top_swap_routes(app: LpAppFramework):
         print(route)
 
     sep('NORMALIZED')
-    routes = await route_recorded.get_top_swap_routes_by_volume(top_n=12, normalize_assets=True)
+    routes = await route_recorded.get_top_swap_routes_by_volume(usd_per_rune, top_n=12, normalize_assets=True)
 
     for route in routes:
         print(route)
 
     sep('REORDERED and NORMALIZED')
-    routes = await route_recorded.get_top_swap_routes_by_volume(top_n=12, reorder_assets=True, normalize_assets=True)
+    routes = await route_recorded.get_top_swap_routes_by_volume(usd_per_rune, top_n=12, reorder_assets=True,
+                                                                normalize_assets=True)
 
     for route in routes:
         print(route)

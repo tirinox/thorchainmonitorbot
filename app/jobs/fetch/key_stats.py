@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+from typing import List
 
 from api.aionode.types import thor_to_float
 from jobs.fetch.base import BaseFetcher
@@ -8,12 +9,15 @@ from jobs.fetch.pol import RunePoolFetcher
 from jobs.scanner.swap_routes import SwapRouteRecorder
 from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
+from lib.constants import BTC_SYMBOL, ETH_SYMBOL
 from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.affiliate import AffiliateInterval, AffiliateCollector
+from models.asset import Asset
 from models.earnings_history import EarningHistoryResponse
-from models.key_stats_model import AlertKeyStats, KeyStats, LockedValue
+from models.key_stats_model import AlertKeyStats, KeyStats, LockedValue, SwapRouteEntry
+from models.pool_info import PoolInfoMap
 from models.vol_n import TxCountStats
 
 
@@ -59,18 +63,23 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
 
         # Swap volumes (trade, synth, normal)
         prev_swap_vol_dict, curr_swap_vol_dict, distribution, mdg_swap_stats = await self.get_swap_volume_stats()
+        curr_swap_vol_usd, prev_swap_vol_usd = mdg_swap_stats.curr_and_prev_interval("total_volume_usd")
+
         swap_count = await self.get_swap_number_stats()
 
         # Earnings
         curr_earnings, prev_earnings = await self.get_earnings_curr_prev()
 
         # Swap routes
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
         routes = await self._swap_route_recorder.get_top_swap_routes_by_volume(
+            usd_per_rune,
             self.tally_days_period,
             top_n=10,
             normalize_assets=True,
             reorder_assets=True,
         )
+        routes = self.beautify_routes(routes)
 
         # Affiliates
         top_affiliates, curr_affiliate_revenue, prev_affiliate_revenue = await self.get_top_affiliates()
@@ -81,31 +90,51 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         # Done. Construct the resulting event
         end = datetime.datetime.now()
         start = end - datetime.timedelta(days=self.tally_days_period)
-        return AlertKeyStats(
+        result = AlertKeyStats(
             routes=routes,
             days=self.tally_days_period,
             current=KeyStats(
-                curr_pools,
                 curr_lock,
                 curr_swap_vol_dict,
                 swap_count.curr,
                 swapper_count=user_stats.wau,
                 earnings=curr_earnings,
+                total_volume_usd=curr_swap_vol_usd,
             ),
             previous=KeyStats(
-                prev_pools,
                 prev_lock,
                 prev_swap_vol_dict,
                 swap_count.prev,
                 swapper_count=user_stats.wau_prev_weak,
                 earnings=prev_earnings,
+                total_volume_usd=prev_swap_vol_usd,
             ),
             swap_type_distribution=distribution,
             start_date=start,
             end_date=end,
             top_affiliates=top_affiliates,
-            mdg_swap_stats=mdg_swap_stats,
         )
+        self.fill_btc_eth_usd_totals(result.current, curr_pools)
+        self.fill_btc_eth_usd_totals(result.previous, prev_pools)
+        return result
+
+    @staticmethod
+    def fill_btc_eth_usd_totals(s: KeyStats, pools: PoolInfoMap):
+        s.btc_total_amount = s.btc_total_usd = 0.0
+        s.eth_total_amount = s.eth_total_usd = 0.0
+        s.usd_total_amount = 0.0
+
+        for pool in pools.values():
+            asset = pool.asset
+            b = thor_to_float(pool.balance_asset)
+            if asset == BTC_SYMBOL:
+                s.btc_total_amount += b
+                s.btc_total_usd += b * pool.usd_per_asset
+            elif asset == ETH_SYMBOL:
+                s.eth_total_amount += b
+                s.eth_total_usd += b * pool.usd_per_asset
+            elif 'USD' in asset or 'DAI-' in asset:  # pretty naive check for stable coins
+                s.usd_total_amount += b
 
     async def get_lock_value(self, sec_ago=0) -> LockedValue:
         height = await self.deps.last_block_cache.get_thor_block_time_ago(sec_ago)
@@ -174,7 +203,8 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         curr_week_interval = AffiliateInterval.sum_of_intervals_per_thorname(
             curr_affiliates).sort_thornames_by_usd_volume()
 
-        prev_names_dict = {tn.thorname: tn for tn in prev_week_interval.thornames} if prev_week_interval.thornames else {}
+        prev_names_dict = {tn.thorname: tn for tn in
+                           prev_week_interval.thornames} if prev_week_interval.thornames else {}
 
         curr_aff_revenue = curr_week_interval.volume_usd
         prev_aff_revenue = prev_week_interval.volume_usd
@@ -191,7 +221,21 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
                 display_name=ns.get_affiliate_name(affiliate.thorname),
                 count=affiliate.count,
                 prev_count=(prev_record.count if prev_record else 0),
-                logo=ns.get_affiliate_logo(affiliate.thorname),
+                logo=ns.aff_man.get_affiliate_logo(affiliate.thorname, with_local_prefix=True),
             ))
 
         return top_affiliates, curr_aff_revenue, prev_aff_revenue
+
+    @staticmethod
+    def beautify_routes(routes: List[SwapRouteEntry]):
+        collectors = []
+        for obj in routes:
+            from_name = Asset(obj.from_asset).shortest
+            to_name = Asset(obj.to_asset).shortest
+            # collectors[(obj.from_asset, obj.to_asset)] += obj.volume_rune
+            collectors.append(
+                SwapRouteEntry(from_asset=from_name, to_asset=to_name, volume_rune=obj.volume_rune,
+                               volume_usd=obj.volume_usd)
+            )
+        collectors.sort(key=lambda r: r.volume_usd, reverse=True)
+        return collectors

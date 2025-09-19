@@ -200,7 +200,7 @@
                         </div>
                         <div class="flex small">
                             {% with curr=curr_a["supply"], prev=prev_a.get("supply", curr) %}
-                                {% include "components/price_delta.jinja2" %}
+                                {% include "components/delta.jinja2" %}
                             {% endwith %}
                         </div>
                     </div>
@@ -211,7 +211,7 @@
                         </div>
                         <div class="flex small">
                             {% with curr=curr_a["value_usd"], prev=prev_a.get("value_usd", curr) %}
-                                {% include "components/price_delta.jinja2" %}
+                                {% include "components/delta.jinja2" %}
                             {% endwith %}
                         </div>
                     </div>
@@ -222,7 +222,7 @@
                         </div>
                         <div class="flex small">
                             {% with curr=curr_a["holders"], prev=prev_a.get("holders", curr) %}
-                                {% include "components/price_delta.jinja2" %}
+                                {% include "components/delta.jinja2" %}
                             {% endwith %}
                         </div>
                     </div>
@@ -234,7 +234,7 @@
 
                         <div class="flex small">
                             {% with curr=curr_a["volume_24h_usd"], prev=prev_a.get("volume_24h_usd", curr) %}
-                                {% include "components/price_delta.jinja2" %}
+                                {% include "components/delta.jinja2" %}
                             {% endwith %}
                         </div>
                     </div>
@@ -251,7 +251,7 @@
                 <div class="indicator-value large"> {{ current.total_assets }}</div>
                 <div class="indicator-subvalue">
                     {% with prev=previous.total_assets, curr=current.total_assets, abs_value=True %}
-                        {% include "components/price_delta.jinja2" %}
+                        {% include "components/delta.jinja2" %}
                     {% endwith %}
                 </div>
 
@@ -265,7 +265,7 @@
             <div class="indicator-value large"> {{ short_dollar(current.total_value_usd) }}</div>
             <div class="indicator-subvalue">
                 {% with prev=previous.total_value_usd, curr=current.total_value_usd %}
-                    {% include "components/price_delta.jinja2" %}
+                    {% include "components/delta.jinja2" %}
                 {% endwith %}
             </div>
             <div class="indicator-label">Total secured depth</div>
@@ -276,7 +276,7 @@
             <div class="indicator-subvalue">
                 {% with prev=previous.total_secured_to_pool_percentage, curr=current.total_secured_to_pool_percentage,
                         abs_value=True, epilogue=' p.p.' %}
-                    {% include "components/price_delta.jinja2" %}
+                    {% include "components/delta.jinja2" %}
                 {% endwith %}
             </div>
             <div class="indicator-label">Secured / pool</div>
@@ -286,7 +286,7 @@
             <div class="indicator-value"> {{ short_dollar(current.total_volume_24h_usd) }}</div>
             <div class="indicator-subvalue">
                 {% with prev=previous.total_volume_24h_usd, curr=current.total_volume_24h_usd %}
-                    {% include "components/price_delta.jinja2" %}
+                    {% include "components/delta.jinja2" %}
                 {% endwith %}
             </div>
             <div class="indicator-label">Volume 24H</div>

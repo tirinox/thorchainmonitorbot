@@ -155,13 +155,13 @@ class AchievementsExtractor(WithLogger):
         total_locked, _ = ev.locked_value_usd_curr_prev
         weekly_protocol_revenue = ev.current.earnings.total_earnings
         weekly_affiliate_revenue = ev.current.earnings.affiliate_revenue
-        weekly_swap_volume, _ = ev.usd_volume_curr_prev
+        weekly_swap_volume = ev.current.total_volume_usd
         total_locked_value_usd = total_locked.total_value_locked_usd
 
         results = [
-            Achievement(A.BTC_IN_VAULT, int(ev.get_btc())),
-            Achievement(A.ETH_IN_VAULT, int(ev.get_eth())),
-            Achievement(A.STABLES_IN_VAULT, int(ev.get_stables_sum())),
+            Achievement(A.BTC_IN_VAULT, int(ev.current.btc_total_amount)),
+            Achievement(A.ETH_IN_VAULT, int(ev.current.eth_total_amount)),
+            Achievement(A.STABLES_IN_VAULT, int(ev.current.usd_total_amount)),
 
             Achievement(A.TOTAL_VALUE_LOCKED, int(total_locked_value_usd)),
             Achievement(A.WEEKLY_PROTOCOL_REVENUE_USD, int(weekly_protocol_revenue)),

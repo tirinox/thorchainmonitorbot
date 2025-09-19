@@ -1,21 +1,21 @@
 {
   "template_name": "weekly_stats.jinja2",
   "parameters": {
-    "start_date": "2025-09-12T17:06:26.122187",
-    "start_date_ts": 1757696786,
-    "end_date": "2025-09-19T17:06:26.122187",
-    "end_date_ts": 1758301586,
+    "start_date": "2025-09-12T15:24:01.601760",
+    "start_date_ts": 1757690641,
+    "end_date": "2025-09-19T15:24:01.601760",
+    "end_date_ts": 1758295441,
     "current": {
       "lock": {
-        "date": "2025-09-19T17:06:25.234094",
-        "date_ts": 1758301585,
-        "total_value_pooled": 119324789.91711408,
-        "total_value_pooled_usd": 156520751.68401805,
-        "total_value_bonded": 111726134.63012049,
-        "total_value_bonded_usd": 146553441.13493496,
-        "total_value_locked": 231050924.54723457,
-        "total_value_locked_usd": 303074192.81895304,
-        "total_non_rune_usd": 78260375.84200902
+        "date": "2025-09-19T15:24:00.860436",
+        "date_ts": 1758295440,
+        "total_value_pooled": 119359204.19164576,
+        "total_value_pooled_usd": 156362026.5284855,
+        "total_value_bonded": 111751108.25012048,
+        "total_value_bonded_usd": 146395327.2069153,
+        "total_value_locked": 231110312.44176623,
+        "total_value_locked_usd": 302757353.7354008,
+        "total_non_rune_usd": 78181013.26424275
       },
       "swap_vol": {
         "swap": 10906998.499451708,
@@ -50,23 +50,23 @@
         "affiliate_revenue": 21604510.0
       },
       "total_volume_usd": 170078051.25,
-      "btc_total_amount": 268.55857138,
-      "btc_total_usd": 31259712.375122234,
-      "eth_total_amount": 3099.2881374900003,
-      "eth_total_usd": 14056138.059338514,
-      "usd_total_amount": 11779802.6407036
+      "btc_total_amount": 268.27696407,
+      "btc_total_usd": 31245404.64273082,
+      "eth_total_amount": 3104.2879077400003,
+      "eth_total_usd": 14012471.131175248,
+      "usd_total_amount": 11772225.72094759
     },
     "previous": {
       "lock": {
-        "date": "2025-09-12T17:06:24.095534",
-        "date_ts": 1757696784,
-        "total_value_pooled": 119519531.23125473,
-        "total_value_pooled_usd": 154826883.74645978,
-        "total_value_bonded": 111726134.63012049,
-        "total_value_bonded_usd": 144731234.13067272,
-        "total_value_locked": 231245665.8613752,
-        "total_value_locked_usd": 299558117.87713253,
-        "total_non_rune_usd": 77413441.87322989
+        "date": "2025-09-12T15:24:00.271066",
+        "date_ts": 1757690640,
+        "total_value_pooled": 119569823.00433722,
+        "total_value_pooled_usd": 154600461.2465619,
+        "total_value_bonded": 111751108.25012048,
+        "total_value_bonded_usd": 144491080.15871537,
+        "total_value_locked": 231320931.2544577,
+        "total_value_locked_usd": 299091541.40527725,
+        "total_non_rune_usd": 77300230.62328096
       },
       "swap_vol": {},
       "swap_count": {
@@ -92,74 +92,12 @@
         "affiliate_revenue": 22879820.0
       },
       "total_volume_usd": 236949239.84,
-      "btc_total_amount": 267.84935043,
-      "btc_total_usd": 30963254.718566135,
-      "eth_total_amount": 3078.65159018,
-      "eth_total_usd": 13977703.03763765,
-      "usd_total_amount": 11722486.529345311
+      "btc_total_amount": 267.83937035,
+      "btc_total_usd": 30856340.95945095,
+      "eth_total_amount": 3077.12741223,
+      "eth_total_usd": 13935851.664135374,
+      "usd_total_amount": 11711488.988126978
     },
-    "routes": [
-      {
-        "from_asset": "BTC.BTC",
-        "to_asset": "ETH.ETH",
-        "volume_rune": 2337605.3143380247,
-        "volume_usd": 3066284.392328238
-      },
-      {
-        "from_asset": "BTC.BTC",
-        "to_asset": "THOR.RUNE",
-        "volume_rune": 1632593.4635420851,
-        "volume_usd": 2141506.021384889
-      },
-      {
-        "from_asset": "THOR.RUNE",
-        "to_asset": "THOR.RUNE",
-        "volume_rune": 1181860.9805526566,
-        "volume_usd": 1550271.0642992354
-      },
-      {
-        "from_asset": "ETH.USDC",
-        "to_asset": "THOR.RUNE",
-        "volume_rune": 714615.6467018188,
-        "volume_usd": 937375.8651878566
-      },
-      {
-        "from_asset": "ETH.ETH",
-        "to_asset": "THOR.RUNE",
-        "volume_rune": 674641.2404981694,
-        "volume_usd": 884940.6242671496
-      },
-      {
-        "from_asset": "ETH.USDT",
-        "to_asset": "THOR.RUNE",
-        "volume_rune": 429581.6638988976,
-        "volume_usd": 563490.9978875547
-      },
-      {
-        "from_asset": "BCH.BCH",
-        "to_asset": "THOR.RUNE",
-        "volume_rune": 381805.17836998164,
-        "volume_usd": 500821.61097306764
-      },
-      {
-        "from_asset": "LTC.LTC",
-        "to_asset": "THOR.RUNE",
-        "volume_rune": 302712.5707226054,
-        "volume_usd": 397074.23031382705
-      },
-      {
-        "from_asset": "BSC.BNB",
-        "to_asset": "THOR.RUNE",
-        "volume_rune": 251883.0939517654,
-        "volume_usd": 330400.17274873547
-      },
-      {
-        "from_asset": "BTC.BTC",
-        "to_asset": "DOGE.DOGE",
-        "volume_rune": 168595.02269218175,
-        "volume_usd": 221149.51721508108
-      }
-    ],
     "swap_type_distribution": {
       "swap": 0.005150919897099502,
       "secured_swap": 0.0017431335020668714,
@@ -511,8 +449,70 @@
     ],
     "days": 7,
     "locked_value_usd_curr_prev": [
-      303074192.81895304,
-      299558117.87713253
+      302757353.7354008,
+      299091541.40527725
+    ],
+    "routes": [
+      {
+        "from_asset": "BTC.BTC",
+        "to_asset": "ETH.ETH",
+        "volume_rune": 2337605.3143380247,
+        "volume_usd": 3066284.392328238
+      },
+      {
+        "from_asset": "BTC.BTC",
+        "to_asset": "THOR.RUNE",
+        "volume_rune": 1632593.4635420851,
+        "volume_usd": 2141506.021384889
+      },
+      {
+        "from_asset": "THOR.RUNE",
+        "to_asset": "THOR.RUNE",
+        "volume_rune": 1181860.9805526566,
+        "volume_usd": 1550271.0642992354
+      },
+      {
+        "from_asset": "ETH.USDC",
+        "to_asset": "THOR.RUNE",
+        "volume_rune": 714615.6467018188,
+        "volume_usd": 937375.8651878566
+      },
+      {
+        "from_asset": "ETH.ETH",
+        "to_asset": "THOR.RUNE",
+        "volume_rune": 674641.2404981694,
+        "volume_usd": 884940.6242671496
+      },
+      {
+        "from_asset": "ETH.USDT",
+        "to_asset": "THOR.RUNE",
+        "volume_rune": 429581.6638988976,
+        "volume_usd": 563490.9978875547
+      },
+      {
+        "from_asset": "BCH.BCH",
+        "to_asset": "THOR.RUNE",
+        "volume_rune": 381805.17836998164,
+        "volume_usd": 500821.61097306764
+      },
+      {
+        "from_asset": "LTC.LTC",
+        "to_asset": "THOR.RUNE",
+        "volume_rune": 302712.5707226054,
+        "volume_usd": 397074.23031382705
+      },
+      {
+        "from_asset": "BSC.BNB",
+        "to_asset": "THOR.RUNE",
+        "volume_rune": 251883.0939517654,
+        "volume_usd": 330400.17274873547
+      },
+      {
+        "from_asset": "BTC.BTC",
+        "to_asset": "DOGE.DOGE",
+        "volume_rune": 168595.02269218175,
+        "volume_usd": 221149.51721508108
+      }
     ]
   }
 }

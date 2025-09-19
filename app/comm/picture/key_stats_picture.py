@@ -55,7 +55,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         self.usdc_logo = self.usdc_logo.resize((usd_logo_size, usd_logo_size))
         self.usdt_logo = self.usdt_logo.resize((usd_logo_size, usd_logo_size))
-        self.rune_logo =self.rune_logo.resize((logo_size, logo_size))
+        self.rune_logo = self.rune_logo.resize((logo_size, logo_size))
 
     @async_wrap
     def _get_picture_sync(self):
@@ -100,19 +100,18 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         coin_x = 151
         values = [
-            (e.get_sum((BTC_SYMBOL,), previous=True), e.get_sum((BTC_SYMBOL,))),
-            (e.get_sum((ETH_SYMBOL,), previous=True), e.get_sum((ETH_SYMBOL,))),
-            (e.get_stables_sum(previous=True), e.get_stables_sum()),
+            (e.previous.btc_total_amount, e.current.btc_total_amount),
+            (e.previous.eth_total_amount, e.current.eth_total_amount),
+            (e.previous.usd_total_amount, e.current.usd_total_amount),
         ]
         vaults_y = [473 + i * 116 for i in range(3)]
-        postfixes = [' ₿', ' Ξ', 'usd',]
+        postfixes = [' ₿', ' Ξ', 'usd', ]
 
         paste_image_masked(image, self.btc_logo, (coin_x, vaults_y[0]))
         paste_image_masked(image, self.eth_logo, (coin_x, vaults_y[1]))
 
         paste_image_masked(image, self.usdt_logo, (coin_x - 20, vaults_y[2]))
         paste_image_masked(image, self.usdc_logo, (coin_x + 20, vaults_y[2]))
-
 
         text_x = coin_x + 94
         # draw.text((text_x, vaults_y[3] - 30), 'RUNEPool', fill=self.LABEL_COLOR, font=font_small_n, anchor='ls')
@@ -215,8 +214,6 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         #           font=font_fee,
         #           anchor='rm',
         #           fill=TC_LIGHTNING_BLUE)
-
-
 
         # 3. Block
 
@@ -326,7 +323,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         # Little hack to make the sum of the volumes equal to the USD volume.
         # We are not able to record all swap events correctly, but we can extract an approximate distribution.
         # Using this distribution, we calculate the actual trading volumes of different assets.
-        total_usd_volume, prev_total_usd_volume = self.event.usd_volume_curr_prev
+        total_usd_volume, prev_total_usd_volume = self.event.current.total_volume_usd, self.event.previous.total_volume_usd
         dist = self.event.swap_type_distribution
         n, t = (
             dist.get(TxMetricType.SWAP, 0.0),

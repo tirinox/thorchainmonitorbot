@@ -52,7 +52,7 @@ class SwapRouteRecorder(WithLogger, INotified):
         await self.redis.hincrbyfloat(key, "volume", volume)
         self.logger.debug(f"Stored swap event: {route} {pretty_dollar(volume)} hash = {tx.tx_hash}")
 
-    async def get_top_swap_routes_by_volume(self, days=7, top_n=3,
+    async def get_top_swap_routes_by_volume(self, usd_per_rune, days=7, top_n=3,
                                             normalize_assets=False,
                                             reorder_assets=False) -> List[SwapRouteEntry]:
         end_time = datetime.now()
@@ -88,7 +88,8 @@ class SwapRouteRecorder(WithLogger, INotified):
 
         # convert to SwapRouteEntry
         top_routes = [
-            SwapRouteEntry(from_asset=from_asset, to_asset=to_asset, volume_rune=volume)
+            SwapRouteEntry(from_asset=from_asset, to_asset=to_asset, volume_rune=volume,
+                           volume_usd=volume * usd_per_rune)
             for (from_asset, to_asset), volume in top_routes
         ]
 

@@ -413,14 +413,19 @@ class AffiliateManager(WithLogger):
 
         return self.thorname_to_name.get(name, display_name)
 
-    def get_affiliate_logo(self, address_or_name: str) -> Optional[str]:
+    LOCAL_PATH_PREFIX = 'renderer/static/img/ecosystem/'
+
+    def get_affiliate_logo(self, address_or_name: str, with_local_prefix=False) -> Optional[str]:
         """
         Returns the affiliate logo for a given address or ThorName.
         If the address or name is not found, it returns None.
         """
         name = self.get_affiliate_name(address_or_name)
         name = self._simplify_name(name)
-        return self.name_to_logo.get(name, "")
+        logo = self.name_to_logo.get(name, "")
+        if with_local_prefix and logo and not logo.startswith('http'):
+            logo = f'{self.LOCAL_PATH_PREFIX}{logo}'
+        return logo
 
     def remove_space_and_lowercase(self, d: dict) -> dict:
         """
