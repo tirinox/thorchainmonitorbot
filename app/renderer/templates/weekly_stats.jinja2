@@ -8,7 +8,7 @@
             display: flex;
             flex: 1;
             padding: 12px;
-            justify-content: center;
+            flex-direction: column;
         }
 
         .main-container {
@@ -16,7 +16,7 @@
             flex-direction: row;
             gap: 24px;
             align-items: stretch;
-            padding-top: 20px;
+            padding-top: 10px;
         }
 
         .date-range {
@@ -36,11 +36,25 @@
         }
 
         .block-title {
+            display: flex;
             color: #999;
             font-size: 24px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.1rem;
+        }
+
+        .route {
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+        }
+
+        .affiliate-logo {
+            height: 24px;
+            width: 24px;
+            vertical-align: middle;
+            margin-left: 8px;
         }
 
 
@@ -56,14 +70,57 @@
     {% endwith %}
 
     <div class="main-container">
+        <!-- COLUMN1 -->
         <div class="block shadow-box">
             <div class="block-title">Native asset vaults</div>
         </div>
+
+        <!-- COLUMN2 -->
         <div class="block shadow-box">
             <div class="block-title">Protocol revenue</div>
+
+            <div>
+                {% for aff in top_affiliates[:8] %}
+                    <div>
+                        {{ aff["display_name"] }}
+                        <img src="{{ aff["logo"] or "renderer/logo/unknown.png" }}"
+                             alt="{{ aff["display_name"] }} logo" class="affiliate-logo">
+                    </div>
+
+                {% endfor %}
+
+            </div>
         </div>
+
+        <!-- COLUMN3 -->
         <div class="block shadow-box">
             <div class="block-title">Swap info</div>
+            <div class="flex">
+                <div>
+                    Unique swappers:
+                </div>
+                <div class="flex t">
+                    {{ short_money(current.swapper_count, integer=True) }}
+                </div>
+                <div class="flex small">
+                    {% with curr=current.swapper_count, prev=previous.swapper_count %}
+                        {% include "components/delta.jinja2" %}
+                    {% endwith %}
+                </div>
+            </div>
+
+            <div class="top_routes">
+                <div class="top_routers_header">Top Route</div>
+                {% for route in routes[:5] %}
+                    <div class="route">
+                        <div class="route_from">{{ route['from_asset'] }}</div>
+                        <div class="route_arrow">⇌</div>
+                        <div class="route_to">{{ route['to_asset'] }}</div>
+                        <div class="route_volume">{{ short_money(route['volume_usd'], integer=True) }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+
         </div>
     </div>
 

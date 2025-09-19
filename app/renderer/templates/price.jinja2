@@ -238,23 +238,23 @@
 
             <div class="indicator-box price-delta-box cbox">
                 {% with label='1H', curr=market_info.pool_rune_price, prev=price_1h %}
-                    {% include "components/price_delta.jinja2" %}
+                    {% include "components/delta.jinja2" %}
                 {% endwith %}
 
                 {% with label='24H', curr=market_info.pool_rune_price, prev=price_24h %}
-                    {% include "components/price_delta.jinja2" %}
+                    {% include "components/delta.jinja2" %}
                 {% endwith %}
 
                 {% with label='7D', curr=market_info.pool_rune_price, prev=price_7d %}
-                    {% include "components/price_delta.jinja2" %}
+                    {% include "components/delta.jinja2" %}
                 {% endwith %}
 
                 {% with label='30D', curr=market_info.pool_rune_price, prev=price_30d %}
-                    {% include "components/price_delta.jinja2" %}
+                    {% include "components/delta.jinja2" %}
                 {% endwith %}
 
                 {% with label='1Y', curr=market_info.pool_rune_price, prev=price_1y %}
-                    {% include "components/price_delta.jinja2" %}
+                    {% include "components/delta.jinja2" %}
                 {% endwith %}
             </div>
 
