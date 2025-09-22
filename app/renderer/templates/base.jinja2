@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>{{ title }}</title>
-    <link rel="stylesheet" href="renderer/static/css/common.css?r={{ range(-100, 100) | random }}">
+    <link rel="stylesheet" href="renderer/static/css/common.css?r=1">
 
     {%- block extra_head %}
     {% endblock %}
@@ -58,12 +58,39 @@
 
         return `${day}.${month}.${year} ${hours}:${minutes} UTC`;
     };
-    todayDate.innerText = formatDate(new Date())
+    todayDate.innerText = formatDate(new Date());
 
     {% if auto %}
-        setInterval(function () {
-            location.reload();
-        }, 3000);
+        (function () {
+            const CHECK_INTERVAL = 2000; // ms
+            let lastContent = null;
+
+            async function checkForChanges() {
+                try {
+                    const response = await fetch(location.href, {
+                        cache: "no-store" // avoid caching
+                    });
+                    const text = await response.text();
+                    if (!lastContent) {
+                        lastContent = text;
+                        console.log('1 last content');
+                    } else {
+
+                        if (text !== lastContent) {
+                            console.log("Page changed, reloading...");
+                            location.reload();
+                        } else {
+                            console.log("No change");
+                        }
+                    }
+                } catch (err) {
+                    console.error("Check failed:", err);
+                }
+            }
+
+            checkForChanges();
+            setInterval(checkForChanges, CHECK_INTERVAL);
+        })();
     {% endif %}
 </script>
 
