@@ -40,7 +40,7 @@
         "runepool_withdraw": 0,
         "secured_swap": 117
       },
-      "swapper_count": 0,
+      "swapper_count": 3430,
       "earnings": {
         "total_earnings": 437091.4858617195,
         "block_earnings": -93.36238733255428,
@@ -82,7 +82,7 @@
         "runepool_withdraw": 0,
         "secured_swap": 0
       },
-      "swapper_count": 0,
+      "swapper_count": 1232,
       "earnings": {
         "total_earnings": 329520.5945790795,
         "block_earnings": -129.77457076504663,
@@ -161,9 +161,9 @@
       }
     ],
     "swap_type_distribution": {
-      "swap": 0.005150919897099502,
-      "secured_swap": 0.0017431335020668714,
-      "trade_swap": 0.9931059466008336
+      "swap": 0.2,
+      "secured_swap": 0.1,
+      "trade_swap": 0.7
     },
     "top_affiliates": [
       {

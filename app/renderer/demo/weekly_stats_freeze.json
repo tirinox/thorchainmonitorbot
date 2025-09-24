@@ -40,7 +40,7 @@
         "runepool_withdraw": 0,
         "secured_swap": 117
       },
-      "swapper_count": 0,
+      "swapper_count": 32443,
       "earnings": {
         "total_earnings": 437091.4858617195,
         "block_earnings": -93.36238733255428,
@@ -54,7 +54,12 @@
       "btc_total_usd": 31245404.64273082,
       "eth_total_amount": 3104.2879077400003,
       "eth_total_usd": 14012471.131175248,
-      "usd_total_amount": 11772225.72094759
+      "usd_total_amount": 11772225.72094759,
+      "swap_type_distribution": {
+        "swap": 0.2,
+        "secured_swap": 0.1,
+        "trade_swap": 0.7
+      }
     },
     "previous": {
       "lock": {
@@ -82,7 +87,7 @@
         "runepool_withdraw": 0,
         "secured_swap": 0
       },
-      "swapper_count": 0,
+      "swapper_count": 34321,
       "earnings": {
         "total_earnings": 329520.5945790795,
         "block_earnings": -129.77457076504663,

@@ -52,6 +52,20 @@ p {
     color: #23DCC8;
 }
 
+
+.highlight-blue-bg {
+    background-color: #00CCFF;
+}
+
+.yggdrasil-green-bg {
+    background-color: #33FF99;
+}
+
+.midgard-turqoise-bg {
+    background-color: #23DCC8;
+}
+
+
 .night-black {
     background-color: #0a1015;
 }
@@ -65,14 +79,6 @@ p {
     border: 1px rgba(255, 255, 255, 0.01) dashed;
     display: block;
     overflow: hidden;
-}
-
-.title {
-    letter-spacing: 0.15em;
-    font-family: ThorFontLight, a;
-    font-size: 43px;
-    color: #c8c8c8;
-    font-weight: normal;
 }
 
 .header-box {

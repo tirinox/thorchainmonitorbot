@@ -4,7 +4,14 @@
 {% block content %}
     <style>
 
-        .block {
+        .block-outer {
+            display: flex;
+            flex: 1;
+
+            flex-direction: column;
+        }
+
+        .block-inner {
             display: flex;
             flex: 1;
             padding: 12px;
@@ -16,7 +23,12 @@
             flex-direction: row;
             gap: 24px;
             align-items: stretch;
-            padding-top: 10px;
+
+        }
+
+        .img-vault-asset {
+            width: 64px;
+            height: 64px;
         }
 
         .date-range {
@@ -36,12 +48,15 @@
         }
 
         .block-title {
-            display: flex;
+            display: block;
             color: #999;
             font-size: 24px;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.1rem;
+            text-align: center;
+            width: 100%;
+            margin-bottom: 6px;
         }
 
         .route {
@@ -50,13 +65,44 @@
             gap: 8px;
         }
 
+        .affiliate-table {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .affiliate-row {
+            display: flex;
+            flex-direction: row;
+        }
+
         .affiliate-logo {
             height: 24px;
             width: 24px;
             vertical-align: middle;
-            margin-left: 8px;
         }
 
+        .bar-block {
+
+        }
+
+        .bar-container {
+            width: 100%;
+            height: 10px;
+            display: flex;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .bar-segment {
+            height: 100%;
+        }
+
+        .bar-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-weight: bold;
+        }
 
     </style>
 
@@ -64,62 +110,196 @@
     {% with title="WEEKLY STATS" %}
         {% include "components/header.jinja2" %}
 
-        <div class="date-range">
-            {{ datetimeformat(start_date_ts, "%d.%m.%Y") }} – {{ datetimeformat(end_date_ts, "%d.%m.%Y") }}
-        </div>
+        {#        <div class="date-range">#}
+        {#            {{ datetimeformat(start_date_ts, "%d.%m.%Y") }} – {{ datetimeformat(end_date_ts, "%d.%m.%Y") }}#}
+        {#        </div>#}
     {% endwith %}
 
     <div class="main-container">
         <!-- COLUMN1 -->
-        <div class="block shadow-box">
+        <div class="block-outer">
             <div class="block-title">Native asset vaults</div>
+            <div class="block-inner shadow-box">
+                <div class="column">
+                    <div class="vault-asset-box">
+                        <img class="img-vault-asset" alt="BTC logo" src="renderer/logo/BTC.BTC.png"/>
+                        <div class="vault-name">
+                            {{ short_money(current.btc_total_amount) }} ₿
+                            {% with curr=current.btc_total_amount, prev=previous.btc_total_amount %}
+                                {% include "components/delta.jinja2" %}
+                            {% endwith %}
+                        </div>
+                    </div>
+
+                    <div class="vault-asset-box">
+                        <img class="img-vault-asset" alt="ETH logo" src="renderer/logo/ETH.ETH.png"/>
+                        <div class="vault-name">
+                            {{ short_money(current.btc_total_amount) }} ₿
+                            {% with curr=current.btc_total_amount, prev=previous.btc_total_amount %}
+                                {% include "components/delta.jinja2" %}
+                            {% endwith %}
+                        </div>
+                    </div>
+
+                    <div class="vault-asset-box">
+                        <div class="coins-stack">
+                            <img class="img-vault-asset" alt="USDT logo"
+                                 src="renderer/logo/ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7.png"/>
+                            <img class="img-vault-asset" alt="USDC logo"
+                                 src="renderer/logo/ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48.png"/>
+                        </div>
+
+                        <div class="vault-name">
+                            {{ short_money(current.usd_total_amount) }} ₿
+                            {% with curr=current.usd_total_amount, prev=previous.usd_total_amount %}
+                                {% include "components/delta.jinja2" %}
+                            {% endwith %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div>Native asset pooled</div>
+                        <div>
+                            <div>
+                                {{ short_dollar(current.lock.total_non_rune_usd) }}
+                            </div>
+
+                            {% with curr=current.lock.total_non_rune_usd, prev=previous.lock.total_non_rune_usd %}
+                                {% include "components/delta.jinja2" %}
+                            {% endwith %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div>Network security</div>
+                        <div>
+                            <div>
+                                {{ short_dollar(current.lock.total_value_bonded_usd) }}
+                            </div>
+
+                            {% with curr=current.lock.total_value_bonded_usd, prev=previous.lock.total_value_bonded_usd %}
+                                {% include "components/delta.jinja2" %}
+                            {% endwith %}
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
         </div>
 
         <!-- COLUMN2 -->
-        <div class="block shadow-box">
+        <div class="block-outer">
             <div class="block-title">Protocol revenue</div>
 
-            <div>
-                {% for aff in top_affiliates[:8] %}
-                    <div>
-                        {{ aff["display_name"] }}
-                        <img src="{{ aff["logo"] or "renderer/logo/unknown.png" }}"
-                             alt="{{ aff["display_name"] }} logo" class="affiliate-logo">
+            <div class="block-inner shadow-box">
+                <div class="protocol-tittle">Protocol Revenue</div>
+                <div class="protocol-revenue">
+                    <div class="protocol-revenue-value">
+                        {{ short_dollar(current.earnings.total_earnings) }}
                     </div>
-
-                {% endfor %}
-
-            </div>
-        </div>
-
-        <!-- COLUMN3 -->
-        <div class="block shadow-box">
-            <div class="block-title">Swap info</div>
-            <div class="flex">
-                <div>
-                    Unique swappers:
-                </div>
-                <div class="flex t">
-                    {{ short_money(current.swapper_count, integer=True) }}
-                </div>
-                <div class="flex small">
-                    {% with curr=current.swapper_count, prev=previous.swapper_count %}
+                    {% with curr=current.earnings.total_earnings, prev=previous.earnings.total_earnings %}
                         {% include "components/delta.jinja2" %}
                     {% endwith %}
                 </div>
+
+                <div class="affiliate-tittle">Affiliate Revenue</div>
+
+                <div class="affiliate-revenue">
+                    <div class="affliate-revenue-value">
+                        {{ short_dollar(current.earnings.affiliate_revenue) }}
+                    </div>
+                    {% with curr=current.earnings.affiliate_revenue, prev=previous.earnings.affiliate_revenue %}
+                        {% include "components/delta.jinja2" %}
+                    {% endwith %}
+                </div>
+
+                <div class="affiliate-table-tittle">Top affiliates</div>
+
+                <div class="affiliate-table">
+                    {% for aff in top_affiliates[:8] %}
+                        <div class="affiliate-row">
+
+                            <img src="{{ aff["logo"] or "renderer/logo/unknown.png" }}"
+                                 alt="{{ aff["display_name"] }} logo" class="affiliate-logo">
+
+                            <div class="affiliate-name">{{ aff["display_name"] }}</div>
+
+                            <div class="affiliate-volume">
+                                {{ short_dollar(aff.total_usd) }}
+                                {% with curr=aff.total_usd, prev=aff.prev_total_usd %}
+                                    {% include "components/delta.jinja2" %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
             </div>
 
-            <div class="top_routes">
-                <div class="top_routers_header">Top Route</div>
-                {% for route in routes[:5] %}
-                    <div class="route">
-                        <div class="route_from">{{ route['from_asset'] }}</div>
-                        <div class="route_arrow">⇌</div>
-                        <div class="route_to">{{ route['to_asset'] }}</div>
-                        <div class="route_volume">{{ short_money(route['volume_usd'], integer=True) }}</div>
+        </div>
+
+        <!-- COLUMN3 -->
+        <div class="block-outer">
+            <div class="block-title">Swap info</div>
+            <div class="block-inner shadow-box">
+                <div class="unique-swappers-block">
+                    <div class="unique-swappers-title">
+                        Unique Swappers:
                     </div>
-                {% endfor %}
+                    <div class="unique-swapper-value">
+                        {{ pretty_money(current.swapper_count, integer=True) }}
+                        {% with curr=current.swapper_count, prev=previous.swapper_count %}
+                            {% include "components/delta.jinja2" %}
+                        {% endwith %}
+                    </div>
+                </div>
+
+                <div class="swap-volume-block">
+                    <div class="swap-volume-title">
+                        Swap Volume:
+                    </div>
+                    <div class="swap-volume-value">
+                        {{ short_dollar(current.total_volume_usd) }}
+                        {% with curr=current.total_volume_usd, prev=previous.total_volume_usd %}
+                            {% include "components/delta.jinja2" %}
+                        {% endwith %}
+                    </div>
+                </div>
+
+                <div class="top_routes">
+                    <div class="top_routers_header">Top Route</div>
+                    {% for route in routes[:5] %}
+                        <div class="route">
+                            <div class="route_from">{{ route['from_asset'] }}</div>
+                            <div class="route_arrow">⇌</div>
+                            <div class="route_to">{{ route['to_asset'] }}</div>
+                            <div class="route_volume">{{ short_money(route['volume_usd'], integer=True) }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="bar-block">
+                    <div class="bar-container">
+                        <div class="bar-segment highlight-blue-bg"
+                             style="width: {{ current.swap_type_distribution['swap'] * 100 }}%">
+                        </div>
+                        <div class="bar-segment midgard-turqoise-bg"
+                             style="width: {{ current.swap_type_distribution['trade_swap'] * 100 }}%">
+                        </div>
+                        <div class="bar-segment yggdrasil-green-bg"
+                             style="width: {{ current.swap_type_distribution['secured_swap'] * 100 }}%">
+                        </div>
+                    </div>
+
+                    <div class="bar-labels">
+                        <span class="highlight-blue">Ordinary</span>
+                        <span class="midgard-turqoise">Trade</span>
+                        <span class="yggdrasil-green">Secured</span>
+                    </div>
+                </div>
             </div>
+
 
         </div>
     </div>
