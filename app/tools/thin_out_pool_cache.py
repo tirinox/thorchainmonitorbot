@@ -1,3 +1,9 @@
+"""
+Usage:
+    make attach
+    PYTHONPATH="/app" python tools/thin_out_pool_cache.py /config/config.yaml
+
+"""
 import asyncio
 import logging
 

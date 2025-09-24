@@ -10,12 +10,6 @@ WORKDIR /app
 # (Adjust path to where your file actually is)
 COPY app/requirements.txt /app/requirements.txt
 
-# System deps that commonly help build native wheels; prune if unneeded
-RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends \
-        build-essential git cmake pkg-config && \
-    rm -rf /var/lib/apt/lists/*
-
 # Newer pip/setuptools/wheel avoid many build issues on 3.11
 RUN python -m pip install --upgrade pip setuptools wheel packaging
 
