@@ -19,8 +19,8 @@ class KnownVersionStorage(WithLogger):
         self.deps = deps
         self.context_name = context_name
 
-    DB_KEY_NEW_VERSION = 'THORNode.Version.Already.Notified.As.New'
-    DB_KEY_LAST_PROGRESS = 'THORNode.Version.Last.Progress'
+    DB_KEY_NEW_VERSION = 'THORNode:Version.Already:Notified:As:New:'
+    DB_KEY_LAST_PROGRESS = 'THORNode:Version:Last:Progress:'
 
     async def is_version_known(self, new_v):
         r = await self.deps.db.get_redis()

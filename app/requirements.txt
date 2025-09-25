@@ -36,6 +36,6 @@ web3>=6.0.0
 websockets
 python-json-logger>=3.0.0
 
-aioredis  # outdated? fixme see DB class
-distutils
+# aioredis  # outdated? fixme see DB class
+# distutils
 jsonformatter

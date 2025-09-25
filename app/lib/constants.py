@@ -28,8 +28,11 @@ BSC_BUSD_SYMBOL = 'BSC.BUSD-0XE9E7CEA3DEDCA5984780BAFC599BD69ADD087D56'
 BSC_USDC_SYMBOL = 'BSC.USDC-0X8AC76A51CC950D9822D68B83FE1AD97B32CD580D'
 ETH_GUSD_SYMBOL = 'ETH.GUSD-0X056FD409E1D7A124BD7017459DFEA2F387B6D5CD'
 ETH_LUSD_SYMBOL = 'ETH.LUSD-0X5F98805A4E8BE255A32880FDEC7F6728C6568BA0'
+TRON_USDT_SYMBOL = 'TRON.USDT-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
 
 DOGE_SYMBOL = 'DOGE.DOGE'
+
+TRX_SYMBOL = 'TRX.TRX'
 
 RUNE_IDEAL_SUPPLY = 500_000_000
 RUNE_SUPPLY_AFTER_SWITCH = 486_051_059
@@ -72,10 +75,11 @@ class Chains:
     BSC = 'BSC'
     BASE = 'BASE'
     XRP = 'XRP'
+    TRON = 'TRON'
 
     ALL_EVM = (ETH, BSC, BASE, AVAX)
 
-    META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM, BSC, BASE, XRP)
+    META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM, BSC, BASE, XRP, TRON)
 
     @staticmethod
     def detect_chain(orig_address: str) -> str:
@@ -86,10 +90,14 @@ class Chains:
             return Chains.THOR
         elif address.startswith('bnb') or address.startswith('tbnb'):
             return Chains.BNB
-        elif orig_address.startswith('D'):
-            return Chains.DOGE
         elif address.startswith('cosmos'):
             return Chains.ATOM
+        elif orig_address.startswith('D'):
+            return Chains.DOGE
+        elif address.startswith('T'):
+            return Chains.TRON
+        elif address.startswith('r'):
+            return Chains.XRP
         return ''
 
     @staticmethod
@@ -116,6 +124,8 @@ class Chains:
             return 2.0
         elif chain == Chains.XRP:
             return 4.0  # typical
+        elif chain == Chains.TRON:
+            return 3.0
         return 0.01
 
     @staticmethod

@@ -40,16 +40,6 @@ class AppSettingsAPI:
         d.loop = asyncio.get_event_loop()
         d.db = DB()
 
-        thor_env = d.cfg.get_thor_env_by_network_id()
-        cfg = d.cfg.get('thor.midgard')
-        d.midgard_connector = MidgardConnector(
-            d.session,
-            int(cfg.get_pure('tries', 3)),
-            public_url=thor_env.midgard_url
-        )
-
-        d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_cache)
-
         self._node_watcher = NodeWatcherStorage(d.db)
 
         self.web_app = Starlette(
@@ -70,7 +60,18 @@ class AppSettingsAPI:
         self._user_counter = UserCounterMiddleware(d)
 
     async def _on_startup(self):
-        self.deps.make_http_session()
+        d = self.deps
+        d.make_http_session()
+        thor_env = d.cfg.get_thor_env_by_network_id()
+        cfg = d.cfg.get('thor.midgard')
+        d.midgard_connector = MidgardConnector(
+            d.session,
+            int(cfg.get_pure('tries', 3)),
+            public_url=thor_env.midgard_url
+        )
+
+        d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_cache)
+
         await self.deps.db.get_redis()
 
     @property

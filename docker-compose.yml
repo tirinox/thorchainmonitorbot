@@ -61,8 +61,8 @@ services:
       - "${REDIS_PORT}"
     command:
       - 'redis-server'
-      - '--save 900 1'
-      - '--save 300 100'
+      - '--save 9000 1'
+      - '--save 3000 100'
       - '--port ${REDIS_PORT}'
       - '--requirepass ${REDIS_PASSWORD}'
   #      - '--bind 0.0.0.0 --protected-mode no'
