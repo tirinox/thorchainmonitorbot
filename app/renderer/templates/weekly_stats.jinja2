@@ -23,12 +23,18 @@
             flex-direction: row;
             gap: 24px;
             align-items: stretch;
-
         }
 
-        .img-vault-asset {
-            width: 64px;
-            height: 64px;
+        .gapped {
+            gap: 12px;
+        }
+
+        .column {
+            padding-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            align-items: center;
         }
 
         .date-range {
@@ -59,6 +65,28 @@
             margin-bottom: 6px;
         }
 
+
+        .vault-asset-box {
+            display: flex;
+            width: 100%;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .vault-delta {
+            font-weight: bolder;
+            font-size: 20px;
+            padding-top: 17px;
+        }
+
+        .vault-amount {
+            display: flex;
+            font-size: 40px;
+            font-weight: bold;
+        }
+
         .route {
             display: flex;
             flex-direction: row;
@@ -68,17 +96,40 @@
         .affiliate-table {
             display: flex;
             flex-direction: column;
+            gap: 5px;
+            justify-content: space-between;
+            width: 100%;
+            padding-top: 8px;
         }
 
         .affiliate-row {
             display: flex;
             flex-direction: row;
+
+            align-content: center;
+            gap: 6px;
+            padding-bottom: 3px;
         }
 
         .affiliate-logo {
-            height: 24px;
-            width: 24px;
+            height: 32px;
+            width: 32px;
             vertical-align: middle;
+            margin-right: 4px;
+        }
+
+        .affiliate-name {
+            font-size: 20px;
+            font-weight: bolder;
+        }
+
+        .affiliate-volume {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .affiliate-delta {
+            padding-top: 2px;
         }
 
         .bar-block {
@@ -97,11 +148,73 @@
             height: 100%;
         }
 
+        .single-amount {
+        }
+
         .bar-labels {
             display: flex;
             justify-content: space-between;
             margin-top: 6px;
             font-weight: bold;
+        }
+
+        .coins-stack {
+            position: relative;
+            display: inline-block;
+        }
+
+        .coin {
+            width: 64px;
+            height: 64px;
+        }
+
+        .coins-stack .coin {
+            border-radius: 50%; /* make round */
+            position: absolute;
+            top: 0;
+        }
+
+        .coins-stack {
+            width: 100px;
+            height: 64px;
+        }
+
+        .coins-stack .coin:nth-child(1) {
+            transform: translate(0%);
+        }
+
+        .coins-stack .coin:nth-child(2) {
+            transform: translate(50%);
+        }
+
+        .metric-block {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .metric-value-block {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .metric-title {
+            color: #999;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight: bold;
+        }
+
+        .metric-delta {
+            font-weight: bolder;
+            font-size: 20px;
+            padding-top: 14px;
         }
 
     </style>
@@ -120,66 +233,82 @@
         <div class="block-outer">
             <div class="block-title">Native asset vaults</div>
             <div class="block-inner shadow-box">
-                <div class="column">
+                <div class="column gapped">
                     <div class="vault-asset-box">
-                        <img class="img-vault-asset" alt="BTC logo" src="renderer/logo/BTC.BTC.png"/>
-                        <div class="vault-name">
-                            {{ short_money(current.btc_total_amount) }} ₿
+                        <img class="coin" alt="BTC logo" src="renderer/logo/BTC.BTC.png"/>
+
+                        <div class="vault-amount single-amount">
+                            {{ pretty_money(current.btc_total_amount) }} ₿
+                        </div>
+
+                        <div class="vault-delta">
                             {% with curr=current.btc_total_amount, prev=previous.btc_total_amount %}
                                 {% include "components/delta.jinja2" %}
                             {% endwith %}
                         </div>
+
                     </div>
 
                     <div class="vault-asset-box">
-                        <img class="img-vault-asset" alt="ETH logo" src="renderer/logo/ETH.ETH.png"/>
-                        <div class="vault-name">
-                            {{ short_money(current.btc_total_amount) }} ₿
-                            {% with curr=current.btc_total_amount, prev=previous.btc_total_amount %}
+                        <img class="coin" alt="ETH logo" src="renderer/logo/ETH.ETH.png"/>
+
+                        <div class="vault-amount single-amount">
+                            {{ pretty_money(current.eth_total_amount) }} Ξ
+                        </div>
+
+                        <div class="vault-delta">
+                            {% with curr=current.eth_total_amount, prev=previous.eth_total_amount %}
                                 {% include "components/delta.jinja2" %}
                             {% endwith %}
                         </div>
+
                     </div>
 
                     <div class="vault-asset-box">
                         <div class="coins-stack">
-                            <img class="img-vault-asset" alt="USDT logo"
+                            <img class="coin img-vault-asset" alt="USDT logo"
                                  src="renderer/logo/ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7.png"/>
-                            <img class="img-vault-asset" alt="USDC logo"
+                            <img class="coin img-vault-asset" alt="USDC logo"
                                  src="renderer/logo/ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48.png"/>
                         </div>
 
-                        <div class="vault-name">
-                            {{ short_money(current.usd_total_amount) }} ₿
+                        <div class="vault-amount">
+                            ${{ short_money(current.usd_total_amount) }}
+                        </div>
+
+                        <div class="vault-delta">
                             {% with curr=current.usd_total_amount, prev=previous.usd_total_amount %}
                                 {% include "components/delta.jinja2" %}
                             {% endwith %}
                         </div>
                     </div>
 
-                    <div>
-                        <div>Native asset pooled</div>
-                        <div>
-                            <div>
+                    <div class="metric-block">
+                        <div class="metric-title">Native Asset Pooled</div>
+                        <div class="metric-value-block">
+                            <div class="metric-value">
                                 {{ short_dollar(current.lock.total_non_rune_usd) }}
                             </div>
 
-                            {% with curr=current.lock.total_non_rune_usd, prev=previous.lock.total_non_rune_usd %}
-                                {% include "components/delta.jinja2" %}
-                            {% endwith %}
+                            <div class="metric-delta">
+                                {% with curr=current.lock.total_non_rune_usd, prev=previous.lock.total_non_rune_usd %}
+                                    {% include "components/delta.jinja2" %}
+                                {% endwith %}
+                            </div>
                         </div>
                     </div>
 
-                    <div>
-                        <div>Network security</div>
-                        <div>
-                            <div>
+                    <div class="metric-block">
+                        <div class="metric-title">Network security</div>
+                        <div class="metric-value-block">
+                            <div class="metric-value">
                                 {{ short_dollar(current.lock.total_value_bonded_usd) }}
                             </div>
-
-                            {% with curr=current.lock.total_value_bonded_usd, prev=previous.lock.total_value_bonded_usd %}
-                                {% include "components/delta.jinja2" %}
-                            {% endwith %}
+                            <div class="metric-delta">
+                                {% with curr=current.lock.total_value_bonded_usd, prev=previous.lock.total_value_bonded_usd %}
+                                    {% include "components/delta.jinja2" %}
+                                {% endwith %}
+                            </div>
                         </div>
 
                     </div>
@@ -192,48 +321,61 @@
         <div class="block-outer">
             <div class="block-title">Protocol revenue</div>
 
-            <div class="block-inner shadow-box">
-                <div class="protocol-tittle">Protocol Revenue</div>
-                <div class="protocol-revenue">
-                    <div class="protocol-revenue-value">
-                        {{ short_dollar(current.earnings.total_earnings) }}
-                    </div>
-                    {% with curr=current.earnings.total_earnings, prev=previous.earnings.total_earnings %}
-                        {% include "components/delta.jinja2" %}
-                    {% endwith %}
-                </div>
-
-                <div class="affiliate-tittle">Affiliate Revenue</div>
-
-                <div class="affiliate-revenue">
-                    <div class="affliate-revenue-value">
-                        {{ short_dollar(current.earnings.affiliate_revenue) }}
-                    </div>
-                    {% with curr=current.earnings.affiliate_revenue, prev=previous.earnings.affiliate_revenue %}
-                        {% include "components/delta.jinja2" %}
-                    {% endwith %}
-                </div>
-
-                <div class="affiliate-table-tittle">Top affiliates</div>
-
-                <div class="affiliate-table">
-                    {% for aff in top_affiliates[:8] %}
-                        <div class="affiliate-row">
-
-                            <img src="{{ aff["logo"] or "renderer/logo/unknown.png" }}"
-                                 alt="{{ aff["display_name"] }} logo" class="affiliate-logo">
-
-                            <div class="affiliate-name">{{ aff["display_name"] }}</div>
-
-                            <div class="affiliate-volume">
-                                {{ short_dollar(aff.total_usd) }}
-                                {% with curr=aff.total_usd, prev=aff.prev_total_usd %}
-                                    {% include "components/delta.jinja2" %}
-                                {% endwith %}
-                            </div>
+            <div class="block-inner shadow-box gapped">
+                <div class="metric-block">
+                    <div class="metric-title">Protocol Revenue</div>
+                    <div class="metric-value-block">
+                        <div class="metric-value">
+                            {{ short_dollar(current.earnings.total_earnings) }}
                         </div>
-                    {% endfor %}
+                        <div class="metric-delta">
+                            {% with curr=current.earnings.total_earnings, prev=previous.earnings.total_earnings %}
+                                {% include "components/delta.jinja2" %}
+                            {% endwith %}
+                        </div>
+                    </div>
                 </div>
+
+                <div class="metric-block">
+                    <div class="metric-title">Affiliate Revenue</div>
+
+                    <div class="metric-value-block">
+                        <div class="metric-value">
+                            {{ short_dollar(current.earnings.affiliate_revenue) }}
+                        </div>
+                        <div class="metric-delta">
+                            {% with curr=current.earnings.affiliate_revenue, prev=previous.earnings.affiliate_revenue %}
+                                {% include "components/delta.jinja2" %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-block">
+                    <div class="metric-title">Top affiliates</div>
+
+                    <div class="affiliate-table">
+                        {% for aff in top_affiliates[:7] %}
+                            <div class="affiliate-row">
+
+                                <img src="{{ aff["logo"] or "renderer/logo/unknown.png" }}"
+                                     alt="{{ aff["display_name"] }} logo" class="affiliate-logo">
+
+                                <div class="affiliate-name">{{ aff["display_name"] }}</div>
+
+                                <div class="affiliate-volume">
+                                    {{ short_dollar(aff.total_usd) }}
+                                </div>
+                                <div class="affiliate-delta">
+                                    {% with curr=aff.total_usd, prev=aff.prev_total_usd %}
+                                        {% include "components/delta.jinja2" %}
+                                    {% endwith %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
 
             </div>
 

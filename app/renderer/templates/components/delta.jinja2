@@ -9,7 +9,6 @@
         flex-wrap: nowrap;
 
         justify-content: space-between;
-        {#width: 100%;#}
         margin: 0;
         padding: 0;
     }
@@ -17,11 +16,12 @@
     .price-label {
         display: block;
         font-weight: normal;
+        margin-right: 20px;
         color: rgb(202, 202, 202);
     }
 
     .price-change {
-        margin-left: 20px;
+        {#margin-left: 20px;#}
         display: flex;
         align-items: baseline;
         font-weight: bolder;
@@ -77,7 +77,7 @@
 % set epilogue = epilogue or '%'
 
 {% if show %}
-<div class="price-delta">
+<div class="price-delta price-delta-extra">
     {% if label %}
         <div class="price-label">{{ label }}:</div>
     {% endif %}
