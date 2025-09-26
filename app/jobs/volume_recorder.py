@@ -130,6 +130,7 @@ class VolumeRecorder(INotified, WithLogger):
         self._accumulator = Accumulator('Volume', deps.db, tolerance=t)
 
         self._deduplicator = TxDeduplicator(deps.db, 'VolumeRecorder')
+        self.use_deduplication = deps.cfg.as_bool('price.volume.record_deduplication', True)
 
     async def on_data(self, sender, txs: Union[List[ThorAction], AlertTradeAccountAction]):
         try:
@@ -147,11 +148,12 @@ class VolumeRecorder(INotified, WithLogger):
         current_price = ph.usd_per_rune
         total_volume = 0.0
 
-        # todo: use a deduplicator here in order to avoid double counting
-
         volumes = defaultdict(float)
         ts = None
         for tx in txs:
+            if self.use_deduplication and await self._deduplicator.have_ever_seen_hash(tx.tx_hash):
+                continue
+
             volume = tx.full_volume_in_rune
             if volume > 0:
                 if tx.is_of_type(ActionType.SWAP):
@@ -179,6 +181,9 @@ class VolumeRecorder(INotified, WithLogger):
 
                 total_volume += volume
                 ts = tx.date_timestamp
+
+            if self.use_deduplication:
+                await self._deduplicator.mark_as_seen(tx.tx_hash)
 
         if ts is not None:
             await self._add_point(ts, volumes, current_price)
@@ -241,7 +246,9 @@ class VolumeRecorder(INotified, WithLogger):
             secured = s.get(TxMetricType.SECURED_SWAP, 0)
             ordinary = total - trade - secured
             if ordinary < 0:
-                raise ValueError(f'Swap accounting is broken: ordinary < 0')
+                self.logger.warning(f'Ordinary volume < 0? {total=} - {trade=} - {secured=}')
+                ordinary = 0
+                # raise ValueError(f'Swap accounting is broken: ordinary < 0')
 
         return {
             TxMetricType.SWAP: ordinary / total,
