@@ -26,7 +26,7 @@
         }
 
         .gapped {
-            gap: 12px;
+            gap: 16px;
         }
 
         .column {
@@ -87,10 +87,26 @@
             font-weight: bold;
         }
 
-        .route {
+        .route-table {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .route-row {
             display: flex;
             flex-direction: row;
             gap: 8px;
+            font-size: 19px;
+            font-weight: bolder;
+            padding-top: 4px;
+        }
+
+        .route-arrow {
+            color: #999;
+        }
+
+        .route-volume {
+            font-weight: 500;
         }
 
         .affiliate-table {
@@ -108,7 +124,7 @@
 
             align-content: center;
             gap: 6px;
-            padding-bottom: 3px;
+            padding-bottom: 2px;
         }
 
         .affiliate-logo {
@@ -129,7 +145,7 @@
         }
 
         .affiliate-delta {
-            padding-top: 2px;
+            padding-top: 4px;
         }
 
         .bar-block {
@@ -185,6 +201,10 @@
 
         .coins-stack .coin:nth-child(2) {
             transform: translate(50%);
+        }
+
+        .lefter {
+            padding-left: 20px;
         }
 
         .metric-block {
@@ -283,7 +303,7 @@
                         </div>
                     </div>
 
-                    <div class="metric-block">
+                    <div class="metric-block lefter">
                         <div class="metric-title">Native Asset Pooled</div>
                         <div class="metric-value-block">
                             <div class="metric-value">
@@ -298,7 +318,7 @@
                         </div>
                     </div>
 
-                    <div class="metric-block">
+                    <div class="metric-block lefter">
                         <div class="metric-title">Network security</div>
                         <div class="metric-value-block">
                             <div class="metric-value">
@@ -341,7 +361,7 @@
 
                     <div class="metric-value-block">
                         <div class="metric-value">
-                            {{ short_dollar(current.earnings.affiliate_revenue) }}
+                            {{ short_dollar(current.earnings.affiliate_revenue * 0.01) }}
                         </div>
                         <div class="metric-delta">
                             {% with curr=current.earnings.affiliate_revenue, prev=previous.earnings.affiliate_revenue %}
@@ -364,7 +384,7 @@
                                 <div class="affiliate-name">{{ aff["display_name"] }}</div>
 
                                 <div class="affiliate-volume">
-                                    {{ short_dollar(aff.total_usd) }}
+                                    {{ short_dollar(aff.total_usd * 0.01) }}
                                 </div>
                                 <div class="affiliate-delta">
                                     {% with curr=aff.total_usd, prev=aff.prev_total_usd %}
@@ -384,41 +404,51 @@
         <!-- COLUMN3 -->
         <div class="block-outer">
             <div class="block-title">Swap info</div>
-            <div class="block-inner shadow-box">
-                <div class="unique-swappers-block">
-                    <div class="unique-swappers-title">
-                        Unique Swappers:
+            <div class="block-inner shadow-box gapped">
+                <div class="metric-block">
+                    <div class="metric-title">
+                        Unique Swappers
                     </div>
-                    <div class="unique-swapper-value">
-                        {{ pretty_money(current.swapper_count, integer=True) }}
-                        {% with curr=current.swapper_count, prev=previous.swapper_count %}
-                            {% include "components/delta.jinja2" %}
-                        {% endwith %}
-                    </div>
-                </div>
-
-                <div class="swap-volume-block">
-                    <div class="swap-volume-title">
-                        Swap Volume:
-                    </div>
-                    <div class="swap-volume-value">
-                        {{ short_dollar(current.total_volume_usd) }}
-                        {% with curr=current.total_volume_usd, prev=previous.total_volume_usd %}
-                            {% include "components/delta.jinja2" %}
-                        {% endwith %}
-                    </div>
-                </div>
-
-                <div class="top_routes">
-                    <div class="top_routers_header">Top Route</div>
-                    {% for route in routes[:5] %}
-                        <div class="route">
-                            <div class="route_from">{{ route['from_asset'] }}</div>
-                            <div class="route_arrow">⇌</div>
-                            <div class="route_to">{{ route['to_asset'] }}</div>
-                            <div class="route_volume">{{ short_money(route['volume_usd'], integer=True) }}</div>
+                    <div class="metric-value-block">
+                        <div class="metric-value">
+                            {{ pretty_money(current.swapper_count, integer=True) }}
                         </div>
-                    {% endfor %}
+                        <div class="metric-delta">
+                            {% with curr=current.swapper_count, prev=previous.swapper_count %}
+                                {% include "components/delta.jinja2" %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-block">
+                    <div class="metric-title">
+                        Swap Volume
+                    </div>
+                    <div class="metric-value-block">
+                        <div class="metric-value">
+                            {{ short_dollar(current.total_volume_usd) }}
+                        </div>
+                        <div class="metric-delta">
+                            {% with curr=current.total_volume_usd, prev=previous.total_volume_usd %}
+                                {% include "components/delta.jinja2" %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-block">
+                    <div class="metric-title">Top Route</div>
+                    <div class="route-table">
+                        {% for route in routes[:6] %}
+                            <div class="route-row">
+                                <div class="route-from">{{ route['from_asset'] }}</div>
+                                <div class="route-arrow">⇌</div>
+                                <div class="route-to">{{ route['to_asset'] }}</div>
+                                <div class="route-volume up-arrow">{{ short_money(route['volume_usd'], integer=True) }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
                 </div>
 
                 <div class="bar-block">
