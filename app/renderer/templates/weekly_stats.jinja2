@@ -454,13 +454,13 @@
                 <div class="bar-block">
                     <div class="bar-container">
                         <div class="bar-segment highlight-blue-bg"
-                             style="width: {{ current.swap_type_distribution['swap'] * 100 }}%">
+                             style="width: {{ swap_type_distribution.get('swap', 0) * 100 }}%">
                         </div>
                         <div class="bar-segment midgard-turqoise-bg"
-                             style="width: {{ current.swap_type_distribution['trade_swap'] * 100 }}%">
+                             style="width: {{ swap_type_distribution.get('trade_swap', 0) * 100 }}%">
                         </div>
                         <div class="bar-segment yggdrasil-green-bg"
-                             style="width: {{ current.swap_type_distribution['secured_swap'] * 100 }}%">
+                             style="width: {{ swap_type_distribution.get('secured_swap', 0) * 100 }}%">
                         </div>
                     </div>
 

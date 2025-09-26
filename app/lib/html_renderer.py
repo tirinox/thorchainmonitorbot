@@ -41,6 +41,11 @@ class InfographicRendererRPC(WithLogger):
         async with self.deps.session.post(self.url, json=message) as response:
             self.logger.info(f'Rendering {template_name = }')
             if response.status != 200:
-                raise ValueError(f'Failed to render. Code: {response.status}. {message = }')
+                try:
+                    text = await response.text()
+                except Exception as e:
+                    self.logger.error(f'Failed to get error text: {e}')
+                    text = '<no text>'
+                raise ValueError(f'Failed to render. Code: {response.status}. Result: {text!r}')
 
             return await response.read()

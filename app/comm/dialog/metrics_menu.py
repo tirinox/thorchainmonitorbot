@@ -3,7 +3,6 @@ from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
 from comm.localization.manager import BaseLocalization
-from comm.picture.key_stats_picture import KeyStatsPictureGenerator
 from comm.picture.nodes_pictures import NodePictureGenerator
 from comm.picture.pools_picture import PoolPictureGenerator
 from comm.picture.queue_picture import queue_graph
@@ -311,11 +310,8 @@ class MetricsDialog(BaseDialog):
             return
 
         ev = self.deps.weekly_stats_notifier.last_event
-
-        pic_gen = KeyStatsPictureGenerator(self.loc, ev)
-        pic, pic_name = await pic_gen.get_picture()
+        pic, pic_name = await self.deps.alert_presenter.render_key_stats(self.loc, ev)
         caption = self.loc.notification_text_key_metrics_caption(ev)
-
         await message.answer_photo(img_to_bio(pic, pic_name), caption=caption, disable_notification=True)
 
     async def show_trade_acc_stats(self, message: Message):

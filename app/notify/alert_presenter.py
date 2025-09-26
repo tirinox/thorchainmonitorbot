@@ -5,7 +5,6 @@ from api.w3.dex_analytics import DexReport
 from comm.localization.manager import BaseLocalization
 from comm.picture.achievement_picture import build_achievement_picture_generator
 from comm.picture.block_height_picture import block_speed_chart
-from comm.picture.key_stats_picture import KeyStatsPictureGenerator
 from comm.picture.nodes_pictures import NodePictureGenerator
 from comm.picture.pools_picture import PoolPictureGenerator
 from comm.picture.price_picture import price_graph_from_db
@@ -210,11 +209,16 @@ class AlertPresenter(INotified, WithLogger):
                 event.changes
             )
 
+    async def render_key_stats(self, _: BaseLocalization, event: AlertKeyStats):
+        parameters = recursive_asdict(event, add_properties=True, handle_datetime=True)
+        photo = await self.renderer.render('weekly_stats.jinja2', parameters)
+        photo_name = 'weekly_stats.png'
+        return photo, photo_name
+
     async def _handle_key_stats(self, event: AlertKeyStats):
         # PICTURE
         async def _gen(loc: BaseLocalization, _a: AlertKeyStats):
-            pic_gen = KeyStatsPictureGenerator(loc, _a)
-            pic, pic_name = await pic_gen.get_picture()
+            pic, pic_name = await self.render_key_stats(loc, event)
             caption = loc.notification_text_key_metrics_caption(event)
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 

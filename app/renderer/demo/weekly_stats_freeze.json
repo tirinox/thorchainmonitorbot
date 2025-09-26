@@ -5,6 +5,11 @@
     "start_date_ts": 1757690641,
     "end_date": "2025-09-19T15:24:01.601760",
     "end_date_ts": 1758295441,
+    "swap_type_distribution": {
+      "swap": 0.2,
+      "secured_swap": 0.1,
+      "trade_swap": 0.7
+    },
     "current": {
       "lock": {
         "date": "2025-09-19T15:24:00.860436",
@@ -54,12 +59,7 @@
       "btc_total_usd": 31245404.64273082,
       "eth_total_amount": 3104.2879077400003,
       "eth_total_usd": 14012471.131175248,
-      "usd_total_amount": 11772225.72094759,
-      "swap_type_distribution": {
-        "swap": 0.2,
-        "secured_swap": 0.1,
-        "trade_swap": 0.7
-      }
+      "usd_total_amount": 11772225.72094759
     },
     "previous": {
       "lock": {
@@ -103,11 +103,7 @@
       "eth_total_usd": 13935851.664135374,
       "usd_total_amount": 11711488.988126978
     },
-    "swap_type_distribution": {
-      "swap": 0.005150919897099502,
-      "secured_swap": 0.0017431335020668714,
-      "trade_swap": 0.9931059466008336
-    },
+
     "top_affiliates": [
       {
         "total_usd": 14265090.0,

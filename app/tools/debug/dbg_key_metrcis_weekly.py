@@ -99,12 +99,19 @@ async def demo_analyse_and_show(app: LpAppFramework):
     await asyncio.sleep(5)  # let them send the picture
 
 
-async def show_picture(app: LpAppFramework, data):
+async def old_show_picture(app: LpAppFramework, data):
     # loc = app.deps.loc_man.default
     loc = app.deps.loc_man[Language.ENGLISH]
 
     pic_gen = KeyStatsPictureGenerator(loc, data)
     pic, name = await pic_gen.get_picture()
+    save_and_show_pic(pic, name=name)
+
+
+async def show_picture(app: LpAppFramework, data):
+    loc = app.deps.loc_man[Language.ENGLISH]
+
+    pic, name = await app.deps.alert_presenter.render_key_stats(loc, data)
     save_and_show_pic(pic, name=name)
 
 
@@ -207,9 +214,9 @@ async def main():
         app.deps.user_counter = UserCounterMiddleware(app.deps)
 
         # await dbg_recursive_asdict(app)
-        # await demo_analyse_and_show(app)
+        await demo_analyse_and_show(app)
         # await demo_picture(app)
-        await dbg_load_data_and_save_as_demo_template(app)
+        # await dbg_load_data_and_save_as_demo_template(app)
         # await debug_locked_value(app)
         # await debug_earnings(app)
         # await dbg_affiliate_top(app)

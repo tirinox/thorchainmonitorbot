@@ -32,11 +32,11 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
         return int((self.notify_cd_sec + 1) / DAY)
 
     async def on_data(self, sender, e: AlertKeyStats):
-        if not e.current.pools:
+        if not e.current.btc_total_usd:
             self.logger.error(f'No pool data! Aborting.')
             return
 
-        if not e.previous.pools:
+        if not e.previous.btc_total_usd:
             self.logger.warning(f'No previous pool data! Go on')
 
         self._prev_data = e
