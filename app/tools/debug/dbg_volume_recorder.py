@@ -33,7 +33,9 @@ async def continuous_volume_recording(lp_app):
     aggregator = AggregatorDataExtractor(d)
     fetcher_tx.add_subscriber(aggregator)
 
-    d.block_scanner = BlockScanner(d, max_attempts=3)
+    last_block = await d.last_block_cache.get_thor_block()
+    d.block_scanner = BlockScanner(d, max_attempts=3, last_block=last_block - 1000)
+    
     native_action_extractor = SwapExtractorBlock(d)
     d.block_scanner.add_subscriber(native_action_extractor)
 
@@ -53,6 +55,9 @@ async def continuous_volume_recording(lp_app):
 
     async def cb(*args):
         print('tick')
+        curr_volume_stats, prev_volume_stats = await d.volume_recorder.get_previous_and_current_sum(DAY)
+        print('curr_volume_stats', curr_volume_stats)
+        print('prev_volume_stats', prev_volume_stats)
 
     receiver = Receiver(d, callback=cb)
     volume_filler.add_subscriber(receiver)
@@ -62,8 +67,6 @@ async def continuous_volume_recording(lp_app):
         d.block_scanner.run(),
         d.pool_fetcher.run(),
     )
-
-
 
 
 async def tool_get_total_volume_and_tx_count(app: LpAppFramework):
@@ -80,10 +83,10 @@ async def tool_get_total_volume_and_tx_count(app: LpAppFramework):
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
-        # await continuous_volume_recording(app)
+        await continuous_volume_recording(app)
         # await demo_show_price_graph(app)
         # await debug_post_price_graph_to_discord(app)
-        await tool_get_total_volume_and_tx_count(app)
+        # await tool_get_total_volume_and_tx_count(app)
 
 
 if __name__ == '__main__':
