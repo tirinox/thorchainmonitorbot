@@ -1,5 +1,3 @@
-from typing import Optional
-
 from lib.cooldown import Cooldown
 from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.delegates import INotified, WithDelegates
@@ -25,7 +23,6 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
         self.logger.info(f"it will notify every {self.notify_cd_sec} sec ({raw_cd})")
 
         self.series = TimeSeries('KeyMetrics', self.deps.db, self.MAX_POINTS)
-        self._prev_data: Optional[AlertKeyStats] = None
 
     @property
     def window_in_days(self):
@@ -39,15 +36,9 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
         if not e.previous.btc_total_usd:
             self.logger.warning(f'No previous pool data! Go on')
 
-        self._prev_data = e
-
         if await self.notify_cd.can_do():
             await self._notify(e)
             await self.notify_cd.do()
-
-    @property
-    def last_event(self):
-        return self._prev_data
 
     async def clear_cd(self):
         await self.notify_cd.clear()

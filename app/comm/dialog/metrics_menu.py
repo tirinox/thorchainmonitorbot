@@ -304,12 +304,12 @@ class MetricsDialog(BaseDialog):
     async def show_weekly_stats(self, message: Message):
         await self.start_typing(message)
 
-        if not self.deps.weekly_stats_notifier or not self.deps.weekly_stats_notifier.last_event:
+        if not self.deps.key_stat_fetcher or not self.deps.key_stat_fetcher.last_event:
             await message.answer(self.loc.TEXT_WEEKLY_STATS_NO_DATA,
                                  disable_notification=True)
             return
 
-        ev = self.deps.weekly_stats_notifier.last_event
+        ev = self.deps.key_stat_fetcher.last_event
         pic, pic_name = await self.deps.alert_presenter.render_key_stats(self.loc, ev)
         caption = self.loc.notification_text_key_metrics_caption(ev)
         await message.answer_photo(img_to_bio(pic, pic_name), caption=caption, disable_notification=True)

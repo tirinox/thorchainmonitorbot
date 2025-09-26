@@ -58,6 +58,7 @@ class DepContainer:
     fetcher_chain_state = None  # type: 'ChainStateFetcher'
     lend_stats_fetcher = None
     trade_acc_fetcher = None  # type: 'TradeAccountFetcher'
+    key_stat_fetcher = None  # type: 'KeyStatsFetcher'
 
     node_op_notifier = None  # type: 'NodeChangePersonalNotifier'
     block_notifier = None  # type: 'BlockHeightNotifier'

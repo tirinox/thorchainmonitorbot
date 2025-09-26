@@ -1,6 +1,6 @@
 import asyncio
 import datetime
-from typing import List
+from typing import List, Optional
 
 from api.aionode.types import thor_to_float
 from jobs.fetch.base import BaseFetcher
@@ -29,6 +29,12 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
 
         self._swap_route_recorder = SwapRouteRecorder(deps.db)
         self._runepool = RunePoolFetcher(deps)
+
+        self._prev_data = None
+
+    @property
+    def last_event(self) -> Optional[AlertKeyStats]:
+        return self._prev_data
 
     @property
     def tally_period_in_sec(self):
@@ -116,6 +122,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         )
         self.fill_btc_eth_usd_totals(result.current, curr_pools)
         self.fill_btc_eth_usd_totals(result.previous, prev_pools)
+        self._prev_data = result
         return result
 
     @staticmethod

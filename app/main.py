@@ -511,13 +511,14 @@ class App(WithLogger):
                 wallet_counter.add_subscriber(achievements)
 
         if d.cfg.get('key_metrics.enabled', True):
-            metrics_fetcher = KeyStatsFetcher(d)
-            tasks.append(metrics_fetcher)
-            d.weekly_stats_notifier = metrics_notifier = KeyMetricsNotifier(d)
-            metrics_fetcher.add_subscriber(metrics_notifier)
-            metrics_notifier.add_subscriber(d.alert_presenter)
+            d.key_stat_fetcher = KeyStatsFetcher(d)
+            tasks.append(d.key_stat_fetcher)
+            if d.cfg.get('key_metrics.notification.enabled', False):
+                d.weekly_stats_notifier = KeyMetricsNotifier(d)
+                d.key_stat_fetcher.add_subscriber(d.weekly_stats_notifier)
+                d.weekly_stats_notifier.add_subscriber(d.alert_presenter)
             if achievements_enabled:
-                metrics_fetcher.add_subscriber(achievements)
+                d.key_stat_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('trade_accounts.enabled', True):
             # Trade account actions
