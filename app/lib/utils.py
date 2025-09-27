@@ -541,8 +541,12 @@ def recursive_asdict(j, add_properties=False, handle_datetime=False):
           - Every datetime becomes ISO string everywhere
           - When a datetime is a dict value, also add <key>_ts with UNIX timestamp
         """
-    plain = _to_plain(j, add_properties)
-    return _inject_datetime_ts(plain) if handle_datetime else plain
+    try:
+        plain = _to_plain(j, add_properties)
+        return _inject_datetime_ts(plain) if handle_datetime else plain
+    except TypeError:
+        logging.error(f'Failed to convert {j!r} to plain dict/list/primitives!')
+        raise
 
 
 def strip_trailing_slash(s: str):
