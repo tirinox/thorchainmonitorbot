@@ -152,11 +152,10 @@ class AchievementsExtractor(WithLogger):
 
     @staticmethod
     def on_weekly_stats(ev: AlertKeyStats):
-        total_locked, _ = ev.locked_value_usd_curr_prev
         weekly_protocol_revenue = ev.current.earnings.total_earnings
         weekly_affiliate_revenue = ev.current.earnings.affiliate_revenue
         weekly_swap_volume = ev.current.total_volume_usd
-        total_locked_value_usd = total_locked.total_value_locked_usd
+        total_locked_value_usd, _ = ev.locked_value_usd_curr_prev
 
         results = [
             Achievement(A.BTC_IN_VAULT, int(ev.current.btc_total_amount)),
