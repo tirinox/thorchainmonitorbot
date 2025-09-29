@@ -546,6 +546,7 @@ def recursive_asdict(j, add_properties=False, handle_datetime=False):
         return _inject_datetime_ts(plain) if handle_datetime else plain
     except TypeError:
         logging.error(f'Failed to convert {j!r} to plain dict/list/primitives!')
+        logging.error(f'HEX: {obj_to_hex(j)}')
         raise
 
 
@@ -735,3 +736,32 @@ def sizeof_fmt(num: int, suffix="B") -> str:
             return f"{num:3.1f}{unit}{suffix}"
         num /= 1024.0
     return f"{num:.1f}Y{suffix}"
+
+
+def obj_to_hex(obj: Any, *, protocol: int = pickle.HIGHEST_PROTOCOL) -> str:
+    """
+    Pickle a Python object and return a hex-encoded string.
+
+    :param obj: Any picklable Python object.
+    :param protocol: Pickle protocol to use (default: highest available).
+    :return: Hex string (lowercase) representing the pickled bytes.
+    """
+    data = pickle.dumps(obj, protocol=protocol)
+    return data.hex()
+
+
+def hex_to_obj(hex_str: str) -> Any:
+    """
+    Decode a hex string produced by `obj_to_hex` and unpickle the object.
+
+    :param hex_str: Hex string of pickled data.
+    :return: The original Python object.
+    :raises ValueError: If the hex string is invalid.
+    :raises pickle.UnpicklingError: If unpickling fails.
+    """
+    try:
+        data = bytes.fromhex(hex_str.strip())
+    except ValueError as e:
+        raise ValueError("Invalid hex string: not valid hexadecimal.") from e
+
+    return pickle.loads(data)
