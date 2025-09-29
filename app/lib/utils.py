@@ -546,7 +546,7 @@ def recursive_asdict(j, add_properties=False, handle_datetime=False):
         return _inject_datetime_ts(plain) if handle_datetime else plain
     except TypeError:
         logging.error(f'Failed to convert {j!r} to plain dict/list/primitives!')
-        logging.error(f'HEX: {obj_to_hex(j)}')
+        # logging.error(f'HEX: {obj_to_hex(j)}')
         raise
 
 

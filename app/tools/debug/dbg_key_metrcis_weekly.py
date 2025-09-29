@@ -14,7 +14,7 @@ from lib.date_utils import DAY
 from lib.delegates import INotified
 from lib.money import short_dollar, short_rune
 from lib.texts import sep
-from lib.utils import recursive_asdict
+from lib.utils import recursive_asdict, hex_to_obj
 from models.affiliate import AffiliateInterval
 from models.key_stats_model import AlertKeyStats, LockedValue
 from notify.public.key_metrics_notify import KeyMetricsNotifier
@@ -113,6 +113,16 @@ async def show_picture(app: LpAppFramework, data):
 
     pic, name = await app.deps.alert_presenter.render_key_stats(loc, data)
     save_and_show_pic(pic, name=name)
+
+
+async def debug_bad_object(app: LpAppFramework):
+    with open('../temp/bad_weekly_stats.hex', 'r') as f:
+        obj = hex_to_obj(f.read())
+        print(obj)
+
+    sep()
+    dumped = recursive_asdict(obj, add_properties=True, handle_datetime=True)
+    print(dumped)
 
 
 async def demo_picture(app: LpAppFramework):
@@ -214,13 +224,14 @@ async def main():
         app.deps.user_counter = UserCounterMiddleware(app.deps)
 
         # await dbg_recursive_asdict(app)
-        await demo_analyse_and_show(app)
+        # await demo_analyse_and_show(app)
         # await demo_picture(app)
         # await dbg_load_data_and_save_as_demo_template(app)
         # await debug_locked_value(app)
         # await debug_earnings(app)
         # await dbg_affiliate_top(app)
         # await dbg_vanaheimix(app)
+        await debug_bad_object(app)
 
 
 if __name__ == '__main__':
