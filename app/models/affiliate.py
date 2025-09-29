@@ -1,9 +1,8 @@
-from typing import List, Annotated, Optional
+from typing import List, Optional
 
-from pydantic import BaseModel, Field, BeforeValidator
+from pydantic import BaseModel, Field
 
-IntFromStr = Annotated[int, BeforeValidator(int)]
-FloatFromStr = Annotated[float, BeforeValidator(float)]
+from models.base import IntFromStr, FloatFromStr
 
 
 class ThornameData(BaseModel):
