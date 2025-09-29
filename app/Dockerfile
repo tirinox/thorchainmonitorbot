@@ -1,5 +1,5 @@
 # Use a supported base (Debian bookworm)
-FROM python:3.11-slim AS production
+FROM python:3.12-slim AS production
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
