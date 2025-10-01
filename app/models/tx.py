@@ -14,7 +14,7 @@ from .lp_info import LPAddress
 from .memo import ActionType, is_action
 from .memo import THORMemo
 from .mimir import MimirHolder
-from .pool_info import PoolInfo, PoolInfoMap
+from .pool_info import PoolInfo
 from .price import PriceHolder
 from .s_swap import StreamingSwap
 
@@ -476,16 +476,7 @@ class ThorAction:
             return self.rune_amount * f, self.asset_amount / self.asset_per_rune * f
 
     @staticmethod
-    def calc_amount(pool_map: PoolInfoMap, realm, filter_unknown_runes=False):
-        """
-        Full Rune volume of the TX
-        @param pool_map: Pool map
-        @param realm: List of ThorSubTx
-        @param filter_unknown_runes: forces it to not count Rune-coins if tx_id is empty.
-        This is needed to fit Midgard peculiarity for savers withdrawals. See the example:
-        https://midgard.ninerealms.com/v2/actions?txid=C24DF9D0A379519EBEEF2DBD50F5AD85AB7A5B75A2F3C571E185202EE2E9876F
-        @return: float
-        """
+    def calc_amount(ph: PriceHolder, realm, filter_unknown_runes=False):
         rune_sum = 0.0
         for tx in realm:
             for coin in tx.coins:
@@ -495,15 +486,20 @@ class ThorAction:
                     rune_sum += coin.amount_float
                 else:
                     pool_name = Asset.to_L1_pool_name(coin.asset)
-                    pool_info = pool_map.get(pool_name)
+                    pool_name = ph.pool_fuzzy_first(pool_name)
+                    pool_info = ph.find_pool(pool_name)
                     if pool_info:
                         rune_sum += pool_info.runes_per_asset * coin.amount_float
 
         return rune_sum
 
-    def calc_full_rune_amount(self, pool_map: PoolInfoMap = None):
+    def calc_full_rune_amount(self, ph: PriceHolder):
         # We take price in from the L1 pool, that's why convert_synth_to_pool_name is used
-        pool_info: PoolInfo = pool_map.get(self.first_pool_l1)
+        exact_asset = ph.pool_fuzzy_first(self.first_pool_l1)
+        pool_info: PoolInfo = ph.find_pool(exact_asset)
+
+        if "DAI" in self.first_pool_l1:
+            print(pool_info)
 
         self.asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
 
@@ -513,12 +509,12 @@ class ThorAction:
                 realm = self.search_realm(in_only=True)
             else:
                 realm = self.search_realm(out_only=True)
-            r = self.calc_amount(pool_map, realm)
+            r = self.calc_amount(ph, realm)
         elif self.is_of_type((ActionType.TRADE_ACC_WITHDRAW, ActionType.TRADE_ACC_DEPOSIT)):
-            r = self.calc_amount(pool_map, self.all_realms)
+            r = self.calc_amount(ph, self.all_realms)
         else:
             # add, donate, refund
-            r = self.calc_amount(pool_map, self.search_realm(in_only=True))
+            r = self.calc_amount(ph, self.search_realm(in_only=True))
         self.full_volume_in_rune = r
 
         if self.full_volume_in_rune == 0.0:

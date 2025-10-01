@@ -29,4 +29,4 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
         ph = await self.deps.pool_cache.get()
 
         for tx in txs:
-            tx.calc_full_rune_amount(ph.pool_info_map)
+            tx.calc_full_rune_amount(ph)
