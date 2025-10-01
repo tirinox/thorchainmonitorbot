@@ -137,10 +137,15 @@ class VolumeRecorder(INotified, WithLogger):
         try:
             last_thor_block = await self.deps.last_block_cache.get_thor_block()
             ph = await self.deps.pool_cache.get()
+
             txs = convert_trade_actions_to_txs(txs, last_thor_block, ph)
-            txs = await self._deduplicator.only_new_txs(txs, logs=True)
+
+            if self.use_deduplication:
+                txs = await self._deduplicator.only_new_txs(txs, logs=True)
             await self.handle_txs_unsafe(txs)
-            await self._deduplicator.mark_as_seen_txs(txs)
+
+            if self.use_deduplication:
+                await self._deduplicator.mark_as_seen_txs(txs)
         except Exception as e:
             self.logger.exception('Error while writing volume', exc_info=e)
 
@@ -152,9 +157,6 @@ class VolumeRecorder(INotified, WithLogger):
         volumes = defaultdict(float)
         ts = None
         for tx in txs:
-            if self.use_deduplication and await self._deduplicator.have_ever_seen_hash(tx.tx_hash):
-                continue
-
             volume = tx.full_volume_in_rune
             if volume > 0:
                 if tx.is_of_type(ActionType.SWAP):
@@ -181,13 +183,15 @@ class VolumeRecorder(INotified, WithLogger):
                     volumes[TxMetricType.RUNEPOOL_WITHDRAW] += volume
 
                 total_volume += volume
-                ts = tx.date_timestamp
+                if tx.date_timestamp:
+                    ts = tx.date_timestamp
 
-            if self.use_deduplication:
-                await self._deduplicator.mark_as_seen(tx.tx_hash)
-
-        if ts is not None:
-            await self._add_point(ts, volumes, current_price)
+        if volumes:
+            if ts is not None:
+                # todo: test what happens if ts is None, is it always set?
+                await self._add_point(ts, volumes, current_price)
+            else:
+                self.logger.warning(f'Volumes {volumes} cannot be recorded to {ts = }')
 
         return total_volume
 
