@@ -310,6 +310,8 @@ class Asset:
         'r': 'THOR.RUNE',
         'f': 'BASE.ETH',
         'x': 'XRP.XRP',
+        'g': 'GAIA.ATOM',
+        'tr': 'TRON.TRX',
     }
 
     ABBREVIATE_GAS_ASSETS = {
