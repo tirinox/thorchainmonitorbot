@@ -1,5 +1,6 @@
 import asyncio
 
+from jobs.scanner.arb_detector import ArbBotDetector, ArbStatus
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.native_scan import BlockResult
 from jobs.scanner.swap_start_detector import SwapStartDetector
@@ -27,6 +28,8 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
             'tx.swap.also_trigger_when.streaming_swap.volume_greater', 2500.0)
         self.check_unique = True
         self.logger.info(f'min_streaming_swap_usd = {pretty_dollar(self.min_streaming_swap_usd)}')
+        self.hide_arb_bots = self.deps.cfg.as_bool('tx.swap.hide_arbitrage_bots', True)
+        self.arb_detector = ArbBotDetector(deps)
 
         self.deduplicator = TxDeduplicator(deps.db, DB_KEY_ANNOUNCED_SS_START)
 
@@ -48,6 +51,12 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
 
         # todo: switch to "debug"
         log_f = self.logger.debug
+
+        if self.hide_arb_bots:
+            sender = swap_start_ev.from_address
+            if await self.arb_detector.try_to_detect_arb_bot(sender) == ArbStatus.ARB:
+                self.logger.warning(f'Ignoring Tx from Arb bot: {swap_start_ev.tx_id} by {sender}')
+                return False
 
         if not e.is_streaming:
             log_f(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: not streaming')
