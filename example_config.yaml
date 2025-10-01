@@ -267,7 +267,7 @@ tx:
     min_usd_total: 50
     curve_mult: 0.3
 
-    hide_arbitrage_bots: true  # (!) new
+    hide_arbitrage_bots: true
 
     also_trigger_when:
       dex_aggregator_used:
@@ -383,7 +383,7 @@ token_transfer:
   flow_summary:
     enabled: true
     cooldown: 1d
-    min_rune_sum: 1000  # (!) new
+    min_rune_sum: 1000
 
   cex_list:
     - thor1t60f02r8jvzjrhtnjgfj4ne6rs5wjnejwmj7fh
@@ -399,7 +399,7 @@ token_transfer:
     - thor1mtqtupwgjwn397w3dx9fqmqgzrfzq3240frash
 
   ignore_cex2cex: true
-  hide_arbitrage_bots: true  # (!) new
+  hide_arbitrage_bots: true
 
 
 cap:
@@ -531,7 +531,7 @@ key_metrics:
   fetch_period: 10m
   data_max_age: 36h
   notification:
-    enabled: false  # (!) new
+    enabled: false
     cooldown: 7d
 
 
@@ -595,3 +595,13 @@ secured_assets:
     notification:
       enabled: true
       cooldown: 3d
+
+
+tcy:  # (!) new
+  enabled: true
+  fetch_period: 10m
+
+  summary:
+    enabled: true
+    notification:
+      cooldown: 1d
