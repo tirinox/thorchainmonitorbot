@@ -498,9 +498,6 @@ class ThorAction:
         exact_asset = ph.pool_fuzzy_first(self.first_pool_l1)
         pool_info: PoolInfo = ph.find_pool(exact_asset)
 
-        if "DAI" in self.first_pool_l1:
-            print(pool_info)
-
         self.asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
 
         if self.is_of_type((ActionType.SWAP, ActionType.WITHDRAW)):
