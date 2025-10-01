@@ -1,6 +1,5 @@
 import json
 from collections import defaultdict
-from datetime import datetime
 from typing import NamedTuple, List, Optional
 
 from jobs.scanner.block_result import ThorEvent
@@ -197,7 +196,7 @@ class SwapProps(NamedTuple):
         asset = Asset.from_string(self.attrs.get('out_asset', ''))
         return not asset.is_trade and not asset.is_synth and not asset.is_virtual and not asset.is_secured
 
-    def build_action(self) -> ThorAction:
+    def build_action(self, ts: int) -> ThorAction:
         attrs = self.attrs
 
         memo_str = self.attrs.get('memo', '')
@@ -263,7 +262,8 @@ class SwapProps(NamedTuple):
 
         network_fees = []  # ignore so far, not really used
 
-        timestamp = int(datetime.now().timestamp() * 1e9)
+        # timestamp = int(datetime.now().timestamp() * 1e9)
+        timestamp = int(ts * 1e9)
 
         tx = ThorAction(
             date=timestamp,
