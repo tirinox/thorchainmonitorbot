@@ -370,6 +370,7 @@ price:
 
   volume:
     record_tolerance: 1h
+    record_deduplication: true  # (!) new
 
 
 token_transfer:
@@ -383,7 +384,7 @@ token_transfer:
   flow_summary:
     enabled: true
     cooldown: 1d
-    min_rune_sum: 1000  # (!) new
+    min_rune_sum: 1000
 
   cex_list:
     - thor1t60f02r8jvzjrhtnjgfj4ne6rs5wjnejwmj7fh

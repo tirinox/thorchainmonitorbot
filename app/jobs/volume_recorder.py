@@ -194,7 +194,7 @@ class VolumeRecorder(INotified, WithLogger):
         if not volumes:
             return
 
-        self.logger.info(f'Update {date_timestamp}: {volumes}')
+        self.logger.info(f'Update ts={date_timestamp}: {volumes}')
         await self._accumulator.add(
             date_timestamp,
             **volumes
