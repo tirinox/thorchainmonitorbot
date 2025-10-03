@@ -1,8 +1,11 @@
 import asyncio
 
 from jobs.fetch.base import BaseFetcher
+from jobs.fetch.circulating import RuneCirculatingSupplyFetcher
+from lib.constants import TCY_DENOM
 from lib.depcont import DepContainer
 from models.mimir import MimirHolder
+from models.price import PriceHolder
 from models.tcy import TcyFullInfo, TcyStatus, VNXTcyData, TcyMimirs
 
 
@@ -33,14 +36,23 @@ class TCYInfoFetcher(BaseFetcher):
             halt_stake_distribution=mimir.get_constant(TcyMimirs.HALT_STAKE_DISTRIBUTION)
         )
 
+    async def get_tcy_total_supply(self) -> float:
+        f = RuneCirculatingSupplyFetcher(self.deps.session, self.deps.thor_connector, self.deps.midgard_connector)
+        supplys = await f.get_all_native_token_supplies()
+        return f.get_specific_denom_amount(supplys, TCY_DENOM)
+
     async def fetch(self) -> TcyFullInfo:
-        vnx_data, status = await asyncio.gather(
+        vnx_data, status, supply, ph = await asyncio.gather(
             self.get_vnx_data(),
-            self.get_tcy_status_from_mimir()
+            self.get_tcy_status_from_mimir(),
+            self.get_tcy_total_supply(),
+            self.deps.pool_cache.get()
         )
+
         return TcyFullInfo(
             vnx=vnx_data,
-            status=status
+            status=status,
+            tcy_total_supply=int(supply),
         )
 
     # stake earning = interval.liquidityFees / 1e8 * 10% * runePriceUSD

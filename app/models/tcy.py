@@ -70,9 +70,13 @@ class TcyMimirs:
     HALT_STAKING = 'TCYSTAKINGHALT'
     HALT_UNSTAKING = 'TCYUNSTAKINGHALT'
 
+    MIN_RUNE_STAKE_DISTRIBUTION = 'MinRuneForTCYStakeDistribution'.upper()
+    MIN_TCY_STAKE_DISTRIBUTION = 'MinTCYForTCYStakeDistribution'.upper()
+
 
 class TcyFullInfo(BaseModel):
     vnx: VNXTcyData
     status: TcyStatus
+    tcy_total_supply: int
 
     # todo: add earnings, previous
