@@ -89,10 +89,9 @@
 
     </style>
 
-    <div class="header-box">
-        <img class="logo" src="renderer/static/img/tc_logo_transparent.png?rv=1" alt="THORChain logo">
-        <div class="title">THORCHAIN 🔥 BURNED RUNE</div>
-    </div>
+    {% with title="🔥 BURNED RUNE" %}
+        {% include "components/header.jinja2" %}
+    {% endwith %}
 
     <div class="indicator-container">
 
