@@ -173,6 +173,9 @@ class MimirNameRules:
         return r
 
     def get_mimir_units(self, name):
+        if 'types' not in self.rules:
+            return ''
+
         name = name.upper()
         if name in self.rules['types']['rune']:
             return MimirUnits.UNITS_RUNES

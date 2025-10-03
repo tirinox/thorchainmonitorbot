@@ -241,20 +241,21 @@ class MimirHolder(INotified, WithLogger):
     def pretty_name(self, name):
         return self.hard_coded_pretty_names.get(name) or self.mimir_rules.name_to_human(name)
 
-    def update(self, data: MimirTuple, active_nodes: List[NodeInfo]):
+    def update(self, data: MimirTuple, active_nodes: List[NodeInfo], with_voting=True) -> 'MimirHolder':
         if not data.mimir.constants:
             self.logger.error('Mimir data is empty!')
-            return
+            return self
         if not data.constants.constants:
             self.logger.error('Constants data is empty!')
-            return
+            return self
 
         self.logger.info(f'Got {len(data.constants.constants)} CONST entries'
                          f' and {len(data.mimir.constants)} MIMIR entries.')
 
         self.last_thor_block = data.last_thor_block
 
-        self.voting_manager = MimirVoteManager(data.votes, active_nodes, self.mimir_rules.excluded_from_voting)
+        if with_voting:
+            self.voting_manager = MimirVoteManager(data.votes, active_nodes, self.mimir_rules.excluded_from_voting)
 
         hard_coded_constants = {n.upper(): v for n, v in data.constants.constants.items()}
         self.hard_coded_pretty_names = {
@@ -303,6 +304,7 @@ class MimirHolder(INotified, WithLogger):
                 units=units,
                 source=source
             )
+        return self
 
     @property
     def all_entries(self) -> List[MimirEntry]:
