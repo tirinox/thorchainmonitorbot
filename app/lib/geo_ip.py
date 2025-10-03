@@ -21,7 +21,7 @@ class GeoDataProvider(NamedTuple):
 
 
 GEO_PROVIDERS = {
-    'ip-api.com': GeoDataProvider('http://ip-api.com/json/{address}?fields=59089', LocationInfo.from_alt_json),
+    'ip-api.com': GeoDataProvider('http://ip-api.com/json/{address}?fields=61151', LocationInfo.from_alt_json),
     'ipapi.co': GeoDataProvider('http://ip-api.com/json/{address}', LocationInfo.from_json),
 }
 

@@ -7,6 +7,7 @@ class LocationInfo(NamedTuple):
     latitude: float = 0
     longitude: float = 0
     country_name: str = ''
+    country_code: str = ''
     city: str = ''
 
     @classmethod
@@ -29,5 +30,6 @@ class LocationInfo(NamedTuple):
             latitude=float(data.get("lat", 0.0)),
             longitude=float(data.get("lon", 0.0)),
             country_name=data.get("country", ""),
+            country_code=data.get("countryCode", ""),
             city=data.get("city", ""),
         )
