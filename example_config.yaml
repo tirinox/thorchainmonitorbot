@@ -370,6 +370,7 @@ price:
 
   volume:
     record_tolerance: 1h
+    record_deduplication: true  # (!) new
 
 
 token_transfer:

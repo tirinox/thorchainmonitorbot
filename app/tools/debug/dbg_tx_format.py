@@ -96,7 +96,7 @@ async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
     pool = ex_tx.first_pool_l1
     ph = await app.deps.pool_cache.get()
     pool_info: PoolInfo = ph.pool_info_map.get(pool)
-    full_rune = ex_tx.calc_full_rune_amount(ph.pool_info_map)
+    full_rune = ex_tx.calc_full_rune_amount(ph)
 
     # profit_calc = StreamingSwapVsCexProfitCalculator(app.deps)
     # if ex_tx.is_of_type(ActionType.SWAP):

@@ -7,6 +7,7 @@ from typing import Optional, List
 from semver import VersionInfo
 
 from api.aionode.types import ThorNetwork
+from comm.localization.eng_base import BaseLocalization
 from comm.localization.languages import Language
 from comm.localization.manager import LocalizationManager
 from jobs.achievement.notifier import AchievementsNotifier
@@ -246,7 +247,7 @@ class NodeFetcherSimulator(BaseFetcher):
 async def demo_churn_simulator(app: LpAppFramework, version=False):
     d = app.deps
 
-    nodes: NetworkNodes = await d.deps.node_cache.get()
+    nodes: NetworkNodes = await d.node_cache.get()
     print(f"There are {len(nodes)} nodes")
 
     await d.broadcaster.broadcast_to_all('---------')
@@ -257,7 +258,7 @@ async def demo_churn_simulator(app: LpAppFramework, version=False):
     # churn_detector
     # node_fetcher_simulator.add_subscriber(churn_detector)
 
-    churn_sim = DbgChurnSimulator(app.deps, trigger_on_tick=2, every_tick=True)
+    churn_sim = DbgChurnSimulator(d, trigger_on_tick=2, every_tick=True)
 
     # notifier module
     notifier_nodes = NodeChurnNotifier(d)
@@ -402,6 +403,24 @@ async def most_frequent_addy(nodes: List[NodeInfo]):
         print(f'{i}. {k} -> {v}')
 
 
+async def dbg_None_in_message(app: LpAppFramework):
+    nodes: NetworkNodes = await app.deps.node_cache.get()
+
+    changes = NodeSetChanges(
+        nodes_added=[],
+        nodes_removed=[],
+        nodes_activated=random.sample(nodes.active_nodes, 4),
+        nodes_deactivated=random.sample(nodes.active_nodes, 5),
+        nodes_previous=nodes.node_info_list,
+        nodes_all=nodes.node_info_list,
+        churn_duration=1234
+    )
+
+    await app.deps.broadcaster.broadcast_to_all(
+        BaseLocalization.notification_text_node_churn_finish,
+        changes)
+
+
 async def main():
     app = LpAppFramework()
     async with app:
@@ -409,7 +428,8 @@ async def main():
         # await demo_churn_test(app)
         # await demo_churn_simulator(app)
         # await dbg_node_info_bond_provider_parsing(app)
-        await demo_once(app)
+        # await demo_once(app)
+        await dbg_None_in_message(app)
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.memo import ActionType
+from models.price import PriceHolder
 from models.runepool import AlertRunePoolAction
 from models.trade_acc import AlertTradeAccountAction
 from models.tx import ThorAction
@@ -15,7 +16,7 @@ from models.vol_n import TxCountStats, TxMetricType
 from notify.dup_stop import TxDeduplicator
 
 
-def convert_trade_actions_to_txs(txs, last_thor_block: int, pool_info_map) -> List[ThorAction]:
+def convert_trade_actions_to_txs(txs, last_thor_block: int, ph: PriceHolder) -> List[ThorAction]:
     """
     The classes below are able to handle both ThorTx and AlertTradeAccountAction, AlertRunePoolAction
      thanks to this function.
@@ -25,7 +26,7 @@ def convert_trade_actions_to_txs(txs, last_thor_block: int, pool_info_map) -> Li
     """
     if isinstance((event := txs), (AlertTradeAccountAction, AlertRunePoolAction)):
         tx = event.as_thor_tx
-        tx.calc_full_rune_amount(pool_info_map)
+        tx.calc_full_rune_amount(ph)
         tx.height = last_thor_block
         tx.date = int(now_ts() * 1e9)
         return [tx]
@@ -97,7 +98,7 @@ class TxCountRecorder(INotified, WithLogger):
         try:
             ph = await self.deps.pool_cache.get()
             last_thor_block = await self.deps.last_block_cache.get_thor_block()
-            txs = convert_trade_actions_to_txs(txs, last_thor_block, ph.pool_info_map)
+            txs = convert_trade_actions_to_txs(txs, last_thor_block, ph)
             txs = await self._deduplicator.only_new_txs(txs, logs=True)
             await self._write_tx_count(txs)
             await self._deduplicator.mark_as_seen_txs(txs)
@@ -136,10 +137,15 @@ class VolumeRecorder(INotified, WithLogger):
         try:
             last_thor_block = await self.deps.last_block_cache.get_thor_block()
             ph = await self.deps.pool_cache.get()
-            txs = convert_trade_actions_to_txs(txs, last_thor_block, ph.pool_info_map)
-            txs = await self._deduplicator.only_new_txs(txs, logs=True)
+
+            txs = convert_trade_actions_to_txs(txs, last_thor_block, ph)
+
+            if self.use_deduplication:
+                txs = await self._deduplicator.only_new_txs(txs, logs=True)
             await self.handle_txs_unsafe(txs)
-            await self._deduplicator.mark_as_seen_txs(txs)
+
+            if self.use_deduplication:
+                await self._deduplicator.mark_as_seen_txs(txs)
         except Exception as e:
             self.logger.exception('Error while writing volume', exc_info=e)
 
@@ -151,9 +157,6 @@ class VolumeRecorder(INotified, WithLogger):
         volumes = defaultdict(float)
         ts = None
         for tx in txs:
-            if self.use_deduplication and await self._deduplicator.have_ever_seen_hash(tx.tx_hash):
-                continue
-
             volume = tx.full_volume_in_rune
             if volume > 0:
                 if tx.is_of_type(ActionType.SWAP):
@@ -180,13 +183,15 @@ class VolumeRecorder(INotified, WithLogger):
                     volumes[TxMetricType.RUNEPOOL_WITHDRAW] += volume
 
                 total_volume += volume
-                ts = tx.date_timestamp
+                if tx.date_timestamp:
+                    ts = tx.date_timestamp
 
-            if self.use_deduplication:
-                await self._deduplicator.mark_as_seen(tx.tx_hash)
-
-        if ts is not None:
-            await self._add_point(ts, volumes, current_price)
+        if volumes:
+            if ts is not None:
+                # todo: test what happens if ts is None, is it always set?
+                await self._add_point(ts, volumes, current_price)
+            else:
+                self.logger.warning(f'Volumes {volumes} cannot be recorded to {ts = }')
 
         return total_volume
 
@@ -194,7 +199,7 @@ class VolumeRecorder(INotified, WithLogger):
         if not volumes:
             return
 
-        self.logger.info(f'Update {date_timestamp}: {volumes}')
+        self.logger.info(f'Update ts={date_timestamp}: {volumes}')
         await self._accumulator.add(
             date_timestamp,
             **volumes

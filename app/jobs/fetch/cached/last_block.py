@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Dict, NamedTuple
 
 from api.aionode.connector import ThorConnector
@@ -47,6 +48,13 @@ class LastBlockCached(CachedDataSource[BlockDict]):
     async def get_thor_block_time_ago(self, seconds):
         last_block = await self.get_thor_block()
         return self.calc_block_time_ago(seconds, last_block)
+
+    async def get_timestamp_of_block(self, block_height: int) -> int:
+        last_block = await self.get_thor_block()
+        current_timestamp = datetime.now().timestamp()
+        delta_block = last_block - block_height
+        estimated_timestamp = current_timestamp - (delta_block * THOR_BLOCK_TIME)
+        return int(estimated_timestamp)
 
 
 class LastBlockEventGenerator(WithDelegates, INotified):

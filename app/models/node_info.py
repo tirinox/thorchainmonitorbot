@@ -165,7 +165,7 @@ class NodeInfo(BaseModelMixin):
     @property
     def flag_emoji(self) -> str:
         if self.ip_info:
-            return find_country_emoji(self.ip_info.country_name or '')
+            return find_country_emoji(self.ip_info.country_code or '') or ''
         return ''
 
 

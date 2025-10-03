@@ -25,8 +25,9 @@ class SwapStartDetector(WithLogger):
         """
         memo_str = msg.get('memo') or safe_get(msg, 'tx', 'memo')
         if memo_str is None:
-            self.logger.error(f'No memo in swap tx: {msg}')
+            self.logger.debug(f'No memo in swap tx: {msg}')
             return None
+
         memo = THORMemo.parse_memo(memo_str, no_raise=True)
 
         # Must be a swap!
