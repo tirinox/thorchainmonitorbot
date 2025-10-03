@@ -3,10 +3,23 @@ import json
 import logging
 
 from jobs.fetch.tcy import TCYInfoFetcher
+from lib.constants import TCY_SYMBOL
 from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 DEMO_DATA_FILENAME_TCY = "./renderer/demo/tcy_info.json"
+
+
+async def dbg_tcy_earnings(app):
+    f = TCYInfoFetcher(app.deps)
+    earnings = await f.get_earnings()
+    sep()
+    print(json.dumps(earnings, indent=4))
+
+
+async def dbg_tcy_pool_depth_history(app):
+    history = await app.deps.midgard_connector.query_pool_depth_history(TCY_SYMBOL, count=30, interval='day')
+    print(history)
 
 
 async def dbg_tcy_data_collect(app):
@@ -31,6 +44,8 @@ async def main():
     app = LpAppFramework(log_level=logging.DEBUG)
     async with app(brief=True):
         await dbg_tcy_data_collect(app)
+        # await dbg_tcy_earnings(app)
+        # await dbg_tcy_pool_depth_history(app)
 
 
 if __name__ == '__main__':

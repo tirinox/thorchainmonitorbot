@@ -1,7 +1,8 @@
-from typing import Dict
+from typing import Dict, List
 
 from pydantic import BaseModel
 
+from lib.constants import thor_to_float
 from .base import IntFromStr
 
 
@@ -60,6 +61,7 @@ class TcyStatus(BaseModel):
     halt_stake_distribution: bool
     halt_staking: bool
     halt_unstaking: bool
+    system_income_bps_to_tcy: int
 
 
 class TcyMimirs:
@@ -72,11 +74,54 @@ class TcyMimirs:
 
     MIN_RUNE_STAKE_DISTRIBUTION = 'MinRuneForTCYStakeDistribution'.upper()
     MIN_TCY_STAKE_DISTRIBUTION = 'MinTCYForTCYStakeDistribution'.upper()
+    TCY_STAKE_SYSTEM_INCOME_BPS = 'TCYStakeSystemIncomeBps'.upper()
+
+
+class TcyEarningsPoint(BaseModel):
+    timestamp: int
+    day_no: int
+    stake_rune: float
+    stake_usd: float
+    pool_rune: float
+    pool_usd: float
+    tcy_price: float
 
 
 class TcyFullInfo(BaseModel):
     vnx: VNXTcyData
     status: TcyStatus
     tcy_total_supply: int
+    usd_per_tcy: float
+    rune_market_cap_usd: float
 
-    # todo: add earnings, previous
+    earnings: List[TcyEarningsPoint]
+
+    @property
+    def market_cap(self):
+        return self.tcy_total_supply * self.usd_per_tcy
+
+    @property
+    def percent_of_rune_market_cap(self):
+        if self.rune_market_cap_usd == 0:
+            return 0.0
+        return 100.0 * self.market_cap / self.rune_market_cap_usd
+
+    @property
+    def tcy_staked(self):
+        return thor_to_float(self.vnx.staker_info.total)
+
+    def get_apr(self, points):
+        number_of_days = len(points)
+        usd_total_earnings = sum(p.stake_usd for p in points)
+        staked_usd = self.tcy_staked * self.usd_per_tcy
+        if staked_usd == 0 or number_of_days == 0:
+            return 0.0
+        daily_earnings = usd_total_earnings / number_of_days
+        apr = (daily_earnings * 365 / staked_usd) * 100.0
+        return apr
+
+    @property
+    def apr_current(self):
+        total_days = len(self.earnings)
+        middle_days = total_days // 2
+        return self.get_apr(self.earnings[middle_days:total_days])
