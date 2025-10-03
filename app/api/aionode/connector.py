@@ -245,6 +245,11 @@ class ThorConnector:
         data = await self._request(url, paginated=True, height=height, collect_key='denom_owners')
         return data
 
+    async def query_supply(self, height=None):
+        url = self.env.path_supply
+        data = await self._request(url, paginated=True, height=height, collect_key='supply')
+        return data
+
     # ---- Internal ----
 
     def __init__(self, env: ThorEnvironment, session: ClientSession, logger=None, extra_headers=None,

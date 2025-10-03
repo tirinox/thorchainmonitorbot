@@ -53,23 +53,19 @@ class RuneCirculatingSupplyFetcher(WithLogger):
 
         return result
 
+    def get_pure_rune_from_thor_array(self, arr) -> float:
+        return self.get_specific_denom_amount(arr, RUNE_DENOM)
+
     @staticmethod
-    def get_pure_rune_from_thor_array(arr) -> float:
+    def get_specific_denom_amount(arr, denom) -> float:
         if arr:
-            thor_rune = next((item['amount'] for item in arr if item['denom'] == RUNE_DENOM), 0)
+            thor_rune = next((item['amount'] for item in arr if item['denom'] == denom), 0)
             return int(thor_to_float(thor_rune))
         else:
             return 0
 
-    @property
-    def thor_node_base_url(self):
-        return self.thor.env.thornode_url
-
     async def get_all_native_token_supplies(self):
-        url_supply = f'{self.thor_node_base_url}/cosmos/bank/v1beta1/supply'
-        self.logger.debug(f'Get: "{url_supply}"')
-        supply = await self.thor.query_raw('/cosmos/bank/v1beta1/supply')
-        return supply['supply']
+        return await self.thor.query_supply()
 
     async def get_thor_rune_total_supply(self):
         supplies = await self.get_all_native_token_supplies()

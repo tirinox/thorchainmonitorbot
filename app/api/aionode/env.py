@@ -61,6 +61,7 @@ class ThorEnvironment:
     path_secured_assets = '/thorchain/securedassets'
 
     path_holders = '/cosmos/bank/v1beta1/denom_owners/{asset}'
+    path_supply = '/cosmos/bank/v1beta1/supply'
 
     kind: str = ''
 
