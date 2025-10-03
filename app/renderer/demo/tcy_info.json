@@ -1,6 +1,335 @@
 {
   "template_name": "tcy_info.jinja2",
   "parameters": {
-
+    "vnx": {
+      "unclaim_info": {
+        "total": 2919753543427423,
+        "count": 7316,
+        "assets": {
+          "ETH.ETH": 626400013450688,
+          "ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7": 42012049517588,
+          "AVAX.AVAX": 21537261940008,
+          "ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48": 33380274322469,
+          "BSC.BNB": 28163421089566,
+          "AVAX.USDC-0XB97EF9EF8734C71904D8002F8B6BC66DD9C48A6E": 23719421103326,
+          "BTC.BTC": 1771945206331924,
+          "GAIA.ATOM": 6911270405843,
+          "DOGE.DOGE": 275614139299007,
+          "LTC.LTC": 67257194723754,
+          "BCH.BCH": 14809737901298,
+          "ETH.TGT-0X108A850856DB3F85D0269A2693D896B394C80325": 1646654519461,
+          "ETH.THOR-0XA5F2211B9B8170F694421F2046281775E8468044": 2655154205651,
+          "ETH.XDEFI-0X72B886D09C117654AB7DA13A14D603001DE0B777": 133525491260,
+          "ETH.AAVE-0X7FC66500C84A76AD7E9C93437BFC5AC33E2DDAE9": 624664878909,
+          "ETH.DAI-0X6B175474E89094C44DA98B954EEDEAC495271D0F": 716155787001,
+          "ETH.FOX-0XC770EEFAD204B5180DF6A14EE197D99D808EE52D": 136603070930,
+          "ETH.SNX-0XC011A73EE8576FB46F5E1C5751CA3B9FE0AF2A6F": 29187710593,
+          "ETH.WBTC-0X2260FAC5E5542A773AA44FBCFEDF7C193BC2C599": 820644889513,
+          "ETH.XRUNE-0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C": 42969995173,
+          "ETH.YFI-0X0BC529C00C6401AEF6D220BE8C6EA1667F6AD93E": 268560378,
+          "ETH.GUSD-0X056FD409E1D7A124BD7017459DFEA2F387B6D5CD": 1001026627,
+          "BSC.USDC-0X8AC76A51CC950D9822D68B83FE1AD97B32CD580D": 17198928137,
+          "AVAX.USDT-0X9702230A8EA53601F5CD2DC00FDBC13D4DF4A8C7": 336880088963,
+          "ETH.VTHOR-0X815C23ECA83261B6EC689B60CC4A58B54BC24D8D": 72251755457,
+          "BSC.USDT-0X55D398326F99059FF775485246999027B3197955": 3200685881,
+          "ETH.LUSD-0X5F98805A4E8BE255A32880FDEC7F6728C6568BA0": 4740901118,
+          "ETH.USDP-0X8E870D67F660D95D5BE530380D0EC0BD388289E1": 25643414,
+          "AVAX.SOL-0XFE6B19286885A4F7F55ADAD09C3CD1F906D2478F": 13845403501,
+          "ETH.FLIP-0X826180541412D574CF1336D22C0C0A287822678A": 74437387628,
+          "ETH.DPI-0X1494CA1F11D487C2BBE4543E90080AEBA4BA3C2B": 526801686659,
+          "ETH.LINK-0X514910771AF9CA656AF840DFF83E8264ECF986CA": 147340725698
+        }
+      },
+      "staker_info": {
+        "total": 17268903927973386,
+        "count": 2333
+      },
+      "pending_reward": 130901637432,
+      "unclaimed": 3041685099131207,
+      "claimed_not_staked": 353774165555345,
+      "treasury": 100510038369916,
+      "tcy_in_pool": 235126768970135,
+      "claimed_info": {
+        "count": 4298,
+        "total": 17740900585447440
+      },
+      "price": 0.20730402,
+      "TCYSupply": 210000000,
+      "runeSupply": 42534640076009300,
+      "pol_tcy": 121931555703784,
+      "last_week_earnings": 5074077229431,
+      "tcy_stake_eod": 561394997203,
+      "tcy_pool_eod": 19385233814,
+      "total_tcy_locked": 819346443782860,
+      "total_tcy_locked_usd": 171399258386749,
+      "stcy_minted": 7546799624637,
+      "tcy_account_bond": 7546799624637
+    },
+    "status": {
+      "halt_trading": false,
+      "halt_claiming": false,
+      "halt_claiming_swap": false,
+      "halt_stake_distribution": false,
+      "halt_staking": false,
+      "halt_unstaking": false,
+      "system_income_bps_to_tcy": 1000
+    },
+    "tcy_total_supply": 210000000,
+    "usd_per_tcy": 0.22288742711351922,
+    "rune_market_cap_usd": 425346391.0,
+    "earnings": [
+      {
+        "timestamp": 1757116800,
+        "day_no": 0,
+        "stake_rune": 1388.612552173,
+        "stake_usd": 1659.2162312307494,
+        "pool_rune": 66.57120663,
+        "pool_usd": 79.54416543352039,
+        "tcy_price": 0.1660846521492326
+      },
+      {
+        "timestamp": 1757203200,
+        "day_no": 1,
+        "stake_rune": 2615.833562536,
+        "stake_usd": 3185.009569170605,
+        "pool_rune": 105.63553354,
+        "pool_usd": 128.62063932047744,
+        "tcy_price": 0.1731237900808208
+      },
+      {
+        "timestamp": 1757289600,
+        "day_no": 2,
+        "stake_rune": 4843.221822957,
+        "stake_usd": 6044.079574928143,
+        "pool_rune": 148.99215561,
+        "pool_usd": 185.93417304952374,
+        "tcy_price": 0.17041102347104012
+      },
+      {
+        "timestamp": 1757376000,
+        "day_no": 3,
+        "stake_rune": 4059.754857909,
+        "stake_usd": 5063.049173779032,
+        "pool_rune": 115.8932219,
+        "pool_usd": 144.53411644899313,
+        "tcy_price": 0.17601718053711657
+      },
+      {
+        "timestamp": 1757462400,
+        "day_no": 4,
+        "stake_rune": 5661.9907395,
+        "stake_usd": 7167.581004094918,
+        "pool_rune": 80.97584638000001,
+        "pool_usd": 102.5082810988579,
+        "tcy_price": 0.18209206575320996
+      },
+      {
+        "timestamp": 1757548800,
+        "day_no": 5,
+        "stake_rune": 12471.484489021,
+        "stake_usd": 16129.820926935508,
+        "pool_rune": 69.52306355,
+        "pool_usd": 89.9166868499618,
+        "tcy_price": 0.19180872576478855
+      },
+      {
+        "timestamp": 1757635200,
+        "day_no": 6,
+        "stake_rune": 3372.934759267,
+        "stake_usd": 4469.728344766253,
+        "pool_rune": 271.14262396,
+        "pool_usd": 359.31138853444185,
+        "tcy_price": 0.19961342514328256
+      },
+      {
+        "timestamp": 1757721600,
+        "day_no": 7,
+        "stake_rune": 4516.908467048,
+        "stake_usd": 5995.652773174077,
+        "pool_rune": 97.61602949,
+        "pool_usd": 129.57353955424784,
+        "tcy_price": 0.19014062979449778
+      },
+      {
+        "timestamp": 1757808000,
+        "day_no": 8,
+        "stake_rune": 3975.749510793,
+        "stake_usd": 5217.086508094557,
+        "pool_rune": 42.84693203,
+        "pool_usd": 56.224908133704616,
+        "tcy_price": 0.1861473940016763
+      },
+      {
+        "timestamp": 1757894400,
+        "day_no": 9,
+        "stake_rune": 2891.9390660320005,
+        "stake_usd": 3645.9097730823005,
+        "pool_rune": 79.96088115,
+        "pool_usd": 100.80784947141463,
+        "tcy_price": 0.17799560512011453
+      },
+      {
+        "timestamp": 1757980800,
+        "day_no": 10,
+        "stake_rune": 9585.371589533,
+        "stake_usd": 12235.889451405632,
+        "pool_rune": 229.03936059,
+        "pool_usd": 292.3726294826312,
+        "tcy_price": 0.17530687067403325
+      },
+      {
+        "timestamp": 1758067200,
+        "day_no": 11,
+        "stake_rune": 2178.7801766680004,
+        "stake_usd": 2913.905748995719,
+        "pool_rune": 94.66935329,
+        "pool_usd": 126.61101645752333,
+        "tcy_price": 0.18856580767333042
+      },
+      {
+        "timestamp": 1758153600,
+        "day_no": 12,
+        "stake_rune": 2176.800847772,
+        "stake_usd": 2956.5926602321656,
+        "pool_rune": 310.70164408,
+        "pool_usd": 422.0037865885706,
+        "tcy_price": 0.1971594498211347
+      },
+      {
+        "timestamp": 1758240000,
+        "day_no": 13,
+        "stake_rune": 2479.58839085,
+        "stake_usd": 3166.968247260699,
+        "pool_rune": 297.5856341,
+        "pool_usd": 380.0809269447224,
+        "tcy_price": 0.21024595379428793
+      },
+      {
+        "timestamp": 1758326400,
+        "day_no": 14,
+        "stake_rune": 1009.3470806610002,
+        "stake_usd": 1282.4717538690936,
+        "pool_rune": 531.4702059800001,
+        "pool_usd": 675.2835969426658,
+        "tcy_price": 0.22643881587001027
+      },
+      {
+        "timestamp": 1758412800,
+        "day_no": 15,
+        "stake_rune": 2450.890386988,
+        "stake_usd": 3072.012754138735,
+        "pool_rune": 827.8036849700001,
+        "pool_usd": 1037.5916816402832,
+        "tcy_price": 0.21739840658732515
+      },
+      {
+        "timestamp": 1758499200,
+        "day_no": 16,
+        "stake_rune": 3781.7524174160003,
+        "stake_usd": 4479.6140454675715,
+        "pool_rune": 710.20875847,
+        "pool_usd": 841.2663703220768,
+        "tcy_price": 0.20970832979130097
+      },
+      {
+        "timestamp": 1758585600,
+        "day_no": 17,
+        "stake_rune": 1970.764671113,
+        "stake_usd": 2315.5301308753587,
+        "pool_rune": 391.34869786,
+        "pool_usd": 459.8112168622838,
+        "tcy_price": 0.19818436900787098
+      },
+      {
+        "timestamp": 1758672000,
+        "day_no": 18,
+        "stake_rune": 1377.4224765879999,
+        "stake_usd": 1633.241098825645,
+        "pool_rune": 59.47780583,
+        "pool_usd": 70.52418455531239,
+        "tcy_price": 0.20319414106673314
+      },
+      {
+        "timestamp": 1758758400,
+        "day_no": 19,
+        "stake_rune": 2321.06371173,
+        "stake_usd": 2564.1965534409937,
+        "pool_rune": 30.09532767,
+        "pool_usd": 33.247831628272124,
+        "tcy_price": 0.18520996065364698
+      },
+      {
+        "timestamp": 1758844800,
+        "day_no": 20,
+        "stake_rune": 1986.398126402,
+        "stake_usd": 2280.8381420558426,
+        "pool_rune": 109.68807346,
+        "pool_usd": 125.94692793500981,
+        "tcy_price": 0.19364644242579393
+      },
+      {
+        "timestamp": 1758931200,
+        "day_no": 21,
+        "stake_rune": 441.62113488499995,
+        "stake_usd": 497.30588754249857,
+        "pool_rune": 42.59190101,
+        "pool_usd": 47.9623855398496,
+        "tcy_price": 0.1945145721647728
+      },
+      {
+        "timestamp": 1759017600,
+        "day_no": 22,
+        "stake_rune": 1111.302396737,
+        "stake_usd": 1293.8096871804883,
+        "pool_rune": 48.9345519,
+        "pool_usd": 56.970989599188044,
+        "tcy_price": 0.19910393864265988
+      },
+      {
+        "timestamp": 1759104000,
+        "day_no": 23,
+        "stake_rune": 665.345692405,
+        "stake_usd": 771.7443548925244,
+        "pool_rune": 19.45884111,
+        "pool_usd": 22.570598939493834,
+        "tcy_price": 0.1998417884258762
+      },
+      {
+        "timestamp": 1759190400,
+        "day_no": 24,
+        "stake_rune": 2634.525478465,
+        "stake_usd": 3004.5850157973605,
+        "pool_rune": 67.23854207000001,
+        "pool_usd": 76.68322726007236,
+        "tcy_price": 0.20479675571869968
+      },
+      {
+        "timestamp": 1759276800,
+        "day_no": 25,
+        "stake_rune": 9538.866692591999,
+        "stake_usd": 11451.205942214592,
+        "pool_rune": 87.9501868,
+        "pool_usd": 105.582322739157,
+        "tcy_price": 0.2106999035474276
+      },
+      {
+        "timestamp": 1759363200,
+        "day_no": 26,
+        "stake_rune": 30020.374414938004,
+        "stake_usd": 36534.1310932319,
+        "pool_rune": 573.30340126,
+        "pool_usd": 697.697547949514,
+        "tcy_price": 0.22288742711351922
+      },
+      {
+        "timestamp": 1759449600,
+        "day_no": 27,
+        "stake_rune": 0.0,
+        "stake_usd": 0.0,
+        "pool_rune": 0.0,
+        "pool_usd": 0.0,
+        "tcy_price": 0.22288742711351922
+      }
+    ]
   }
 }
