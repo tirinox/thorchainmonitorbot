@@ -83,5 +83,8 @@ class MidgardURLGenV2:
             spec += f"&interval={interval}"
         return f'{self.base_url}/v2/history/affiliate?{spec}'
 
+    def url_pool_depth_history(self, pool: str, count=30, interval='day') -> str:
+        return f'{self.base_url}/v2/history/depths/{pool}?count={count}&interval={interval}'
+
 
 free_url_gen = MidgardURLGenV2('')

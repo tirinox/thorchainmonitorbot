@@ -119,3 +119,10 @@ class MidgardConnector(WithLogger):
         )
         if j and j != self.ERROR_RESPONSE:
             return self.parser.parse_affiliate_history(j)
+
+    async def query_pool_depth_history(self, pool: str, count=30, interval='day'):
+        j = await self.request(
+            self.urlgen.url_pool_depth_history(pool, count=count, interval=interval)
+        )
+        if j and j != self.ERROR_RESPONSE:
+            return self.parser.parse_pool_depth_history(j)

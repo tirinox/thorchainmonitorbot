@@ -1,11 +1,10 @@
 import copy
 import dataclasses
 import logging
-import math
-from _operator import attrgetter
 from dataclasses import dataclass
-from operator import attrgetter
 from typing import List, Dict, NamedTuple, Optional
+
+import math
 
 from api.aionode.types import ThorPool
 from lib.constants import thor_to_float
@@ -182,8 +181,11 @@ class PoolInfoHistoricEntry:
     asset_price_usd: float = 0.0
     liquidity_units: int = 0
     synth_units: int = 0
+    synth_supply: int = 0
+    luvi: float = 0.0
     units: int = 0
     timestamp: int = 0
+    members_count: int = 0
 
     def to_pool_info(self, asset) -> PoolInfo:
         return PoolInfo(
@@ -194,6 +196,36 @@ class PoolInfoHistoricEntry:
             PoolInfo.DEPRECATED_ENABLED,
             units=self.liquidity_units,
             original=None,
+        )
+
+    @classmethod
+    def from_json(cls, j):
+        asset_depth = int(j.get('assetDepth', '0'))
+        rune_depth = int(j.get('runeDepth', '0'))
+        asset_price = asset_depth / rune_depth if rune_depth else 0.0
+        return PoolInfoHistoricEntry(
+            asset_depth=asset_depth,
+            rune_depth=rune_depth,
+            units=int(j.get('units', 0)),  # total liquidity units!
+            synth_units=int(j.get('synthUnits', 0)),
+            synth_supply=int(j.get('synthSupply', 0)),
+            liquidity_units=int(j.get('liquidityUnits', 0)),
+            asset_price=float(j.get('assetPrice', asset_price)),
+            asset_price_usd=float(j.get('assetPriceUSD', 0.0)),
+            timestamp=int(j.get('endTime', 0)),
+            members_count=int(j.get('membersCount', 0)),
+            luvi=float(j.get('luvi', 0)),
+        )
+
+
+@dataclass
+class PoolDepthResponse:
+    intervals: List[PoolInfoHistoricEntry]
+
+    @classmethod
+    def from_json(cls, r):
+        return cls(
+            intervals=[PoolInfoHistoricEntry.from_json(j) for j in r.get('intervals', [])]
         )
 
 

@@ -53,6 +53,12 @@ class EarningsInterval(NamedTuple):
             start_time=int(data['startTime'])
         )
 
+    def find_pool(self, pool_name: str) -> PoolEarnings | None:
+        for pool in self.pools:
+            if pool.pool == pool_name:
+                return pool
+        return None
+
 
 @dataclasses.dataclass
 class EarningsTuple:

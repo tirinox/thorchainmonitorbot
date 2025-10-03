@@ -3,7 +3,7 @@ from typing import NamedTuple, List, Optional
 
 from models.affiliate import AffiliateHistoryResponse
 from models.memo import ActionType, is_action
-from models.pool_info import PoolInfoHistoricEntry, PoolInfoMap, PoolInfo
+from models.pool_info import PoolInfoHistoricEntry, PoolInfoMap, PoolInfo, PoolDepthResponse
 from models.pool_member import PoolMemberDetails
 from models.tx import ThorAction, ThorSubTx, ThorMetaSwap, ThorMetaRefund, ThorMetaWithdraw, \
     ThorMetaAddLiquidity
@@ -81,25 +81,6 @@ class MidgardParserV2:
             prev_page_token=meta.get('prevPageToken', '')
         )
 
-    def parse_historic_pool_items(self, response: dict) -> List[PoolInfoHistoricEntry]:
-        results = []
-        intervals = response.get('intervals', [])
-        for j in intervals:
-            asset_depth = int(j.get('assetDepth', '0'))
-            rune_depth = int(j.get('runeDepth', '0'))
-            asset_price = asset_depth / rune_depth if rune_depth else 0.0
-            results.append(PoolInfoHistoricEntry(
-                asset_depth=asset_depth,
-                rune_depth=rune_depth,
-                units=int(j.get('units', 0)),  # total liquidity units!
-                synth_units=int(j.get('synthUnits', 0)),
-                liquidity_units=int(j.get('liquidityUnits', 0)),
-                asset_price=asset_price,
-                asset_price_usd=float(j.get('assetPriceUSD', '0')),
-                timestamp=int(j.get('endTime', 0))
-            ))
-        return results
-
     @staticmethod
     def parse_pool_member_details(response, address='') -> List[PoolMemberDetails]:
         results = []
@@ -144,6 +125,10 @@ class MidgardParserV2:
     @staticmethod
     def parse_affiliate_history(response):
         return AffiliateHistoryResponse(**response)
+
+    @staticmethod
+    def parse_pool_depth_history(response):
+        return PoolDepthResponse.from_json(response)
 
 
 def get_parser_by_network_id(network_id) -> MidgardParserV2:
