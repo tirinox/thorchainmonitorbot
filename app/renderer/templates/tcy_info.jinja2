@@ -1,15 +1,58 @@
-{% set _width, _height = set_viewport_size(1600, 1200) %}
+{% set _width, _height = set_viewport_size(1470, 1000) %}
 {% extends "base.jinja2" %}
 
 {% block content %}
     <style>
-        .earnings-chart-container {
+        .earnings-outer-container {
             display: flex;
+            flex-direction: column;
+        }
 
-            width: 600px;
+        .tcy-earnings-legend {
+            margin-top: -14px;
+            display: flex;
+            flex-direction: row;
+            gap: 14px;
+            align-items: center;
+
+            justify-content: center;
+            padding-bottom: 14px;
+        }
+
+        .tcy-earnings-legend-text {
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #ccc;
+            font-weight: bolder;
+        }
+
+        .pool-color {
+            background-color: #FF9933;
+        }
+
+        .stake-color {
+            background-color: #33FF99;
+        }
+
+        .tcy-earnings-legend-circle {
+            width: 32px;
+            height: 16px;
+            border-radius: 8px;
+        }
+
+        .earnings-chart-container {
+            width: 100%;
             height: 450px;
             padding: 0 14px 14px;
             margin-bottom: 10px;
+        }
+
+        .tcy-description {
+            display: none;
+            font-size: 19px;
+            color: #ccc;
+            font-style: italic;
         }
 
         .price-chart-container {
@@ -17,13 +60,19 @@
         }
 
         #tcyAllocationSunburstChart {
-            width: auto;
-            height: auto;
+            width: 700px;
+            height: 420px;
         }
 
         .supply-chart {
-            width: 260px;
-            height: 260px;
+
+        }
+
+        .item {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            font-size: 20px;
         }
 
         .main-container {
@@ -38,16 +87,19 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
+            flex: 1;
         }
 
         .columns {
             display: flex;
             flex-direction: row;
             gap: 16px;
+            width: 100%;
         }
 
         .chain-state-name {
             font-size: 22px;
+            color: #ccc;
         }
 
         .mimir-container {
@@ -66,10 +118,18 @@
             margin-bottom: 6px;
         }
 
+        .tcy-price {
+            color: #fff !important;
+        }
+
+        .glow {
+            text-shadow: 0 0 4px #00ffccaa, 0 0 8px #00ffccaa, 0 0 12px #00ffcc66;
+        }
+
     </style>
 
     <script src="renderer/static/js/lightweight-charts.standalone.production.js"></script>
-    <script src="renderer/static/js/sunburst-chart.min.js"></script>
+    <script src="renderer/static/js/echarts.min.js"></script>
 
     {% with title="TCY INFO" %}
         {% include "components/header.jinja2" %}
@@ -79,7 +139,7 @@
         <div class="columns">
             <div class="column">
                 <div class="flex">
-                    <p>
+                    <p class="tcy-description">
                         The TCY token is a native asset introduced by THORChain to address approximately $210 million
                         debt
                         accumulated by THORFi’s savings and lending services. Approved through community governance via
@@ -89,35 +149,90 @@
                     </p>
                 </div>
 
-                <div class="flex">Supply: {{ tcy_total_supply }}</div>
-
-                <div class="flex supply-chart">
-                    <div id="tcyAllocationSunburstChart"></div>
-                </div>
-
-
-            </div>
-
-            <div class="column">
-
                 <div class="block-title">
-                    TCY earnings, $
-                </div>
-
-                <div class="earnings-chart-container shadow-box">
-                    <canvas id="tcyEarningsChart"></canvas>
-                </div>
-
-                <div class="block-title">
-                    TCY price, $
+                    <span>TCY price:</span>
+                    <span class="tcy-price">
+                        ${{ pretty_money(usd_per_tcy) }}
+                    </span>
                 </div>
 
                 <div class="price-chart-container shadow-box">
                     <canvas id="tcyPriceChart"></canvas>
                 </div>
 
+                <div class="item">
+                    <div class="item-title">Supply</div>
+                    <div class="item-value">{{ tcy_total_supply }}</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-title">Market cap</div>
+                    <div class="item-value">${{ short_money(market_cap) }}</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-title">Vs RUNE</div>
+                    <div class="item-value">{{ pretty_money(percent_of_rune_market_cap) }}%</div>
+                </div>
+
+                <div class="item">
+                    <div class="item-title">Claimed</div>
+                    <div class="item-value">
+                        {{ pretty_money(vnx.claimed_info.count) }} wallets
+                        ({{ short_money(vnx.claimed_info.total * 1e-8) }} TCY)
+                    </div>
+                </div>
+
+                <div class="item">
+                    <div class="item-title">Unclaimed</div>
+                    <div class="item-value">
+                        {{ pretty_money(vnx.unclaim_info.count) }} wallets
+                        ({{ short_money(vnx.unclaim_info.total * 1e-8) }} TCY)
+                    </div>
+                </div>
+
+                <div class="supply-chart">
+                    <div id="tcyAllocationSunburstChart"></div>
+                </div>
+            </div>
+
+
+            <div class="column">
+                <div class="block-title">
+                    TCY earnings
+                    (<span style="color: #fff">
+                        <span class="glow">{{ round(status.system_income_bps_to_tcy / 100, 1) }}%</span>
+                        of SYSTEM INCOME
+                    </span>), USD
+                </div>
+
+                <div class="shadow-box earnings-outer-container">
+                    <div class="earnings-chart-container">
+                        <canvas id="tcyEarningsChart"></canvas>
+                    </div>
+                    <div class="tcy-earnings-legend">
+                        <div class="tcy-earnings-legend-circle stake-color"></div>
+                        <div class="tcy-earnings-legend-text">Stake earnings</div>
+                        <div class="tcy-earnings-legend-circle pool-color"></div>
+                        <div class="tcy-earnings-legend-text">Pool earnings</div>
+                    </div>
+                </div>
+
+                <div class="item">
+                    <div class="item-title">Earnings (7D)</div>
+                    <div class="item-value">{{ pretty_money(vnx.last_week_earnings * 1e-8) }}</div>
+                    <div class="item-extra">
+                        (${{ pretty_money(vnx.last_week_earnings * 1e-8 * usd_per_rune) }})
+                    </div>
+                </div>
+
+                <div class="item">
+                    <div class="item-title">APR (7D)</div>
+                    <div class="item-value">{{ pretty_money(apr_current) }}%</div>
+                </div>
             </div>
         </div>
+
 
         <div class="mimir-container">
             <div class="chain-state-container cbox">
@@ -153,8 +268,6 @@
             </div>
         </div>
     </div>
-
-
 
     <script>
         Chart.defaults.font.family = 'ThorFontLight'; // Set the font family for the chart
@@ -332,7 +445,7 @@
                         x: {
                             display: false,
                             grid: {
-                                display: false,
+                                display: true,
                                 drawTicks: false,
                                 drawOnChartArea: false,
                             },
@@ -379,94 +492,112 @@
 
         function plotTcyAllocationSunburstChart() {
             const colorTables = {
-                'BTC.BTC': '#f7931a',
-                'ETH.ETH': '#627eea',
-                'LTC.LTC': '#bfbbbb',
-                'DOGE.DOGE': '#c2a633',
-            }
+                'BTC.BTC': ['#f7931a', '#ffcc80'],   // orange gradient
+                'ETH.ETH': ['#627eea', '#a0b4ff'],   // blue gradient
+                'LTC.LTC': ['#bfbbbb', '#bfbbbb'],   // silver
+                'DOGE.DOGE': ['#c2a633', '#c2a633'], // gold
+            };
+
+            const makeRadial = (colors) => new echarts.graphic.RadialGradient(0.5, 0.5, 0.8, [
+                {offset: 0, color: colors[0]},
+                {offset: 1, color: colors[1]}
+            ]);
+
             const vnx = {{ vnx|safe }};
-            const unclaimedAssets = vnx.unclaim_info.assets;  // { "ETH.ETH": 100, "BTC.BTC": 0.5, ... }
-            console.log("unclaimedAssets", unclaimedAssets);
+            const unclaimedAssets = vnx.unclaim_info.assets;
             const sumOfUnclaimedAssets = Object.values(unclaimedAssets).reduce((a, b) => a + b, 0);
-            // top 5 assets by value
+
             const topUnclaimedAssets = Object.entries(unclaimedAssets)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 3);
+
             const sumOfTopUnclaimedAssets = topUnclaimedAssets.reduce((a, b) => a + b[1], 0);
-            // add "Other" asset if there are more than 5 assets
             if (Object.keys(unclaimedAssets).length > 5) {
-                topUnclaimedAssets.push(["Other", sumOfUnclaimedAssets - sumOfTopUnclaimedAssets]);
+                topUnclaimedAssets.push(["Other", Math.max(sumOfUnclaimedAssets - sumOfTopUnclaimedAssets, 0)]);
             }
-            const unclaimedChildren = topUnclaimedAssets.map(([name, value]) => ({
-                name: name,
-                value: value,
-                color: colorTables[name] || '#AAAAAA',
-            }));
-            console.log("unclaimedChildren", unclaimedChildren);
+
+            const unclaimedChildren = topUnclaimedAssets.map(([name, value]) => {
+                const colors = colorTables[name] || ['#aaaaaa', '#cccccc'];
+                return {
+                    name,
+                    value,
+                    itemStyle: {color: makeRadial(colors)},
+                };
+            });
+
+            const usersValue = Math.max(
+                (vnx.staker_info?.total || 0) - (vnx.pol_tcy || 0) - (vnx.tcy_in_pool || 0) - (vnx.treasury || 0),
+                0
+            );
 
             const claimedChildren = [
+                {name: "POL", value: vnx.pol_tcy, itemStyle: {color: makeRadial(['#33FF99', '#009966'])}},
+                {name: "Pool", value: vnx.tcy_in_pool, itemStyle: {color: makeRadial(['#00FFCC', '#0099AA'])}},
+                {name: "Treasury", value: vnx.treasury, itemStyle: {color: makeRadial(['#66FFCC', '#009966'])}},
+                {name: "Users", value: usersValue, itemStyle: {color: makeRadial(['#00CCFF', '#0066FF'])}},
+            ];
+
+            const data = [
                 {
-                    name: "POL",
-                    value: vnx.pol_tcy,
-                    color: '#33FF99',
+                    name: "Unclaimed",
+                    value: sumOfUnclaimedAssets,
+                    itemStyle: {color: makeRadial(['#66ffcc', '#009966'])},
+                    children: unclaimedChildren
                 },
                 {
-                    name: "Pool",
-                    value: vnx.tcy_in_pool,
-                    color: '#33FF99',
-                },
-                {
-                    name: "Treasury",
-                    value: vnx.treasury,
-                    color: '#33FF99',
-                },
-                {
-                    name: "Users",
-                    value: vnx.staker_info.total - vnx.pol_tcy - vnx.tcy_in_pool - vnx.treasury,
-                    color: '#00CCFF',
+                    name: "Claimed",
+                    value: (vnx.staker_info?.total || 0),
+                    itemStyle: {color: makeRadial(['#0ba7cd', '#004d73'])},
+                    children: claimedChildren
                 }
-            ]
+            ];
 
-            const data = {
-                name: "",
-                color: '#000000',
-                children: [
-                    {
-                        name: "Unclaimed",
-                        color: '#33FF99',
-                        children: unclaimedChildren
+
+            const chart = echarts.init(document.getElementById("tcyAllocationSunburstChart"));
+            const option = {
+                animation: false,
+
+                series: [{
+                    itemStyle: {
+                        borderWidth: 0,      // remove border lines
+                        gap: 2,              // add space between slices (like padding)
                     },
-                    {
-                        name: "Claimed",
-                        color: '#0ba7cd',
-                        children: claimedChildren,
-                    }
-                ]
-            }
 
-            new Sunburst(document.getElementById("tcyAllocationSunburstChart"))
-                .data(data)
-                .width(420)
-                .height(420)
-                .transitionDuration(0)
-                .color((d, parent) => {
-                    return d.color
-                })
-                .excludeRoot(true)
-            {#.handleNonFittingLabel((label, availablePx) => {#}
-            {#    return label#}
-            {#    const numFitChars = Math.round(availablePx / 7); // ~7px per char#}
-            {#    return numFitChars < 3#}
-            {#        ? null#}
-            {#        : `${label.slice(0, Math.round(numFitChars) - 3)}...`;#}
-            {#})#}
-            .
-                radiusScaleExponent(1)
-            }
+                    type: 'sunburst',
+                    data,
 
-            plotEarningsChart();
-            plotPriceChart();
-            plotTcyAllocationSunburstChart();
+                    radius: ['10%', '90%'],
+                    nodeClick: 'zoomToNode',
+                    sort: null,
+                    startAngle: 30,
+                    label: {
+                        rotate: 0,    // keep labels horizontal
+                        minAngle: 8,
+                        formatter: '{b}',
+                        fontSize: 10,
+                        fontWeight: 'bold',
+                        textShadowColor: 'rgba(0,0,0,0.6)',
+                        textShadowBlur: 4,
+                        textShadowOffsetX: 1,
+                        textShadowOffsetY: 1,
+                        color: '#ffffff',
+                    },
+                    levels: [
+                        {},
+                        {r0: '10%', r: '45%', label: {fontSize: 15, width: 80, overflow: 'truncate'}},
+                        {r0: '45%', r: '90%', label: {fontSize: 15, width: 90, overflow: 'truncate'}},
+                    ],
+                    {#emphasis: {focus: 'ancestor'},#}
+                }]
+            };
+
+            chart.setOption(option);
+            window.addEventListener('resize', () => chart.resize());
+        }
+
+        plotEarningsChart();
+        plotPriceChart();
+        plotTcyAllocationSunburstChart();
 
     </script>
 
