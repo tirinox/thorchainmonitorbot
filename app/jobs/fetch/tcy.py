@@ -96,6 +96,7 @@ class TCYInfoFetcher(BaseFetcher):
             status=status,
             tcy_total_supply=int(supply),
             usd_per_tcy=usd_per_tcy,
+            usd_per_rune=market.pool_rune_price,
             rune_market_cap_usd=market.total_supply,
             earnings=earnings,
         )

@@ -1,6 +1,6 @@
 from typing import Dict, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 
 from lib.constants import thor_to_float
 from .base import IntFromStr
@@ -92,22 +92,26 @@ class TcyFullInfo(BaseModel):
     status: TcyStatus
     tcy_total_supply: int
     usd_per_tcy: float
+    usd_per_rune: float
     rune_market_cap_usd: float
 
     earnings: List[TcyEarningsPoint]
 
+    @computed_field
     @property
-    def market_cap(self):
+    def market_cap(self) -> float:
         return self.tcy_total_supply * self.usd_per_tcy
 
+    @computed_field
     @property
-    def percent_of_rune_market_cap(self):
+    def percent_of_rune_market_cap(self) -> float:
         if self.rune_market_cap_usd == 0:
             return 0.0
         return 100.0 * self.market_cap / self.rune_market_cap_usd
 
+    @computed_field
     @property
-    def tcy_staked(self):
+    def tcy_staked(self) -> float:
         return thor_to_float(self.vnx.staker_info.total)
 
     def get_apr(self, points):
@@ -120,8 +124,9 @@ class TcyFullInfo(BaseModel):
         apr = (daily_earnings * 365 / staked_usd) * 100.0
         return apr
 
+    @computed_field
     @property
-    def apr_current(self):
+    def apr_current(self) -> float:
         total_days = len(self.earnings)
         middle_days = total_days // 2
         return self.get_apr(self.earnings[middle_days:total_days])
