@@ -3,26 +3,471 @@
 
 {% block content %}
     <style>
+        .earnings-chart-container {
+            display: flex;
 
+            width: 600px;
+            height: 450px;
+            padding: 0 14px 14px;
+            margin-bottom: 10px;
+        }
+
+        .price-chart-container {
+            padding: 14px;
+        }
+
+        #tcyAllocationSunburstChart {
+            width: auto;
+            height: auto;
+        }
+
+        .supply-chart {
+            width: 260px;
+            height: 260px;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: row;
+            /* flex start top */
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .column {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .columns {
+            display: flex;
+            flex-direction: row;
+            gap: 16px;
+        }
+
+        .chain-state-name {
+            font-size: 22px;
+        }
+
+        .mimir-container {
+            width: 100%;
+        }
+
+        .block-title {
+            display: block;
+            color: #999;
+            font-size: 24px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            text-align: left;
+            width: 100%;
+            margin-bottom: 6px;
+        }
 
     </style>
 
     <script src="renderer/static/js/lightweight-charts.standalone.production.js"></script>
+    <script src="renderer/static/js/sunburst-chart.min.js"></script>
 
     {% with title="TCY INFO" %}
         {% include "components/header.jinja2" %}
     {% endwith %}
 
-    <div class="main-container">
-        <p>
-            The TCY token is a native asset introduced by THORChain to address approximately $210 million debt
-            accumulated by THORFi’s savings and lending services. Approved through community governance via Proposal 6,
-            TCY converts defaulted debt into equity, transforming creditors into stakeholders.
-        </p>
+    <div class="main-container column">
+        <div class="columns">
+            <div class="column">
+                <div class="flex">
+                    <p>
+                        The TCY token is a native asset introduced by THORChain to address approximately $210 million
+                        debt
+                        accumulated by THORFi’s savings and lending services. Approved through community governance via
+                        Proposal
+                        6,
+                        TCY converts defaulted debt into equity, transforming creditors into stakeholders.
+                    </p>
+                </div>
+
+                <div class="flex">Supply: {{ tcy_total_supply }}</div>
+
+                <div class="flex supply-chart">
+                    <div id="tcyAllocationSunburstChart"></div>
+                </div>
+
+
+            </div>
+
+            <div class="column">
+
+                <div class="block-title">
+                    TCY earnings, $
+                </div>
+
+                <div class="earnings-chart-container shadow-box">
+                    <canvas id="tcyEarningsChart"></canvas>
+                </div>
+
+                <div class="block-title">
+                    TCY price, $
+                </div>
+
+                <div class="price-chart-container shadow-box">
+                    <canvas id="tcyPriceChart"></canvas>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="mimir-container">
+            <div class="chain-state-container cbox">
+                <div class="chain-state">
+                    <div class="chain-state-status {{ 'ok' if not status.halt_claiming else 'halted' }}"></div>
+                    <div class="chain-state-name">CLAIMING</div>
+                </div>
+
+                <div class="chain-state">
+                    <div class="chain-state-status {{ 'ok' if not status.halt_claiming_swap else 'halted' }}"></div>
+                    <div class="chain-state-name">CLAIMING SWAP</div>
+                </div>
+
+                <div class="chain-state">
+                    <div class="chain-state-status {{ 'ok' if not status.halt_staking else 'halted' }}"></div>
+                    <div class="chain-state-name">STAKING</div>
+                </div>
+
+                <div class="chain-state">
+                    <div class="chain-state-status {{ 'ok' if not status.halt_unstaking else 'halted' }}"></div>
+                    <div class="chain-state-name">UNSTAKING</div>
+                </div>
+
+                <div class="chain-state">
+                    <div class="chain-state-status {{ 'ok' if not status.halt_stake_distribution else 'halted' }}"></div>
+                    <div class="chain-state-name">DISTRIBUTION</div>
+                </div>
+
+                <div class="chain-state">
+                    <div class="chain-state-status {{ 'ok' if not status.halt_trading else 'halted' }}"></div>
+                    <div class="chain-state-name">TRADING</div>
+                </div>
+            </div>
+        </div>
     </div>
 
+
+
     <script>
-        // todo
+        Chart.defaults.font.family = 'ThorFontLight'; // Set the font family for the chart
+        Chart.defaults.color = 'rgb(200, 200, 200)'; // Set the font color for the chart
+
+        function plotEarningsChart() {
+            // Get the context of the canvas element we want to select
+            const ctx = document.getElementById('tcyEarningsChart').getContext('2d');
+
+            const stakeGradient = ctx.createLinearGradient(0, 0, 0, 200);
+            stakeGradient.addColorStop(1, '#33FF99'); // Top color
+            stakeGradient.addColorStop(0, '#00CCFF'); // Bottom color
+
+            const poolGradient = ctx.createLinearGradient(0, 0, 0, 200);
+            poolGradient.addColorStop(1, '#FF9933'); // Top color
+            poolGradient.addColorStop(0, '#ff3388'); // Bottom color
+
+            const earnings = {{ earnings|safe }};
+
+            let dateStrings = earnings.map(point => new Date(point.timestamp * 1e3));
+            console.log(dateStrings)
+
+            // format dates to DD.MM HH:MM
+            let prevDate = null
+            dateStrings = dateStrings.reverse().map(date => {
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const label = `${day}.${month}`
+                if (prevDate === label) {
+                    return ' '
+                } else {
+                    prevDate = label
+                    return label
+                }
+            }).reverse()
+            console.log(dateStrings)
+
+            const stakeValues = earnings.map(point => point.stake_usd);
+            const poolValues = earnings.map(point => point.pool_usd);
+
+            // Define the data for the chart
+            const data = {
+                labels: dateStrings, // X-axis labels
+                datasets: [
+                    {
+                        label: 'TCY Stake earnings, $',
+                        data: stakeValues, // Y-axis data
+                        backgroundColor: stakeGradient,
+                        borderWidth: 2,
+                        borderRadius: Number.MAX_VALUE,
+                        borderSkipped: false,
+                        categoryPercentage: 0.99,
+                        barPercentage: 0.99,
+                    },
+                    {
+                        label: 'TCY Pool earnings, $',
+                        data: poolValues, // Y-axis data
+                        backgroundColor: poolGradient,
+                        borderWidth: 2,
+                        borderRadius: Number.MAX_VALUE,
+                        borderSkipped: false,
+                        categoryPercentage: 0.99,
+                        barPercentage: 0.99,
+                    }
+                ]
+            };
+
+            // Define the configuration options
+            const config = {
+                type: 'bar', // Specify the chart type
+                data: data,
+                options: {
+                    animation: false,
+                    animations: {
+                        colors: false,
+                        x: false
+                    },
+
+                    responsive: true, // Make the chart responsive
+                    maintainAspectRatio: false, // Maintain the aspect ratio
+                    tooltips: {
+                        enabled: false
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: false,
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)',
+                            },
+                            ticks: {
+                                font: {
+                                    size: 16,
+                                }
+                            },
+                        },
+                        y: {
+                            beginAtZero: true, // Start the Y-axis at zero
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)',
+                            },
+                            ticks: {
+                                font: {
+                                    size: 18,
+                                },
+                                maxTicksLimit: 10
+                            },
+
+                        },
+
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                        },
+                        legend: {
+                            display: false,
+                            labels: {
+                                font: {
+                                    size: 20
+                                }
+                            }
+                        },
+                    }
+                }
+            };
+
+            // when fonts loaded
+            document.fonts.ready.then(() => {
+                // Create and render the chart
+                new Chart(ctx, config);
+            });
+        }
+
+        function plotPriceChart() {
+            // Get the context of the canvas element we want to select
+            const ctx = document.getElementById('tcyPriceChart').getContext('2d');
+
+            const earnings = {{ earnings|safe }};
+
+            let dateStrings = earnings.map(point => (point.timestamp * 1e3));
+
+            const priceValues = earnings.map(point => point.tcy_price);
+
+            // Define the data for the chart
+            const data = {
+                labels: dateStrings, // X-axis labels
+                datasets: [
+                    {
+                        label: 'TCY Stake earnings, $',
+                        data: priceValues, // Y-axis data
+                        lineColor: '#2962FF', topColor: '#2962FF', bottomColor: 'rgba(41, 98, 255, 0.28)'
+                    },
+                ]
+            };
+
+            // Define the configuration options
+            const config = {
+                type: 'line', // Specify the chart type
+                data: data,
+                options: {
+                    animation: false,
+                    animations: {
+                        colors: false,
+                        x: false
+                    },
+
+                    responsive: true, // Make the chart responsive
+                    maintainAspectRatio: false, // Maintain the aspect ratio
+                    tooltips: {
+                        enabled: false
+                    },
+                    scales: {
+                        x: {
+                            display: false,
+                            grid: {
+                                display: false,
+                                drawTicks: false,
+                                drawOnChartArea: false,
+                            },
+                            border: {
+                                display: false,
+                            },
+                        },
+                        y: {
+                            display: true,
+                            grid: {
+                                display: true,
+                                drawTicks: true,
+                                drawOnChartArea: true,
+                                color: 'rgba(255, 255, 255, 0.1)',
+                            },
+                            border: {
+                                display: false,
+                            },
+                            ticks: {
+                                font: {
+                                    size: 20,
+                                },
+                                maxTicksLimit: 6
+                            },
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: false,
+                        },
+                        legend: {
+                            display: false,
+                        },
+                    }
+                }
+            };
+
+            // when fonts loaded
+            document.fonts.ready.then(() => {
+                // Create and render the chart
+                new Chart(ctx, config);
+            });
+        }
+
+        function plotTcyAllocationSunburstChart() {
+            const colorTables = {
+                'BTC.BTC': '#f7931a',
+                'ETH.ETH': '#627eea',
+                'LTC.LTC': '#bfbbbb',
+                'DOGE.DOGE': '#c2a633',
+            }
+            const vnx = {{ vnx|safe }};
+            const unclaimedAssets = vnx.unclaim_info.assets;  // { "ETH.ETH": 100, "BTC.BTC": 0.5, ... }
+            console.log("unclaimedAssets", unclaimedAssets);
+            const sumOfUnclaimedAssets = Object.values(unclaimedAssets).reduce((a, b) => a + b, 0);
+            // top 5 assets by value
+            const topUnclaimedAssets = Object.entries(unclaimedAssets)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3);
+            const sumOfTopUnclaimedAssets = topUnclaimedAssets.reduce((a, b) => a + b[1], 0);
+            // add "Other" asset if there are more than 5 assets
+            if (Object.keys(unclaimedAssets).length > 5) {
+                topUnclaimedAssets.push(["Other", sumOfUnclaimedAssets - sumOfTopUnclaimedAssets]);
+            }
+            const unclaimedChildren = topUnclaimedAssets.map(([name, value]) => ({
+                name: name,
+                value: value,
+                color: colorTables[name] || '#AAAAAA',
+            }));
+            console.log("unclaimedChildren", unclaimedChildren);
+
+            const claimedChildren = [
+                {
+                    name: "POL",
+                    value: vnx.pol_tcy,
+                    color: '#33FF99',
+                },
+                {
+                    name: "Pool",
+                    value: vnx.tcy_in_pool,
+                    color: '#33FF99',
+                },
+                {
+                    name: "Treasury",
+                    value: vnx.treasury,
+                    color: '#33FF99',
+                },
+                {
+                    name: "Users",
+                    value: vnx.staker_info.total - vnx.pol_tcy - vnx.tcy_in_pool - vnx.treasury,
+                    color: '#00CCFF',
+                }
+            ]
+
+            const data = {
+                name: "",
+                color: '#000000',
+                children: [
+                    {
+                        name: "Unclaimed",
+                        color: '#33FF99',
+                        children: unclaimedChildren
+                    },
+                    {
+                        name: "Claimed",
+                        color: '#0ba7cd',
+                        children: claimedChildren,
+                    }
+                ]
+            }
+
+            new Sunburst(document.getElementById("tcyAllocationSunburstChart"))
+                .data(data)
+                .width(420)
+                .height(420)
+                .transitionDuration(0)
+                .color((d, parent) => {
+                    return d.color
+                })
+                .excludeRoot(true)
+            {#.handleNonFittingLabel((label, availablePx) => {#}
+            {#    return label#}
+            {#    const numFitChars = Math.round(availablePx / 7); // ~7px per char#}
+            {#    return numFitChars < 3#}
+            {#        ? null#}
+            {#        : `${label.slice(0, Math.round(numFitChars) - 3)}...`;#}
+            {#})#}
+            .
+                radiusScaleExponent(1)
+            }
+
+            plotEarningsChart();
+            plotPriceChart();
+            plotTcyAllocationSunburstChart();
+
     </script>
 
 {% endblock %}

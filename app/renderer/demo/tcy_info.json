@@ -68,7 +68,7 @@
     "status": {
       "halt_trading": false,
       "halt_claiming": false,
-      "halt_claiming_swap": false,
+      "halt_claiming_swap": true,
       "halt_stake_distribution": false,
       "halt_staking": false,
       "halt_unstaking": false,

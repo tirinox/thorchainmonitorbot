@@ -349,3 +349,50 @@ footer {
     background: rgba(52, 51, 51, 0.21);
     box-shadow: rgb(0, 0, 0, 0.5) 0 0 20px;
 }
+
+.ok {
+    background-color: #26a69a;
+}
+
+.halted {
+    background-color: #ef5350;
+    /* fire red shadow */
+}
+
+.halted-text {
+    color: #ef5350;
+}
+
+.warning {
+    background-color: #FFA500;
+}
+
+.chain-state-name {
+    color: #bbb;
+    font-size: 24px;
+    font-weight: bold;
+    display: flex;
+    margin-right: 30px;
+}
+
+.chain-state-status {
+    display: flex;
+    margin-top: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.chain-state {
+    display: flex;
+    align-items: center; /* Align items vertically */
+}
+
+
+.chain-state-container {
+    margin-top: 2%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+}

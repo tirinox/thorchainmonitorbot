@@ -69,52 +69,6 @@
             width: auto;
         }
 
-        .chain-state-container {
-            margin-top: 2%;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .chain-state {
-            display: flex;
-            align-items: center; /* Align items vertically */
-        }
-
-        .chain-state-name {
-            color: #bbb;
-            font-size: 24px;
-            font-weight: bold;
-            display: flex;
-            margin-right: 30px;
-        }
-
-        .chain-state-status {
-            display: flex;
-            margin-top: 3px;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            margin-right: 10px;
-        }
-
-        .ok {
-            background-color: #26a69a;
-        }
-
-        .halted {
-            background-color: #ef5350;
-            /* fire red shadow */
-        }
-
-        .halted-text {
-            color: #ef5350;
-        }
-
-        .warning {
-            background-color: #FFA500;
-        }
-
         .price-delta-box {
             display: flex;
             flex-direction: column;
@@ -226,7 +180,7 @@
 
         <div class="chain-state-container cbox">
             {% for c in chain_state %}
-                <div class="chain-state  ">
+                <div class="chain-state">
                     <div class="chain-state-status {{ c[1] }}"></div>
                     <div class="chain-state-name {{ "halted-text" if c[1] == 'halted' else '' }}">{{ c[0] }}</div>
                 </div>
