@@ -598,25 +598,44 @@
 
             const topUnclaimedAssets = Object.entries(unclaimedAssets)
                 .sort((a, b) => b[1] - a[1])
-                .slice(0, 3);
+                .slice(0, 5);
 
             const sumOfTopUnclaimedAssets = topUnclaimedAssets.reduce((a, b) => a + b[1], 0);
             topUnclaimedAssets.push(["Other assets", Math.max(sumOfUnclaimedAssets - sumOfTopUnclaimedAssets, 0)]);
 
+
+            function normalizeAssetName(_name) {
+                console.log(_name);
+                // Example: "ETH.USDT-0XDAC17F..." → "ETH.USDT"
+                // Example: "ETH.ETH" → "ETH"
+                // Example: "GAIA.ATOM" → "GAIA.ATOM"
+
+                // Split into chain and asset parts
+                const [chain, assetPart] = _name.split('.');
+                if(!assetPart) {
+                    return _name;
+                }
+
+                // Strip contract suffix after hyphen, if any
+                const asset = assetPart.split('-')[0];
+
+                // Special case: same chain and asset (ETH.ETH → ETH)
+                if (chain === asset) return chain;
+
+                // Otherwise, use CHAIN.ASSET notation (but keep GAIA.ATOM intact)
+                if (_name === 'GAIA.ATOM') return _name;
+
+                return `${chain}.${asset}`;
+            }
+
             const unclaimedChildren = topUnclaimedAssets.map(([name, value]) => {
                 const colors = colorTables[name] || ['#aaaaaa', '#cccccc'];
                 return {
-                    name,
+                    name: normalizeAssetName(name),
                     amount: value,
                     itemStyle: {color: makeRadial(colors)},
                 };
             });
-
-            {#                                {{ pretty_money(vnx.claimed_info.count) }} wallets#}
-            {#                                ({{ short_money(vnx.claimed_info.total * 1e-8) }} TCY)#}
-
-                                {#                                {{ pretty_money(vnx.unclaim_info.count) }} wallets#}
-                    {#                                ({{ short_money(vnx.unclaim_info.total * 1e-8) }} TCY)#}
 
 
             const data = [
@@ -727,8 +746,8 @@
                     label: {
                         fontSize: 22,
                         color: '#ffffff',
-                        fontFamily: 'ThorFont, monospace',
-                        fontWeight: 100,
+                        fontFamily: 'ThorFontLight, monospace',
+                        fontWeight: 400,
                         textBorderWidth: 0,            // remove outline
                         textBorderColor: 'transparent',
                         textShadowColor: 'rgba(0,0,0,0.7)', // dark shadow
