@@ -64,10 +64,6 @@
             height: 420px;
         }
 
-        .supply-chart {
-
-        }
-
         .item {
             display: flex;
             flex-direction: row;
@@ -126,6 +122,18 @@
             text-shadow: 0 0 4px #00ffccaa, 0 0 8px #00ffccaa, 0 0 12px #00ffcc66;
         }
 
+        .indicator-box {
+            display: flex;
+            padding: 12px;
+
+            background: rgba(52, 51, 51, 0.21);
+            border-radius: 12px;
+            font-family: ThorFontLight, serif;
+            justify-content: space-between;
+            flex-direction: column;
+            align-items: center;
+        }
+
     </style>
 
     <script src="renderer/static/js/lightweight-charts.standalone.production.js"></script>
@@ -162,7 +170,7 @@
 
                 <div class="item">
                     <div class="item-title">Supply</div>
-                    <div class="item-value">{{ tcy_total_supply }}</div>
+                    <div class="item-value">{{ pretty_money(tcy_total_supply) }} TCY</div>
                 </div>
 
                 <div class="item">
@@ -191,7 +199,7 @@
                     </div>
                 </div>
 
-                <div class="supply-chart">
+                <div class="supply-chart shadow-box">
                     <div id="tcyAllocationSunburstChart"></div>
                 </div>
             </div>
@@ -218,15 +226,15 @@
                     </div>
                 </div>
 
-                <div class="item">
+                <div class="item indicator-box">
                     <div class="item-title">Earnings (7D)</div>
-                    <div class="item-value">{{ pretty_money(vnx.last_week_earnings * 1e-8) }}</div>
+                    <div class="item-value">{{ pretty_money(vnx.last_week_earnings * 1e-8) }} RUNE</div>
                     <div class="item-extra">
                         (${{ pretty_money(vnx.last_week_earnings * 1e-8 * usd_per_rune) }})
                     </div>
                 </div>
 
-                <div class="item">
+                <div class="item indicator-box">
                     <div class="item-title">APR (7D)</div>
                     <div class="item-value">{{ pretty_money(apr_current) }}%</div>
                 </div>
@@ -492,16 +500,17 @@
 
         function plotTcyAllocationSunburstChart() {
             const colorTables = {
-                'BTC.BTC': ['#f7931a', '#ffcc80'],   // orange gradient
+                'BTC.BTC': ['#f7931a', '#f8b348'],   // orange gradient
                 'ETH.ETH': ['#627eea', '#a0b4ff'],   // blue gradient
                 'LTC.LTC': ['#bfbbbb', '#bfbbbb'],   // silver
                 'DOGE.DOGE': ['#c2a633', '#c2a633'], // gold
             };
 
-            const makeRadial = (colors) => new echarts.graphic.RadialGradient(0.5, 0.5, 0.8, [
-                {offset: 0, color: colors[0]},
-                {offset: 1, color: colors[1]}
-            ]);
+            const makeRadial = (colors) =>
+                new echarts.graphic.LinearGradient(0, 0, -1, 1, [
+                    {offset: 0, color: colors[0]},
+                    {offset: 1, color: colors[1]}
+                ]);
 
             const vnx = {{ vnx|safe }};
             const unclaimedAssets = vnx.unclaim_info.assets;
@@ -512,83 +521,173 @@
                 .slice(0, 3);
 
             const sumOfTopUnclaimedAssets = topUnclaimedAssets.reduce((a, b) => a + b[1], 0);
-            if (Object.keys(unclaimedAssets).length > 5) {
-                topUnclaimedAssets.push(["Other", Math.max(sumOfUnclaimedAssets - sumOfTopUnclaimedAssets, 0)]);
-            }
+            topUnclaimedAssets.push(["Other assets", Math.max(sumOfUnclaimedAssets - sumOfTopUnclaimedAssets, 0)]);
 
             const unclaimedChildren = topUnclaimedAssets.map(([name, value]) => {
                 const colors = colorTables[name] || ['#aaaaaa', '#cccccc'];
                 return {
                     name,
-                    value,
+                    amount: value,
                     itemStyle: {color: makeRadial(colors)},
                 };
             });
 
-            const usersValue = Math.max(
-                (vnx.staker_info?.total || 0) - (vnx.pol_tcy || 0) - (vnx.tcy_in_pool || 0) - (vnx.treasury || 0),
-                0
-            );
-
-            const claimedChildren = [
-                {name: "POL", value: vnx.pol_tcy, itemStyle: {color: makeRadial(['#33FF99', '#009966'])}},
-                {name: "Pool", value: vnx.tcy_in_pool, itemStyle: {color: makeRadial(['#00FFCC', '#0099AA'])}},
-                {name: "Treasury", value: vnx.treasury, itemStyle: {color: makeRadial(['#66FFCC', '#009966'])}},
-                {name: "Users", value: usersValue, itemStyle: {color: makeRadial(['#00CCFF', '#0066FF'])}},
-            ];
-
             const data = [
+                ...unclaimedChildren,
                 {
-                    name: "Unclaimed",
-                    value: sumOfUnclaimedAssets,
-                    itemStyle: {color: makeRadial(['#66ffcc', '#009966'])},
-                    children: unclaimedChildren
+                    name: 'Unclaimed',
+                    depth: 1,
+                    itemStyle: {color: makeRadial(['#16877a', '#136c63'])},
+
                 },
                 {
-                    name: "Claimed",
-                    value: (vnx.staker_info?.total || 0),
-                    itemStyle: {color: makeRadial(['#0ba7cd', '#004d73'])},
-                    children: claimedChildren
+                    name: 'Claimed',
+                    depth: 1,
+                    itemStyle: {color: makeRadial(['#00CCFF', '#079fc5'])},
+                },
+                {
+                    name: 'Not staked',
+                    depth: 2,
+                },
+                {
+                    name: 'Staked',
+                    depth: 2,
+                    itemStyle: {color: makeRadial(['#66ffcc', '#009966'])},
+
+                },
+                {
+                    name: 'Protocol',
+                    depth: 3,
+                    nodeGap: 50,
+                },
+                {
+                    name: 'Treasury',
+                    depth: 3,
+                    nodeGap: 50,
+                    itemStyle: {color: makeRadial(['#ff6333', 'rgba(255,112,51,0.93)'])}
+                },
+                {
+                    name: 'Pool',
+                    depth: 3,
+                    nodeGap: 50,
+                    itemStyle: {color: makeRadial(['#FF9933', '#FF9933'])}
+                },
+                {
+                    name: 'Users',
+                    depth: 3,
+                    nodeGap: 50,
                 }
             ];
 
+            const linksRaw = []
+
+            // for each unclaimedChildren make link to Unclaimed
+            for (const item of unclaimedChildren) {
+                linksRaw.push({
+                    source: item.name,
+                    target: 'Unclaimed',
+                    depth: 0,
+                    value: item.amount,
+                })
+            }
+            linksRaw.push(
+                {
+                    source: 'Claimed',
+                    target: 'Staked',
+                    value: vnx.staker_info.total,
+                },
+                {
+                    source: 'Not staked',
+                    target: 'Pool',
+                    value: vnx.tcy_in_pool,
+                },
+                {
+                    source: 'Not staked',
+                    target: 'Protocol',
+                    value: vnx.pol_tcy,
+                },
+                {
+                    source: 'Not staked',
+                    target: 'Treasury',
+                    value: vnx.treasury,
+                },
+                {
+                    source: 'Not staked',
+                    target: 'Users',
+                    value: vnx.claimed_not_staked,
+                },
+                {
+                    source: 'Claimed',
+                    target: 'Not staked',
+                    value: vnx.claimed_not_staked + vnx.treasury + vnx.pol_tcy + vnx.tcy_in_pool,
+                },
+            )
+
+            // ---- Per-depth normalization ----
+            const K = 1000; // target total per column
+            const depthOf = Object.fromEntries(data.map(n => [n.name, n.depth]));
+            console.log("depth", depthOf);
+
+            const inboundPerNode = {};
+            linksRaw.forEach(l => {
+                inboundPerNode[l.target] = (inboundPerNode[l.target] || 0) + l.value;
+            });
+            const totalPerDepth = {};
+            data.forEach(n => {
+                if (n.depth === 0) return; // root column handled from its outflows
+                totalPerDepth[n.depth] = (totalPerDepth[n.depth] || 0) + (inboundPerNode[n.name] || 0);
+            });
+
+            const totalDepth0 = linksRaw
+                .filter(l => depthOf[l.source] === 0)
+                .reduce((s, l) => s + l.value, 0);
+            totalPerDepth[0] = totalDepth0;
+
+            const linksScaled = linksRaw.map(l => {
+                const d = depthOf[l.target]; // normalize by target column
+                const scale = totalPerDepth[d] ? (K / totalPerDepth[d]) : 1;
+                return {
+                    ...l,
+                    rawValue: l.value,         // keep original for tooltip
+                    value: l.value * scale     // used by layout/width/height
+                };
+            });
+
+            console.log("--Nodes--")
+            console.log(data)
+            console.log("--Links scaled--")
+            console.log(linksScaled)
+            console.log("--Links raw--")
+            console.log(linksRaw);
 
             const chart = echarts.init(document.getElementById("tcyAllocationSunburstChart"));
             const option = {
                 animation: false,
-
-                series: [{
-                    itemStyle: {
-                        borderWidth: 0,      // remove border lines
-                        gap: 2,              // add space between slices (like padding)
-                    },
-
-                    type: 'sunburst',
-                    data,
-
-                    radius: ['10%', '90%'],
-                    nodeClick: 'zoomToNode',
-                    sort: null,
-                    startAngle: 30,
+                series: {
+                    type: 'sankey',
+                    layout: 'none',
                     label: {
-                        rotate: 0,    // keep labels horizontal
-                        minAngle: 8,
-                        formatter: '{b}',
-                        fontSize: 10,
-                        fontWeight: 'bold',
-                        textShadowColor: 'rgba(0,0,0,0.6)',
-                        textShadowBlur: 4,
-                        textShadowOffsetX: 1,
-                        textShadowOffsetY: 1,
+                        fontSize: 22,
                         color: '#ffffff',
+
+                        textBorderWidth: 0,            // remove outline
+                        textBorderColor: 'transparent',
+                        textShadowColor: 'rgba(0,0,0,0.7)', // dark shadow
+                        textShadowBlur: 6,
+                        textShadowOffsetX: 1,
+                        textShadowOffsetY: 1
                     },
-                    levels: [
-                        {},
-                        {r0: '10%', r: '45%', label: {fontSize: 15, width: 80, overflow: 'truncate'}},
-                        {r0: '45%', r: '90%', label: {fontSize: 15, width: 90, overflow: 'truncate'}},
-                    ],
-                    {#emphasis: {focus: 'ancestor'},#}
-                }]
+                    orient: 'horizontal',
+                    nodeAlign: 'justify',
+                    nodeWidth: 30,
+                    nodeGap: 20,
+                    right: 110,
+                    emphasis: {
+                        focus: 'adjacency'
+                    },
+                    data,
+                    links: linksRaw,
+                }
             };
 
             chart.setOption(option);
