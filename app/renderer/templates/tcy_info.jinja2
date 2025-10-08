@@ -13,7 +13,7 @@
             padding: 0 14px 14px;
             margin-bottom: 10px;
             min-width: 650px;
-            min-height: 490px;
+            min-height: 510px;
         }
 
         .price-chart-container {
@@ -96,6 +96,7 @@
             /* flex start top */
             align-items: flex-start;
             gap: 16px;
+            bottom: 3%;
         }
 
         .column {
@@ -408,7 +409,7 @@
                         label: 'TCY Stake earnings, $',
                         data: stakeValues, // Y-axis data
                         backgroundColor: stakeGradient,
-                        borderWidth: 2,
+                        borderWidth: 0,
                         borderRadius: Number.MAX_VALUE,
                         borderSkipped: false,
                         categoryPercentage: 0.99,
@@ -513,7 +514,7 @@
                     {
                         label: 'TCY Stake earnings, $',
                         data: priceValues, // Y-axis data
-                        lineColor: '#2962FF', topColor: '#2962FF', bottomColor: 'rgba(41, 98, 255, 0.28)'
+                        lineColor: '#5080ff',
                     },
                 ]
             };
