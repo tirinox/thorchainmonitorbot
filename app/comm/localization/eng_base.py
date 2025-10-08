@@ -45,6 +45,7 @@ from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
 from models.secured import AlertSecuredAssetSummary
+from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, RuneCEXFlow
 from models.tx import ThorAction, ThorSubTx, EventLargeTransaction
@@ -2517,6 +2518,12 @@ class BaseLocalization(ABC):  # == English
     @staticmethod
     def notification_text_secured_asset_summary(e: AlertSecuredAssetSummary):
         return 'Secured Asset Summary'
+
+    @staticmethod
+    def notification_text_tcy_info_caption(e: TcyFullInfo):
+        return 'TCY Summary'
+
+    TEXT_TCY_INFO_NO_DATA = '😩 Sorry. We have not gotten any data for TCY yet.'
 
     # ------ Bond providers alerts ------
 

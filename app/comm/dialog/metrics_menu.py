@@ -367,6 +367,21 @@ class MetricsDialog(BaseDialog):
         text = self.loc.notification_text_secured_asset_summary(event)
         await message.answer_photo(img_to_bio(photo, photo_name), caption=text, disable_notification=True)
 
+    async def show_tcy_info(self, message: Message):
+        await self.start_typing(message)
+        if not self.deps.tcy_summary_notifier:
+            await message.answer("This method is disabled.", disable_notification=True)
+            return
+
+        event = self.deps.tcy_summary_notifier.last_event
+        if not event:
+            await message.answer(self.loc.TEXT_TCY_INFO_NO_DATA, disable_notification=True)
+            return
+
+        pic, pic_name = await self.deps.alert_presenter.render_tcy_infographic(self.loc, event)
+        text = self.loc.notification_text_tcy_info_caption(event)
+        await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
+
     # ---- Ask for duration (universal)
 
     def parse_duration_response(self, message: Message):

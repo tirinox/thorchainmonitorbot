@@ -37,6 +37,7 @@ from models.runepool import AlertPOLState, AlertRunepoolStats
 from models.runepool import AlertRunePoolAction
 from models.s_swap import AlertSwapStart
 from models.secured import AlertSecuredAssetSummary
+from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import RuneCEXFlow, NativeTokenTransfer
 from models.tx import EventLargeTransaction
@@ -126,6 +127,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_rujira_merge_stats(data)
         elif isinstance(data, AlertSecuredAssetSummary):
             await self._handle_secured_asset_summary(data)
+        elif isinstance(data, TcyFullInfo):
+            await self._handle_tcy_report(data)
 
     async def load_names(self, addresses) -> NameMap:
         if isinstance(addresses, str):
@@ -564,6 +567,22 @@ class AlertPresenter(INotified, WithLogger):
         async def message_gen(loc: BaseLocalization):
             text = loc.notification_text_secured_asset_summary(data)
             photo, photo_name = await self.render_secured_asset_summary(loc, data)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
+        await self.deps.broadcaster.broadcast_to_all(message_gen)
+
+    async def render_tcy_infographic(self, loc: BaseLocalization, data: TcyFullInfo):
+        photo = await self.renderer.render('tcy_info.jinja2', data.model_dump())
+        photo_name = 'tcy_info.png'
+        return photo, photo_name
+
+    async def _handle_tcy_report(self, data: TcyFullInfo):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_tcy_info_caption(data)
+            photo, photo_name = await self.render_tcy_infographic(loc, data)
             if photo is not None:
                 return BoardMessage.make_photo(photo, text, photo_name)
             else:

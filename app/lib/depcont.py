@@ -76,6 +76,7 @@ class DepContainer:
     pol_notifier = None
     lend_stats_notifier = None
     secured_asset_notifier = None
+    tcy_summary_notifier = None
 
     dex_analytics = None
     affiliate_recorder = None

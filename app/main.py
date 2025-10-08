@@ -33,6 +33,7 @@ from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from jobs.fetch.queue import QueueFetcher
 from jobs.fetch.ruji_merge import RujiMergeStatsFetcher
 from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
+from jobs.fetch.tcy import TCYInfoFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.tx import TxFetcher
 from jobs.node_churn import NodeChurnDetector
@@ -91,6 +92,7 @@ from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
 from notify.public.secured_notify import SecureAssetSummaryNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
 from notify.public.supply_notify import SupplyNotifier
+from notify.public.tcy_notify import TcySummaryNotifier
 from notify.public.trade_acc_notify import TradeAccTransactionNotifier, TradeAccSummaryNotifier
 from notify.public.transfer_notify import RuneMoveNotifier
 from notify.public.tx_notify import GenericTxNotifier, LiquidityTxNotifier, SwapTxNotifier, RefundTxNotifier
@@ -606,6 +608,15 @@ class App(WithLogger):
                 d.secured_asset_notifier = SecureAssetSummaryNotifier(d)
                 secured_asset_fetcher.add_subscriber(d.secured_asset_notifier)
                 d.secured_asset_notifier.add_subscriber(d.alert_presenter)
+
+        if d.cfg.get('tcy.enabled', True):
+            tcy_info_fetcher = TCYInfoFetcher(d)
+            tasks.append(tcy_info_fetcher)
+
+            if d.cfg.get('tcy.summary.notification.enabled', True):
+                d.tcy_summary_notifier = TcySummaryNotifier(d)
+                tcy_info_fetcher.add_subscriber(d.tcy_summary_notifier)
+                d.tcy_summary_notifier.add_subscriber(d.alert_presenter)
 
         # -------- SCHEDULER --------
 
