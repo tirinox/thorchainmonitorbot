@@ -603,6 +603,6 @@ tcy:  # (!) new
   fetch_period: 10m
 
   summary:
-    enabled: true
     notification:
+      enabled: true
       cooldown: 1d
