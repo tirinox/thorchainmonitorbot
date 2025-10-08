@@ -3,7 +3,7 @@ from typing import NamedTuple, List, Optional
 
 from models.affiliate import AffiliateHistoryResponse
 from models.memo import ActionType, is_action
-from models.pool_info import PoolInfoHistoricEntry, PoolInfoMap, PoolInfo, PoolDepthResponse
+from models.pool_info import PoolInfoMap, PoolInfo, PoolDepthResponse
 from models.pool_member import PoolMemberDetails
 from models.tx import ThorAction, ThorSubTx, ThorMetaSwap, ThorMetaRefund, ThorMetaWithdraw, \
     ThorMetaAddLiquidity
@@ -99,27 +99,8 @@ class MidgardParserV2:
 
     @staticmethod
     def parse_pool_info(response) -> PoolInfoMap:
-        pm = {}
-        for j in response:
-            asset = j.get('asset')
-            pm[asset] = PoolInfo(
-                asset=asset,
-                balance_asset=int(j.get('assetDepth', 0)),
-                balance_rune=int(j.get('runeDepth', 0)),
-                pool_units=int(j.get('liquidityUnits', 0)),
-                status=str(j.get('status', '')).lower(),
-                # rune_per_asset=float(j.get('assetPrice', 0.0)),
-                usd_per_asset=float(j.get('assetPriceUSD', 0.0)),
-                pool_apy=float(j.get('poolAPY', 0.0)) * 100.0,
-                synth_supply=int(j.get('synthSupply', 0)),
-                synth_units=int(j.get('synthUnits', 0)),
-                units=int(j.get('units', 0)),
-                volume_24h=int(j.get('volume24h', 0)),
-                savers_units=int(j.get('saversUnits', 0)),
-                savers_depth=int(j.get('saversDepth', 0)),
-                savers_apr=float(j.get('saversAPR', 0)),
-                pool_apr=float(j.get('annualPercentageRate', 0)) * 100.0,
-            )
+        pools = [PoolInfo.from_midgard_json(j) for j in response]
+        pm = {p.asset: p for p in pools if p.pool}
         return pm
 
     @staticmethod

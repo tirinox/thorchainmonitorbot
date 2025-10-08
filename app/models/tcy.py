@@ -94,6 +94,7 @@ class TcyFullInfo(BaseModel):
     usd_per_tcy: float
     usd_per_rune: float
     rune_market_cap_usd: float
+    tcy_trade_volume_24h: float
 
     earnings: List[TcyEarningsPoint]
 

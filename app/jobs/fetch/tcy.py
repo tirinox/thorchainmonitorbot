@@ -78,14 +78,19 @@ class TCYInfoFetcher(BaseFetcher):
         )
         return [d.asset_price_usd for d in depth_history.intervals]
 
+    async def get_tcy_trade_volume_24h(self) -> float:
+        pool_details = await self.deps.midgard_connector.query_pool(TCY_SYMBOL)
+        return thor_to_float(pool_details.volume_24h) if pool_details else 0.0
+
     async def fetch(self) -> TcyFullInfo:
         status = await self.get_tcy_status_from_mimir()
-        vnx_data, supply, ph, market, earnings = await asyncio.gather(
+        vnx_data, supply, ph, market, earnings, tcy_trade_volume_24h = await asyncio.gather(
             self.get_vnx_data(),
             self.get_tcy_total_supply(),
             self.deps.pool_cache.get(),
             self.deps.rune_market_fetcher.get_rune_market_info_cached(),
             self.get_earnings(status.system_income_bps_to_tcy),
+            self.get_tcy_trade_volume_24h()
         )
         ph: PriceHolder
 
@@ -99,6 +104,7 @@ class TCYInfoFetcher(BaseFetcher):
             usd_per_rune=market.pool_rune_price,
             rune_market_cap_usd=market.total_supply,
             earnings=earnings,
+            tcy_trade_volume_24h=tcy_trade_volume_24h * market.pool_rune_price
         )
 
     # stake earning = interval.liquidityFees / 1e8 * 10% * runePriceUSD

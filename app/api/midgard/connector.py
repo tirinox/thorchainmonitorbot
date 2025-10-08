@@ -3,12 +3,13 @@ from typing import Union, Optional, List
 import aiohttp
 
 from api.aionode.nodeclient import ThorNodeClient
+from api.aionode.types import ThorPool
 from api.midgard.parser import MidgardParserV2, TxParseResult
 from api.midgard.urlgen import free_url_gen
 from lib.constants import HTTP_CLIENT_ID
 from lib.logs import WithLogger
 from models.earnings_history import EarningHistoryResponse
-from models.pool_info import PoolInfoMap
+from models.pool_info import PoolInfoMap, PoolInfo
 from models.pool_member import PoolMemberDetails
 from models.swap_history import SwapHistoryResponse
 
@@ -108,10 +109,16 @@ class MidgardConnector(WithLogger):
             return self.parser.parse_pool_membership(j)
 
     async def query_pools(self, period: str = '30d', parse=True) -> Optional[PoolInfoMap]:
-        raw_data = await self.request(self.urlgen.url_pool_info(period=period))
+        raw_data = await self.request(self.urlgen.url_pools_info(period=period))
         if not raw_data or raw_data == self.ERROR_RESPONSE:
             return None
         return self.parser.parse_pool_info(raw_data) if parse else raw_data
+
+    async def query_pool(self, pool: str, period: str = '30d', parse=True) -> Optional[PoolInfo]:
+        raw_data = await self.request(self.urlgen.url_pool_info(pool, period=period))
+        if not raw_data or raw_data == self.ERROR_RESPONSE:
+            return None
+        return PoolInfo.from_midgard_json(raw_data) if parse else raw_data
 
     async def query_affiliates(self, count=14, interval='day'):
         j = await self.request(

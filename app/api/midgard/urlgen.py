@@ -68,10 +68,13 @@ class MidgardURLGenV2:
     def url_stats(self):
         return f'{self.base_url}/v2/stats'
 
-    def url_pool_info(self, period=None):
-        if period:
-            return f'{self.base_url}/v2/pools?period={period}'
-        return f'{self.base_url}/v2/pools'
+    def url_pools_info(self, period=None):
+        url = f'{self.base_url}/v2/pools'
+        return f'{url}?period={period}' if period else url
+
+    def url_pool_info(self, pool, period=None):
+        url = f'{self.base_url}/v2/pool/{pool}'
+        return f'{url}?period={period}' if period else url
 
     def url_affiliate_history(self, from_ts=0, to_ts=0, count=0, interval='day') -> str:
         spec = ''

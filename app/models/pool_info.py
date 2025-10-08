@@ -172,6 +172,26 @@ class PoolInfo:
     def __post_init__(self):
         self.is_virtual = Asset(self.asset).is_virtual
 
+    @classmethod
+    def from_midgard_json(cls, j):
+        return cls(
+            asset=j.get('asset'),
+            balance_asset=int(j.get('assetDepth', 0)),
+            balance_rune=int(j.get('runeDepth', 0)),
+            pool_units=int(j.get('liquidityUnits', 0)),
+            status=str(j.get('status', '')).lower(),
+            usd_per_asset=float(j.get('assetPriceUSD', 0.0)),
+            pool_apy=float(j.get('poolAPY', 0.0)) * 100.0,
+            synth_supply=int(j.get('synthSupply', 0)),
+            synth_units=int(j.get('synthUnits', 0)),
+            units=int(j.get('units', 0)),
+            volume_24h=int(j.get('volume24h', 0)),
+            savers_units=int(j.get('saversUnits', 0)),
+            savers_depth=int(j.get('saversDepth', 0)),
+            savers_apr=float(j.get('saversAPR', 0)),
+            pool_apr=float(j.get('annualPercentageRate', 0)) * 100.0,
+        )
+
 
 @dataclass
 class PoolInfoHistoricEntry:
