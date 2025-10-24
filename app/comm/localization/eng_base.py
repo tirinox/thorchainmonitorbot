@@ -55,9 +55,7 @@ from .achievements.ach_eng import AchievementsEnglishLocalization
 
 CREATOR_TG = '@account1242'
 
-URL_THOR_SWAP = 'https://app.thorswap.finance/'
-
-URL_OUR_REF = 'https://app.thorswap.finance/swap?ref=ref'
+URL_OUR_REF = 'https://swap.thorchain.org/'
 
 
 class BaseLocalization(ABC):  # == English
@@ -449,7 +447,7 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def thor_site():
-        return URL_THOR_SWAP
+        return URL_OUR_REF
 
     @property
     def show_add_more(self):
