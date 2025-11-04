@@ -125,7 +125,8 @@ async def run():
     async with app(brief=True):
         # out_asset is turned out "secured" but it is not. investigate!
         # await dbg_one_finished_swap(app, "59E9DEA85C268338266D76E872DF9D07DB362FB2C06AB34D3AA7F65FF4E79757")
-        await dbg_one_finished_swap(app, "D07FE81C65120782E47B729971DC9ADD5736AC9420A5FC0DA63DBCAC3BA93626")
+        # await dbg_one_finished_swap(app, "D07FE81C65120782E47B729971DC9ADD5736AC9420A5FC0DA63DBCAC3BA93626")
+        await dbg_one_finished_swap(app, "76657D59BCCC1E2B8C3B641C043045C9459DB1D492B12BFCC2682AA9BAAE0923")
 
         # issue: when finalized, the rune outbound is sent, and only after decent delay, there goes L1 outbound
         # await debug_full_pipeline(app, ignore_traders=True,

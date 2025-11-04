@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 2500 2500" fill="none">
+<style type="text/css">.bg{fill:url(#color);}</style>
+<linearGradient id="color" gradientUnits="userSpaceOnUse" x1="225.8144" y1="1348.4883" x2="2131.8145" y2="1348.4883" gradientTransform="matrix(1.311 0 0 -1.311 -296.0335 3017.158)">
+  <stop offset="0" style="stop-color:#00CCFF" />
+  <stop offset="1" style="stop-color:#33FF99" />
+</linearGradient>
+<rect width="2500" height="2500" rx="400" class="bg" />
+<path fill="#fff" d="M959.6,860l356.6,361.8l637.1-778.7L959.6,860z M545.4,2058.2l1127.4-474.6l-356.6-361.8L545.4,2058.2z" />
+</svg>

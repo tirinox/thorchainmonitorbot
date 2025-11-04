@@ -60,6 +60,7 @@ affiliates:
     cs3: "Coinstore Web3 Wallet"
     kns: Keystone
     origamix: Origamix
+    sto: thorchain.org
   logos:
     shapeshift: fox.png
     tokenpocket: tps.png
@@ -113,3 +114,4 @@ affiliates:
     trustwallet: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/trust/logo.svg
     zengo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/zengo/logo.svg
     origamix: https://origamix.io/app-logo/origamix-logo.png
+    thorchain.org: thorchain.org.svg
