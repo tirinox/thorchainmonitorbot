@@ -100,7 +100,7 @@ class MidgardParserV2:
     @staticmethod
     def parse_pool_info(response) -> PoolInfoMap:
         pools = [PoolInfo.from_midgard_json(j) for j in response]
-        pm = {p.asset: p for p in pools if p.pool}
+        pm = {p.asset: p for p in pools if p.asset}
         return pm
 
     @staticmethod

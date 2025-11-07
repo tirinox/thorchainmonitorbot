@@ -18,6 +18,7 @@ from models.ruji import AlertRujiraMergeStats
 from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.burn_notify import BurnNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
+from notify.public.cex_flow import CEXFlowNotifier
 from notify.public.node_churn_notify import NodeChurnNotifier
 from notify.public.price_notify import PriceNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
@@ -262,8 +263,8 @@ class MetricsDialog(BaseDialog):
             await message.answer(self.loc.notification_text_pol_stats(event), disable_notification=True)
 
     async def show_cex_flow(self, message: Message, period=DAY):
-        notifier: RuneMoveNotifier = self.deps.rune_move_notifier
-        flow = await notifier.tracker.read_within_period(period=period)
+        cex_flow_notifier = CEXFlowNotifier(self.deps)
+        flow = await cex_flow_notifier.read_within_period(period=period)
         flow.usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
         text = self.loc.notification_text_cex_flow(flow)
         await message.answer(text, disable_notification=True)
