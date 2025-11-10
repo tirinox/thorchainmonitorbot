@@ -25,8 +25,7 @@ class TCYInfoFetcher(BaseFetcher):
             return VNXTcyData(**data)
 
     async def get_tcy_status_from_mimir(self) -> TcyStatus:
-        mimir_tuple = await self.deps.mimir_cache.get()
-        mimir = MimirHolder().update(mimir_tuple, [], with_voting=False)
+        mimir = await self.deps.mimir_cache.get_mimir_holder()
 
         return TcyStatus(
             halt_claiming=mimir.get_constant(TcyMimirs.HALT_CLAIMING),

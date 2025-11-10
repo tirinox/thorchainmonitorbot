@@ -4,7 +4,7 @@ from api.aionode.connector import ThorConnector
 from jobs.fetch.cached.base import CachedDataSource
 from jobs.fetch.cached.last_block import LastBlockCached
 from lib.date_utils import MINUTE
-from models.mimir import MimirTuple
+from models.mimir import MimirTuple, MimirHolder
 
 
 class MimirCached(CachedDataSource[MimirTuple]):
@@ -51,3 +51,7 @@ class MimirCached(CachedDataSource[MimirTuple]):
             constants, mimir, accepted_node_mimir, votes,
             last_thor_block=last_block,
         )
+
+    async def get_mimir_holder(self) -> MimirHolder:
+        mimir_tuple = await self.get()
+        return MimirHolder().update(mimir_tuple, [], with_voting=False)
