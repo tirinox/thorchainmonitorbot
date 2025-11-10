@@ -193,6 +193,12 @@ async def demo_mimir_spam_filter(app: LpAppFramework, mode):
     await var_file_loop(var_changed, f_every_tick, sleep_time=5.0)
 
 
+async def dbg_humanize_some_keys(app):
+    k = "ADVSWAPQUEUERAPIDSWAPMAX"
+    name = app.deps.mimir_const_holder.pretty_name(k)
+    print(f'{k} -> {name}')
+
+
 async def run():
     app = LpAppFramework()
     await app.prepare(brief=True)
@@ -200,12 +206,13 @@ async def run():
     mimir = await app.deps.mimir_cache.get()
     print(mimir)
 
-    await app.deps.node_info_fetcher.run_once()
+    # await app.deps.node_info_fetcher.run_once()
 
     # await demo_cap_test(app)
     # await demo_mimir_spam_filter(app, mode=MimirMockChangesFetcher.PAUSE_GLOBAL)
     # await demo_mimir_spam_filter(app, mode=MimirMockChangesFetcher.GENERAL)
-    await demo_voting(app)
+    # await demo_voting(app)
+    await dbg_humanize_some_keys(app)
 
 
 if __name__ == '__main__':

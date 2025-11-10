@@ -206,6 +206,7 @@ class MimirHolder(INotified, WithLogger):
 
         self._const_map = {}
         self.all_names = set()
+        self.all_names_including_voting = set()
         self._mimir_only_names = set()
         self.node_mimir = {}
         self.voting_manager = MimirVoteManager([], [], [])
@@ -276,6 +277,9 @@ class MimirHolder(INotified, WithLogger):
 
         overridden_names = mimir_names & const_names
         self.all_names = mimir_names | const_names | node_mimir_names
+        self.all_names_including_voting = self.all_names.copy() | {
+            v.key for v in data.votes
+        }
 
         self._const_map = {}
         for name, current_value in chain(hard_coded_constants.items(), mimir_constants.items(), node_mimir.items()):

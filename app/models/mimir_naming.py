@@ -67,6 +67,7 @@ class MimirNameRules:
     def load(self, filename):
         self.rules = self._load_mimir_naming_rules(filename)
         self.make_words_proper()
+        self.sort_word_transform()
 
     @property
     def dict_word_sorted(self):
@@ -90,16 +91,17 @@ class MimirNameRules:
         # save
         self.rules['words'] = words
 
+    def sort_word_transform(self):
+        transformed = {
+            k.strip().upper(): v
+            for k, v in self.rules.get('word_transform', {}).items()
+        }
+        self.rules['word_transform'] = dict(sorted(transformed.items()))
+
     @staticmethod
     def _load_mimir_naming_rules(filename):
         with open(filename, 'r') as f:
             data = yaml.safe_load(f)
-
-        data['word_transform'] = {
-            k.strip().upper(): v
-            for k, v in data.get('word_transform', {}).items()
-        }
-
         return data
 
     @property
@@ -129,15 +131,18 @@ class MimirNameRules:
         components = []
         name = name.upper()
 
+        word_offset = {}
+
         for word in self.dict_word_sorted:
             word_len = len(word)
             while True:
-                index = name.find(word)
+                index = name.find(word, word_offset.get(word, 0))
                 if index == -1:
                     break
                 else:
+                    word_offset[word] = index + 1
                     components.append((index, word))
-                    name = name.replace(word, ' ' * word_len)
+                    name = name.replace(word, ' ' * word_len, 1)
 
         components.sort()  # sort by index
 
@@ -161,6 +166,9 @@ class MimirNameRules:
         return glue.join(words)
 
     def name_to_human(self, name: str):
+        # if not self.rules:
+        #     logging.warning("No rules loaded")
+
         r = (
                 self.rules.get('translate', {}).get(name)
                 or self.try_deducting_mimir_name(name)

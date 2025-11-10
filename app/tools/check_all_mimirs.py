@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from lib.texts import sep
+from models.mimir_naming import MIMIR_DICT_FILENAME
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -10,12 +11,17 @@ async def main():
 
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
-        rules = lp_app.deps.mimir_const_holder.mimir_rules
 
-        current_names = set([k.upper() for k in lp_app.deps.mimir_const_holder.all_names])
+        mimir = await lp_app.deps.mimir_cache.get_mimir_holder()
+
+        rules = mimir.mimir_rules
+        rules.load(MIMIR_DICT_FILENAME)
+
+        current_names = set([k.upper() for k in mimir.all_names_including_voting])
         sep()
         code_gen = ''
         for name in sorted(current_names):
+            # fixme: ADVSWAPQUEUERAPIDSWAPMAX ->  'Advanced Swap Queue Rapid      Max'
             pretty_name = rules.name_to_human(name)
             code_gen += f'    {name.upper()}: {pretty_name!r},\n'
 
