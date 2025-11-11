@@ -5,7 +5,7 @@ import logging
 from jobs.fetch.tcy import TCYInfoFetcher
 from lib.constants import TCY_SYMBOL
 from lib.texts import sep
-from tools.lib.lp_common import LpAppFramework
+from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 DEMO_DATA_FILENAME_TCY = "./renderer/demo/tcy_info.json"
 
@@ -41,16 +41,21 @@ async def dbg_tcy_data_collect(app):
 
 
 async def dbg_tcy_post_alert(app):
-    ...
+    f = TCYInfoFetcher(app.deps)
+    event = await f.fetch()
+
+    pic, pic_name = await app.deps.alert_presenter.render_tcy_infographic(None, event)
+
+    save_and_show_pic(pic, name=pic_name)
 
 
 async def main():
     app = LpAppFramework(log_level=logging.DEBUG)
     async with app(brief=True):
-        await dbg_tcy_data_collect(app)
+        # await dbg_tcy_data_collect(app)
         # await dbg_tcy_earnings(app)
         # await dbg_tcy_pool_depth_history(app)
-        # await dbg_tcy_post_alert(app)
+        await dbg_tcy_post_alert(app)
 
 
 if __name__ == '__main__':

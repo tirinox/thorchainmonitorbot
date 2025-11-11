@@ -94,7 +94,7 @@ async def demo_analyse_and_show(app: LpAppFramework):
     sep('Swap count: previous')
     print(result.previous.swapper_count)
 
-    await show_picture(app, result)
+    await show_key_stats_pic(app, result)
 
     await asyncio.sleep(5)  # let them send the picture
 
@@ -108,7 +108,7 @@ async def old_show_picture(app: LpAppFramework, data):
     save_and_show_pic(pic, name=name)
 
 
-async def show_picture(app: LpAppFramework, data):
+async def show_key_stats_pic(app: LpAppFramework, data):
     loc = app.deps.loc_man[Language.ENGLISH]
 
     pic, name = await app.deps.alert_presenter.render_key_stats(loc, data)
