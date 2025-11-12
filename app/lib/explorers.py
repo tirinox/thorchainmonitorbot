@@ -48,6 +48,8 @@ def get_explorer_url_to_address(network_id, pool_or_chain: str, address: str, ta
         return f'https://xrpscan.com/account/{address}'
     elif chain == Chains.TRON:
         return f'https://tronscan.org/#/address/{address}'
+    elif chain == Chains.SOL:
+        return f'https://explorer.solana.com/address/{address}'
     else:
         url = f'https://www.google.com/search?q={chain}+explorer'
         return url if is_live else f'{url}+test'
@@ -96,6 +98,8 @@ def get_explorer_url_to_tx(network_id, pool_or_chain: str, tx_id: str):
         return f'https://xrpscan.com/tx/{tx_id}'
     elif chain == Chains.TRON:
         return f'https://tronscan.org/#/transaction/{tx_id}'
+    elif chain == Chains.SOL:
+        return f'https://explorer.solana.com/tx/{tx_id}'
     else:
         url = f'https://www.google.com/search?q={chain}+explorer'
         return url if is_live else f'{url}+test'

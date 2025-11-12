@@ -1,4 +1,7 @@
+import re
 from typing import NamedTuple
+
+import base58
 
 from lib.date_utils import MINUTE
 
@@ -77,10 +80,11 @@ class Chains:
     BASE = 'BASE'
     XRP = 'XRP'
     TRON = 'TRON'
+    SOL = 'SOL'
 
     ALL_EVM = (ETH, BSC, BASE, AVAX)
 
-    META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM, BSC, BASE, XRP, TRON)
+    META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM, BSC, BASE, XRP, TRON, SOL)
 
     @staticmethod
     def detect_chain(orig_address: str) -> str:
@@ -99,6 +103,8 @@ class Chains:
             return Chains.TRON
         elif address.startswith('r'):
             return Chains.XRP
+        elif Chains.is_solana_address(orig_address):
+            return Chains.SOL
         return ''
 
     @staticmethod
@@ -127,6 +133,8 @@ class Chains:
             return 4.0  # typical
         elif chain == Chains.TRON:
             return 3.0
+        elif chain == Chains.SOL:
+            return 0.4
         return 0.01
 
     @staticmethod
@@ -140,6 +148,16 @@ class Chains:
         elif chain == Chains.BASE:
             return 8453
         return 0
+
+    @staticmethod
+    def is_solana_address(s: str) -> bool:
+        if not re.fullmatch(r'[1-9A-HJ-NP-Za-km-z]{32,44}', s):
+            return False
+        try:
+            decoded = base58.b58decode(s)
+            return len(decoded) == 32
+        except Exception:
+            return False
 
 
 class NetworkIdents:
