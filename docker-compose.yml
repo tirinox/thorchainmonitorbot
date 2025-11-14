@@ -79,6 +79,7 @@ services:
       - DOZZLE_PASSWORD=${DOZZLE_PASSWORD}
       - DOZZLE_KEY=${DOZZLE_KEY}
       - DOZZLE_TAILSIZE=${DOZZLE_TAILSIZE}
+      - DOZZLE_BASE=/logs
     networks:
       - redis-net
 
