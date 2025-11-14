@@ -180,8 +180,8 @@ fill-pool-cache:
 .PHOHY: web-auth-add-user  # Add new web auth user
 web-auth-add-user:
 	# ask username and password and store them in htpasswd-dash-logs
-	@read -p "Username: " USER; \
-	read -s -p "Password: " PASS; echo ""; \
+	@printf "Username: "; read USER; \
+	printf "Password: "; stty -echo; read PASS; stty echo; echo ""; \
 	if [ ! -f web/htpasswd-dash-logs ]; then \
 		echo "Creating web/htpasswd-dash-logs ..."; \
 		htpasswd -bc web/htpasswd-dash-logs $$USER $$PASS; \
