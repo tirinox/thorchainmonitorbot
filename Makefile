@@ -175,3 +175,17 @@ thin-out-pool-cache:
 .PHONY: fill-pool-cache  # Fill the pool cache
 fill-pool-cache:
 	docker compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/fill_pool_cache.py /config/config.yaml'
+
+
+.PHOHY: web-auth-add-user  # Add new web auth user
+web-auth-add-user:
+	# ask username and password and store them in htpasswd-dash-logs
+	@read -p "Username: " USER; \
+	read -s -p "Password: " PASS; echo ""; \
+	if [ ! -f web/htpasswd-dash-logs ]; then \
+		echo "Creating web/htpasswd-dash-logs ..."; \
+		htpasswd -bc web/htpasswd-dash-logs $$USER $$PASS; \
+	else \
+		echo "Updating web/htpasswd-dash-logs ..."; \
+		htpasswd -b web/htpasswd-dash-logs $$USER $$PASS; \
+	fi
