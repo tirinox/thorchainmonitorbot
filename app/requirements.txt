@@ -3,6 +3,7 @@ aiofiles
 aiogram==2.*
 aiohttp>=3.11.0
 async-timeout
+base58
 bech32
 colorama
 # discord.py  # will be installed at Stage 2
