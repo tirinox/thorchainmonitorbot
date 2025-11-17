@@ -3,12 +3,8 @@ from datetime import datetime
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-from tools.dashboard.cex_flow import cex_flow_dashboard_info
-from tools.dashboard.curve import curve_dashboard_info
-from tools.dashboard.dedup import dedup_dashboard_info
-from tools.dashboard.fetchers import fetchers_dashboard_info
-from tools.dashboard.helpers import run_task, get_app
-from tools.dashboard.stats import stats_dashboard_info
+from tools.dashboard.components import *
+from tools.dashboard.helpers import get_app, run_task
 
 st.set_page_config(page_title="Bot Dashboard")
 
