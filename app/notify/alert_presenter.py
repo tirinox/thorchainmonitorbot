@@ -66,9 +66,9 @@ class AlertPresenter(INotified, WithLogger):
 
     async def on_data(self, sender, data):
         # noinspection PyAsyncCall
-        asyncio.create_task(self._handle_async(data))
+        asyncio.create_task(self.handle_data(data))
 
-    async def _handle_async(self, data):
+    async def handle_data(self, data):
         if isinstance(data, RuneCEXFlow):
             await self._handle_rune_cex_flow(data)
         elif isinstance(data, NativeTokenTransfer):

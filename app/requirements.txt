@@ -2,6 +2,7 @@ aiodns
 aiofiles
 aiogram==2.*
 aiohttp>=3.11.0
+apscheduler
 async-timeout
 base58
 bech32

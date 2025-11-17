@@ -27,6 +27,7 @@ from models.net_stats import NetworkStats
 from models.node_watchers import AlertWatchers
 from models.queue import QueueInfo
 from notify.channel import Messengers
+from notify.pub_scheduler import PublicScheduler
 
 
 @dataclass
@@ -83,6 +84,7 @@ class DepContainer:
     route_recorder = None
 
     scheduler: Optional[Scheduler] = None
+    pub_scheduler: Optional[PublicScheduler] = None
 
     gen_alert_settings_proc = None
     alert_watcher: Optional[AlertWatchers] = None

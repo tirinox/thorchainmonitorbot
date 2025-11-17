@@ -71,6 +71,7 @@ from notify.personal.bond_provider import PersonalBondProviderNotifier
 from notify.personal.personal_main import NodeChangePersonalNotifier
 from notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from notify.personal.scheduled import PersonalPeriodicNotificationService
+from notify.pub_configure import configure_scheduled_public_notifications
 from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.burn_notify import BurnNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
@@ -107,6 +108,8 @@ class App(WithLogger):
 
         d.is_loading = True
         self._bg_task = None
+
+        self._ev_loaded = asyncio.Event()
 
         self._init_configuration(log_level)
 
@@ -239,6 +242,9 @@ class App(WithLogger):
                 self.logger.info('Loading constants and mimir...')
                 await d.mimir_const_fetcher.run_once()  # get constants beforehand
                 await asyncio.sleep(sleep_step)
+
+                # Start public notification scheduler when all is ready
+                d.pub_scheduler.start()
 
                 break  # all is good. exit the loop
             except Exception as e:
@@ -620,6 +626,7 @@ class App(WithLogger):
 
         # -------- SCHEDULER --------
 
+        # personal one
         scheduler_cfg = d.cfg.get('personal.scheduler')
         if scheduler_cfg.get('enabled', True):
             poll_interval = parse_timespan_to_seconds(scheduler_cfg.get_pure('poll_interval', '1m'))
@@ -628,6 +635,9 @@ class App(WithLogger):
 
             personal_lp_notifier = PersonalPeriodicNotificationService(d)
             d.scheduler.add_subscriber(personal_lp_notifier)
+
+        # public one
+        await configure_scheduled_public_notifications(d)
 
         # ------- BOTS -------
 
@@ -683,6 +693,7 @@ class App(WithLogger):
             await self._preloading()
 
             self.deps.is_loading = False
+            self._ev_loaded.set()
         except Exception as e:
             self.logger.exception(f'Failed to prepare tasks: {e}')
             self.logger.error(f'Terminating in {self.sleep_step} sec...')
@@ -723,6 +734,7 @@ class App(WithLogger):
             await self.deps.session.close()
 
     def run_bot(self):
+        # run_bot -> on_startup -> _run_background_jobs -> _prepare_task_graph -> _preloading -> start public scheduler
         self.deps.telegram_bot.run(on_startup=self.on_startup, on_shutdown=self.on_shutdown)
 
 
