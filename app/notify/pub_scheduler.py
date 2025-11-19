@@ -1,4 +1,5 @@
 import asyncio
+import functools
 import json
 from typing import List
 
@@ -72,15 +73,19 @@ class PublicScheduler(WithLogger):
         self.logger.info(f"Added new job {job_cfg.id} of type {job_cfg.func}.")
 
     async def _with_retry(self, func, retries=3, delay=5, delay_mult=2):
-        async def wrapper(_delay=delay):
+        func_name = func.__name__
+        @functools.wraps(func)
+        async def wrapper():
+            current_delay = delay
+            self.logger.info(f"Starting job with retry logic: {func_name}.")
             for attempt in range(1, retries + 1):
                 try:
                     return await func()
                 except Exception as e:
-                    self.logger.warning(f"Attempt {attempt}/{retries} failed: {e}. Retrying in {_delay} seconds...")
+                    self.logger.warning(f"{func_name}: attempt {attempt}/{retries} failed: {e}. Retrying in {current_delay} seconds...")
                     if attempt < retries:
-                        await asyncio.sleep(_delay)
-                        _delay = _delay * delay_mult
+                        await asyncio.sleep(current_delay)
+                        current_delay = current_delay * delay_mult
                     else:
                         raise
             return None
