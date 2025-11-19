@@ -1,6 +1,6 @@
 from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
 from lib.depcont import DepContainer
-from models.types import PubAlertJobNames
+from models.sched import PubAlertJobNames
 from notify.pub_scheduler import PublicScheduler
 
 

@@ -7,6 +7,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from lib.config import Config
 from lib.db import DB
+from lib.interchan import PubSubChannel
 from lib.log_db import RedisLog
 from lib.logs import WithLogger
 from models.sched import SchedJobCfg
@@ -15,6 +16,8 @@ from models.sched import SchedJobCfg
 class PublicScheduler(WithLogger):
     DB_KEY_PREFIX = 'PublicScheduler'
     DB_KEY_CONFIG = f'{DB_KEY_PREFIX}:Config'
+
+    DB_KEY_COMM_CHAN = f'{DB_KEY_PREFIX}:CommunicationChannel'
 
     def __init__(self, cfg: Config, db: DB):
         super().__init__()
@@ -27,6 +30,24 @@ class PublicScheduler(WithLogger):
         self._registered_jobs = {}
         self._scheduled_jobs: List[SchedJobCfg] = []
         self.db_log = RedisLog(self.DB_KEY_PREFIX, db, max_lines=10_000)
+        self._subscriber = PubSubChannel(db, self.DB_KEY_COMM_CHAN, self._on_control_message)
+
+    async def _on_control_message(self, _chan, message):
+        self.logger.warning(f'Received control message: {message}')
+        if not message or not isinstance(message, dict):
+            self.logger.error(f'Invalid control message format: {message}')
+            return
+        command = message.get('command')
+        if command == 'reload_config':
+            await self._load_config()
+            await self.apply_scheduler_configuration()
+            self.logger.info('Scheduler configuration reloaded via control message.')
+
+    async def post_command(self, command: str, **kwargs):
+        await self._subscriber.post_message({
+            'command': command,
+            **kwargs
+        })
 
     async def register_job_type(self, key, func):
         if key in self._registered_jobs:
@@ -71,6 +92,7 @@ class PublicScheduler(WithLogger):
             self.logger.warning("Scheduler is already running.")
             return
         self.scheduler.start()
+        self._subscriber.start()
         self.logger.info("Scheduler started.")
 
     def stop(self):
@@ -88,6 +110,7 @@ class PublicScheduler(WithLogger):
             self.logger.error('Invalid schedule configuration format.')
             schedule_cfg = []
         self._scheduled_jobs = [SchedJobCfg(**item) for item in schedule_cfg]
+        self.logger.info(f'Loaded scheduler configuration from DB: {len(self._scheduled_jobs)} jobs.')
         return schedule_cfg
 
     async def save_config(self):
