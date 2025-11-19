@@ -20,10 +20,14 @@ async def dbg_run_public_scheduler(app: LpAppFramework):
         func="foo_job",
         enabled=True,
         variant="interval",
-        interval=IntervalCfg(seconds=3),
+        interval=IntervalCfg(seconds=10),
         max_instances=1,
         coalesce=True,
     ))
+
+    # await p.add_new_job(SchedJobCfg(
+    #
+    # ))
 
     await p.apply_scheduler_configuration()
 

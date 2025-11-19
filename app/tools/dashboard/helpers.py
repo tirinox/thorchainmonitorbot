@@ -1,40 +1,43 @@
 import asyncio
 import logging
+import threading
 
 import streamlit as st
 
 from tools.lib.lp_common import LpAppFramework
 
-# A dictionary to store ongoing tasks
-tasks = {}
-
-# Ensure there is a running event loop
-try:
-    loop = asyncio.get_running_loop()
-except RuntimeError:
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
+_loop = None
+_loop_thread = None
+_loop_lock = threading.Lock()
 
 
-# Define a helper function to create and schedule async tasks
-def schedule_task(key, coro):
-    """Schedules an async task and stores it with a unique key."""
-    if key not in tasks:
-        tasks[key] = loop.create_task(coro)
+def get_background_loop() -> asyncio.AbstractEventLoop:
+    """Get (or create) a single background event loop."""
+    global _loop, _loop_thread
+
+    with _loop_lock:
+        if _loop is None:
+            _loop = asyncio.new_event_loop()
+
+            def _run_loop():
+                asyncio.set_event_loop(_loop)
+                _loop.run_forever()
+
+            _loop_thread = threading.Thread(target=_run_loop, daemon=True)
+            _loop_thread.start()
+
+    return _loop
 
 
-# Run the event loop to process scheduled tasks
-def process_tasks():
-    """Process pending tasks on the event loop."""
-    pending = [task for task in tasks.values() if not task.done()]
-    if pending:
-        loop.run_until_complete(asyncio.gather(*pending))
+def run_coro(coro):
+    """
+    Run a coroutine on the background loop and wait for the result
+    in a blocking way (safe to call from Streamlit).
+    """
+    loop = get_background_loop()
+    future = asyncio.run_coroutine_threadsafe(coro, loop)
+    return future.result()  # you may want try/except here and re-raise nicely
 
-
-def run_task(coro):
-    """Run a coroutine and return its result."""
-    task = loop.create_task(coro)
-    return loop.run_until_complete(task)
 
 @st.cache_resource
 def get_app():
@@ -42,4 +45,5 @@ def get_app():
         app = LpAppFramework(log_level=logging.INFO)
         await app.prepare(brief=True)
         return app
-    return run_task(_get_app())
+
+    return run_coro(_get_app())

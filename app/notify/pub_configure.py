@@ -4,6 +4,10 @@ from models.sched import PubAlertJobNames
 from notify.pub_scheduler import PublicScheduler
 
 
+AVAILABLE_SCHEDULER_JOBS = [
+    PubAlertJobNames.SECURED_ASSET_SUMMARY,
+]
+
 async def configure_scheduled_public_notifications(d: DepContainer) -> PublicScheduler:
     d.public_scheduler = p = PublicScheduler(d.cfg, d.db)
 
