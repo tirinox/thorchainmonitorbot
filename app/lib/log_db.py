@@ -1,11 +1,14 @@
 import asyncio
+import datetime
 import json
 
 from lib.db import DB
+from lib.logs import WithLogger
 
 
-class RedisLog:
+class RedisLog(WithLogger):
     def __init__(self, prefix: str, db: DB, max_lines=10_000):
+        super().__init__()
         self.prefix = prefix
         self.db = db
         self.max_lines = max_lines
@@ -15,7 +18,7 @@ class RedisLog:
         return f'{self.prefix}:Logs'
 
     async def add_log(self, data: dict):
-        data['_ts'] = asyncio.get_event_loop().time()
+        data['_ts'] = datetime.datetime.now().timestamp()
         payload = json.dumps(data)
 
         pipe = self.db.redis.pipeline()
@@ -29,3 +32,13 @@ class RedisLog:
         items = [json.loads(entry) for entry in entries]
         items.sort(key=lambda x: x.get('_ts', 0))
         return items
+
+    async def add_log_convenience(self, name, phase, **kwargs):
+        try:
+            await self.add_log({
+            'action': name,
+            'phase': phase,
+            **kwargs,
+            })
+        except Exception as e:
+            self.logger.error(f'Failed to add log entry: {e}')
