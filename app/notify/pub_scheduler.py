@@ -37,6 +37,11 @@ class PublicScheduler(WithLogger):
         self._scheduled_jobs: List[SchedJobCfg] = []
         self.db_log = RedisLog(self.DB_KEY_PREFIX, db, max_lines=10_000)
         self._subscriber = PubSubChannel(db, self.DB_KEY_COMM_CHAN, self._on_control_message)
+        self._dirty = False
+
+    @property
+    def is_dirty(self) -> bool:
+        return self._dirty
 
     async def clear_job_list(self, apply=False, save=False):
         await self.db_log.add_log_convenience('clear_jobs', 'start', apply=apply, save=save)
@@ -64,6 +69,24 @@ class PublicScheduler(WithLogger):
             await self.apply_scheduler_configuration()
             self.logger.info('Scheduler configuration reloaded via control message!')
             await self.db_log.add_log_convenience('control_message', 'config_reloaded')
+        elif command == 'run_now':
+            job_id = message.get('job_id')
+            await self.db_log.add_log_convenience('control_message', 'job_scheduled_now', job_id=job_id)
+            await self.run_job_now(job_id)
+
+    async def run_job_now(self, job_id):
+        job_cfg = self.find_job_by_id(job_id)
+        if not job_cfg:
+            self.logger.error(f'Job with id {job_id} not found; cannot run now.')
+            return
+
+        coro = self._registered_jobs.get(job_cfg.func)
+        if not coro:
+            self.logger.error(f'Job function {job_cfg.func} is not registered; cannot run job {job_id}.')
+            return
+        self.logger.info(f'Job {job_id} scheduled to run now via control message!')
+        # Run the job immediately
+        await coro()
 
     async def post_command(self, command: str, **kwargs):
         await self._subscriber.post_message({
@@ -92,6 +115,7 @@ class PublicScheduler(WithLogger):
 
         self._scheduled_jobs.append(job_cfg)
         await self.save_config_to_db()
+        self._dirty = True
         self.logger.info(f"Added new job {job_cfg.id} of type {job_cfg.func}.")
 
     def _with_retry(self, func, retries=3, delay=5, delay_mult=2):
@@ -99,18 +123,26 @@ class PublicScheduler(WithLogger):
 
         @functools.wraps(func)
         async def wrapper():
+            # fixme: retries will continue even if the job is cancelled externally
             current_delay = delay
             self.logger.info(f"Starting job with retry logic: {func_name}.")
+            await self.db_log.add_log_convenience('run', 'start', job=func_name)
             for attempt in range(1, retries + 1):
                 try:
-                    return await func()
+                    result = await func()
+                    await self.db_log.add_log_convenience('run', 'complete', job=func_name)
+                    return result
                 except Exception as e:
                     self.logger.warning(
                         f"{func_name}: attempt {attempt}/{retries} failed: {e}. Retrying in {current_delay} seconds...")
                     if attempt < retries:
+                        await self.db_log.add_log_convenience('run', 'retry', job=func_name, attempt=attempt,
+                                                              error=str(e))
                         await asyncio.sleep(current_delay)
                         current_delay = current_delay * delay_mult
                     else:
+                        await self.db_log.add_log_convenience('run', 'failed', job=func_name, error=str(e))
+                        self.logger.error(f'{func_name}: all {retries} attempts failed.')
                         raise
             return None
 
@@ -163,6 +195,9 @@ class PublicScheduler(WithLogger):
             self.scheduler.remove_job(existing_job.id)
 
         for job_cfg in self._scheduled_jobs:
+            if not job_cfg.enabled:
+                continue
+
             coro = self._registered_jobs.get(job_cfg.func)
             if not coro:
                 self.logger.error(f"Job function '{job_cfg.func}' is not registered; skipping job '{job_cfg.id}'.")
@@ -172,3 +207,34 @@ class PublicScheduler(WithLogger):
                 coro,
                 **job_cfg.to_add_job_args()
             )
+
+        self.logger.info(
+            f'Applied scheduler configuration: {self.total_running_jobs} / {len(self._scheduled_jobs)} jobs scheduled.')
+        self._dirty = False
+
+    def find_job_by_id(self, job_id: str) -> SchedJobCfg | None:
+        for job in self._scheduled_jobs:
+            if job.id == job_id:
+                return job
+        return None
+
+    def find_jobs_by_func(self, func_name: str) -> List[SchedJobCfg]:
+        return [job for job in self._scheduled_jobs if job.func == func_name]
+
+    async def toggle_job_enabled(self, job_id: str, enabled: bool):
+        job = self.find_job_by_id(job_id)
+        if not job:
+            self.logger.error(f"Job with id '{job_id}' not found; cannot toggle enabled state.")
+            raise ValueError(f"Job with id '{job_id}' not found.")
+        if enabled != job.enabled:
+            job.enabled = enabled
+            self._dirty = True
+            await self.save_config_to_db()
+            self.logger.info(f"Toggled job '{job_id}' enabled state to {enabled}.")
+            await self.db_log.add_log_convenience('job_toggle_enabled', 'toggled', job_id=job_id, enabled=enabled)
+        else:
+            self.logger.info(f"Job '{job_id}' already has enabled state {enabled}; no change made.")
+
+    @property
+    def total_running_jobs(self) -> int:
+        return len(self.scheduler.get_jobs())
