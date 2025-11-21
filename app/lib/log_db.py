@@ -30,7 +30,7 @@ class RedisLog(WithLogger):
     async def get_last_logs(self, count=100):
         entries = await self.db.redis.lrange(self.db_key, -count, -1)
         items = [json.loads(entry) for entry in entries]
-        items.sort(key=lambda x: x.get('_ts', 0))
+        items.sort(key=lambda x: -x.get('_ts', 0))
         return items
 
     async def add_log_convenience(self, name, phase, **kwargs):
