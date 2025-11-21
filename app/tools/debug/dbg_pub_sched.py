@@ -18,7 +18,7 @@ async def dbg_run_public_scheduler(app: LpAppFramework):
     await p.register_job_type('foo_job', foo_job)
     await p.register_job_type('failing_job', failing_job)
 
-    p.start()
+    await p.start()
 
     await p.add_new_job(SchedJobCfg(
         id="dbg_foo_job",
@@ -29,7 +29,7 @@ async def dbg_run_public_scheduler(app: LpAppFramework):
             second='*/15',
             minute='41-59'
         )
-    ))
+    ), allow_replace=True)
 
     await p.add_new_job(SchedJobCfg(
         id="dbg_failing_job",
@@ -37,7 +37,7 @@ async def dbg_run_public_scheduler(app: LpAppFramework):
         enabled=True,
         variant="interval",
         interval=IntervalCfg(seconds=10),
-    ))
+    ), allow_replace=True)
 
     await p.apply_scheduler_configuration()
 

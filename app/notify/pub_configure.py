@@ -9,7 +9,7 @@ AVAILABLE_SCHEDULER_JOBS = [
 ]
 
 async def configure_scheduled_public_notifications(d: DepContainer) -> PublicScheduler:
-    d.public_scheduler = p = PublicScheduler(d.cfg, d.db)
+    d.public_scheduler = p = PublicScheduler(d.cfg, d.db, d.loop)
 
     secured_asset_fetcher = SecuredAssetAssetFetcher(d)
 

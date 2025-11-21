@@ -15,6 +15,7 @@ from lib.draw_utils import img_to_bio
 from lib.texts import sep
 from lib.utils import load_json
 from main import App
+from notify.pub_configure import configure_scheduled_public_notifications
 
 
 class LpAppFramework(App):
@@ -76,6 +77,8 @@ class LpAppFramework(App):
         await d.db.get_redis()
         
         d.make_http_session()
+
+        d.pub_scheduler = await configure_scheduled_public_notifications(d)
 
         # often required
         d.volume_recorder = VolumeRecorder(d)

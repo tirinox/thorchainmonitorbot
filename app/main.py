@@ -244,7 +244,7 @@ class App(WithLogger):
                 await asyncio.sleep(sleep_step)
 
                 # Start public notification scheduler when all is ready
-                d.pub_scheduler.start()
+                await d.pub_scheduler.start()
 
                 break  # all is good. exit the loop
             except Exception as e:
@@ -637,7 +637,7 @@ class App(WithLogger):
             d.scheduler.add_subscriber(personal_lp_notifier)
 
         # public one
-        await configure_scheduled_public_notifications(d)
+        d.pub_scheduler = await configure_scheduled_public_notifications(d)
 
         # ------- BOTS -------
 
