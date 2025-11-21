@@ -44,34 +44,34 @@ class PublicScheduler(WithLogger):
         return self._dirty
 
     async def clear_job_list(self, apply=False, save=False):
-        await self.db_log.add_log_convenience('clear_jobs', 'start', apply=apply, save=save)
+        await self.db_log.info('clear_jobs', phase='start', apply=apply, save=save)
         self._scheduled_jobs.clear()
         if apply:
             await self.apply_scheduler_configuration()
         if save:
             await self.save_config_to_db()
-        await self.db_log.add_log_convenience('clear_jobs', 'end', apply=apply, save=save)
+        await self.db_log.info('clear_jobs', phase='end', apply=apply, save=save)
 
     @property
     def jobs(self) -> List[SchedJobCfg]:
         return self._scheduled_jobs
 
     async def _on_control_message(self, _chan, message):
-        await self.db_log.add_log_convenience('control_message', 'received', message=message)
+        await self.db_log.info('control_message', phase='received', message=message)
         self.logger.warning(f'Received control message: {message}')
         if not message or not isinstance(message, dict):
             self.logger.error(f'Invalid control message format: {message}')
-            await self.db_log.add_log_convenience('control_message', 'error', reason='invalid_format', message=message)
+            await self.db_log.error('control_message', reason='invalid_format', message=message)
             return
         command = message.get('command')
         if command == 'reload_config':
             await self.load_config_from_db()
             await self.apply_scheduler_configuration()
             self.logger.info('Scheduler configuration reloaded via control message!')
-            await self.db_log.add_log_convenience('control_message', 'config_reloaded')
+            await self.db_log.warning('config_reloaded')
         elif command == 'run_now':
             job_id = message.get('job_id')
-            await self.db_log.add_log_convenience('control_message', 'job_scheduled_now', job_id=job_id)
+            await self.db_log.warning('job_scheduled_now', job_id=job_id)
             await self.run_job_now(job_id)
 
     async def run_job_now(self, job_id):
@@ -126,22 +126,22 @@ class PublicScheduler(WithLogger):
             # fixme: retries will continue even if the job is cancelled externally
             current_delay = delay
             self.logger.info(f"Starting job with retry logic: {func_name}.")
-            await self.db_log.add_log_convenience('run', 'start', job=func_name)
+            await self.db_log.info('run', phase='start', job=func_name)
             for attempt in range(1, retries + 1):
                 try:
                     result = await func()
-                    await self.db_log.add_log_convenience('run', 'complete', job=func_name)
+                    await self.db_log.info('run', phase='complete', job=func_name)
                     return result
                 except Exception as e:
                     self.logger.warning(
                         f"{func_name}: attempt {attempt}/{retries} failed: {e}. Retrying in {current_delay} seconds...")
                     if attempt < retries:
-                        await self.db_log.add_log_convenience('run', 'retry', job=func_name, attempt=attempt,
-                                                              error=str(e))
+                        await self.db_log.error('run', phase='retry', job=func_name, attempt=attempt,
+                                               error=str(e))
                         await asyncio.sleep(current_delay)
                         current_delay = current_delay * delay_mult
                     else:
-                        await self.db_log.add_log_convenience('run', 'failed', job=func_name, error=str(e))
+                        await self.db_log.error('run', phase='failed', job=func_name, error=str(e))
                         self.logger.error(f'{func_name}: all {retries} attempts failed.')
                         raise
             return None
@@ -231,7 +231,7 @@ class PublicScheduler(WithLogger):
             self._dirty = True
             await self.save_config_to_db()
             self.logger.info(f"Toggled job '{job_id}' enabled state to {enabled}.")
-            await self.db_log.add_log_convenience('job_toggle_enabled', 'toggled', job_id=job_id, enabled=enabled)
+            await self.db_log.info('job_toggle_enabled', job_id=job_id, enabled=enabled)
         else:
             self.logger.info(f"Job '{job_id}' already has enabled state {enabled}; no change made.")
 

@@ -39,6 +39,8 @@ async def dbg_run_public_scheduler(app: LpAppFramework):
         interval=IntervalCfg(seconds=10),
     ), allow_replace=True)
 
+    await p.db_log.warning("start_debug_script", data="foo")
+
     await p.apply_scheduler_configuration()
 
 

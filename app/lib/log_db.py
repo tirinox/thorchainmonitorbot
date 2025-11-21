@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import json
 
@@ -33,12 +32,21 @@ class RedisLog(WithLogger):
         items.sort(key=lambda x: -x.get('_ts', 0))
         return items
 
-    async def add_log_convenience(self, name, phase, **kwargs):
+    async def add_log_safe(self, name, level, **kwargs):
         try:
             await self.add_log({
-            'action': name,
-            'phase': phase,
-            **kwargs,
+                'level': level,
+                'action': name,
+                **kwargs,
             })
         except Exception as e:
             self.logger.error(f'Failed to add log entry: {e}')
+
+    async def info(self, name, **kwargs):
+        await self.add_log_safe(name, level='info', **kwargs)
+
+    async def error(self, name, **kwargs):
+        await self.add_log_safe(name, level='error', **kwargs)
+
+    async def warning(self, name, **kwargs):
+        await self.add_log_safe(name, level='warning', **kwargs)
