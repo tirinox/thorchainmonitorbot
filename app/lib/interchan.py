@@ -41,11 +41,14 @@ class PubSubChannel:
                 if not self._running:
                     break
 
-                if msg["type"] == "message":
-                    data = msg["data"]
-                    if data:
-                        data = json.loads(data)
-                        await self.callback(self.channel, data)
+                try:
+                    if msg["type"] == "message":
+                        data = msg["data"]
+                        if data:
+                            data = json.loads(data)
+                            await self.callback(self.channel, data)
+                except Exception as e:
+                    logging.exception(f'Error processing message: {e}')
 
         except asyncio.CancelledError:
             pass
