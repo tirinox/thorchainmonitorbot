@@ -1,4 +1,5 @@
 import asyncio
+import atexit
 import logging
 import threading
 
@@ -6,43 +7,58 @@ import streamlit as st
 
 from tools.lib.lp_common import LpAppFramework
 
-_loop = None
-_loop_thread = None
-_loop_lock = threading.Lock()
+
+async def _startup():
+    pass
 
 
-def get_background_loop() -> asyncio.AbstractEventLoop:
-    """Get (or create) a single background event loop."""
-    global _loop, _loop_thread
+async def _shutdown():
+    pass
 
-    with _loop_lock:
-        if _loop is None:
-            _loop = asyncio.new_event_loop()
 
-            def _run_loop():
-                asyncio.set_event_loop(_loop)
-                _loop.run_forever()
+@st.cache_resource  # <----- this is what makes it possible to keep an event loop alive across multiple script runs (CTA clicks).
+def get_global_loop(startup=_startup, shutdown=_shutdown):
+    """
+    Returns a persistent asyncio loop running in a background thread.
+    The loop will live across Streamlit reruns and only be cleaned up at shutdown.
+    """
+    loop = asyncio.new_event_loop()
 
-            _loop_thread = threading.Thread(target=_run_loop, daemon=True)
-            _loop_thread.start()
+    def run_loop():
+        loop.create_task(startup())
+        loop.run_forever()
 
-    return _loop
+    t = threading.Thread(target=run_loop, daemon=True)
+    t.start()
 
+    def stop_loop():
+        try:
+            fut = asyncio.run_coroutine_threadsafe(shutdown(), loop)
+            fut.result(timeout=5)
+        except Exception as e:
+            print(f"[shutdown] Error during cleanup: {e}")
+        loop.call_soon_threadsafe(loop.stop)
+
+    atexit.register(stop_loop)
+
+    return loop
 
 def run_coro(coro):
     """
     Run a coroutine on the background loop and wait for the result
     in a blocking way (safe to call from Streamlit).
     """
-    loop = get_background_loop()
+    loop = get_global_loop()
     future = asyncio.run_coroutine_threadsafe(coro, loop)
     return future.result()  # you may want try/except here and re-raise nicely
 
 
 @st.cache_resource
 def get_app():
+    loop = get_global_loop()
     async def _get_app():
         app = LpAppFramework(log_level=logging.INFO)
+        app.deps.loop = loop
         await app.prepare(brief=True)
         return app
 
