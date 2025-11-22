@@ -3,9 +3,9 @@ from datetime import datetime
 
 import pandas as pd
 import streamlit as st
-from eth_utils import humanize_seconds
 from streamlit_autorefresh import st_autorefresh
 
+from lib.date_utils import seconds_human
 from notify.pub_scheduler import PublicScheduler
 from tools.dashboard.helpers import get_app, run_coro
 
@@ -47,7 +47,7 @@ for col in df.columns:
 if "_ts" in df.columns:
     now = datetime.now().timestamp()
     df["Time"] = df["_ts"].apply(
-        lambda x: f'{datetime.fromtimestamp(x).strftime("%Y/%m/%d | %H:%M:%S")} | {humanize_seconds(now - x)} ago'
+        lambda x: f'{datetime.fromtimestamp(x).strftime("%Y/%m/%d | %H:%M:%S")} | {seconds_human(now - x)} ago'
         if pd.notna(x)
         else ""
     )
@@ -73,8 +73,13 @@ df["level"] = df["level"].apply(format_level)
 
 # Ensure phase exists
 if "phase" not in df.columns:
-    df["phase"] = ""
+    df["phase"] = "-"
 
+if "job" not in df.columns:
+    df["job"] = "-"
+
+if "action" not in df.columns:
+    df["action"] = "-"
 
 # ===== Filters (use raw columns, not the final 4-column view) ================
 action_list = ["(all)"]
@@ -112,7 +117,7 @@ if f_text.strip():
 # 2nd: Time
 # 3rd: phase
 # 4th: Details = comma-separated other fields (key=value)
-detail_exclude = {"level", "Time", "phase"}
+detail_exclude = {"level", "Time", "phase", "job", "action"}
 
 detail_cols = [c for c in filtered.columns if c not in detail_exclude]
 
@@ -122,15 +127,23 @@ def build_details(row):
         v = row.get(c, "")
         if pd.isna(v) or v == "":
             continue
+        if c == 'elapsed':
+            v = f'{float(v):.3f}s'
+        elif c == 'attempt':
+            v = int(v)
+        if isinstance(v, str):
+            v = repr(v)
         parts.append(f"{c}={v}")
     return ", ".join(parts)
 
 filtered["Details"] = filtered.apply(build_details, axis=1)
 
-display_df = filtered[["level", "Time", "phase", "Details"]].rename(
+display_df = filtered[["level", "Time", "action", "job", "phase", "Details"]].rename(
     columns={
         "level": "Level",
         "phase": "Phase",
+        "job": "Job",
+        "action": "Action",
     }
 )
 
