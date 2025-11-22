@@ -1,10 +1,13 @@
 import asyncio
 import functools
 import json
+import time
 from typing import List
+from typing import Optional, Any, Literal
 
 from apscheduler.events import EVENT_JOB_MISSED, EVENT_JOB_ERROR
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from pydantic import BaseModel
 
 from lib.config import Config
 from lib.db import DB
@@ -14,14 +17,143 @@ from lib.logs import WithLogger
 from models.sched import SchedJobCfg
 
 
+class JobStatsModel(BaseModel):
+    last_ts: float | None = None  # 1. last timestamp run
+    run_count: int = 0  # 2. total run times
+    last_elapsed: float | None = None  # 3. last elapsed seconds
+    avg_elapsed: float | None = None  # 4. avg elapsed seconds
+    last_status: Literal["ok", "error"] | None = None  # 5. last time whether error or not
+    last_error: str | None = None  # 6. last error message if it was error
+
+
+# ---- Redis-backed stats ----
+
+
+class JobStats(WithLogger):
+    FIELD_LAST_TS = "last_ts"
+    FIELD_RUN_COUNT = "run_count"
+    FIELD_LAST_ELAPSED = "last_elapsed"
+    FIELD_TOTAL_ELAPSED = "total_elapsed"  # internal for avg calc
+    FIELD_LAST_STATUS = "last_status"
+    FIELD_LAST_ERROR = "last_error"
+
+    def __init__(self, db: DB, key: str):
+        super().__init__()
+        self.db = db
+        self.key = f"{PublicScheduler.DB_KEY_PREFIX}:Stats:{key}"
+
+    # --- simple helpers (not nested) ---
+
+    @staticmethod
+    def _to_str(value: Any) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, bytes):
+            return value.decode("utf-8")
+        return str(value)
+
+    @staticmethod
+    def _to_int(value: Any, default: int = 0) -> int:
+        s = JobStats._to_str(value)
+        if s is None or s == "":
+            return default
+        try:
+            return int(s)
+        except ValueError:
+            return default
+
+    @staticmethod
+    def _to_float(value: Any, default: float | None = None) -> float | None:
+        s = JobStats._to_str(value)
+        if s is None or s == "":
+            return default
+        try:
+            return float(s)
+        except ValueError:
+            return default
+
+    # --- public API ---
+
+    async def read_stats(self) -> JobStatsModel:
+        data = await self.db.redis.hgetall(self.key)
+        if not data:
+            # default Pydantic instance
+            return JobStatsModel()
+
+        last_ts = self._to_float(data.get(self.FIELD_LAST_TS))
+        run_count = self._to_int(data.get(self.FIELD_RUN_COUNT), default=0)
+        last_elapsed = self._to_float(data.get(self.FIELD_LAST_ELAPSED))
+        total_elapsed = self._to_float(data.get(self.FIELD_TOTAL_ELAPSED), default=None)
+        last_status = self._to_str(data.get(self.FIELD_LAST_STATUS))
+        last_error = self._to_str(data.get(self.FIELD_LAST_ERROR))
+
+        avg_elapsed: float | None = None
+        if run_count > 0 and total_elapsed is not None:
+            avg_elapsed = total_elapsed / run_count
+
+        return JobStatsModel(
+            last_ts=last_ts,
+            run_count=run_count,
+            last_elapsed=last_elapsed,
+            avg_elapsed=avg_elapsed,
+            last_status=last_status,  # "ok" / "error" / None
+            last_error=last_error,
+        )
+
+    async def _update_common_fields(
+            self,
+            *,
+            elapsed: float,
+            ts: Optional[float],
+            status: Literal["ok", "error"],
+            error_message: Optional[str] = None,
+    ) -> None:
+        if ts is None:
+            ts = time.time()  # or your monotonic source if you prefer
+
+        # atomic increments
+        await self.db.redis.hincrby(self.key, self.FIELD_RUN_COUNT, 1)
+        await self.db.redis.hincrbyfloat(self.key, self.FIELD_TOTAL_ELAPSED, float(elapsed))
+
+        # last-* fields
+        mapping = {
+            self.FIELD_LAST_TS: ts,
+            self.FIELD_LAST_ELAPSED: float(elapsed),
+            self.FIELD_LAST_STATUS: status,
+            self.FIELD_LAST_ERROR: error_message or "",
+        }
+        await self.db.redis.hset(self.key, mapping=mapping)
+
+    async def record_success(self, elapsed: float, ts: Optional[float] = None) -> None:
+        await self._update_common_fields(
+            elapsed=elapsed,
+            ts=ts,
+            status="ok",
+            error_message=None,
+        )
+
+    async def record_error(
+            self,
+            elapsed: float,
+            error_message: str,
+            ts: Optional[float] = None,
+    ) -> None:
+        await self._update_common_fields(
+            elapsed=elapsed,
+            ts=ts,
+            status="error",
+            error_message=error_message,
+        )
+
+    async def reset(self) -> None:
+        await self.db.redis.delete(self.key)
+
+
 class PublicScheduler(WithLogger):
     DB_KEY_PREFIX = 'PublicScheduler'
     DB_KEY_CONFIG = f'{DB_KEY_PREFIX}:Config'
 
     DB_KEY_COMM_CHAN = f'{DB_KEY_PREFIX}:CommunicationChannel'
-
-    def db_key_stats(self, func_name: str) -> str:
-        return f'{self.DB_KEY_PREFIX}:Stats:{func_name}'
 
     def __init__(self, cfg: Config, db: DB, loop: asyncio.AbstractEventLoop = None):
         super().__init__()
@@ -86,7 +218,7 @@ class PublicScheduler(WithLogger):
             return
         self.logger.info(f'Job {job_id} scheduled to run now via control message!')
         # Run the job immediately
-        await coro()
+        await coro(job_cfg)
 
     async def post_command(self, command: str, **kwargs):
         await self._subscriber.post_message({
@@ -122,27 +254,37 @@ class PublicScheduler(WithLogger):
         func_name = func.__name__
 
         @functools.wraps(func)
-        async def wrapper():
+        async def wrapper(desc: SchedJobCfg):
             # fixme: retries will continue even if the job is cancelled externally
             current_delay = delay
+            stats = JobStats(self.db, key=desc.id)
             self.logger.info(f"Starting job with retry logic: {func_name}.")
             await self.db_log.info('run', phase='start', job=func_name)
+            start_time = time.monotonic()
             for attempt in range(1, retries + 1):
                 try:
                     result = await func()
-                    await self.db_log.info('run', phase='complete', job=func_name)
+                    finish_time = time.monotonic()
+                    elapsed = finish_time - start_time
+                    await self.db_log.info('run', phase='complete', job=func_name, elapsed=elapsed)
+                    self.logger.info(
+                        f'{func_name}: completed successfully in {elapsed:.2f} seconds on attempt {attempt}.')
+                    await stats.record_success(elapsed=elapsed, ts=finish_time)
                     return result
                 except Exception as e:
                     self.logger.warning(
                         f"{func_name}: attempt {attempt}/{retries} failed: {e}. Retrying in {current_delay} seconds...")
                     if attempt < retries:
                         await self.db_log.error('run', phase='retry', job=func_name, attempt=attempt,
-                                               error=str(e))
+                                                error=str(e))
                         await asyncio.sleep(current_delay)
                         current_delay = current_delay * delay_mult
                     else:
                         await self.db_log.error('run', phase='failed', job=func_name, error=str(e))
                         self.logger.error(f'{func_name}: all {retries} attempts failed.')
+                        finish_time = time.monotonic()
+                        elapsed = finish_time - start_time
+                        await stats.record_error(elapsed, error_message=str(e), ts=finish_time)
                         raise
             return None
 
@@ -205,7 +347,8 @@ class PublicScheduler(WithLogger):
 
             self.scheduler.add_job(
                 coro,
-                **job_cfg.to_add_job_args()
+                **job_cfg.to_add_job_args(),
+                args=[job_cfg],
             )
 
         self.logger.info(
