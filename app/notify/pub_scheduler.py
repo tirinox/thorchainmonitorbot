@@ -24,6 +24,7 @@ class JobStatsModel(BaseModel):
     avg_elapsed: float | None = None  # 4. avg elapsed seconds
     last_status: Literal["ok", "error"] | None = None  # 5. last time whether error or not
     last_error: str | None = None  # 6. last error message if it was error
+    error_count: int = 0
 
 
 # ---- Redis-backed stats ----
@@ -36,6 +37,7 @@ class JobStats(WithLogger):
     FIELD_TOTAL_ELAPSED = "total_elapsed"  # internal for avg calc
     FIELD_LAST_STATUS = "last_status"
     FIELD_LAST_ERROR = "last_error"
+    FIELD_ERROR_COUNT = "error_count"
 
     def __init__(self, db: DB, key: str):
         super().__init__()
@@ -86,6 +88,7 @@ class JobStats(WithLogger):
         total_elapsed = self._to_float(data.get(self.FIELD_TOTAL_ELAPSED), default=None)
         last_status = self._to_str(data.get(self.FIELD_LAST_STATUS))
         last_error = self._to_str(data.get(self.FIELD_LAST_ERROR))
+        error_count = self._to_int(data.get(self.FIELD_ERROR_COUNT), default=0)
 
         avg_elapsed: float | None = None
         if run_count > 0 and total_elapsed is not None:
@@ -98,6 +101,7 @@ class JobStats(WithLogger):
             avg_elapsed=avg_elapsed,
             last_status=last_status,  # "ok" / "error" / None
             last_error=last_error,
+            error_count=error_count,
         )
 
     async def _update_common_fields(
@@ -111,9 +115,14 @@ class JobStats(WithLogger):
         if ts is None:
             ts = time.time()  # or your monotonic source if you prefer
 
+        r = self.db.redis
+
         # atomic increments
-        await self.db.redis.hincrby(self.key, self.FIELD_RUN_COUNT, 1)
-        await self.db.redis.hincrbyfloat(self.key, self.FIELD_TOTAL_ELAPSED, float(elapsed))
+        await r.hincrby(self.key, self.FIELD_RUN_COUNT, 1)
+        await r.hincrbyfloat(self.key, self.FIELD_TOTAL_ELAPSED, float(elapsed))
+
+        if status == "error":
+            await r.hincrby(self.key, self.FIELD_ERROR_COUNT, 1)
 
         # last-* fields
         mapping = {
@@ -122,7 +131,7 @@ class JobStats(WithLogger):
             self.FIELD_LAST_STATUS: status,
             self.FIELD_LAST_ERROR: error_message or "",
         }
-        await self.db.redis.hset(self.key, mapping=mapping)
+        await r.hset(self.key, mapping=mapping)
 
     async def record_success(self, elapsed: float, ts: Optional[float] = None) -> None:
         await self._update_common_fields(
@@ -152,6 +161,9 @@ class JobStats(WithLogger):
 class PublicScheduler(WithLogger):
     DB_KEY_PREFIX = 'PublicScheduler'
     DB_KEY_CONFIG = f'{DB_KEY_PREFIX}:Config'
+
+    COMMAND_RELOAD = 'reload_config'
+    COMMAND_RUN_NOW = 'run_now'
 
     DB_KEY_COMM_CHAN = f'{DB_KEY_PREFIX}:CommunicationChannel'
 
@@ -196,12 +208,12 @@ class PublicScheduler(WithLogger):
             await self.db_log.error('control_message', reason='invalid_format', message=message)
             return
         command = message.get('command')
-        if command == 'reload_config':
+        if command == self.COMMAND_RELOAD:
             await self.load_config_from_db()
             await self.apply_scheduler_configuration()
             self.logger.info('Scheduler configuration reloaded via control message!')
             await self.db_log.warning('config_reloaded')
-        elif command == 'run_now':
+        elif command == self.COMMAND_RUN_NOW:
             job_id = message.get('job_id')
             await self.db_log.warning('job_scheduled_now', job_id=job_id)
             await self.run_job_now(job_id)
@@ -209,13 +221,12 @@ class PublicScheduler(WithLogger):
     async def run_job_now(self, job_id):
         job_cfg = self.find_job_by_id(job_id)
         if not job_cfg:
-            self.logger.error(f'Job with id {job_id} not found; cannot run now.')
-            return
+            raise RuntimeError(f'Job with id {job_id} not found; cannot run now.')
 
         coro = self._registered_jobs.get(job_cfg.func)
         if not coro:
-            self.logger.error(f'Job function {job_cfg.func} is not registered; cannot run job {job_id}.')
-            return
+            raise RuntimeError(f'Job function {job_cfg.func} is not registered; cannot run job {job_id}.')
+
         self.logger.info(f'Job {job_id} scheduled to run now via control message!')
         # Run the job immediately
         await coro(job_cfg)
@@ -264,16 +275,19 @@ class PublicScheduler(WithLogger):
             for attempt in range(1, retries + 1):
                 try:
                     result = await func()
-                    finish_time = time.monotonic()
-                    elapsed = finish_time - start_time
+                    elapsed = time.monotonic() - start_time
                     await self.db_log.info('run', phase='complete', job=func_name, elapsed=elapsed)
                     self.logger.info(
                         f'{func_name}: completed successfully in {elapsed:.2f} seconds on attempt {attempt}.')
-                    await stats.record_success(elapsed=elapsed, ts=finish_time)
+                    await stats.record_success(elapsed=elapsed, ts=time.time())
                     return result
                 except Exception as e:
                     self.logger.warning(
                         f"{func_name}: attempt {attempt}/{retries} failed: {e}. Retrying in {current_delay} seconds...")
+
+                    elapsed = time.monotonic() - start_time
+                    await stats.record_error(elapsed, error_message=str(e), ts=time.time())
+
                     if attempt < retries:
                         await self.db_log.error('run', phase='retry', job=func_name, attempt=attempt,
                                                 error=str(e))
@@ -282,9 +296,6 @@ class PublicScheduler(WithLogger):
                     else:
                         await self.db_log.error('run', phase='failed', job=func_name, error=str(e))
                         self.logger.error(f'{func_name}: all {retries} attempts failed.')
-                        finish_time = time.monotonic()
-                        elapsed = finish_time - start_time
-                        await stats.record_error(elapsed, error_message=str(e), ts=finish_time)
                         raise
             return None
 
@@ -381,3 +392,18 @@ class PublicScheduler(WithLogger):
     @property
     def total_running_jobs(self) -> int:
         return len(self.scheduler.get_jobs())
+
+    async def delete_job(self, job_id: str):
+        job = self.find_job_by_id(job_id)
+        if not job:
+            self.logger.error(f"Job with id '{job_id}' not found; cannot delete.")
+            raise ValueError(f"Job with id '{job_id}' not found.")
+        self._scheduled_jobs = [j for j in self._scheduled_jobs if j.id != job_id]
+        self._dirty = True
+        await self.save_config_to_db()
+        await self.db_log.info('job_deleted', job_id=job_id, job=job.func)
+        self.logger.info(f"Deleted job '{job_id}'.")
+
+    async def get_job_stats(self, job_id: str) -> JobStatsModel:
+        stats_db = JobStats(self.db, key=job_id)
+        return await stats_db.read_stats()
