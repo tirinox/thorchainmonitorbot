@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import functools
 import json
 import time
@@ -22,9 +23,11 @@ class JobStatsModel(BaseModel):
     run_count: int = 0  # 2. total run times
     last_elapsed: float | None = None  # 3. last elapsed seconds
     avg_elapsed: float | None = None  # 4. avg elapsed seconds
-    last_status: Literal["ok", "error"] | None = None  # 5. last time whether error or not
+    last_status: Literal["ok", "error", "progress"] | None = None  # 5. last time whether error or not
     last_error: str | None = None  # 6. last error message if it was error
     error_count: int = 0
+    next_run_ts: float | None = None
+    is_dirty: bool = False
 
 
 # ---- Redis-backed stats ----
@@ -38,6 +41,8 @@ class JobStats(WithLogger):
     FIELD_LAST_STATUS = "last_status"
     FIELD_LAST_ERROR = "last_error"
     FIELD_ERROR_COUNT = "error_count"
+    FIELD_NEXT_RUN_TS = "next_run_ts"
+    FIELD_IS_DIRTY = "is_dirty"
 
     def __init__(self, db: DB, key: str):
         super().__init__()
@@ -89,6 +94,8 @@ class JobStats(WithLogger):
         last_status = self._to_str(data.get(self.FIELD_LAST_STATUS))
         last_error = self._to_str(data.get(self.FIELD_LAST_ERROR))
         error_count = self._to_int(data.get(self.FIELD_ERROR_COUNT), default=0)
+        next_run_ts = self._to_float(data.get(self.FIELD_NEXT_RUN_TS))
+        is_dirty = bool(int(self._to_str(data.get(self.FIELD_IS_DIRTY, 0))))
 
         avg_elapsed: float | None = None
         if run_count > 0 and total_elapsed is not None:
@@ -99,9 +106,11 @@ class JobStats(WithLogger):
             run_count=run_count,
             last_elapsed=last_elapsed,
             avg_elapsed=avg_elapsed,
-            last_status=last_status,  # "ok" / "error" / None
+            last_status=last_status,  # "ok" / "error" / "progress" / None
             last_error=last_error,
             error_count=error_count,
+            next_run_ts=next_run_ts,
+            is_dirty=is_dirty,
         )
 
     async def _update_common_fields(
@@ -132,6 +141,18 @@ class JobStats(WithLogger):
             self.FIELD_LAST_ERROR: error_message or "",
         }
         await r.hset(self.key, mapping=mapping)
+
+    async def record_progress(self):
+        r = self.db.redis
+        await r.hset(self.key, self.FIELD_LAST_STATUS, "progress")
+
+    async def set_next_time_run(self, ts):
+        r = self.db.redis
+        await r.hset(self.key, self.FIELD_NEXT_RUN_TS, ts)
+
+    async def set_is_dirty(self, is_dirty):
+        r = self.db.redis
+        await r.hset(self.key, self.FIELD_IS_DIRTY, str(int(is_dirty)))
 
     async def record_success(self, elapsed: float, ts: Optional[float] = None) -> None:
         await self._update_common_fields(
@@ -180,12 +201,8 @@ class PublicScheduler(WithLogger):
         self._registered_jobs = {}
         self._scheduled_jobs: List[SchedJobCfg] = []
         self.db_log = RedisLog(self.DB_KEY_PREFIX, db, max_lines=10_000)
+        self._anything_deleted = False
         self._subscriber = PubSubChannel(db, self.DB_KEY_COMM_CHAN, self._on_control_message)
-        self._dirty = False
-
-    @property
-    def is_dirty(self) -> bool:
-        return self._dirty
 
     async def clear_job_list(self, apply=False, save=False):
         await self.db_log.info('clear_jobs', phase='start', apply=apply, save=save)
@@ -195,6 +212,17 @@ class PublicScheduler(WithLogger):
         if save:
             await self.save_config_to_db()
         await self.db_log.info('clear_jobs', phase='end', apply=apply, save=save)
+
+    async def any_job_is_dirty(self):
+        if self._anything_deleted:
+            return True
+
+        for job in self._scheduled_jobs:
+            stats = JobStats(self.db, key=job.id)
+            job_stats = await stats.read_stats()
+            if job_stats.is_dirty:
+                return True
+        return False
 
     @property
     def jobs(self) -> List[SchedJobCfg]:
@@ -246,11 +274,17 @@ class PublicScheduler(WithLogger):
         self._registered_jobs[key] = wrapped_func
         self.logger.info(f"Registered job {key}.")
 
-    async def add_new_job(self, job_cfg: SchedJobCfg, allow_replace=False):
-        if not allow_replace:
-            if any(existing_job.id == job_cfg.id for existing_job in self._scheduled_jobs):
-                self.logger.error(f"Job with id {job_cfg.id} already exists; cannot add duplicate.")
-                raise ValueError(f"Job with id {job_cfg.id} already exists.")
+    async def add_new_job(self, job_cfg: SchedJobCfg, allow_replace=False, load_before=False):
+        if not job_cfg.id or job_cfg.id.strip() == "":
+            raise ValueError("Job ID cannot be empty.")
+
+        if load_before:
+            await self.load_config_from_db()
+
+        exists = any(existing_job.id == job_cfg.id for existing_job in self._scheduled_jobs)
+        if exists and not allow_replace:
+            self.logger.error(f"Job with id {job_cfg.id} already exists; cannot add duplicate.")
+            raise ValueError(f"Job with id {job_cfg.id} already exists.")
 
         if allow_replace:
             # Remove existing job with the same id
@@ -258,8 +292,18 @@ class PublicScheduler(WithLogger):
 
         self._scheduled_jobs.append(job_cfg)
         await self.save_config_to_db()
-        self._dirty = True
-        self.logger.info(f"Added new job {job_cfg.id} of type {job_cfg.func}.")
+        await self.db_log.info(
+            "job_replaced" if exists else "job_created",
+            job_id=job_cfg.id,
+            job=job_cfg.func,
+            variant=job_cfg.variant
+        )
+        await self._mark_job_dirty(job_cfg.id)
+        self.logger.info(f"{'Edited job' if exists else 'Added a new'} job {job_cfg.id} of type {job_cfg.func}.")
+
+    async def _mark_job_dirty(self, job_id: str, value=True):
+        stats = JobStats(self.db, key=job_id)
+        await stats.set_is_dirty(value)
 
     def _with_retry(self, func, retries=3, delay=5, delay_mult=2):
         func_name = func.__name__
@@ -348,6 +392,8 @@ class PublicScheduler(WithLogger):
             self.scheduler.remove_job(existing_job.id)
 
         for job_cfg in self._scheduled_jobs:
+            await self._mark_job_dirty(job_cfg.id, value=False)
+
             if not job_cfg.enabled:
                 continue
 
@@ -356,15 +402,19 @@ class PublicScheduler(WithLogger):
                 self.logger.error(f"Job function '{job_cfg.func}' is not registered; skipping job '{job_cfg.id}'.")
                 continue
 
-            self.scheduler.add_job(
+            j = self.scheduler.add_job(
                 coro,
                 **job_cfg.to_add_job_args(),
                 args=[job_cfg],
             )
 
+            if isinstance(j.next_run_time, datetime.datetime):
+                stats = JobStats(self.db, job_cfg.id)
+                await stats.set_next_time_run(j.next_run_time.timestamp())
+
+        self._anything_deleted = False
         self.logger.info(
             f'Applied scheduler configuration: {self.total_running_jobs} / {len(self._scheduled_jobs)} jobs scheduled.')
-        self._dirty = False
 
     def find_job_by_id(self, job_id: str) -> SchedJobCfg | None:
         for job in self._scheduled_jobs:
@@ -380,9 +430,10 @@ class PublicScheduler(WithLogger):
         if not job:
             self.logger.error(f"Job with id '{job_id}' not found; cannot toggle enabled state.")
             raise ValueError(f"Job with id '{job_id}' not found.")
+
         if enabled != job.enabled:
             job.enabled = enabled
-            self._dirty = True
+            await self._mark_job_dirty(job_id)
             await self.save_config_to_db()
             self.logger.info(f"Toggled job '{job_id}' enabled state to {enabled}.")
             await self.db_log.info('job_toggle_enabled', job_id=job_id, enabled=enabled)
@@ -399,7 +450,9 @@ class PublicScheduler(WithLogger):
             self.logger.error(f"Job with id '{job_id}' not found; cannot delete.")
             raise ValueError(f"Job with id '{job_id}' not found.")
         self._scheduled_jobs = [j for j in self._scheduled_jobs if j.id != job_id]
-        self._dirty = True
+        self._anything_deleted = True
+        stats = JobStats(self.db, key=job_id)
+        await stats.reset()
         await self.save_config_to_db()
         await self.db_log.info('job_deleted', job_id=job_id, job=job.func)
         self.logger.info(f"Deleted job '{job_id}'.")
