@@ -12,9 +12,23 @@ from tools.dashboard.helpers import get_app, run_coro
 st.set_page_config(page_title="Scheduled Jobs", layout="wide")
 
 st.title("Configured Jobs (SchedJobCfg)")
-# Header row
 
-col_config = [2, 2, 1, 1, 4, 2]
+# todo:
+#   1. is running now flag
+#   2. next run in "1h 30m 5s"
+
+
+def set_message_rerun(msg):
+    st.session_state['success_msg'] = msg
+    st.rerun()
+
+
+if msg := st.session_state.get('success_msg'):
+    st.success(msg)
+    del st.session_state['success_msg']
+
+# Header row
+col_config = [2, 2, 1, 1, 4, 3]
 
 header_cols = st.columns(col_config)
 with header_cols[0]:
@@ -44,7 +58,7 @@ for job in jobs:
     with cols[1]:
         st.text(job.func)
     with cols[2]:
-        enable = st.checkbox("?", value=job.enabled, key=f"enabled_{ident}")
+        st.text("✅ YES" if job.enabled else '🔻NO')
     with cols[3]:
         st.text(job.variant)
     with cols[4]:
@@ -65,47 +79,50 @@ for job in jobs:
         trig["rate"] = format_percent(stats.run_count - stats.error_count, stats.run_count)
         trig["last_elapsed"] = seconds_human(stats.last_elapsed)
         trig["avg_elapsed"] = seconds_human(stats.avg_elapsed)
-        trig["last"] = f'{seconds_human(time.time() - stats.last_ts)} ago'
+        if stats.last_ts:
+            trig["last"] = f'{seconds_human(time.time() - stats.last_ts)} ago'
 
-        # красиво упакуем параметры в одну колонку
-        # params = ", ".join(f"{k}={v}" for k, v in trig.items()) if trig else ""
-        # st.text(params)
         st.json(trig)
 
     with cols[5]:
-        b_cols = st.columns(3)
+        b_cols = st.columns(4)
         success = ''
 
         with b_cols[0]:
             if st.button("❌", key=f"delete_{ident}"):
                 run_coro(sched.delete_job(ident))
-                success = f'Job \'{ident}\' deleted.'
+                set_message_rerun(f'Job \'{ident}\' deleted.')
         with b_cols[1]:
             if st.button("▶️", key=f"run_{ident}", type="secondary"):
                 run_coro(sched.post_command(sched.COMMAND_RUN_NOW, job_id=ident))
-                success = f"Job '{ident}' triggered to run now."
+                set_message_rerun(f"Job '{ident}' triggered to run now.")
         with b_cols[2]:
             if st.button("✍️", key=f"edit_{ident}"):
                 # todo
-                success = f"Navigate to edit page for job '{ident}'."
-        if success:
-            st.success(success)
-
-    if enable != job.enabled:
-        # Update enabled state in the job config
-        run_coro(sched.toggle_job_enabled(job.id, enable))
-        st.success(f"Job '{ident}' enabled state updated to {enable}.")
+                set_message_rerun(f"Navigate to edit page for job '{ident}'.")
+        with b_cols[3]:
+            if st.button("OFF" if job.enabled else "ON!", key=f"toggle_{ident}"):
+                run_coro(sched.toggle_job_enabled(job.id, not job.enabled))
+                set_message_rerun(f"Job is enabled" if job.enabled else "Job is disabled")
 
 if applied := st.button("Apply", type="primary"):
     run_coro(sched.post_command(sched.COMMAND_RELOAD))
-    st.success("Reload command sent to scheduler!")
+    st.session_state['success_msg'] = "Reload command sent to scheduler!"
+    st.rerun()
 
-if not applied and sched.is_dirty:
+is_dirty = run_coro(sched.any_job_is_dirty())
+if is_dirty and not applied:
     st.warning("Scheduler configuration has unsaved changes. Please apply the configuration.")
 
 # button Add navigates to AddSchedJob page
 if st.button("Add New Job"):
-    form_add_job()
+    st.session_state["new_job_form_active"] = not st.session_state.get("new_job_form_active", False)
+
+if st.session_state.get("new_job_form_active"):
+    job_cfg = form_add_job()
+    if job_cfg:
+        run_coro(sched.add_new_job(job_cfg, load_before=True))
+        st.rerun()
 
 with st.expander("Raw JSON configs"):
     for j in jobs:
