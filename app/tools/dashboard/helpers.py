@@ -37,11 +37,13 @@ def get_global_loop(startup=_startup, shutdown=_shutdown):
             fut.result(timeout=5)
         except Exception as e:
             print(f"[shutdown] Error during cleanup: {e}")
+        # noinspection PyTypeChecker
         loop.call_soon_threadsafe(loop.stop)
 
     atexit.register(stop_loop)
 
     return loop
+
 
 def run_coro(coro):
     """
@@ -56,6 +58,7 @@ def run_coro(coro):
 @st.cache_resource
 def get_app():
     loop = get_global_loop()
+
     async def _get_app():
         app = LpAppFramework(log_level=logging.INFO)
         app.deps.loop = loop
