@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
@@ -51,6 +52,8 @@ if "_ts" in df.columns:
         if pd.notna(x)
         else ""
     )
+    df["date"] = pd.to_datetime(df["_ts"], unit="s").dt.date
+
     df.drop(columns=["_ts"], inplace=True)
 else:
     df["Time"] = ""
@@ -58,6 +61,7 @@ else:
 # Ensure level column exists and is formatted with emoji
 if "level" not in df.columns:
     df["level"] = "info"
+
 
 def format_level(level_value: str) -> str:
     if pd.isna(level_value):
@@ -69,7 +73,8 @@ def format_level(level_value: str) -> str:
         return "🟡 " + s.upper()
     return "🟢 " + s.upper()
 
-df["level"] = df["level"].apply(format_level)
+
+df["level_fmt"] = df["level"].apply(format_level)
 
 # Ensure phase exists
 if "phase" not in df.columns:
@@ -111,15 +116,15 @@ if f_text.strip():
     )
     filtered = filtered[mask]
 
-
 # ===== Build display DataFrame ===============================================
 # 1st col: level
 # 2nd: Time
 # 3rd: phase
 # 4th: Details = comma-separated other fields (key=value)
-detail_exclude = {"level", "Time", "phase", "job", "action"}
+detail_exclude = {"level_fmt", "Time", "phase", "job", "action"}
 
 detail_cols = [c for c in filtered.columns if c not in detail_exclude]
+
 
 def build_details(row):
     parts = []
@@ -135,6 +140,7 @@ def build_details(row):
             v = repr(v)
         parts.append(f"{c}={v}")
     return ", ".join(parts)
+
 
 filtered["Details"] = filtered.apply(build_details, axis=1)
 
@@ -171,3 +177,32 @@ styled = display_df.style.apply(highlight_level, axis=1)
 # ===== Show result ============================================================
 st.write(f"### Logs ({len(display_df)})")
 st.dataframe(styled, use_container_width=True, hide_index=True)
+
+# ===== Bar chart ==============================================================
+if "date" in filtered.columns and "level" in filtered.columns:
+    chart_df = (
+        filtered.groupby(["date", "level"])
+        .size()
+        .reset_index(name="count")
+    )
+
+    # Color map
+    color_scale = alt.Scale(
+        domain=["error", "warning", "info"],
+        range=["#ff4d4f", "#fadb14", "#52c41a"]  # red, yellow, green
+    )
+
+    chart = (
+        alt.Chart(chart_df)
+        .mark_bar()
+        .encode(
+            x=alt.X("date:T", title="Day"),
+            y=alt.Y("count:Q", title="Count"),
+            color=alt.Color("level:N", scale=color_scale, title="Level"),
+            tooltip=["date:T", "level:N", "count:Q"],
+        )
+        .properties(height=300)
+    )
+
+    st.write("### Daily log levels")
+    st.altair_chart(chart, use_container_width=True)
