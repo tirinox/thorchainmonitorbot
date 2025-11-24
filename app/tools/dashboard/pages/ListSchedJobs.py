@@ -11,11 +11,12 @@ from tools.dashboard.helpers import get_app, run_coro
 
 st.set_page_config(page_title="Scheduled Jobs", layout="wide")
 
-st.title("Configured Jobs (SchedJobCfg)")
+st.title("Configured Jobs")
+
 
 # todo:
 #   1. is running now flag
-#   2. next run in "1h 30m 5s"
+#
 
 
 def set_message_rerun(msg):
@@ -28,70 +29,86 @@ if msg := st.session_state.get('success_msg'):
     del st.session_state['success_msg']
 
 # Header row
-col_config = [2, 2, 1, 1, 4, 3]
+col_config = [3, 1, 4, 2]
 
 header_cols = st.columns(col_config)
 with header_cols[0]:
-    st.markdown("**ID**")
+    st.markdown("**ID/Func/Variant**")
 with header_cols[1]:
-    st.markdown("**Func**")
-with header_cols[2]:
     st.markdown("**Enabled**")
-with header_cols[3]:
-    st.markdown("**Variant**")
-with header_cols[4]:
+with header_cols[2]:
     st.markdown("**Params**")
-with header_cols[5]:
-    st.markdown("**Action**")
+with header_cols[3]:
+    st.markdown("**Actions**")
 
 app = get_app()
 sched: PublicScheduler = app.deps.pub_scheduler
 jobs: list[SchedJobCfg] = run_coro(sched.load_config_from_db())
 
+
+@st.dialog('Confirm Delete Job')
+def confirm_delete(ident_to_delete):
+    st.markdown(f"Are you sure you want to delete job '{ident_to_delete}'?")
+    if st.button("Yes, delete it", type="primary"):
+        st.session_state.delete_job_id = ident_to_delete
+        st.rerun()
+
+
+if delete_job_id := st.session_state.get('delete_job_id'):
+    run_coro(sched.delete_job(delete_job_id))
+    del st.session_state['delete_job_id']
+    set_message_rerun(f"Job '{delete_job_id}' deleted.")
+
 # Data rows
 for job in jobs:
     cols = st.columns(col_config)
     ident = job.id
+    stats: JobStatsModel = run_coro(sched.get_job_stats(ident))
 
     with cols[0]:
-        st.code(job.id)
+        st.markdown(f"### {job.func}")
+        st.code(f'ID={job.id!r}', language='python')
     with cols[1]:
-        st.text(job.func)
+        st.subheader("✅ YES" if job.enabled else '🔻NO')
+        if st.button("Disable" if job.enabled else "Enable", key=f"toggle_{ident}"):
+            run_coro(sched.toggle_job_enabled(job.id, not job.enabled))
+            set_message_rerun(f"Job is enabled" if job.enabled else "Job is disabled")
     with cols[2]:
-        st.text("✅ YES" if job.enabled else '🔻NO')
-    with cols[3]:
-        st.text(job.variant)
-    with cols[4]:
-        if job.variant == "interval":
-            trig = job.interval.model_dump(exclude_none=True)
-        elif job.variant == "cron":
-            trig = job.cron.model_dump(exclude_none=True)
-        elif job.variant == "date":
-            trig = job.date.model_dump(exclude_none=True)
-        else:
-            trig = {}
-
-        stats: JobStatsModel = run_coro(sched.get_job_stats(ident))
+        trig = job.model_dump(exclude_none=True,
+                              exclude={'id', 'func', 'enabled', 'variant', 'max_instances', 'coalesce'})
+        # if job.variant == "interval":
+        #     trig = job.interval.model_dump(exclude_none=True)
+        # elif job.variant == "cron":
+        #     trig = job.cron.model_dump(exclude_none=True)
+        # elif job.variant == "date":
+        #     trig = job.date.model_dump(exclude_none=True)
+        # else:
+        #     trig = {}
+        s = trig['stats'] = {}
         if stats.last_status == "error":
-            trig["error"] = repr(stats.last_error)
-        trig["count"] = stats.run_count
-        trig["errors"] = stats.error_count
-        trig["rate"] = format_percent(stats.run_count - stats.error_count, stats.run_count)
-        trig["last_elapsed"] = seconds_human(stats.last_elapsed)
-        trig["avg_elapsed"] = seconds_human(stats.avg_elapsed)
+            s["error"] = repr(stats.last_error)
+        s["count"] = stats.run_count
+        s["errors"] = stats.error_count
+        s["rate"] = format_percent(stats.run_count - stats.error_count, stats.run_count)
+        s["last_elapsed"] = seconds_human(stats.last_elapsed)
+        s["avg_elapsed"] = seconds_human(stats.avg_elapsed)
         if stats.last_ts:
-            trig["last"] = f'{seconds_human(time.time() - stats.last_ts)} ago'
+            s["last"] = f'{seconds_human(time.time() - stats.last_ts)} ago'
+        if stats.next_run_ts:
+            next_run_diff = stats.next_run_ts - time.time()
+            in_past = next_run_diff < 0
+            s["next_run"] = (
+                f'passed {seconds_human(-next_run_diff)}' if in_past else f'in {seconds_human(next_run_diff)}')
 
         st.json(trig)
 
-    with cols[5]:
-        b_cols = st.columns(4)
+    with cols[3]:
+        b_cols = st.columns(3)
         success = ''
 
         with b_cols[0]:
             if st.button("❌", key=f"delete_{ident}"):
-                run_coro(sched.delete_job(ident))
-                set_message_rerun(f'Job \'{ident}\' deleted.')
+                confirm_delete(ident)
         with b_cols[1]:
             if st.button("▶️", key=f"run_{ident}", type="secondary"):
                 run_coro(sched.post_command(sched.COMMAND_RUN_NOW, job_id=ident))
@@ -100,10 +117,8 @@ for job in jobs:
             if st.button("✍️", key=f"edit_{ident}"):
                 # todo
                 set_message_rerun(f"Navigate to edit page for job '{ident}'.")
-        with b_cols[3]:
-            if st.button("OFF" if job.enabled else "ON!", key=f"toggle_{ident}"):
-                run_coro(sched.toggle_job_enabled(job.id, not job.enabled))
-                set_message_rerun(f"Job is enabled" if job.enabled else "Job is disabled")
+if not jobs:
+    st.info("No jobs configured yet. Consider adding one below.")
 
 if applied := st.button("Apply", type="primary"):
     run_coro(sched.post_command(sched.COMMAND_RELOAD))
@@ -114,11 +129,7 @@ is_dirty = run_coro(sched.any_job_is_dirty())
 if is_dirty and not applied:
     st.warning("Scheduler configuration has unsaved changes. Please apply the configuration.")
 
-# button Add navigates to AddSchedJob page
-if st.button("Add New Job"):
-    st.session_state["new_job_form_active"] = not st.session_state.get("new_job_form_active", False)
-
-if st.session_state.get("new_job_form_active"):
+with st.expander("Add New Job"):
     job_cfg = form_add_job()
     if job_cfg:
         run_coro(sched.add_new_job(job_cfg, load_before=True))
