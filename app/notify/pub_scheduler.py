@@ -186,6 +186,8 @@ class PublicScheduler(WithLogger):
     COMMAND_RELOAD = 'reload_config'
     COMMAND_RUN_NOW = 'run_now'
 
+    ANY_JOB_SPECIAL_ID = '__any_job_check__'
+
     DB_KEY_COMM_CHAN = f'{DB_KEY_PREFIX}:CommunicationChannel'
 
     def __init__(self, cfg: Config, db: DB, loop: asyncio.AbstractEventLoop = None):
@@ -201,7 +203,6 @@ class PublicScheduler(WithLogger):
         self._registered_jobs = {}
         self._scheduled_jobs: List[SchedJobCfg] = []
         self.db_log = RedisLog(self.DB_KEY_PREFIX, db, max_lines=10_000)
-        self._anything_deleted = False
         self._subscriber = PubSubChannel(db, self.DB_KEY_COMM_CHAN, self._on_control_message)
 
     async def clear_job_list(self, apply=False, save=False):
@@ -214,7 +215,9 @@ class PublicScheduler(WithLogger):
         await self.db_log.info('clear_jobs', phase='end', apply=apply, save=save)
 
     async def any_job_is_dirty(self):
-        if self._anything_deleted:
+        any_job = JobStats(self.db, key=self.ANY_JOB_SPECIAL_ID)
+        any_job_stats = await any_job.read_stats()
+        if any_job_stats.is_dirty:
             return True
 
         for job in self._scheduled_jobs:
@@ -374,7 +377,7 @@ class PublicScheduler(WithLogger):
 
     async def save_config_to_db(self):
         self.logger.info(f"Saving scheduler configuration to DB: {len(self._scheduled_jobs)} jobs.")
-        schedule_cfg = [job.model_dump() for job in self._scheduled_jobs]
+        schedule_cfg = [job.model_dump(mode='json') for job in self._scheduled_jobs]
         await self.db.redis.set(self.DB_KEY_CONFIG, json.dumps(schedule_cfg))
 
     def _fail_listener(self, event):
@@ -412,7 +415,8 @@ class PublicScheduler(WithLogger):
                 stats = JobStats(self.db, job_cfg.id)
                 await stats.set_next_time_run(j.next_run_time.timestamp())
 
-        self._anything_deleted = False
+        await self._mark_job_dirty(self.ANY_JOB_SPECIAL_ID, value=False)
+
         self.logger.info(
             f'Applied scheduler configuration: {self.total_running_jobs} / {len(self._scheduled_jobs)} jobs scheduled.')
 
@@ -450,7 +454,9 @@ class PublicScheduler(WithLogger):
             self.logger.error(f"Job with id '{job_id}' not found; cannot delete.")
             raise ValueError(f"Job with id '{job_id}' not found.")
         self._scheduled_jobs = [j for j in self._scheduled_jobs if j.id != job_id]
-        self._anything_deleted = True
+
+        await self._mark_job_dirty(self.ANY_JOB_SPECIAL_ID, value=True)
+
         stats = JobStats(self.db, key=job_id)
         await stats.reset()
         await self.save_config_to_db()
