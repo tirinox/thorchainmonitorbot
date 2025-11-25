@@ -145,7 +145,6 @@ class JobStats(WithLogger):
             self.FIELD_LAST_ERROR: error_message or "",
         }
         await r.hset(self.key, mapping=mapping)
-        await self.set_is_running(False)
 
     async def record_progress(self):
         r = self.db.redis
@@ -268,8 +267,10 @@ class PublicScheduler(WithLogger):
             raise RuntimeError(f'Job function {job_cfg.func} is not registered; cannot run job {job_id}.')
 
         self.logger.info(f'Job {job_id} scheduled to run now via control message!')
+
         # Run the job immediately
-        await coro(job_cfg)
+        one_time_cfg = job_cfg.model_copy(update={'enabled': True})
+        await coro(one_time_cfg)
 
     async def post_command(self, command: str, **kwargs):
         await self._subscriber.post_message({
@@ -330,6 +331,14 @@ class PublicScheduler(WithLogger):
             start_time = time.monotonic()
             for attempt in range(1, retries + 1):
                 try:
+                    if not desc.enabled:
+                        # fixme: possible bug, are we sure the "desc" is the latest state?
+                        self.logger.warning(f'{func_name}: job disabled during run; skipping execution.')
+                        await stats.set_is_running(False)
+                        await self.db_log.warning('run', phase='skipped', job=func_name,
+                                                  comment='job disabled during run')
+                        return None
+
                     await stats.set_is_running(True)
                     result = await func()
                     elapsed = time.monotonic() - start_time
@@ -337,6 +346,7 @@ class PublicScheduler(WithLogger):
                     self.logger.info(
                         f'{func_name}: completed successfully in {elapsed:.2f} seconds on attempt {attempt}.')
                     await stats.record_success(elapsed=elapsed, ts=time.time())
+                    await stats.set_is_running(False)
                     return result
                 except Exception as e:
                     self.logger.warning(
@@ -344,6 +354,7 @@ class PublicScheduler(WithLogger):
 
                     elapsed = time.monotonic() - start_time
                     await stats.record_error(elapsed, error_message=str(e), ts=time.time())
+                    await stats.set_is_running(False)
 
                     if attempt < retries:
                         await self.db_log.error('run', phase='retry', job=func_name, attempt=attempt,
