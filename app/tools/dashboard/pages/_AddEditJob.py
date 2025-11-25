@@ -6,7 +6,7 @@ import streamlit as st
 from pydantic import ValidationError
 
 from models.sched import SchedVariant, SchedJobCfg, CronCfg, DateCfg, IntervalCfg
-from notify.pub_configure import AVAILABLE_SCHEDULER_JOBS
+from notify.pub_configure import PublicAlertJobExecutor
 from notify.pub_scheduler import PublicScheduler
 from tools.dashboard.helpers import run_coro, get_app
 
@@ -27,8 +27,8 @@ def form_add_job(edit_job: Optional[SchedJobCfg] = None):
         if edit_job:
             func_name = st.text_input("Function (cannot edit)", value=edit_job.func, disabled=True)
         else:
-            func_name = st.selectbox("Function", list(AVAILABLE_SCHEDULER_JOBS),
-                                     index=random.randint(0, len(AVAILABLE_SCHEDULER_JOBS) - 1))
+            types = PublicAlertJobExecutor.AVAILABLE_TYPES.keys()
+            func_name = st.selectbox("Function", list(types), index=random.randint(0, len(types) - 1))
 
         enabled = st.checkbox("Enabled?", value=edit_job.enabled if edit_job else False)
 
