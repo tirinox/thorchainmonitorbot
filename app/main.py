@@ -71,7 +71,7 @@ from notify.personal.bond_provider import PersonalBondProviderNotifier
 from notify.personal.personal_main import NodeChangePersonalNotifier
 from notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from notify.personal.scheduled import PersonalPeriodicNotificationService
-from notify.pub_configure import configure_scheduled_public_notifications
+from notify.pub_configure import PublicAlertJobExecutor
 from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.burn_notify import BurnNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
@@ -637,7 +637,8 @@ class App(WithLogger):
             d.scheduler.add_subscriber(personal_lp_notifier)
 
         # public one
-        d.pub_scheduler = await configure_scheduled_public_notifications(d)
+        d.pub_alert_executor = PublicAlertJobExecutor(d)
+        d.pub_scheduler = await d.pub_alert_executor.configure_jobs()
 
         # ------- BOTS -------
 

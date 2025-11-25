@@ -4,10 +4,6 @@ from typing import Optional, Literal
 from pydantic import BaseModel, model_validator
 
 
-class PubAlertJobNames:
-    SECURED_ASSET_SUMMARY = "secured_asset_summary"
-
-
 class SchedVariant:
     INTERVAL = "interval"
     CRON = "cron"

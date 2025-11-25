@@ -2,12 +2,13 @@ import asyncio
 import random
 
 from models.sched import SchedJobCfg, IntervalCfg, CronCfg
-from notify.pub_configure import configure_scheduled_public_notifications
+from notify.pub_configure import PublicAlertJobExecutor
 from tools.lib.lp_common import LpAppFramework
 
 
 async def dbg_run_public_scheduler(app: LpAppFramework):
-    p = await configure_scheduled_public_notifications(app.deps)
+    pub_alert_executor = PublicAlertJobExecutor(app.deps)
+    p = await pub_alert_executor.configure_jobs()
 
     async def foo_job():
         await app.send_test_tg_message(f"🤓 Normal Foo job executed successfully!")
