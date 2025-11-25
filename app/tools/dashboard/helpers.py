@@ -66,3 +66,21 @@ def get_app():
         return app
 
     return run_coro(_get_app())
+
+
+def st_running_sign():
+    st.markdown("""
+    <style>
+    .blink {
+      animation: blinker 1s linear infinite;
+      color: red;
+      font-weight: bold;
+      font-size: 20px;
+    }
+    @keyframes blinker {  
+      50% { opacity: 0; }
+    }
+    </style>
+
+    <p class="blink">Running...</p>
+    """, unsafe_allow_html=True)

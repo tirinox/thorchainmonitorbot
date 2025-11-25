@@ -11,9 +11,11 @@ async def dbg_run_public_scheduler(app: LpAppFramework):
     p = await pub_alert_executor.configure_jobs()
 
     async def foo_job():
+        await asyncio.sleep(3.0)
         await app.send_test_tg_message(f"🤓 Normal Foo job executed successfully!")
 
     async def failing_job():
+        await asyncio.sleep(3.5)
         if random.uniform(0, 1) > 0.3:
             await app.send_test_tg_message(f'⚠️ Failing job encountered an error!')
             raise Exception("Intentional failure for testing")

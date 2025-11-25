@@ -1,25 +1,23 @@
 import time
 
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 
 from lib.date_utils import seconds_human
 from lib.money import format_percent
 from models.sched import SchedJobCfg
 from notify.pub_scheduler import PublicScheduler, JobStatsModel
-from tools.dashboard.helpers import get_app, run_coro
+from tools.dashboard.helpers import get_app, run_coro, st_running_sign
 
 st.set_page_config(page_title="Scheduled Jobs", layout="wide")
 
 st.title("Configured Jobs")
 
-
-# todo:
-#   1. is running now flag
-#
+st_autorefresh(interval=2000, limit=2000, key="page_refresh")
 
 
-def set_message_rerun(msg):
-    st.session_state['success_msg'] = msg
+def set_message_rerun(_msg):
+    st.session_state['success_msg'] = _msg
     st.rerun()
 
 
@@ -44,7 +42,7 @@ with header_cols[4]:
 
 app = get_app()
 sched: PublicScheduler = app.deps.pub_scheduler
-jobs: list[SchedJobCfg] = run_coro(sched.load_config_from_db())
+jobs: list[SchedJobCfg] = run_coro(sched.load_config_from_db(silent=True))
 
 
 @st.dialog('Confirm Delete Job')
@@ -69,6 +67,10 @@ for job in jobs:
     with cols[0]:
         st.markdown(f"### {job.func}")
         st.code(f'ID={job.id!r}', language='python')
+        if stats.is_running:
+            st_running_sign()
+        else:
+            st.text('Idle')
     with cols[1]:
         st.subheader(job.variant)
     with cols[2]:

@@ -28,6 +28,7 @@ class JobStatsModel(BaseModel):
     error_count: int = 0
     next_run_ts: float | None = None
     is_dirty: bool = False
+    is_running: bool = False
 
 
 # ---- Redis-backed stats ----
@@ -43,6 +44,7 @@ class JobStats(WithLogger):
     FIELD_ERROR_COUNT = "error_count"
     FIELD_NEXT_RUN_TS = "next_run_ts"
     FIELD_IS_DIRTY = "is_dirty"
+    FIELD_IS_RUNNING = "is_running"
 
     def __init__(self, db: DB, key: str):
         super().__init__()
@@ -96,6 +98,7 @@ class JobStats(WithLogger):
         error_count = self._to_int(data.get(self.FIELD_ERROR_COUNT), default=0)
         next_run_ts = self._to_float(data.get(self.FIELD_NEXT_RUN_TS))
         is_dirty = bool(int(self._to_str(data.get(self.FIELD_IS_DIRTY, 0))))
+        is_running = bool(int(self._to_str(data.get(self.FIELD_IS_RUNNING, 0))))
 
         avg_elapsed: float | None = None
         if run_count > 0 and total_elapsed is not None:
@@ -111,6 +114,7 @@ class JobStats(WithLogger):
             error_count=error_count,
             next_run_ts=next_run_ts,
             is_dirty=is_dirty,
+            is_running=is_running,
         )
 
     async def _update_common_fields(
@@ -141,6 +145,7 @@ class JobStats(WithLogger):
             self.FIELD_LAST_ERROR: error_message or "",
         }
         await r.hset(self.key, mapping=mapping)
+        await self.set_is_running(False)
 
     async def record_progress(self):
         r = self.db.redis
@@ -153,6 +158,10 @@ class JobStats(WithLogger):
     async def set_is_dirty(self, is_dirty):
         r = self.db.redis
         await r.hset(self.key, self.FIELD_IS_DIRTY, str(int(is_dirty)))
+
+    async def set_is_running(self, is_running: bool):
+        r = self.db.redis
+        await r.hset(self.key, self.FIELD_IS_RUNNING, str(int(is_running)))
 
     async def record_success(self, elapsed: float, ts: Optional[float] = None) -> None:
         await self._update_common_fields(
@@ -321,6 +330,7 @@ class PublicScheduler(WithLogger):
             start_time = time.monotonic()
             for attempt in range(1, retries + 1):
                 try:
+                    await stats.set_is_running(True)
                     result = await func()
                     elapsed = time.monotonic() - start_time
                     await self.db_log.info('run', phase='complete', job=func_name, elapsed=elapsed)
@@ -364,7 +374,7 @@ class PublicScheduler(WithLogger):
         self.scheduler.shutdown()
         self.logger.info("Scheduler stopped.")
 
-    async def load_config_from_db(self):
+    async def load_config_from_db(self, silent=False) -> List[SchedJobCfg]:
         # Placeholder for loading configuration if needed
         schedule_cfg = await self.db.redis.get(self.DB_KEY_CONFIG)
         schedule_cfg = json.loads(schedule_cfg) if schedule_cfg else []
@@ -372,7 +382,8 @@ class PublicScheduler(WithLogger):
             self.logger.error('Invalid schedule configuration format.')
             schedule_cfg = []
         self._scheduled_jobs = [SchedJobCfg(**item) for item in schedule_cfg]
-        self.logger.info(f'Loaded scheduler configuration from DB: {len(self._scheduled_jobs)} jobs.')
+        if not silent:
+            self.logger.info(f'Loaded scheduler configuration from DB: {len(self._scheduled_jobs)} jobs.')
         return self._scheduled_jobs
 
     async def save_config_to_db(self):
