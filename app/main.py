@@ -105,9 +105,8 @@ class App(WithLogger):
         super().__init__()
         d = self.deps = DepContainer()
 
-        if asyncio.get_event_loop_policy().get_event_loop() is None:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
 
         d.is_loading = True
         self._bg_task = None
