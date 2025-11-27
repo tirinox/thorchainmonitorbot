@@ -129,7 +129,7 @@ async def demo_runepool_stats(app: LpAppFramework):
 
     if not previous:
         previous = e.runepool
-        await notifier._save_last_event(e.runepool)
+        await notifier.save_last_event(e.runepool)
 
     previous = previous._replace(
         pool=previous.pool._replace(

@@ -44,7 +44,7 @@ class RunepoolStatsNotifier(INotified, WithDelegates, WithLogger):
 
     DB_KEY_LAST_EVENT = 'runepool:previous_event'
 
-    async def _save_last_event(self, e: RunepoolState):
+    async def save_last_event(self, e: RunepoolState):
         if not e:
             self.logger.warning('No event to save')
             return
@@ -72,5 +72,5 @@ class RunepoolStatsNotifier(INotified, WithDelegates, WithLogger):
                 usd_per_rune=usd_per_rune,
             )
             await self.pass_data_to_listeners(new_event)
-            await self._save_last_event(e.runepool)
+            await self.save_last_event(e.runepool)
             await self.cd.do()

@@ -323,7 +323,6 @@ class PublicScheduler(WithLogger):
 
         @functools.wraps(func)
         async def wrapper(desc: SchedJobCfg):
-            # fixme: retries will continue even if the job is cancelled externally
             current_delay = delay
             stats = JobStats(self.db, key=desc.id)
             self.logger.info(f"Starting job with retry logic: {func_name}.")

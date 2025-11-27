@@ -3,13 +3,16 @@ from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
 from jobs.fetch.tcy import TCYInfoFetcher
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
+from models.runepool import AlertRunepoolStats
 from notify.pub_scheduler import PublicScheduler
+from notify.public.runepool_notify import RunepoolStatsNotifier
 
 
 class PubAlertJobNames:
     SECURED_ASSET_SUMMARY = "secured_asset_summary"
     TCY_SUMMARY = "tcy_summary"
     POL_SUMMARY = "pol_summary"
+    RUNE_POOL_SUMMARY = "runepool_summary"
 
 
 class PublicAlertJobExecutor(WithLogger):
@@ -39,13 +42,34 @@ class PublicAlertJobExecutor(WithLogger):
         previous = None  # todo
         data = data._replace(previous=previous if previous else None)
 
-        await self._send_alert(data, "runepool summary alert")
+        await self._send_alert(data, "POL summary alert")
+
+    async def job_runepool_summary(self):
+        data = await self.runepool_fetcher.fetch()
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+
+        runepool_notifier = RunepoolStatsNotifier(self.deps)
+        previous = await runepool_notifier.load_last_event()
+
+        runepool_event = AlertRunepoolStats(
+            data.runepool,
+            previous,
+            usd_per_rune=usd_per_rune,
+        )
+
+        try:
+            await runepool_notifier.save_last_event(data.runepool)
+        except Exception as e:
+            self.logger.error(f'Failed to save last runepool event: {e!r}', exc_info=True)
+
+        await self._send_alert(runepool_event, "runepool summary alert")
 
     # maps job names to methods of this class
     AVAILABLE_TYPES = {
         PubAlertJobNames.TCY_SUMMARY: job_tcy_summary,
         PubAlertJobNames.SECURED_ASSET_SUMMARY: job_secured,
         PubAlertJobNames.POL_SUMMARY: job_pol_summary,
+        PubAlertJobNames.RUNE_POOL_SUMMARY: job_runepool_summary,
     }
 
     async def configure_jobs(self):
