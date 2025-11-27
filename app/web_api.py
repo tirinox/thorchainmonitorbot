@@ -37,7 +37,10 @@ class AppSettingsAPI:
 
         logging.info(f'Starting Web API for THORChain monitoring bot @ "{d.cfg.network_id}".')
 
-        d.loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+        d.loop = loop
         d.db = DB()
 
         self._node_watcher = NodeWatcherStorage(d.db)
