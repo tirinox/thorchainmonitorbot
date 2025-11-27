@@ -121,10 +121,12 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
                 streaming_quantity=event.ss.quantity,
                 streaming_interval=event.ss.interval,
                 tolerance_bps=10000,  # MAX
-                # affiliate='t' if event.memo.affiliates else '',  # does not matter for quote
+                affiliate='t' if event.memo.affiliates else '',  # does not matter for quote
                 affiliate_bps=event.memo.affiliate_fee_bp,
                 height=event.block_height,  # for historical quotes
             )
+            if 'message' in event.quote:
+                self.logger.warning(f'Failed to load quote for {event.tx_id}: {event["message"]}')
         except Exception as e:
             self.logger.warning(f'Failed to load quote for {event.tx_id}: {e}')
 
