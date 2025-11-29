@@ -254,7 +254,7 @@ class THORNameCache:
             return
 
         ex = self.thorname_expire if expiring else None
-        value = thorname.to_json() if thorname else self.NO_VALUE
+        value = thorname.to_dict() if thorname else self.NO_VALUE
         await self.db.redis.set(
             self._key_thorname_to_addresses(name),
             value=value,

@@ -108,6 +108,19 @@ class POLState(NamedTuple):
     def pnl_percent(self):
         return self.value.pnl / self.value.current_deposit if self.value.current_deposit else 0.0
 
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            j.get('usd_per_rune', 0.0),
+            ThorRunePoolPOL.from_json(j.get('value')),
+        )
+
+    def to_dict(self):
+        return {
+            'usd_per_rune': self.usd_per_rune,
+            'value': self.value.to_dict(),
+        }
+
 
 class RunepoolState(NamedTuple):
     pool: ThorRunePool
@@ -175,8 +188,7 @@ class AlertPOLState(NamedTuple):
             membership=membership,
         )
 
-    @property
-    def to_json_for_series(self):
+    def to_dict(self):
         return {
             'pol': self.current.value._asdict(),
             'membership': [
