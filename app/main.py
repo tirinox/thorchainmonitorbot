@@ -56,7 +56,7 @@ from lib.depcont import DepContainer
 from lib.emergency import EmergencyReport
 from lib.logs import WithLogger, setup_logs_from_config
 from lib.money import DepthCurve
-from lib.scheduler import Scheduler
+from lib.scheduler import PrivateScheduler
 from lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
 from models.memo import ActionType
 from models.mimir import MimirHolder
@@ -630,7 +630,7 @@ class App(WithLogger):
         scheduler_cfg = d.cfg.get('personal.scheduler')
         if scheduler_cfg.get('enabled', True):
             poll_interval = parse_timespan_to_seconds(scheduler_cfg.get_pure('poll_interval', '1m'))
-            d.scheduler = Scheduler(d.db.redis, 'PersonalLPReports', poll_interval)
+            d.scheduler = PrivateScheduler(d.db.redis, 'PersonalLPReports', poll_interval)
             tasks.append(d.scheduler)
 
             personal_lp_notifier = PersonalPeriodicNotificationService(d)

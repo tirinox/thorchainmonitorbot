@@ -9,7 +9,7 @@ from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
 from lib.logs import WithLogger
-from lib.scheduler import Scheduler
+from lib.scheduler import PrivateScheduler
 from lib.settings_manager import SettingsManager
 from lib.utils import generate_random_code
 from notify.channel import BoardMessage, ChannelDescriptor
@@ -87,7 +87,7 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
         else:
             await self.subscribe(tr, period)
 
-    async def on_data(self, sender: Scheduler, ident: str):
+    async def on_data(self, sender: PrivateScheduler, ident: str):
         tr = PersonalIdTriplet.from_key(ident)
         _ = asyncio.create_task(self._deliver_report_safe(tr))
 

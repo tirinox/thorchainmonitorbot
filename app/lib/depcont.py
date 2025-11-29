@@ -19,7 +19,7 @@ from lib.db import DB
 from lib.emergency import EmergencyReport
 from lib.http_ses import ObservableSession
 from lib.new_feature import NewFeatureManager, Features
-from lib.scheduler import Scheduler
+from lib.scheduler import PrivateScheduler
 from lib.settings_manager import SettingsManager
 from models.chains import ChainInfoHolder
 from models.mimir import MimirHolder
@@ -83,7 +83,7 @@ class DepContainer:
     affiliate_recorder = None
     route_recorder = None
 
-    scheduler: Optional[Scheduler] = None
+    scheduler: Optional[PrivateScheduler] = None
     pub_scheduler: Optional[PublicScheduler] = None
 
     gen_alert_settings_proc = None
