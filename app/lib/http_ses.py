@@ -98,8 +98,9 @@ class ObservableSession(aiohttp.ClientSession, WithLogger):
     def rps(self):
         return self._rps_counter.get_rps()
 
+    # noinspection PyTypeChecker
     @staticmethod
-    def clean_url(url: str):
+    def clean_url(url: str) -> str:
         return urlunparse(urlparse(url)._replace(query=''))
 
     @property
@@ -184,8 +185,8 @@ class ObservableSession(aiohttp.ClientSession, WithLogger):
                        fingerprint: Optional[bytes] = None, ssl_context: Optional[SSLContext] = None,
                        ssl: Optional[Union[SSLContext, bool, Fingerprint]] = None,
                        proxy_headers: Optional[LooseHeaders] = None,
-                       trace_request_ctx: Optional[SimpleNamespace] = None,
-                       read_bufsize: Optional[int] = None) -> ClientResponse:
+                       trace_request_ctx: Optional[SimpleNamespace] = None, read_bufsize: Optional[int] = None,
+                       **kwargs) -> ClientResponse:
         ts_start = now_ts()
         self._register_start(str_or_url, method, ts_start)
 
