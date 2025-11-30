@@ -1,11 +1,13 @@
+from typing import Optional
+
 from jobs.fetch.pol import RunePoolFetcher
 from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
 from jobs.fetch.tcy import TCYInfoFetcher
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from models.runepool import AlertRunepoolStats
+from lib.prev_state import PrevStateDB
+from models.runepool import AlertRunepoolStats, POLState, AlertPOLState, RunepoolState
 from notify.pub_scheduler import PublicScheduler
-from notify.public.runepool_notify import RunepoolStatsNotifier
 
 
 class PubAlertJobNames:
@@ -37,19 +39,23 @@ class PublicAlertJobExecutor(WithLogger):
         await self._send_alert(data, "secured asset summary alert")
 
     async def job_pol_summary(self):
-        data = await self.runepool_fetcher.fetch()
+        pvdb = PrevStateDB(self.deps.db, POLState)
+        previous: Optional[POLState] = await pvdb.get()
 
-        previous = None  # todo
+        data: AlertPOLState = await self.runepool_fetcher.fetch()
+
         data = data._replace(previous=previous if previous else None)
 
         await self._send_alert(data, "POL summary alert")
+
+        await pvdb.set(data.current)
 
     async def job_runepool_summary(self):
         data = await self.runepool_fetcher.fetch()
         usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
 
-        runepool_notifier = RunepoolStatsNotifier(self.deps)
-        previous = await runepool_notifier.load_last_event()
+        pvdb = PrevStateDB(self.deps.db, RunepoolState)
+        previous: Optional[RunepoolState] = await pvdb.get()
 
         runepool_event = AlertRunepoolStats(
             data.runepool,
@@ -57,12 +63,10 @@ class PublicAlertJobExecutor(WithLogger):
             usd_per_rune=usd_per_rune,
         )
 
-        try:
-            await runepool_notifier.save_last_event(data.runepool)
-        except Exception as e:
-            self.logger.error(f'Failed to save last runepool event: {e!r}', exc_info=True)
-
+        # AlertRunepoolStats
         await self._send_alert(runepool_event, "runepool summary alert")
+
+        await pvdb.set(data.runepool)
 
     # maps job names to methods of this class
     AVAILABLE_TYPES = {

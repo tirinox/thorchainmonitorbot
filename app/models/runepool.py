@@ -64,7 +64,7 @@ class AlertRunePoolAction(NamedTuple):
 
         return ThorAction(
             0, self.height, SUCCESS,
-            type=t.value,
+            type=str(t.value),
             pools=[],
             in_tx=in_tx_list, out_tx=out_tx_list,
             rune_amount=self.amount,
@@ -76,6 +76,7 @@ class AlertRunePoolAction(NamedTuple):
 class POLState(NamedTuple):
     usd_per_rune: float
     value: ThorRunePoolPOL
+    timestamp: int
 
     @property
     def is_zero(self):
@@ -113,12 +114,14 @@ class POLState(NamedTuple):
         return cls(
             j.get('usd_per_rune', 0.0),
             ThorRunePoolPOL.from_json(j.get('value')),
+            j.get('timestamp', 0),
         )
 
     def to_dict(self):
         return {
             'usd_per_rune': self.usd_per_rune,
             'value': self.value.to_dict(),
+            'timestamp': self.timestamp,
         }
 
 
@@ -127,6 +130,7 @@ class RunepoolState(NamedTuple):
     n_providers: int
     avg_deposit: float
     usd_per_rune: float = 0.0
+    timestamp: int = 0
 
     def to_dict(self):
         return {
@@ -134,6 +138,7 @@ class RunepoolState(NamedTuple):
             'n_providers': self.n_providers,
             'avg_deposit': self.avg_deposit,
             'usd_per_rune': self.usd_per_rune,
+            'timestamp': self.timestamp,
         }
 
     @classmethod
@@ -143,6 +148,7 @@ class RunepoolState(NamedTuple):
             j.get('n_providers', 0),
             j.get('avg_deposit', 0.0),
             j.get('usd_per_rune', 0.0),
+            j.get('timestamp', 0),
         )
 
     @property
@@ -181,7 +187,7 @@ class AlertPOLState(NamedTuple):
     @classmethod
     def load_from_series(cls, j):
         usd_per_rune = float(j.get('usd_per_rune', 1.0))
-        pol = POLState(usd_per_rune, ThorRunePoolPOL(**j.get('pol')))
+        pol = POLState(usd_per_rune, ThorRunePoolPOL(**j.get('pol')), j.get('timestamp', 0))
         membership = [PoolMemberDetails(**it) for it in j.get('membership', [])]
         return cls(
             current=pol,
