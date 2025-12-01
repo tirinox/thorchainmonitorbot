@@ -1,12 +1,16 @@
 import asyncio
 import random
 
+from lib.date_utils import now_ts
+from lib.db import DB
+from lib.texts import sep
 from models.sched import SchedJobCfg, IntervalCfg, CronCfg
 from notify.pub_configure import PublicAlertJobExecutor
+from notify.pub_scheduler import JobStats
 from tools.lib.lp_common import LpAppFramework
 
 
-async def dbg_run_public_scheduler(app: LpAppFramework):
+async def dbg_run_public_scheduler(app: LpAppFramework, with_demo_jobs: bool = True):
     pub_alert_executor = PublicAlertJobExecutor(app.deps)
     p = await pub_alert_executor.configure_jobs()
 
@@ -27,35 +31,66 @@ async def dbg_run_public_scheduler(app: LpAppFramework):
 
     await p.start()
 
-    await p.add_new_job(SchedJobCfg(
-        id="dbg_foo_job",
-        func="foo_job",
-        enabled=True,
-        variant='cron',
-        cron=CronCfg(
-            second='*/30',
-            minute='20-40'
-        )
-    ), allow_replace=True)
+    if with_demo_jobs:
+        await p.add_new_job(SchedJobCfg(
+            id="dbg_foo_job",
+            func="foo_job",
+            enabled=True,
+            variant='cron',
+            cron=CronCfg(
+                second='*/30',
+                minute='20-40'
+            )
+        ), allow_replace=True)
 
-    await p.add_new_job(SchedJobCfg(
-        id="dbg_failing_job",
-        func="failing_job",
-        enabled=True,
-        variant="interval",
-        interval=IntervalCfg(seconds=60),
-    ), allow_replace=True)
+        await p.add_new_job(SchedJobCfg(
+            id="dbg_failing_job",
+            func="failing_job",
+            enabled=True,
+            variant="interval",
+            interval=IntervalCfg(seconds=60),
+        ), allow_replace=True)
 
     await p.db_log.warning("start_debug_script", data="foo")
 
     await p.apply_scheduler_configuration()
 
 
+async def dbg_test_job_stats(app: LpAppFramework):
+    db: DB = app.deps.db
+    j = JobStats(db, 'dbg_lol_foo')
+    stats = await j.read_stats()
+    print(f"Initial stats: {stats}")
+    sep()
+    await j.set_is_running(True)
+    await j.set_is_dirty(True)
+    stats = await j.read_stats()
+    print(f"After setting running and dirty: {stats}")
+    sep()
+    await j.record_progress()
+    await j.record_success(12.0)
+    stats = await j.read_stats()
+    print(f"After recording success: {stats}")
+    sep()
+    await j.set_is_running(False)
+    await j.set_is_dirty(False)
+    await j.record_error(5.0, "Simulated error")
+    stats = await j.read_stats()
+    print(f"After recording error: {stats}")
+    sep()
+    await j.set_next_time_run(now_ts() + 1122.0)
+    stats = await j.read_stats()
+    print(f"After setting next run time: {stats}")
+    sep()
+    await j.reset()
+
+
 async def main():
     app = LpAppFramework()
     async with app:
-        await dbg_run_public_scheduler(app)
-        await asyncio.sleep(10_000)
+        # await dbg_run_public_scheduler(app)
+        # await asyncio.sleep(10_000)
+        await dbg_test_job_stats(app)
 
 
 if __name__ == '__main__':

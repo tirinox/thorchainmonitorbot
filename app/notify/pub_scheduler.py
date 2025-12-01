@@ -4,7 +4,7 @@ import functools
 import json
 import time
 from typing import List
-from typing import Optional, Any, Literal
+from typing import Optional, Literal
 
 from apscheduler.events import EVENT_JOB_MISSED, EVENT_JOB_ERROR
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -19,103 +19,40 @@ from models.sched import SchedJobCfg
 
 
 class JobStatsModel(BaseModel):
-    last_ts: float | None = None  # 1. last timestamp run
-    run_count: int = 0  # 2. total run times
-    last_elapsed: float | None = None  # 3. last elapsed seconds
-    avg_elapsed: float | None = None  # 4. avg elapsed seconds
-    last_status: Literal["ok", "error", "progress"] | None = None  # 5. last time whether error or not
-    last_error: str | None = None  # 6. last error message if it was error
+    last_ts: float | None = None
+    run_count: int = 0
+    last_elapsed: float | None = None
+    total_elapsed: float | None = None
+    last_status: Literal["ok", "error", "progress"] | None = None
+    last_error: str | None = None
     error_count: int = 0
     next_run_ts: float | None = None
     is_dirty: bool = False
     is_running: bool = False
+    creation_ts: float | None = None
 
+    @property
+    def avg_elapsed(self) -> float | None:
+        if self.run_count and self.total_elapsed:
+            return self.total_elapsed / self.run_count
+        return None
 
-# ---- Redis-backed stats ----
+    model_config = {
+        "extra": "ignore"  # ignore unknown Redis fields (safe)
+    }
+
 
 
 class JobStats(WithLogger):
-    FIELD_LAST_TS = "last_ts"
-    FIELD_RUN_COUNT = "run_count"
-    FIELD_LAST_ELAPSED = "last_elapsed"
-    FIELD_TOTAL_ELAPSED = "total_elapsed"  # internal for avg calc
-    FIELD_LAST_STATUS = "last_status"
-    FIELD_LAST_ERROR = "last_error"
-    FIELD_ERROR_COUNT = "error_count"
-    FIELD_NEXT_RUN_TS = "next_run_ts"
-    FIELD_IS_DIRTY = "is_dirty"
-    FIELD_IS_RUNNING = "is_running"
 
     def __init__(self, db: DB, key: str):
         super().__init__()
         self.db = db
         self.key = f"{PublicScheduler.DB_KEY_PREFIX}:Stats:{key}"
 
-    # --- simple helpers (not nested) ---
-
-    @staticmethod
-    def _to_str(value: Any) -> str | None:
-        if value is None:
-            return None
-        if isinstance(value, bytes):
-            return value.decode("utf-8")
-        return str(value)
-
-    @staticmethod
-    def _to_int(value: Any, default: int = 0) -> int:
-        s = JobStats._to_str(value)
-        if s is None or s == "":
-            return default
-        try:
-            return int(s)
-        except ValueError:
-            return default
-
-    @staticmethod
-    def _to_float(value: Any, default: float | None = None) -> float | None:
-        s = JobStats._to_str(value)
-        if s is None or s == "":
-            return default
-        try:
-            return float(s)
-        except ValueError:
-            return default
-
-    # --- public API ---
-
     async def read_stats(self) -> JobStatsModel:
         data = await self.db.redis.hgetall(self.key)
-        if not data:
-            # default Pydantic instance
-            return JobStatsModel()
-
-        last_ts = self._to_float(data.get(self.FIELD_LAST_TS))
-        run_count = self._to_int(data.get(self.FIELD_RUN_COUNT), default=0)
-        last_elapsed = self._to_float(data.get(self.FIELD_LAST_ELAPSED))
-        total_elapsed = self._to_float(data.get(self.FIELD_TOTAL_ELAPSED), default=None)
-        last_status = self._to_str(data.get(self.FIELD_LAST_STATUS))
-        last_error = self._to_str(data.get(self.FIELD_LAST_ERROR))
-        error_count = self._to_int(data.get(self.FIELD_ERROR_COUNT), default=0)
-        next_run_ts = self._to_float(data.get(self.FIELD_NEXT_RUN_TS))
-        is_dirty = bool(int(self._to_str(data.get(self.FIELD_IS_DIRTY, 0))))
-        is_running = bool(int(self._to_str(data.get(self.FIELD_IS_RUNNING, 0))))
-
-        avg_elapsed: float | None = None
-        if run_count > 0 and total_elapsed is not None:
-            avg_elapsed = total_elapsed / run_count
-
-        return JobStatsModel(
-            last_ts=last_ts,
-            run_count=run_count,
-            last_elapsed=last_elapsed,
-            avg_elapsed=avg_elapsed,
-            last_status=last_status,  # "ok" / "error" / "progress" / None
-            last_error=last_error,
-            error_count=error_count,
-            next_run_ts=next_run_ts,
-            is_dirty=is_dirty,
-            is_running=is_running,
-        )
+        return JobStatsModel(**data) if data else JobStatsModel()
 
     async def _update_common_fields(
             self,
@@ -131,36 +68,36 @@ class JobStats(WithLogger):
         r = self.db.redis
 
         # atomic increments
-        await r.hincrby(self.key, self.FIELD_RUN_COUNT, 1)
-        await r.hincrbyfloat(self.key, self.FIELD_TOTAL_ELAPSED, float(elapsed))
+        await r.hincrby(self.key, 'run_count', 1)
+        await r.hincrbyfloat(self.key, 'total_elapsed', float(elapsed))
 
         if status == "error":
-            await r.hincrby(self.key, self.FIELD_ERROR_COUNT, 1)
+            await r.hincrby(self.key, 'error_count', 1)
 
         # last-* fields
         mapping = {
-            self.FIELD_LAST_TS: ts,
-            self.FIELD_LAST_ELAPSED: float(elapsed),
-            self.FIELD_LAST_STATUS: status,
-            self.FIELD_LAST_ERROR: error_message or "",
+            'last_ts': ts,
+            'last_elapsed': float(elapsed),
+            'last_status': status,
+            'last_error': error_message or "",
         }
         await r.hset(self.key, mapping=mapping)
 
     async def record_progress(self):
         r = self.db.redis
-        await r.hset(self.key, self.FIELD_LAST_STATUS, "progress")
+        await r.hset(self.key, 'last_status', "progress")
 
     async def set_next_time_run(self, ts):
         r = self.db.redis
-        await r.hset(self.key, self.FIELD_NEXT_RUN_TS, ts)
+        await r.hset(self.key, 'next_run_ts', ts)
 
-    async def set_is_dirty(self, is_dirty):
+    async def set_is_dirty(self, is_dirty: bool):
         r = self.db.redis
-        await r.hset(self.key, self.FIELD_IS_DIRTY, str(int(is_dirty)))
+        await r.hset(self.key, 'is_dirty', int(is_dirty))
 
     async def set_is_running(self, is_running: bool):
         r = self.db.redis
-        await r.hset(self.key, self.FIELD_IS_RUNNING, str(int(is_running)))
+        await r.hset(self.key, 'is_running', int(is_running))
 
     async def record_success(self, elapsed: float, ts: Optional[float] = None) -> None:
         await self._update_common_fields(
