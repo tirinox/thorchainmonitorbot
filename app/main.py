@@ -19,21 +19,19 @@ from jobs.fetch.cached.last_block import LastBlockCached, LastBlockEventGenerato
 from jobs.fetch.cached.mimir import MimirCached
 from jobs.fetch.cached.nodes import NodeCache
 from jobs.fetch.cached.pool import PoolCache
+from jobs.fetch.cached.rune_market import RuneMarketInfoCache
 from jobs.fetch.cached.swap_history import SwapHistoryFetcher
 from jobs.fetch.cap import CapInfoFetcher
 from jobs.fetch.chain_id import ChainIdFetcher
 from jobs.fetch.chains import ChainStateFetcher
-from jobs.fetch.fair_price import RuneMarketInfoFetcher
-from jobs.fetch.key_stats import KeyStatsFetcher
 from jobs.fetch.mimir import ConstMimirFetcher
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from jobs.fetch.node_info import NodeInfoFetcher
 from jobs.fetch.pol import RunePoolFetcher
-from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
+from jobs.fetch.pool_price import PoolFetcher
 from jobs.fetch.queue import QueueFetcher
 from jobs.fetch.ruji_merge import RujiMergeStatsFetcher
-from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
-from jobs.fetch.tcy import TCYInfoFetcher
+from jobs.fetch.rune_market import RuneMarketInfoFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.tx import TxFetcher
 from jobs.node_churn import NodeChurnDetector
@@ -72,28 +70,22 @@ from notify.personal.personal_main import NodeChangePersonalNotifier
 from notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from notify.personal.scheduled import PersonalPeriodicNotificationService
 from notify.pub_configure import PublicAlertJobExecutor
-from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.burn_notify import BurnNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.cex_flow import CEXFlowNotifier
 from notify.public.chain_id_notify import ChainIdNotifier
 from notify.public.chain_notify import TradingHaltedNotifier
 from notify.public.dex_report_notify import DexReportNotifier
-from notify.public.key_metrics_notify import KeyMetricsNotifier
 from notify.public.mimir_notify import MimirChangedNotifier
 from notify.public.node_churn_notify import NodeChurnNotifier
-from notify.public.pol_notify import POLNotifier
 from notify.public.pool_churn_notify import PoolChurnNotifier
 from notify.public.price_div_notify import PriceDivergenceNotifier
 from notify.public.price_notify import PriceNotifier
 from notify.public.queue_notify import QueueNotifier, QueueStoreMetrics
 from notify.public.ruji_merge_stats import RujiMergeStatsTxNotifier
-from notify.public.runepool_notify import RunePoolTransactionNotifier, RunepoolStatsNotifier
+from notify.public.runepool_notify import RunePoolTransactionNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
-from notify.public.secured_notify import SecureAssetSummaryNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
-from notify.public.supply_notify import SupplyNotifier
-from notify.public.tcy_notify import TcySummaryNotifier
 from notify.public.trade_acc_notify import TradeAccTransactionNotifier, TradeAccSummaryNotifier
 from notify.public.transfer_notify import RuneMoveNotifier
 from notify.public.tx_notify import GenericTxNotifier, LiquidityTxNotifier, SwapTxNotifier, RefundTxNotifier
@@ -196,6 +188,7 @@ class App(WithLogger):
         d.mimir_cache = MimirCached(d.thor_connector, d.last_block_cache)
         d.pool_cache = PoolCache(d)
         d.node_cache = NodeCache(d)
+        d.market_info_cache = RuneMarketInfoCache(d)
 
         d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_cache)
         d.alert_presenter.name_service = d.name_service
@@ -473,14 +466,15 @@ class App(WithLogger):
             d.pool_fetcher.add_subscriber(notifier_pool_churn)
             notifier_pool_churn.add_subscriber(d.alert_presenter)
 
-        if d.cfg.get('best_pools.enabled', True):
-            # note: we don't use "pool_fetcher" here since PoolInfoFetcherMidgard gives richer info including APY
-            period = parse_timespan_to_seconds(d.cfg.best_pools.fetch_period)
-            mdg_pool_fetcher = PoolInfoFetcherMidgard(d, period)
-            d.best_pools_notifier = BestPoolsNotifier(d)
-            mdg_pool_fetcher.add_subscriber(d.best_pools_notifier)
-            d.best_pools_notifier.add_subscriber(d.alert_presenter)
-            tasks.append(mdg_pool_fetcher)
+        # note: use Public Alert Scheduler for Top Pools
+        # if d.cfg.get('best_pools.enabled', True):
+        #     # note: we don't use "pool_fetcher" here since PoolInfoFetcherMidgard gives richer info including APY
+        #     period = parse_timespan_to_seconds(d.cfg.best_pools.fetch_period)
+        #     mdg_pool_fetcher = PoolInfoFetcherMidgard(d, period)
+        #     d.best_pools_notifier = BestPoolsNotifier(d)
+        #     mdg_pool_fetcher.add_subscriber(d.best_pools_notifier)
+        #     d.best_pools_notifier.add_subscriber(d.alert_presenter)
+        #     tasks.append(mdg_pool_fetcher)
 
         if d.cfg.get('chain_halt_state.enabled', True):
             notifier_trade_halt = TradingHaltedNotifier(d)
@@ -500,17 +494,18 @@ class App(WithLogger):
             if achievements_enabled:
                 d.mimir_const_fetcher.add_subscriber(achievements)
 
-        if d.cfg.get('supply.enabled', True):
-            supply_notifier = SupplyNotifier(d)
-            d.rune_market_fetcher.add_subscriber(supply_notifier)
-            if d.rune_market_fetcher not in tasks:
-                tasks.append(d.rune_market_fetcher)
-            supply_notifier.add_subscriber(d.alert_presenter)
+        # if d.cfg.get('supply.enabled', True):
+        #     supply_notifier = SupplyNotifier(d)
+        #     d.rune_market_fetcher.add_subscriber(supply_notifier)
+        #     if d.rune_market_fetcher not in tasks:
+        #         tasks.append(d.rune_market_fetcher)
+        #     supply_notifier.add_subscriber(d.alert_presenter)
 
-            if d.cfg.get('supply.rune_burn.notification.enabled', True):
-                burn_notifier = BurnNotifier(d)
-                d.rune_market_fetcher.add_subscriber(burn_notifier)
-                burn_notifier.add_subscriber(d.alert_presenter)
+        # todo!
+        if d.cfg.get('supply.rune_burn.notification.enabled', True):
+            burn_notifier = BurnNotifier(d)
+            d.rune_market_fetcher.add_subscriber(burn_notifier)
+            burn_notifier.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('wallet_counter.enabled', True) and achievements_enabled:  # only used along with achievements
             wallet_counter = AccountNumberFetcher(d)
@@ -518,15 +513,16 @@ class App(WithLogger):
             if achievements_enabled:
                 wallet_counter.add_subscriber(achievements)
 
-        if d.cfg.get('key_metrics.enabled', True):
-            d.key_stat_fetcher = KeyStatsFetcher(d)
-            tasks.append(d.key_stat_fetcher)
-            if d.cfg.get('key_metrics.notification.enabled', False):
-                d.weekly_stats_notifier = KeyMetricsNotifier(d)
-                d.key_stat_fetcher.add_subscriber(d.weekly_stats_notifier)
-                d.weekly_stats_notifier.add_subscriber(d.alert_presenter)
-            if achievements_enabled:
-                d.key_stat_fetcher.add_subscriber(achievements)
+        # note: use Public Alert Scheduler for Key Metrics
+        # if d.cfg.get('key_metrics.enabled', True):
+        #     d.key_stat_fetcher = KeyStatsFetcher(d)
+        #     tasks.append(d.key_stat_fetcher)
+        #     if d.cfg.get('key_metrics.notification.enabled', False):
+        #         d.weekly_stats_notifier = KeyMetricsNotifier(d)
+        #         d.key_stat_fetcher.add_subscriber(d.weekly_stats_notifier)
+        #         d.weekly_stats_notifier.add_subscriber(d.alert_presenter)
+        #     if achievements_enabled:
+        #         d.key_stat_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('trade_accounts.enabled', True):
             # Trade account actions
@@ -542,6 +538,7 @@ class App(WithLogger):
 
             traed.add_subscriber(achievements)
 
+            # todo: move to pub sched
             if d.cfg.get('trade_accounts.summary.enabled', True):
                 tasks.append(d.trade_acc_fetcher)
 
@@ -567,17 +564,19 @@ class App(WithLogger):
         runepool_fetcher = RunePoolFetcher(d)
         need_runepool_data = False
 
-        if d.cfg.get('runepool.summary.enabled', True):
-            d.runepool_summary_notifier = RunepoolStatsNotifier(d)
-            runepool_fetcher.add_subscriber(d.runepool_summary_notifier)
-            d.runepool_summary_notifier.add_subscriber(d.alert_presenter)
-            need_runepool_data = True
+        # note: use Public Alert Scheduler for Runepool summary
+        # if d.cfg.get('runepool.summary.enabled', True):
+        #     d.runepool_summary_notifier = RunepoolStatsNotifier(d)
+        #     runepool_fetcher.add_subscriber(d.runepool_summary_notifier)
+        #     d.runepool_summary_notifier.add_subscriber(d.alert_presenter)
+        #     need_runepool_data = True
 
-        if d.cfg.get('runepool.pol_summary.enabled', True):
-            d.pol_notifier = POLNotifier(d)
-            runepool_fetcher.add_subscriber(d.pol_notifier)
-            d.pol_notifier.add_subscriber(d.alert_presenter)
-            need_runepool_data = True
+        # note: use Public Alert Scheduler for POL summary
+        # if d.cfg.get('runepool.pol_summary.enabled', True):
+        #     d.pol_notifier = POLNotifier(d)
+        #     runepool_fetcher.add_subscriber(d.pol_notifier)
+        #     d.pol_notifier.add_subscriber(d.alert_presenter)
+        #     need_runepool_data = True
 
         if need_runepool_data:
             tasks.append(runepool_fetcher)
@@ -606,23 +605,26 @@ class App(WithLogger):
                     notifier_ruji_merge.add_subscriber(d.alert_presenter)
                     ruji_stats_fetcher.add_subscriber(notifier_ruji_merge)
 
-        if d.cfg.get('secured_assets.enabled', True):
-            secured_asset_fetcher = SecuredAssetAssetFetcher(d)
-            tasks.append(secured_asset_fetcher)
+        # note: use Public Alert Scheduler for Secured Asset summary
+        # if d.cfg.get('secured_assets.enabled', True):
+        #     secured_asset_fetcher = SecuredAssetAssetFetcher(d)
+        #     tasks.append(secured_asset_fetcher)
+        #
+        #     if d.cfg.get('secured_assets.summary.notification.enabled', True):
+        #         d.secured_asset_notifier = SecureAssetSummaryNotifier(d)
+        #         secured_asset_fetcher.add_subscriber(d.secured_asset_notifier)
+        #         d.secured_asset_notifier.add_subscriber(d.alert_presenter)
+        # todo: secured assets achievements?
 
-            if d.cfg.get('secured_assets.summary.notification.enabled', True):
-                d.secured_asset_notifier = SecureAssetSummaryNotifier(d)
-                secured_asset_fetcher.add_subscriber(d.secured_asset_notifier)
-                d.secured_asset_notifier.add_subscriber(d.alert_presenter)
-
-        if d.cfg.get('tcy.enabled', True):
-            tcy_info_fetcher = TCYInfoFetcher(d)
-            tasks.append(tcy_info_fetcher)
-
-            if d.cfg.get('tcy.summary.notification.enabled', True):
-                d.tcy_summary_notifier = TcySummaryNotifier(d)
-                tcy_info_fetcher.add_subscriber(d.tcy_summary_notifier)
-                d.tcy_summary_notifier.add_subscriber(d.alert_presenter)
+        # note: use Public Alert Scheduler for TCY summary
+        # if d.cfg.get('tcy.enabled', True):
+        #     tcy_info_fetcher = TCYInfoFetcher(d)
+        #     tasks.append(tcy_info_fetcher)
+        #
+        #     if d.cfg.get('tcy.summary.notification.enabled', True):
+        #         d.tcy_summary_notifier = TcySummaryNotifier(d)
+        #         tcy_info_fetcher.add_subscriber(d.tcy_summary_notifier)
+        #         d.tcy_summary_notifier.add_subscriber(d.alert_presenter)
 
         # -------- SCHEDULER --------
 

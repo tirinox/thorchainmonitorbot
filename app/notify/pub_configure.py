@@ -25,6 +25,7 @@ class PubAlertJobNames:
     TOP_POOLS = "top_pools"
     SUPPLY_CHART = "supply_chart"
     RUNE_BURN_CHART = "rune_burn_chart"
+    TRADE_ASSET_SUMMARY = "trade_account_summary"
 
 
 class PublicAlertJobExecutor(WithLogger):
@@ -117,7 +118,7 @@ class PublicAlertJobExecutor(WithLogger):
         await pvdb.set(pool_map_struct)
 
     async def job_supply_chart(self):
-        market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.fetch()
+        market_info: RuneMarketInfo = await self.deps.market_info_cache.get()
 
         if not market_info or not (supply := market_info.supply_info):
             raise ValueError(f'Market Info is incomplete: {market_info = }. Ignoring!')
@@ -133,7 +134,11 @@ class PublicAlertJobExecutor(WithLogger):
 
     async def job_rune_burn_chart(self):
         # Placeholder for future implementation
-        pass
+        raise NotImplementedError("Rune burn chart job is not implemented yet.")
+
+    async def job_trade_account_summary(self):
+        # Placeholder for future implementation
+        raise NotImplementedError("Trade account summary job is not implemented yet.")
 
     # maps job names to methods of this class
     AVAILABLE_TYPES = {
@@ -145,6 +150,7 @@ class PublicAlertJobExecutor(WithLogger):
         PubAlertJobNames.TOP_POOLS: job_top_pools,
         PubAlertJobNames.SUPPLY_CHART: job_supply_chart,
         PubAlertJobNames.RUNE_BURN_CHART: job_rune_burn_chart,
+        PubAlertJobNames.TRADE_ASSET_SUMMARY: job_trade_account_summary,
     }
 
     async def configure_jobs(self):
