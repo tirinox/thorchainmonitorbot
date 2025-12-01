@@ -1,4 +1,5 @@
 import asyncio
+import binascii
 import dataclasses
 import datetime
 import hashlib
@@ -20,7 +21,6 @@ from itertools import tee
 from typing import Iterable, List, Any, Awaitable
 from urllib.parse import urlparse, urlunparse
 
-import binascii
 from pydantic import BaseModel
 from tqdm import tqdm
 
@@ -765,3 +765,7 @@ def hex_to_obj(hex_str: str) -> Any:
         raise ValueError("Invalid hex string: not valid hexadecimal.") from e
 
     return pickle.loads(data)
+
+
+def dict_sorted_by_keys(d: dict, key=None) -> dict:
+    return {k: d[k] for k in sorted(d.keys(), key=key)}
