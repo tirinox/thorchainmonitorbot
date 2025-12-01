@@ -5,8 +5,9 @@ from api.midgard.parser import get_parser_by_network_id
 from jobs.fetch.base import BaseFetcher
 from jobs.fetch.cached.pool import PoolCache
 from lib.config import Config
+from lib.date_utils import now_ts
 from lib.depcont import DepContainer
-from models.pool_info import PoolInfoMap
+from models.pool_info import PoolInfoMap, PoolMapStruct
 from models.price import PriceHolder
 
 
@@ -47,6 +48,15 @@ class PoolInfoFetcherMidgard(BaseFetcher):
     async def fetch(self):
         result = await self.get_pool_info_midgard()
         return result
+
+    async def fetch_as_pool_map_struct(self) -> Optional[PoolMapStruct]:
+        pool_info_map = await self.get_pool_info_midgard()
+        if pool_info_map:
+            return PoolMapStruct(
+                pool_map=pool_info_map,
+                timestamp=int(now_ts())
+            )
+        return None
 
     @staticmethod
     def _dbg_test_drop_one(pool_info_map: PoolInfoMap) -> PoolInfoMap:

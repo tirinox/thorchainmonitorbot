@@ -1547,7 +1547,7 @@ class RussianLocalization(BaseLocalization):
     TEXT_BP_TOTAL_LIQ = 'Общая ликвидность'
     TEXT_BP_24H_VOLUME = 'Объем за 24 часа'
 
-    def notification_text_best_pools(self, pd: EventPools, n_pools):
+    def notification_text_best_pools(self, pd: EventPools):
         return 'Топ пулов ликвидности THORChain'
 
     # ------------------------------------------

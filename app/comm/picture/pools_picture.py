@@ -3,7 +3,6 @@ from PIL import Image, ImageDraw
 from comm.localization.eng_base import BaseLocalization
 from comm.picture.common import BasePictureGenerator
 from comm.picture.resources import Resources
-from lib.constants import thor_to_float
 from lib.draw_utils import result_color, TC_LIGHTNING_BLUE
 from lib.money import pretty_money, short_money, short_dollar
 from lib.utils import async_wrap

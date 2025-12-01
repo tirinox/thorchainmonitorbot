@@ -249,7 +249,7 @@ class MetricsDialog(BaseDialog):
             await message.answer(self.loc.TEXT_BEST_POOLS_NO_DATA, disable_notification=True)
             return
 
-        text = self.loc.notification_text_best_pools(event, notifier.n_pools)
+        text = self.loc.notification_text_best_pools(event)
         generator = PoolPictureGenerator(self.loc, event)
         pic, pic_name = await generator.get_picture()
         await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)

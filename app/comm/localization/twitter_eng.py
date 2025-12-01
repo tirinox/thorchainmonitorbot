@@ -618,7 +618,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             text += no_pool_text
         return text.strip()
 
-    def notification_text_best_pools(self, pd: EventPools, n_pools):
+    def notification_text_best_pools(self, pd: EventPools):
         return 'THORChain top liquidity pools'
 
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):

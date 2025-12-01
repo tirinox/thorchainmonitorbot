@@ -29,7 +29,7 @@ class SupplyNotifier(INotified, WithDelegates, WithLogger):
         try:
             r = await self.deps.db.get_redis()
             if data := await r.get(self.DB_KEY_SUPPLY):
-                return RuneCirculatingSupply.from_dict(json.loads(data))
+                return RuneCirculatingSupply.from_json(json.loads(data))
         except Exception as e:
             self.logger.error(f'Failed to load supply info from DB: {e}')
 

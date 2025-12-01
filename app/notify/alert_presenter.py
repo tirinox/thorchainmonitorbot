@@ -436,7 +436,7 @@ class AlertPresenter(INotified, WithLogger):
         async def generate_pool_picture(loc: BaseLocalization, event: EventPools):
             pic_gen = PoolPictureGenerator(loc, event)
             pic, pic_name = await pic_gen.get_picture()
-            caption = loc.notification_text_best_pools(event, 5)
+            caption = loc.notification_text_best_pools(event)
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
         await self.deps.broadcaster.broadcast_to_all(generate_pool_picture, data)

@@ -2026,7 +2026,7 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_BEST_POOLS_NO_DATA = 'No pool data available. Please try again later.'
 
-    def notification_text_best_pools(self, pd: EventPools, n_pools):
+    def notification_text_best_pools(self, pd: EventPools):
         return 'THORChain top liquidity pools'
 
     # ------- INLINE BOT (English only) -------

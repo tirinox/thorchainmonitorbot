@@ -103,7 +103,7 @@ class InlineBotHandlerDialog(BaseDialog):
 
     async def _handle_pools_query(self, inline_query: InlineQuery):
         notifier: BestPoolsNotifier = self.deps.best_pools_notifier
-        text = self.loc.notification_text_best_pools(notifier.last_pool_detail, notifier.n_pools)
+        text = self.loc.notification_text_best_pools(notifier.last_pool_detail)
 
         ident = unique_ident([], prec='minute')
         await self._answer_results(inline_query, [
