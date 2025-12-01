@@ -49,9 +49,7 @@ class DepContainer:
     name_service: Optional[NameService] = None
 
     block_scanner = None  # type: 'BlockScanner'
-
     rune_market_fetcher = None  # type: 'RuneMarketInfoFetcher'
-
     pool_fetcher = None  # type: 'PoolFetcher'
     node_info_fetcher = None  # type: 'NodeInfoFetcher'
     mimir_const_fetcher = None  # type: 'ConstMimirFetcher'
@@ -100,6 +98,7 @@ class DepContainer:
     swap_history_cache: Optional[SwapHistoryFetcher] = None
     pool_cache = None
     node_cache = None
+    market_info_cache = None
 
     # price_holder: PriceHolder = field(default_factory=PriceHolder)
     queue_holder: QueueInfo = field(default_factory=QueueInfo.error)

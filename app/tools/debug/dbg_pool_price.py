@@ -3,7 +3,6 @@ import json
 import logging
 
 from api.aionode.connector import ThorConnector
-from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from lib.depcont import DepContainer
@@ -47,6 +46,7 @@ async def demo_cache_blocks(app: LpAppFramework):
     print(pools)
 
 
+# noinspection PyProtectedMember
 async def demo_top_pools(app: LpAppFramework):
     d = app.deps
     fetcher_pool_info = PoolInfoFetcherMidgard(d, 1)
@@ -56,7 +56,7 @@ async def demo_top_pools(app: LpAppFramework):
     await fetcher_pool_info.run_once()
 
 
-async def _create_price_alert(app, fill=False):
+async def _create_price_alert(app: LpAppFramework, fill=False):
     # use: redis_copy_keys.py to copy redis keys from prod to local
 
     if fill:
@@ -68,7 +68,7 @@ async def _create_price_alert(app, fill=False):
 
     price_notifier = PriceNotifier(app.deps)
 
-    market_info = await app.deps.rune_market_fetcher.fetch()
+    market_info = await app.deps.market_info_cache.get()
 
     event = await price_notifier.make_event(
         market_info,
@@ -129,30 +129,12 @@ async def debug_load_pools(app: LpAppFramework):
     print(len(pools))
 
 
-async def dbg_save_market_info(app):
-    info = await app.deps.rune_market_fetcher.fetch()
-    sep()
-    print(json.dumps(info, indent=2))
-    sep()
-
-
 async def dbg_new_price_picture(app):
     event = await _create_price_alert(app)
 
     ap: AlertPresenter = app.deps.alert_presenter
     await ap.on_data(None, event)
     await asyncio.sleep(5.0)
-
-
-async def dbg_price_picture_continuously(app):
-    mf: RuneMarketInfoFetcher = app.deps.rune_market_fetcher
-
-    price_notifier = PriceNotifier(app.deps)
-    mf.add_subscriber(price_notifier)
-
-    price_notifier.add_subscriber(app.deps.alert_presenter)
-
-    await mf.run()
 
 
 async def demo_load_historic_data(app):

@@ -1,39 +1,38 @@
 import asyncio
-from typing import Optional
 
 from api.midgard.urlgen import free_url_gen
-from jobs.fetch.base import BaseFetcher
-from jobs.fetch.circulating import RuneCirculatingSupplyFetcher, RuneCirculatingSupply, RuneHoldEntry, \
-    ThorRealms
-from jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_cap_rank, gecko_ticker_price, \
-    gecko_market_volume
-from lib.cache import async_cache_ignore_arguments
-from lib.constants import thor_to_float, DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
+from jobs.fetch.cached.base import CachedDataSource
+from jobs.fetch.circulating import RuneCirculatingSupplyFetcher
+from jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_volume, gecko_market_cap_rank, \
+    gecko_ticker_price
+from lib.constants import DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET, thor_to_float, ThorRealms
 from lib.date_utils import MINUTE
 from lib.depcont import DepContainer
 from lib.utils import retries
+from models.circ_supply import RuneCirculatingSupply, RuneHoldEntry
 from models.price import RuneMarketInfo
 
-RUNE_MARKET_INFO_CACHE_TIME = 3 * MINUTE
 
+class RuneMarketInfoCache(CachedDataSource[RuneMarketInfo]):
+    """
+    Fetches swap history from the cache.
+    """
 
-class RuneMarketInfoFetcher(BaseFetcher):
-    async def fetch(self) -> RuneMarketInfo:
-        market_info = await self.get_rune_market_info_cached()
-        # await self.price_recorder.write(market_info)
-        return market_info
-
-    def __init__(self, deps: DepContainer):
-        period = deps.cfg.as_interval('price.market_fetch_period', '8m')
-        super().__init__(deps, sleep_period=period)
-
-        self._prev_result: Optional[RuneMarketInfo] = None
-
+    def __init__(self, deps: DepContainer, cache_period=5 * MINUTE):
+        # pool = None means all pools, otherwise it filters by the specified pool
+        super().__init__(cache_period, retry_times=5, retry_exponential_growth_factor=2)
+        self.deps = deps
         self.cex_name = deps.cfg.as_str('price.cex_reference.cex', DEFAULT_CEX_NAME)
         self.cex_pair = deps.cfg.as_str('price.cex_reference.pair', DEFAULT_CEX_BASE_ASSET)
         self.step_delay = 1.0
 
         self.logger.info(f'Reference is RUNE/${self.cex_pair} at "{self.cex_name}" CEX.')
+
+    async def _load(self) -> RuneMarketInfo:
+        info = await self.get_rune_market_info_from_api()
+        if not info.is_valid:
+            raise ValueError(f"RuneMarketInfo is invalid: {info}")
+        return info
 
     @retries(5)
     async def total_pooled_rune(self):
@@ -131,14 +130,3 @@ class RuneMarketInfoFetcher(BaseFetcher):
             result.pools = await self.deps.pool_fetcher.fetch()
 
         return result
-
-    @async_cache_ignore_arguments(RUNE_MARKET_INFO_CACHE_TIME)
-    async def get_rune_market_info_cached(self) -> RuneMarketInfo:
-        try:
-            result = await self.get_rune_market_info_from_api()
-            if result.is_valid:
-                self._prev_result = result
-            return result
-        except Exception as e:
-            self.logger.exception(f'Failed to get fresh Rune market info! {e!r}', exc_info=True)
-            return self._prev_result

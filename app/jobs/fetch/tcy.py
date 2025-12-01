@@ -4,7 +4,6 @@ from jobs.fetch.base import BaseFetcher
 from jobs.fetch.circulating import RuneCirculatingSupplyFetcher
 from lib.constants import TCY_DENOM, TCY_SYMBOL, THOR_BASIS_POINT_MAX, thor_to_float
 from lib.depcont import DepContainer
-from models.mimir import MimirHolder
 from models.price import PriceHolder
 from models.tcy import TcyFullInfo, TcyStatus, VNXTcyData, TcyMimirs, TcyEarningsPoint
 
@@ -87,7 +86,7 @@ class TCYInfoFetcher(BaseFetcher):
             self.get_vnx_data(),
             self.get_tcy_total_supply(),
             self.deps.pool_cache.get(),
-            self.deps.rune_market_fetcher.get_rune_market_info_cached(),
+            self.deps.market_info_cache.get(),
             self.get_earnings(status.system_income_bps_to_tcy),
             self.get_tcy_trade_volume_24h()
         )

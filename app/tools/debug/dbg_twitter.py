@@ -26,7 +26,7 @@ async def twitter_post_supply(app: LpAppFramework):
 async def twitter_post_price(app: LpAppFramework):
     loc = app.deps.loc_man.default
 
-    market_info = await app.deps.rune_market_fetcher.fetch()
+    market_info = await app.deps.market_info_cache.get()
     if not market_info:
         print("No market info")
         return

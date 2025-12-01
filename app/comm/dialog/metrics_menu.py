@@ -7,7 +7,6 @@ from comm.picture.nodes_pictures import NodePictureGenerator
 from comm.picture.pools_picture import PoolPictureGenerator
 from comm.picture.queue_picture import queue_graph
 from comm.picture.supply_picture import SupplyPictureGenerator
-from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.ruji_merge import RujiMergeTracker
 from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from lib.draw_utils import img_to_bio
@@ -22,7 +21,6 @@ from notify.public.cex_flow import CEXFlowNotifier
 from notify.public.node_churn_notify import NodeChurnNotifier
 from notify.public.price_notify import PriceNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
-from notify.public.transfer_notify import RuneMoveNotifier
 from .base import BaseDialog, message_handler
 
 
@@ -196,7 +194,7 @@ class MetricsDialog(BaseDialog):
     async def show_price(self, message, period):
         await self.start_typing(message)
 
-        market_info = await self.deps.rune_market_fetcher.fetch()
+        market_info = await self.deps.market_info_cache.get()
 
         if not market_info:
             await message.answer(self.loc.TEXT_PRICE_NO_DATA, disable_notification=True)
@@ -272,8 +270,7 @@ class MetricsDialog(BaseDialog):
     async def show_rune_supply(self, message: Message):
         await self.start_typing(message)
 
-        market_fetcher: RuneMarketInfoFetcher = self.deps.rune_market_fetcher
-        market_info = await market_fetcher.fetch()
+        market_info = await self.deps.market_info_cache.get()
 
         text = self.loc.text_metrics_supply(market_info)
 

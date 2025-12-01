@@ -52,6 +52,7 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
             return None
 
         # save current max supply (as int, no decimal)
+        # note: this method mutates internal state, however it is a getter!
         await self.ts.add(max_supply=curr_max_supply_8)
 
         # then convert
@@ -66,7 +67,7 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
         supply_24h_ago = thor_to_float(supply_24h_ago)
         last_24h_burned_rune = max(0.0, supply_24h_ago - curr_max_supply)
 
-        supply_info = await self.deps.rune_market_fetcher.get_full_supply_info()
+        supply_info = await self.deps.market_info_cache.get()
 
         all_points = await self.get_last_supply_dataframe()
         all_points_resampled = await self.resample(all_points)
