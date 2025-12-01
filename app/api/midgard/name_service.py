@@ -13,6 +13,7 @@ from lib.date_utils import parse_timespan_to_seconds
 from lib.db import DB
 from lib.logs import WithLogger
 from lib.texts import shorten_text
+from lib.utils import dict_sorted_by_keys
 from models.memo import THORMemo
 from models.name import ThorName, make_virtual_thor_name, ThorNameAlias
 from models.node_info import NetworkNodes
@@ -397,6 +398,28 @@ class AffiliateManager(WithLogger):
             self.logger.info(f'Loaded {len(self.thorname_to_name)} affiliate names and '
                              f'{len(self.name_to_logo)} logos from {self.FILE}')
             self.check_integrity()
+
+    def add(self, code, name, logo=""):
+        code_simplified = self._simplify_name(code)
+        name_simplified = self._simplify_name(name)
+
+        self.thorname_to_name[code_simplified] = name
+
+        if name_simplified not in self.name_to_logo:
+            self.name_to_logo[name_simplified] = logo
+        else:
+            self.logger.warning(f'Affiliate logo for {name!r} already exists, not updating.')
+
+    def save(self):
+        data = {
+            'affiliates': {
+                'names': dict_sorted_by_keys(self.thorname_to_name),
+                'logos': dict_sorted_by_keys(self.name_to_logo),
+            }
+        }
+        with open(self.FILE, 'w', encoding='utf-8') as file:
+            yaml.dump(data, file, sort_keys=False, allow_unicode=True)
+        self.logger.info(f'Saved affiliate data to {self.FILE}')
 
     @staticmethod
     def _simplify_name(name: str) -> str:
