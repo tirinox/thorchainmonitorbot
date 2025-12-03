@@ -30,13 +30,12 @@ from jobs.fetch.node_info import NodeInfoFetcher
 from jobs.fetch.pol import RunePoolFetcher
 from jobs.fetch.pool_price import PoolFetcher
 from jobs.fetch.queue import QueueFetcher
-from jobs.fetch.ruji_merge import RujiMergeStatsFetcher
 from jobs.fetch.rune_market import RuneMarketInfoFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.tx import TxFetcher
 from jobs.node_churn import NodeChurnDetector
 from jobs.price_recorder import PriceRecorder
-from jobs.ruji_merge import RujiMergeTracker
+from jobs.rune_burn_recorder import RuneBurnRecorder
 from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.runepool import RunePoolEventDecoder
 from jobs.scanner.swap_extractor import SwapExtractorBlock
@@ -70,7 +69,6 @@ from notify.personal.personal_main import NodeChangePersonalNotifier
 from notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from notify.personal.scheduled import PersonalPeriodicNotificationService
 from notify.pub_configure import PublicAlertJobExecutor
-from notify.public.burn_notify import BurnNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.cex_flow import CEXFlowNotifier
 from notify.public.chain_id_notify import ChainIdNotifier
@@ -82,11 +80,10 @@ from notify.public.pool_churn_notify import PoolChurnNotifier
 from notify.public.price_div_notify import PriceDivergenceNotifier
 from notify.public.price_notify import PriceNotifier
 from notify.public.queue_notify import QueueNotifier, QueueStoreMetrics
-from notify.public.ruji_merge_stats import RujiMergeStatsTxNotifier
 from notify.public.runepool_notify import RunePoolTransactionNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
-from notify.public.trade_acc_notify import TradeAccTransactionNotifier, TradeAccSummaryNotifier
+from notify.public.trade_acc_notify import TradeAccTransactionNotifier
 from notify.public.transfer_notify import RuneMoveNotifier
 from notify.public.tx_notify import GenericTxNotifier, LiquidityTxNotifier, SwapTxNotifier, RefundTxNotifier
 from notify.public.version_notify import VersionNotifier
@@ -494,6 +491,7 @@ class App(WithLogger):
             if achievements_enabled:
                 d.mimir_const_fetcher.add_subscriber(achievements)
 
+        # note: use Public Alert Scheduler for Supply Alert
         # if d.cfg.get('supply.enabled', True):
         #     supply_notifier = SupplyNotifier(d)
         #     d.rune_market_fetcher.add_subscriber(supply_notifier)
@@ -501,11 +499,9 @@ class App(WithLogger):
         #         tasks.append(d.rune_market_fetcher)
         #     supply_notifier.add_subscriber(d.alert_presenter)
 
-        # todo!
-        if d.cfg.get('supply.rune_burn.notification.enabled', True):
-            burn_notifier = BurnNotifier(d)
-            d.rune_market_fetcher.add_subscriber(burn_notifier)
-            burn_notifier.add_subscriber(d.alert_presenter)
+        if d.cfg.get('supply.rune_burn.recorder.enabled', True):
+            burn_notifier = RuneBurnRecorder(d)
+            d.mimir_const_fetcher.add_subscriber(burn_notifier)
 
         if d.cfg.get('wallet_counter.enabled', True) and achievements_enabled:  # only used along with achievements
             wallet_counter = AccountNumberFetcher(d)
@@ -538,14 +534,15 @@ class App(WithLogger):
 
             traed.add_subscriber(achievements)
 
-            # todo: move to pub sched
-            if d.cfg.get('trade_accounts.summary.enabled', True):
-                tasks.append(d.trade_acc_fetcher)
-
-                d.tr_acc_summary_notifier = TradeAccSummaryNotifier(d)
-                d.tr_acc_summary_notifier.add_subscriber(d.alert_presenter)
-                d.trade_acc_fetcher.add_subscriber(d.tr_acc_summary_notifier)
-                d.trade_acc_fetcher.add_subscriber(achievements)
+            # note: use Public Alert Scheduler for TCY summary
+            # if d.cfg.get('trade_accounts.summary.enabled', True):
+            #     tasks.append(d.trade_acc_fetcher)
+            #
+            #     d.tr_acc_summary_notifier = TradeAccSummaryNotifier(d)
+            #     d.tr_acc_summary_notifier.add_subscriber(d.alert_presenter)
+            #     d.trade_acc_fetcher.add_subscriber(d.tr_acc_summary_notifier)
+            #     if achievements:
+            #       d.trade_acc_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('runepool.actions.enabled', True):
             runepool_decoder = RunePoolEventDecoder(d.db, d.pool_cache)
@@ -591,19 +588,20 @@ class App(WithLogger):
             chain_id_notifier.add_subscriber(d.alert_presenter)
             chain_id_job.add_subscriber(chain_id_notifier)
 
-        if d.cfg.get('rujira.enabled', True):
-            if d.cfg.get('rujira.merge.enabled', True):
-                # Record Merge txs real-time
-                ruji_merge_tracker = RujiMergeTracker(d)
-                d.block_scanner.add_subscriber(ruji_merge_tracker)
-
-                ruji_stats_fetcher = RujiMergeStatsFetcher(d)
-                tasks.append(ruji_stats_fetcher)
-
-                if d.cfg.get('rujira.merge.notification.enabled', True):
-                    notifier_ruji_merge = RujiMergeStatsTxNotifier(d)
-                    notifier_ruji_merge.add_subscriber(d.alert_presenter)
-                    ruji_stats_fetcher.add_subscriber(notifier_ruji_merge)
+        # note: deprecated features
+        # if d.cfg.get('rujira.enabled', True):
+        #     if d.cfg.get('rujira.merge.enabled', True):
+        #         # Record Merge txs real-time
+        #         ruji_merge_tracker = RujiMergeTracker(d)
+        #         d.block_scanner.add_subscriber(ruji_merge_tracker)
+        #
+        #         ruji_stats_fetcher = RujiMergeStatsFetcher(d)
+        #         tasks.append(ruji_stats_fetcher)
+        #
+        #         if d.cfg.get('rujira.merge.notification.enabled', True):
+        #             notifier_ruji_merge = RujiMergeStatsTxNotifier(d)
+        #             notifier_ruji_merge.add_subscriber(d.alert_presenter)
+        #             ruji_stats_fetcher.add_subscriber(notifier_ruji_merge)
 
         # note: use Public Alert Scheduler for Secured Asset summary
         # if d.cfg.get('secured_assets.enabled', True):

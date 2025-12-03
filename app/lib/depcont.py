@@ -100,7 +100,6 @@ class DepContainer:
     node_cache = None
     market_info_cache = None
 
-    # price_holder: PriceHolder = field(default_factory=PriceHolder)
     queue_holder: QueueInfo = field(default_factory=QueueInfo.error)
     mimir_const_holder: Optional[MimirHolder] = None
     chain_info: ChainInfoHolder = field(default_factory=ChainInfoHolder)

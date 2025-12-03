@@ -8,6 +8,7 @@ from comm.picture.pools_picture import PoolPictureGenerator
 from comm.picture.queue_picture import queue_graph
 from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.ruji_merge import RujiMergeTracker
+from jobs.rune_burn_recorder import RuneBurnRecorder
 from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from lib.draw_utils import img_to_bio
 from lib.texts import kbd
@@ -15,7 +16,6 @@ from models.net_stats import AlertNetworkStats
 from models.node_info import NodeInfo, NetworkNodes
 from models.ruji import AlertRujiraMergeStats
 from notify.public.best_pool_notify import BestPoolsNotifier
-from notify.public.burn_notify import BurnNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.cex_flow import CEXFlowNotifier
 from notify.public.node_churn_notify import NodeChurnNotifier
@@ -327,7 +327,7 @@ class MetricsDialog(BaseDialog):
     async def show_rune_burned(self, message: Message):
         await self.start_typing(message)
 
-        notifier = BurnNotifier(self.deps)
+        notifier = RuneBurnRecorder(self.deps)
         event = await notifier.get_event()
         if not event:
             await message.answer(self.loc.TEXT_BURN_NO_DATA, disable_notification=True)

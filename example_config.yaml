@@ -508,6 +508,9 @@ supply:
   notification:
     period: 7d
   rune_burn:
+    recorder:
+      enabled: true
+
     notification:
       enabled: true
       cooldown: 1d
