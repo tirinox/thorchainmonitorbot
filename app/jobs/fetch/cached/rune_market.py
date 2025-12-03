@@ -5,6 +5,7 @@ from jobs.fetch.cached.base import CachedDataSource
 from jobs.fetch.circulating import RuneCirculatingSupplyFetcher
 from jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_volume, gecko_market_cap_rank, \
     gecko_ticker_price
+from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from lib.constants import DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET, thor_to_float, ThorRealms
 from lib.date_utils import MINUTE
 from lib.depcont import DepContainer
@@ -51,11 +52,12 @@ class RuneMarketInfoCache(CachedDataSource[RuneMarketInfo]):
     @retries(5)
     async def get_full_supply_info(self) -> RuneCirculatingSupply:
         supply_info = await self.get_supply_fetcher().fetch()
-        supply_info = self._enrich_circulating_supply(supply_info)
+        supply_info = await self._enrich_circulating_supply(supply_info)
         return supply_info
 
-    def _enrich_circulating_supply(self, supply: RuneCirculatingSupply) -> RuneCirculatingSupply:
-        ns = self.deps.net_stats
+    async def _enrich_circulating_supply(self, supply: RuneCirculatingSupply) -> RuneCirculatingSupply:
+        ns = await NetworkStatisticsFetcher(self.deps, 0).fetch()
+
         if ns:
             supply.set_holder(RuneHoldEntry('bond_module', int(ns.total_active_bond_rune), 'Bonded', ThorRealms.BONDED))
             supply.set_holder(RuneHoldEntry('pool_module', int(ns.total_rune_lp), 'Pooled', ThorRealms.LIQ_POOL))

@@ -10,8 +10,8 @@ from models.net_stats import NetworkStats
 
 
 class NetworkStatisticsFetcher(BaseFetcher):
-    def __init__(self, deps: DepContainer):
-        sleep_period = parse_timespan_to_seconds(deps.cfg.net_summary.fetch_period)
+    def __init__(self, deps: DepContainer, sleep_period=0):
+        sleep_period = sleep_period or parse_timespan_to_seconds(deps.cfg.net_summary.fetch_period)
         super().__init__(deps, sleep_period)
         self.step_sleep = deps.cfg.sleep_step
         self.swap_stats_days = 15
@@ -51,7 +51,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         ns.reserve_rune = thor_to_float(j['totalReserve'])
 
         next_cool_cd = int(j['poolActivationCountdown'])
-        ns.next_pool_activation_ts = now_ts() + THOR_BLOCK_TIME * next_cool_cd
+        ns.next_pool_activation_ts = int(now_ts() + THOR_BLOCK_TIME * next_cool_cd)
 
         bonding_metrics: dict = j['bondMetrics']
         ns.total_active_bond_rune = thor_to_float(bonding_metrics['totalActiveBond'])
