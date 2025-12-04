@@ -88,9 +88,9 @@ async def dbg_test_job_stats(app: LpAppFramework):
 async def main():
     app = LpAppFramework()
     async with app:
-        # await dbg_run_public_scheduler(app)
-        # await asyncio.sleep(10_000)
-        await dbg_test_job_stats(app)
+        await dbg_run_public_scheduler(app)
+        await asyncio.sleep(10_000)
+        # await dbg_test_job_stats(app)
 
 
 if __name__ == '__main__':

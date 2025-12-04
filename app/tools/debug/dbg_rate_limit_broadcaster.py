@@ -8,7 +8,7 @@ from tools.lib.lp_common import LpAppFramework
 
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
-    async with lp_app(brief=True):
+    async with lp_app:
         # await my_test_circulating(lp_app)
         b: Broadcaster = lp_app.deps.broadcaster
 

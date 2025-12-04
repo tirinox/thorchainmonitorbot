@@ -31,7 +31,7 @@ async def dbg_aff_record1(app, send_alerts=False, catch_up=0, force_start_block=
 
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
-    async with app(brief=True):
+    async with app:
         # await dbg_aff_record1(app, catch_up=50)
         await dbg_aff_record1(app, one_block=False, force_start_block=19000000)
 

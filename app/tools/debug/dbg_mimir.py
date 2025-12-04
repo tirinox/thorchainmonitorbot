@@ -201,7 +201,7 @@ async def dbg_humanize_some_keys(app):
 
 async def run():
     app = LpAppFramework()
-    await app.prepare(brief=True)
+    
 
     mimir = await app.deps.mimir_cache.get()
     print(mimir)

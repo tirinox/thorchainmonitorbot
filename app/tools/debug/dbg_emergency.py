@@ -4,7 +4,7 @@ from tools.lib.lp_common import LpAppFramework
 
 
 async def main():
-    app = LpAppFramework(brief=True)
+    app = LpAppFramework
     async with app:
         er = app.deps.emergency
         asyncio.create_task(er.run_worker())

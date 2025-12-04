@@ -278,7 +278,7 @@ async def demo_avax_health(app: LpAppFramework):
 
 async def run():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         # await demo_avax_w3_low_level(app)
         # await demo_decoder(app)
         # await demo_full_tx_pipeline(app)

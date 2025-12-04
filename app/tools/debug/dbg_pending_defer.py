@@ -48,7 +48,7 @@ async def continuous_pending_scan(app):
 
 async def main():
     app = LpAppFramework(log_level=logging.DEBUG)
-    async with app(brief=True):
+    async with app:
         await continuous_pending_scan(app)
 
 

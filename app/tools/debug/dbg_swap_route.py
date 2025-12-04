@@ -65,7 +65,7 @@ async def tool_record_swap_routes(app: LpAppFramework, start_block: int = -1):
 
 async def main():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         await tool_record_swap_routes(app, -10 * 60 * 24 * 14)
 
 

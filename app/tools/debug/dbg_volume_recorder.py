@@ -82,7 +82,7 @@ async def tool_get_total_volume_and_tx_count(app: LpAppFramework):
 
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
-    async with app(brief=True):
+    async with app:
         await continuous_volume_recording(app)
         # await demo_show_price_graph(app)
         # await debug_post_price_graph_to_discord(app)

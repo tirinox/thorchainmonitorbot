@@ -42,7 +42,7 @@ async def main():
     # dbg_decode_thor_amounts()
 
     app = LpAppFramework(log_level=logging.DEBUG)
-    async with app(brief=True):
+    async with app:
         # await dbg_get_block(app, block=19999647)
         await dbg_get_block(app, block=1999647)
 

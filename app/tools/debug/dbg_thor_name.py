@@ -112,7 +112,7 @@ async def dbg_affiliate(app):
 
 async def run():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         ns = app.deps.name_service
         await dbg_name_to_addr(ns)
         await dbg_addr_to_name(ns)

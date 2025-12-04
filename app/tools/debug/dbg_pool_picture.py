@@ -12,7 +12,7 @@ from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 async def main():
     lp_app = LpAppFramework()
-    async with lp_app(brief=True):
+    async with lp_app:
         mdg = PoolInfoFetcherMidgard(lp_app.deps, 10)
         pools = await mdg.get_pool_info_midgard()
         earnings = await lp_app.deps.midgard_connector.query_earnings(count=15, interval='day')

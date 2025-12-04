@@ -33,7 +33,7 @@ async def online_data_test(app: LpAppFramework):
 
 async def run():
     app = LpAppFramework()
-    await app.prepare(brief=True)
+    
     await online_data_test(app)
 
 

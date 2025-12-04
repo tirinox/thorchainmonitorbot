@@ -164,7 +164,7 @@ async def demo_runepool_stats(app: LpAppFramework):
 
 async def run():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         # await demo_decode_runepool_deposit(app, DEPOSIT_TX_HEIGHT)
         # await demo_decode_runepool_deposit(app, WITHDRAW_TX_HEIGHT)
         await demo_simulate_withdrawal(app)

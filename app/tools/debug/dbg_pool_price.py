@@ -157,7 +157,7 @@ async def dbg_pool_cache(app: LpAppFramework):
 
 async def main():
     app = LpAppFramework(log_level=logging.DEBUG)
-    async with app(brief=True):
+    async with app:
         # await find_anomaly(app)
         # await demo_cache_blocks(app)
         # await demo_top_pools(app)

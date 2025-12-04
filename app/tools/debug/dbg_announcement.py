@@ -7,7 +7,7 @@ from tools.lib.lp_common import LpAppFramework
 async def main():
     app = LpAppFramework()
 
-    async with app(brief=True):
+    async with app:
         loc = app.deps.loc_man[Language.RUSSIAN]
         f = loc._conditional_announcement
 

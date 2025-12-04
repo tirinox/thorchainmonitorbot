@@ -122,7 +122,7 @@ async def dbg_one_finished_swap(app, tx_id):
 
 async def run():
     app = LpAppFramework(log_level=logging.DEBUG)
-    async with app(brief=True):
+    async with app:
         # out_asset is turned out "secured" but it is not. investigate!
         # await dbg_one_finished_swap(app, "59E9DEA85C268338266D76E872DF9D07DB362FB2C06AB34D3AA7F65FF4E79757")
         # await dbg_one_finished_swap(app, "D07FE81C65120782E47B729971DC9ADD5736AC9420A5FC0DA63DBCAC3BA93626")

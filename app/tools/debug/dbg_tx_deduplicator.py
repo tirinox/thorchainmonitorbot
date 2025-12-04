@@ -54,7 +54,7 @@ async def dbg_accuracy_benchmark(app: LpAppFramework):
 
 async def main():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         # await collect_info_about_existing_dedup(app)
         await dbg_accuracy_benchmark(app)
 

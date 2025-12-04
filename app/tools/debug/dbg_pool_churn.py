@@ -41,7 +41,7 @@ async def dbg_simulate_pool_churn(d: DepContainer):
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app:
-        await lp_app.prepare(brief=True)
+        
         await dbg_simulate_pool_churn(lp_app.deps)
 
 

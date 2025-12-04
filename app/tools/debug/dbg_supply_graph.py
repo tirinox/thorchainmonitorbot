@@ -99,7 +99,7 @@ async def debug_network_stats(app: LpAppFramework):
 
 async def run():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         # await app.deps.pool_fetcher.fetch()
 
         pic, _ = await get_supply_pic(app, cached=True)

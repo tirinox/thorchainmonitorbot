@@ -64,7 +64,7 @@ async def twitter_post_burned_rune(app: LpAppFramework):
 async def main():
     app = LpAppFramework()
 
-    async with app(brief=True):
+    async with app:
         print(os.getcwd())
         # cfg = Config('../../../temp/twitter.yaml')
         cfg = app.deps.cfg

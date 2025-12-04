@@ -51,7 +51,7 @@ async def dbg_tcy_post_alert(app):
 
 async def main():
     app = LpAppFramework(log_level=logging.DEBUG)
-    async with app(brief=True):
+    async with app:
         # await dbg_tcy_data_collect(app)
         # await dbg_tcy_earnings(app)
         # await dbg_tcy_pool_depth_history(app)

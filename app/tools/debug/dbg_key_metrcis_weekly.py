@@ -219,7 +219,7 @@ async def dbg_recursive_asdict(app: LpAppFramework):
 
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
-    async with app(brief=True):
+    async with app:
         await app.deps.db.get_redis()
         app.deps.user_counter = UserCounterMiddleware(app.deps)
 

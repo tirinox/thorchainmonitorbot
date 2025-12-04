@@ -349,7 +349,7 @@ async def dbg_refund_spam(app):
 
 async def main():
     app = LpAppFramework()
-    await app.prepare(brief=True)
+    
 
     # await midgard_test_donate(app, mdg, tx_parser)
     # await midgard_test_1(app, mdg, tx_parser)

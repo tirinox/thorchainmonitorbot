@@ -34,7 +34,7 @@ async def demo_all_locs(app: LpAppFramework):
 
 async def run():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         # await demo_live_network_ident_changes(app)
         await demo_all_locs(app)
 

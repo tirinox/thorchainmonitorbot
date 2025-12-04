@@ -10,7 +10,7 @@ from tools.lib.lp_common import LpAppFramework
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app:
-        await lp_app.prepare(brief=True)
+        
         address = os.environ.get('EXAMPLE_ADDRESS')
         if not address:
             raise ValueError('EXAMPLE_ADDRESS env variable is not set')

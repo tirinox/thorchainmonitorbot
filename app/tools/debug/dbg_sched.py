@@ -50,7 +50,7 @@ async def demo_ignore_old_4(sched: PrivateScheduler):
 
 async def run():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         r = await app.deps.db.get_redis()
         sched = PrivateScheduler(r, 'demo', poll_interval=1)
         sched.add_subscriber(Receiver(tag='scheduler-demo', callback=handler))
