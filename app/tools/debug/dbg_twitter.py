@@ -6,7 +6,7 @@ from comm.twitter.twitter_bot import TwitterBot, TwitterBotMock
 from lib.date_utils import DAY
 from notify.channel import BoardMessage, ChannelDescriptor
 from notify.public.burn_notify import BurnNotifier
-from notify.public.price_notify import PriceNotifier
+from notify.public.price_notify import PriceChangeNotifier
 from tools.debug.dbg_supply_graph import get_supply_pic
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
@@ -31,7 +31,7 @@ async def twitter_post_price(app: LpAppFramework):
         print("No market info")
         return
 
-    pn = PriceNotifier(app.deps)
+    pn = PriceChangeNotifier(app.deps)
     pn.price_graph_period = 7 * DAY
     event = await pn.make_event(
         market_info,

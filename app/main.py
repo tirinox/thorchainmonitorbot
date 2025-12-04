@@ -78,7 +78,7 @@ from notify.public.mimir_notify import MimirChangedNotifier
 from notify.public.node_churn_notify import NodeChurnNotifier
 from notify.public.pool_churn_notify import PoolChurnNotifier
 from notify.public.price_div_notify import PriceDivergenceNotifier
-from notify.public.price_notify import PriceNotifier
+from notify.public.price_notify import PriceChangeNotifier
 from notify.public.queue_notify import QueueNotifier, QueueStoreMetrics
 from notify.public.runepool_notify import RunePoolTransactionNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
@@ -284,15 +284,12 @@ class App(WithLogger):
             d.user_counter = UserCounterMiddleware(d)
             d.block_scanner.add_subscriber(d.user_counter)
 
-            # fixme: enable this later
-            # d.affiliate_recorder = AffiliateRecorder(d)
-            # d.block_scanner.add_subscriber(d.affiliate_recorder)
-
             if d.cfg.get('token_transfer.enabled', True):
                 d.rune_move_notifier = RuneMoveNotifier(d)
                 d.rune_move_notifier.add_subscriber(d.alert_presenter)
                 transfer_decoder.add_subscriber(d.rune_move_notifier)
 
+            # todo: move to PubSched
             if d.cfg.get('token_transfer.flow_summary.enabled', True):
                 cex_flow_notifier = CEXFlowNotifier(d)
                 cex_flow_notifier.add_subscriber(d.alert_presenter)
@@ -441,8 +438,7 @@ class App(WithLogger):
             price_rec = PriceRecorder(d.db)
             d.rune_market_fetcher.add_subscriber(price_rec)
 
-            # handles RuneMarketInfo
-            notifier_price = PriceNotifier(d)
+            notifier_price = PriceChangeNotifier(d)
             notifier_price.add_subscriber(d.alert_presenter)
 
             d.rune_market_fetcher.add_subscriber(notifier_price)

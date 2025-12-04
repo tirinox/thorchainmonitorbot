@@ -7,6 +7,7 @@ from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
 from jobs.fetch.tcy import TCYInfoFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.rune_burn_recorder import RuneBurnRecorder
+from lib.date_utils import DAY
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.prev_state import PrevStateDB
@@ -17,6 +18,7 @@ from models.price import PriceHolder, RuneMarketInfo
 from models.runepool import AlertRunepoolStats, POLState, AlertPOLState, RunepoolState
 from models.trade_acc import AlertTradeAccountStats
 from notify.pub_scheduler import PublicScheduler
+from notify.public.price_notify import PriceChangeNotifier
 
 
 class PubAlertJobNames:
@@ -29,6 +31,9 @@ class PubAlertJobNames:
     SUPPLY_CHART = "supply_chart"
     RUNE_BURN_CHART = "rune_burn_chart"
     TRADE_ASSET_SUMMARY = "trade_account_summary"
+
+    PRICE_ALERT = "price_alert"
+    RUNE_CEX_FLOW = "rune_cex_flow"
 
 
 class PublicAlertJobExecutor(WithLogger):
@@ -146,6 +151,19 @@ class PublicAlertJobExecutor(WithLogger):
         data: AlertTradeAccountStats = await self.trade_acc_fetcher.fetch()
         await self._send_alert(data, "trade account stats")
 
+    async def job_price_alert(self):
+        pn = PriceChangeNotifier(self.deps)
+        pn.price_graph_period = 7 * DAY
+        market_info: RuneMarketInfo = await self.deps.market_info_cache.get()
+        alert = await pn.make_event(
+            market_info,
+            ath=False, last_ath=None
+        )
+        await self._send_alert(alert, "price alert")
+
+    async def job_rune_cex_flow(self):
+        raise NotImplementedError("Rune CEX flow job is not implemented yet.")
+
     # maps job names to methods of this class
     AVAILABLE_TYPES = {
         PubAlertJobNames.TCY_SUMMARY: job_tcy_summary,
@@ -157,6 +175,8 @@ class PublicAlertJobExecutor(WithLogger):
         PubAlertJobNames.SUPPLY_CHART: job_supply_chart,
         PubAlertJobNames.RUNE_BURN_CHART: job_rune_burn_chart,
         PubAlertJobNames.TRADE_ASSET_SUMMARY: job_trade_account_summary,
+        PubAlertJobNames.PRICE_ALERT: job_price_alert,
+        PubAlertJobNames.RUNE_CEX_FLOW: job_rune_cex_flow,
     }
 
     async def configure_jobs(self):

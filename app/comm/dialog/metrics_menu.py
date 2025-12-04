@@ -19,7 +19,7 @@ from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.cex_flow import CEXFlowNotifier
 from notify.public.node_churn_notify import NodeChurnNotifier
-from notify.public.price_notify import PriceNotifier
+from notify.public.price_notify import PriceChangeNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
 from .base import BaseDialog, message_handler
 
@@ -200,12 +200,9 @@ class MetricsDialog(BaseDialog):
             await message.answer(self.loc.TEXT_PRICE_NO_DATA, disable_notification=True)
             return
 
-        pn = PriceNotifier(self.deps)
-        pn.price_graph_period = period or pn.price_graph_period
-        alert = await pn.make_event(
-            market_info,
-            ath=False, last_ath=None
-        )
+        pn = PriceChangeNotifier(self.deps)
+        pn.price_graph_period = 7 * DAY
+        alert = await pn.make_event(market_info, ath=False, last_ath=None)
 
         price_text = self.loc.notification_text_price_update(alert)
 
