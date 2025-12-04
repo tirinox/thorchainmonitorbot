@@ -62,7 +62,6 @@ def get_app():
     async def _get_app():
         app = LpAppFramework(log_level=logging.INFO)
         app.deps.loop = loop
-        await app.prepare(brief=True)
         return app
 
     return run_coro(_get_app())
