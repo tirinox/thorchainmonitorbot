@@ -24,7 +24,7 @@ async def dbg_run_one_job(app: LpAppFramework):
     # await ex.job_key_metrics()
     # await ex.job_tcy_summary()
     # await ex.job_secured_asset_summary()
-    await ex.job_rune_cex_flow()
+    # await ex.job_rune_cex_flow()
     await ex.job_price_alert()
 
 
