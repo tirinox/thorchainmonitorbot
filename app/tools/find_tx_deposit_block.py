@@ -19,7 +19,7 @@ def is_our_tx(tx: ThorObservedTx, tx_id_to_find):
 
 async def run():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         tx_id = os.environ.get("TXID") or input("Enter tx_id: ")
         tx_id = tx_id.lower().strip()
         print("Tx id:", tx_id)

@@ -15,7 +15,7 @@ def recursive_sort(data):
 
 async def main():
     lp_app = LpAppFramework()
-    async with lp_app(brief=True):
+    async with lp_app:
         mimir_rules = MimirNameRules()
         mimir_rules.load(MIMIR_DICT_FILENAME)
         mimir_rules.rules = recursive_sort(mimir_rules.rules)

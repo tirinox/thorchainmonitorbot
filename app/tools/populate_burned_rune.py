@@ -51,7 +51,7 @@ async def run():
         print('Aborted')
         return
 
-    async with app(brief=True):
+    async with app:
         notifier = RuneBurnRecorder(app.deps)
         await notifier.erase_and_populate_from_history(
             period=args.time_step,

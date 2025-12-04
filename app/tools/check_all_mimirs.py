@@ -10,7 +10,7 @@ async def main():
     # print(try_to_decompose_mimir_name('MAXNODETOCHURNOUTSUCKFORLOWVERSIONGGG'))
 
     lp_app = LpAppFramework(log_level=logging.INFO)
-    async with lp_app(brief=True):
+    async with lp_app:
 
         mimir = await lp_app.deps.mimir_cache.get_mimir_holder()
 

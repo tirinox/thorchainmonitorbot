@@ -11,7 +11,7 @@ STAGENET_NODE = "https://stagenet-thornode.ninerealms.com/"
 
 async def main():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         d = app.deps
 
         stagenet_thor = ThorConnector(STAGENET, d.session)

@@ -6,7 +6,7 @@ from tools.lib.lp_common import LpAppFramework
 
 async def main():
     lp_app = LpAppFramework()
-    async with lp_app(brief=True):
+    async with lp_app:
         mimir_rules = MimirNameRules()
         mimir_rules.load(MIMIR_DICT_FILENAME)
 

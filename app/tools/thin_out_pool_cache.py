@@ -38,7 +38,7 @@ async def thin_out_pool_cache(app):
 
 async def main():
     app = LpAppFramework(log_level=logging.DEBUG)
-    async with app(brief=True):
+    async with app:
         await thin_out_pool_cache(app)
 
 
