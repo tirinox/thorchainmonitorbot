@@ -5,6 +5,8 @@ from jobs.fetch.pol import RunePoolFetcher
 from jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
 from jobs.fetch.tcy import TCYInfoFetcher
+from jobs.fetch.trade_accounts import TradeAccountFetcher
+from jobs.rune_burn_recorder import RuneBurnRecorder
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.prev_state import PrevStateDB
@@ -13,6 +15,7 @@ from models.key_stats_model import AlertKeyStats
 from models.pool_info import EventPools, PoolMapStruct
 from models.price import PriceHolder, RuneMarketInfo
 from models.runepool import AlertRunepoolStats, POLState, AlertPOLState, RunepoolState
+from models.trade_acc import AlertTradeAccountStats
 from notify.pub_scheduler import PublicScheduler
 
 
@@ -36,6 +39,7 @@ class PublicAlertJobExecutor(WithLogger):
         self.secured_asset_fetcher = SecuredAssetAssetFetcher(deps)
         self.runepool_fetcher = RunePoolFetcher(deps)
         self.key_stats_fetcher = KeyStatsFetcher(deps)
+        self.trade_acc_fetcher = TradeAccountFetcher(deps)
 
     async def _send_alert(self, data, alert_type: str):
         if not data:
@@ -46,7 +50,7 @@ class PublicAlertJobExecutor(WithLogger):
         data = await self.tcy_info_fetcher.fetch()
         await self._send_alert(data, "tcy summary alert")
 
-    async def job_secured(self):
+    async def job_secured_asset_summary(self):
         data = await self.secured_asset_fetcher.fetch()
         await self._send_alert(data, "secured asset summary alert")
 
@@ -133,17 +137,19 @@ class PublicAlertJobExecutor(WithLogger):
         await pvdb.set(market_info.supply_info)
 
     async def job_rune_burn_chart(self):
-        # Placeholder for future implementation
-        raise NotImplementedError("Rune burn chart job is not implemented yet.")
+        recorder = RuneBurnRecorder(self.deps)
+        if not (event := await recorder.get_event()):
+            raise ValueError("No rune burn event data available!")
+        await self._send_alert(event, "rune burn chart alert")
 
     async def job_trade_account_summary(self):
-        # Placeholder for future implementation
-        raise NotImplementedError("Trade account summary job is not implemented yet.")
+        data: AlertTradeAccountStats = await self.trade_acc_fetcher.fetch()
+        await self._send_alert(data, "trade account stats")
 
     # maps job names to methods of this class
     AVAILABLE_TYPES = {
         PubAlertJobNames.TCY_SUMMARY: job_tcy_summary,
-        PubAlertJobNames.SECURED_ASSET_SUMMARY: job_secured,
+        PubAlertJobNames.SECURED_ASSET_SUMMARY: job_secured_asset_summary,
         PubAlertJobNames.POL_SUMMARY: job_pol_summary,
         PubAlertJobNames.RUNE_POOL_SUMMARY: job_runepool_summary,
         PubAlertJobNames.KEY_METRICS: job_key_metrics,

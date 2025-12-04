@@ -3,7 +3,6 @@ from lib.cooldown import Cooldown
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from models.mimir import MimirTuple
 
 
 class BurnNotifier(INotified, WithDelegates, WithLogger):
@@ -14,7 +13,7 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
         self.cd = Cooldown(self.deps.db, 'RuneBurn', notify_cd_sec)
         self.recorder = RuneBurnRecorder(self.deps)
 
-    async def on_data(self, sender, _: MimirTuple):
+    async def on_data(self, sender, _):
         if event := await self.recorder.get_event():
             if await self.cd.can_do():
                 await self.pass_data_to_listeners(event)

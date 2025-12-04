@@ -20,8 +20,12 @@ class RuneBurnRecorder(INotified, WithLogger):
         self.tally_period = deps.cfg.as_int('supply.rune_burn.notification.tally_period_days', 7) * DAY
         self.ts = TimeSeries('RuneMaxSupply', deps.db)
 
-    def get_current_max_supply(self):
-        mimir = self.deps.mimir_const_holder
+    async def on_data(self, sender, data):
+        curr_max_supply_8 = self.get_current_max_supply()
+        if curr_max_supply_8:
+            await self.ts.add(max_supply=curr_max_supply_8)
+
+    def get_current_max_supply(self, mimir):
         if not mimir:
             self.logger.error('Mimir constants are not loaded yet!')
             return None
@@ -38,13 +42,7 @@ class RuneBurnRecorder(INotified, WithLogger):
             return None
         return curr_max_supply_8
 
-    async def on_data(self, sender, data):
-        curr_max_supply_8 = self.get_current_max_supply()
-        if curr_max_supply_8:
-            await self.ts.add(max_supply=curr_max_supply_8)
-
-    def get_income_burn_bps(self):
-        mimir = self.deps.mimir_const_holder
+    def get_income_burn_bps(self, mimir):
         if not mimir:
             self.logger.error('Mimir constants are not loaded yet!')
             return None
@@ -58,8 +56,9 @@ class RuneBurnRecorder(INotified, WithLogger):
         return system_income_burn_bp
 
     async def get_event(self) -> Optional[EventRuneBurn]:
-        curr_max_supply_8 = self.get_current_max_supply()
-        system_income_burn_bp = self.get_income_burn_bps()
+        mimir = await self.deps.mimir_cache.get_mimir_holder()
+        curr_max_supply_8 = self.get_current_max_supply(mimir)
+        system_income_burn_bp = self.get_income_burn_bps(mimir)
 
         # then convert
         curr_max_supply = thor_to_float(curr_max_supply_8)
