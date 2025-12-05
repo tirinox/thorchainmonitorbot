@@ -1,3 +1,5 @@
+import logging
+
 import streamlit as st
 
 from notify.pub_configure import PublicAlertJobExecutor
@@ -19,11 +21,13 @@ def confirm_run_now(_function):
 
 if function := st.session_state.get('run_job_function'):
     sched: PublicScheduler = app.deps.pub_scheduler
-    try:
-        run_coro(sched.post_command(sched.COMMAND_RUN_NOW, func=function))
+
+    result = run_coro(sched.post_command(sched.COMMAND_RUN_NOW, func=function))
+    if result == 'success':
         st.success(f"Job '{function}' executed successfully.")
-    except Exception as e:
-        st.error(f"Error running job '{function}': {e}")
+    else:
+        st.error(f"Failed to execute job '{function}': {result}")
+
     del st.session_state['run_job_function']
 
 
