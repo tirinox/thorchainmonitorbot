@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from lib.config import Config
 from lib.db import DB
-from lib.interchan import PubSubChannel
+from lib.interchan import SimpleRPC
 from lib.log_db import RedisLog
 from lib.logs import WithLogger
 from models.sched import SchedJobCfg
@@ -43,7 +43,6 @@ class JobStatsModel(BaseModel):
 
 
 class JobStats(WithLogger):
-
     def __init__(self, db: DB, key: str):
         super().__init__()
         self.db = db
@@ -147,7 +146,7 @@ class PublicScheduler(WithLogger):
         self._registered_jobs = {}
         self._scheduled_jobs: List[SchedJobCfg] = []
         self.db_log = RedisLog(self.DB_KEY_PREFIX, db, max_lines=10_000)
-        self._subscriber = PubSubChannel(db, self.DB_KEY_COMM_CHAN, self._on_control_message)
+        self._rpc = SimpleRPC(db, channel_prefix=self.DB_KEY_PREFIX)
 
     async def clear_job_list(self, apply=False, save=False):
         await self.db_log.info('clear_jobs', phase='start', apply=apply, save=save)
@@ -175,29 +174,32 @@ class PublicScheduler(WithLogger):
     def jobs(self) -> List[SchedJobCfg]:
         return self._scheduled_jobs
 
-    async def _on_control_message(self, _chan, message):
-        await self.db_log.info('control_message', phase='received', message=message)
-        self.logger.warning(f'Received control message: {message}')
-        if not message or not isinstance(message, dict):
-            self.logger.error(f'Invalid control message format: {message}')
-            await self.db_log.error('control_message', reason='invalid_format', message=message)
-            return
-        command = message.get('command')
+    async def _on_control_message(self, payload):
+        await self.db_log.info('control_message', phase='received', message=payload)
+        self.logger.warning(f'Received control message: {payload}')
+        if not payload or not isinstance(payload, dict):
+            self.logger.error(f'Invalid message payload format: {payload}')
+            await self.db_log.error('control_message', reason='invalid_format', message=payload)
+            return "invalid_format"
+        command = payload.get('command')
         if command == self.COMMAND_RELOAD:
             await self.load_config_from_db()
             await self.apply_scheduler_configuration()
             self.logger.info('Scheduler configuration reloaded via control message!')
             await self.db_log.warning('config_reloaded')
+            return 'reloaded'
         elif command == self.COMMAND_RUN_NOW:
-            job_id = message.get('job_id')
+            job_id = payload.get('job_id')
             if job_id:
                 await self.db_log.warning('job_scheduled_now', job_id=job_id)
-                await self.run_job_now_by_id(job_id)
-            elif func := message.get('func'):
+                return await self.run_job_now_by_id(job_id)
+            elif func := payload.get('func'):
                 await self.db_log.warning('job_scheduled_now', func=func)
-                await self.run_job_by_function(func)
+                return await self.run_job_by_function(func)
             else:
-                await self.logger.error(f'Cannot run {command} with parameters {message}')
+                await self.logger.error(f'Cannot run {command} with parameters {payload}')
+        else:
+            return "unknown_command"
 
     async def run_job_now_by_id(self, job_id):
         job_cfg = self.find_job_by_id(job_id)
@@ -217,13 +219,13 @@ class PublicScheduler(WithLogger):
     async def run_job_by_function(self, func_name: str):
         self.logger.info(f'Function {func_name} is run by name')
         coro = self._registered_jobs.get(func_name)
-        await coro(None)
+        return await coro(None)
 
-    async def post_command(self, command: str, **kwargs):
-        await self._subscriber.post_message({
+    async def post_command(self, command: str, timeout=15.0, **kwargs):
+        return await self._rpc({
             'command': command,
             **kwargs
-        })
+        }, timeout=timeout)
 
     async def register_job_type(self, key, func):
         if key in self._registered_jobs:
@@ -296,6 +298,7 @@ class PublicScheduler(WithLogger):
                         f'{func_name}: completed successfully in {elapsed:.2f} seconds on attempt {attempt}.')
                     await stats.record_success(elapsed=elapsed, ts=time.time())
                     await stats.set_is_running(False)
+                    result = result if result is not None else 'success'
                     return result
                 except Exception as e:
                     self.logger.warning(
@@ -316,8 +319,7 @@ class PublicScheduler(WithLogger):
                                                 job=func_name, job_id=job_id,
                                                 error=str(e))
                         self.logger.error(f'{func_name}: all {retries} attempts failed.')
-                        raise
-            return None
+            return 'failed'
 
         return wrapper
 
@@ -327,7 +329,7 @@ class PublicScheduler(WithLogger):
             return
         await self.load_config_from_db()
         self.scheduler.start()
-        self._subscriber.start()
+        await self._rpc.run_as_server(self._on_control_message)
         self.logger.info("Scheduler started.")
 
     def stop(self):
@@ -440,3 +442,6 @@ class PublicScheduler(WithLogger):
     async def get_job_stats(self, job_id: str) -> JobStatsModel:
         stats_db = JobStats(self.db, key=job_id)
         return await stats_db.read_stats()
+
+    async def start_rpc_client(self):
+        await self._rpc.run_as_client()

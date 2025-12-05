@@ -42,7 +42,6 @@ class PubSubChannel:
             async for msg in pubsub.listen():
                 if not self._running:
                     break
-
                 try:
                     if msg["type"] == "message":
                         data = msg["data"]
@@ -84,6 +83,8 @@ class SimpleRPC(WithLogger):
         error = None
         try:
             payload = data.get('data', {})
+
+            self.logger.info(f'Handling RPC call id {call_id} with payload: {payload}')
             result = self._receiver_callback(payload)
             if asyncio.iscoroutine(result):
                 result = await result
@@ -116,6 +117,8 @@ class SimpleRPC(WithLogger):
 
         error = data.get('error')
         response = data.get('response')
+
+        self.logger.info(f'Received RPC response for call_id {call_id}: error={error}, response={response}')
 
         if error is not None:
             fut.set_exception(RuntimeError(f'RPC error: {error}'))

@@ -2,6 +2,7 @@ import asyncio
 
 from lib.texts import sep
 from notify.pub_configure import PublicAlertJobExecutor
+from notify.pub_scheduler import PublicScheduler
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -28,11 +29,19 @@ async def dbg_run_one_job(app: LpAppFramework):
     await ex.job_price_alert()
 
 
+async def dbg_test_command(app: LpAppFramework):
+    sched: PublicScheduler = app.deps.pub_scheduler
+    await sched.start_rpc_client()
+    result = await sched.post_command(sched.COMMAND_RUN_NOW, func='pol_summary')
+    print(f'Command result: {result}')
+
+
 async def main():
     app = LpAppFramework()
     async with app():
-        await dbg_run_one_job(app)
-        await asyncio.sleep(10)
+        # await dbg_run_one_job(app)
+        # await asyncio.sleep(10)
+        await dbg_test_command(app)
 
 
 if __name__ == '__main__':
