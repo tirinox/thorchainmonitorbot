@@ -115,6 +115,10 @@ for job in jobs:
                 run_coro(sched.toggle_job_enabled(job.id, not job.enabled))
                 set_message_rerun(f"Job is enabled" if job.enabled else "Job is disabled")
 
+            if st.button("Logs...", key=f'view_logs_{ident}'):
+                st.session_state['job_id_view_logs'] = ident
+                st.switch_page(f"pages/SchedLogs.py")
+
 if not jobs:
     st.info("No jobs configured yet. Consider adding one below.")
 

@@ -19,7 +19,7 @@ app = get_app()
 # ===== Data loading ===========================================================
 async def fetch_logs():
     sched: PublicScheduler = app.deps.pub_scheduler
-    logs = await sched.db_log.get_last_logs(300)
+    logs = await sched.db_log.get_last_logs(10000)
     return logs
 
 
@@ -43,6 +43,12 @@ def to_json_if_dict(value):
 for col in df.columns:
     if df[col].dtype == object:
         df[col] = df[col].apply(to_json_if_dict)
+
+job_query_param = st.session_state.get('job_id_view_logs')
+if job_query_param:
+    if st.button('Reset job id query'):
+        del st.session_state['job_id_view_logs']
+        st.rerun()
 
 # Timestamp → Time column
 if "_ts" in df.columns:
@@ -99,7 +105,11 @@ with col1:
 with col2:
     f_phase = st.selectbox("phase", phase_list)
 with col3:
-    f_text = st.text_input("search text", "")
+    if job_query_param:
+        find_text = job_query_param
+    else:
+        find_text = ''
+    f_text = st.text_input("search text", find_text)
 
 filtered = df.copy()
 
