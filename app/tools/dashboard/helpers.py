@@ -84,5 +84,5 @@ def st_running_sign():
     }
     </style>
 
-    <p class="blink">Running...</p>
+    <p class="blink">🚀Running...</p>
     """, unsafe_allow_html=True)

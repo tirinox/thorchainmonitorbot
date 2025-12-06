@@ -1,5 +1,3 @@
-import logging
-
 import streamlit as st
 
 from notify.pub_configure import PublicAlertJobExecutor

@@ -15,16 +15,6 @@ st.title("Configured Jobs")
 
 st_autorefresh(interval=2000, limit=2000, key="page_refresh")
 
-
-def set_message_rerun(_msg):
-    st.session_state['success_msg'] = _msg
-    st.rerun()
-
-
-if msg := st.session_state.get('success_msg'):
-    st.success(msg)
-    del st.session_state['success_msg']
-
 # Header row
 col_config = [3, 1, 1, 4, 2]
 
@@ -56,7 +46,7 @@ def confirm_delete(ident_to_delete):
 if delete_job_id := st.session_state.get('delete_job_id'):
     run_coro(sched.delete_job(delete_job_id))
     del st.session_state['delete_job_id']
-    set_message_rerun(f"Job '{delete_job_id}' deleted.")
+    st.rerun()
 
 # Data rows
 for job in jobs:
@@ -70,7 +60,7 @@ for job in jobs:
         if stats.is_running:
             st_running_sign()
         else:
-            st.text('Idle')
+            st.text('🧘IDLE')
     with cols[1]:
         st.subheader(job.variant)
     with cols[2]:
@@ -102,8 +92,11 @@ for job in jobs:
 
         with b_cols[0]:
             if st.button("▶️", key=f"run_{ident}", type="secondary"):
-                run_coro(sched.post_command(sched.COMMAND_RUN_NOW, job_id=ident))
-                set_message_rerun(f"Job '{ident}' triggered to run now.")
+                result = run_coro(sched.post_command(sched.COMMAND_RUN_NOW, job_id=ident))
+                if result == 'success':
+                    st.success(f"Job '{ident}' executed successfully.")
+                else:
+                    st.error(f"Failed to execute job '{ident}': {result}")
 
             if st.button("❌", key=f"delete_{ident}"):
                 confirm_delete(ident)
@@ -113,7 +106,7 @@ for job in jobs:
                 st.switch_page("pages/_AddEditJob.py")
             if st.button("Disable" if job.enabled else "Enable", key=f"toggle_{ident}"):
                 run_coro(sched.toggle_job_enabled(job.id, not job.enabled))
-                set_message_rerun(f"Job is enabled" if job.enabled else "Job is disabled")
+                st.rerun()
 
             if st.button("Logs...", key=f'view_logs_{ident}'):
                 st.session_state['job_id_view_logs'] = ident
@@ -129,7 +122,7 @@ if is_dirty:
     if applied := st.button("Apply", type="primary", use_container_width=True):
         run_coro(sched.post_command(sched.COMMAND_RELOAD))
         st.session_state['apply_clicked'] = True
-        set_message_rerun("Reload command sent to scheduler!")
+        st.rerun()
 
 if st.button("Add New Job", use_container_width=True):
     st.session_state.editing_job = None
