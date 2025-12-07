@@ -28,6 +28,7 @@ from models.key_stats_model import AlertKeyStats
 from models.last_block import EventBlockSpeed, BlockProduceState
 from models.memo import THORMemo
 from models.mimir import AlertMimirChange, AlertMimirVoting
+from models.net_stats import AlertNetworkStats
 from models.node_info import AlertNodeChurn
 from models.pool_info import PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
@@ -129,6 +130,10 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_secured_asset_summary(data)
         elif isinstance(data, TcyFullInfo):
             await self._handle_tcy_report(data)
+        elif isinstance(data, AlertNetworkStats):
+            await self._handle_net_stats(data)
+        else:
+            self.logger.error(f'Unknown alert data type: {type(data)}')
 
     async def load_names(self, addresses) -> NameMap:
         if isinstance(addresses, str):
@@ -589,3 +594,6 @@ class AlertPresenter(INotified, WithLogger):
                 return text
 
         await self.deps.broadcaster.broadcast_to_all(message_gen)
+
+    async def _handle_net_stats(self, data: AlertNetworkStats):
+        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_network_summary, data)

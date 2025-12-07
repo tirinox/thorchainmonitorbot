@@ -148,13 +148,13 @@ class MetricsDialog(BaseDialog):
 
         nodes: NetworkNodes = await self.deps.node_cache.get()
 
+        event = AlertNetworkStats(
+            old_info, new_info,
+            nodes.node_info_list,
+        )
+
         await message.answer(
-            loc.notification_text_network_summary(
-                AlertNetworkStats(
-                    old_info, new_info,
-                    nodes.node_info_list,
-                ),
-            ),
+            loc.notification_text_network_summary(event),
             disable_web_page_preview=True,
             disable_notification=True
         )

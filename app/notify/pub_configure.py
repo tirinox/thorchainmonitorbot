@@ -1,6 +1,7 @@
 from typing import Optional
 
 from jobs.fetch.key_stats import KeyStatsFetcher
+from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from jobs.fetch.pol import RunePoolFetcher
 from jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
@@ -13,6 +14,8 @@ from lib.logs import WithLogger
 from lib.prev_state import PrevStateDB
 from models.circ_supply import RuneCirculatingSupply
 from models.key_stats_model import AlertKeyStats
+from models.net_stats import AlertNetworkStats
+from models.node_info import NetworkNodes
 from models.pool_info import EventPools, PoolMapStruct
 from models.price import PriceHolder, RuneMarketInfo
 from models.runepool import AlertRunepoolStats, POLState, AlertPOLState, RunepoolState
@@ -20,6 +23,7 @@ from models.trade_acc import AlertTradeAccountStats
 from notify.pub_scheduler import PublicScheduler
 from notify.public.cex_flow import CEXFlowRecorder
 from notify.public.price_notify import PriceChangeNotifier
+from notify.public.stats_notify import NetworkStatsNotifier
 
 
 class PubAlertJobNames:
@@ -35,6 +39,7 @@ class PubAlertJobNames:
 
     PRICE_ALERT = "price_alert"
     RUNE_CEX_FLOW = "rune_cex_flow"
+    NET_STATS_SUMMARY = "net_stats_summary"
 
 
 class PublicAlertJobExecutor(WithLogger):
@@ -179,6 +184,24 @@ class PublicAlertJobExecutor(WithLogger):
 
         await self._send_alert(flow, "rune cex flow alert")
 
+    async def job_net_stats_summary(self):
+        nsn = NetworkStatsNotifier(self.deps)
+        old_info = await nsn.get_previous_stats()
+
+        fetcher_stats = NetworkStatisticsFetcher(self.deps)
+        new_info = await fetcher_stats.fetch()
+
+        if not new_info.is_ok:
+            raise Exception("Network stats data is not sufficient for alert.")
+
+        nodes: NetworkNodes = await self.deps.node_cache.get()
+
+        event = AlertNetworkStats(
+            old_info, new_info,
+            nodes.node_info_list,
+        )
+        await self._send_alert(event, "network stats summary alert")
+
     # maps job names to methods of this class
     AVAILABLE_TYPES = {
         PubAlertJobNames.TCY_SUMMARY: job_tcy_summary,
@@ -192,6 +215,7 @@ class PublicAlertJobExecutor(WithLogger):
         PubAlertJobNames.TRADE_ASSET_SUMMARY: job_trade_account_summary,
         PubAlertJobNames.PRICE_ALERT: job_price_alert,
         PubAlertJobNames.RUNE_CEX_FLOW: job_rune_cex_flow,
+        PubAlertJobNames.NET_STATS_SUMMARY: job_net_stats_summary,
     }
 
     async def configure_jobs(self):
