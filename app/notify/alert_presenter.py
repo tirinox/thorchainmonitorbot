@@ -11,6 +11,7 @@ from comm.picture.price_picture import price_graph_from_db
 from comm.picture.queue_picture import queue_graph
 from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.achievement.ach_list import Achievement
+from jobs.fetch.cached.last_block import EventLastBlock
 from jobs.fetch.chain_id import AlertChainIdChange
 from lib.constants import THOR_BLOCKS_PER_MINUTE, thor_to_float, THOR_BASIS_POINT_MAX, Chains
 from lib.date_utils import DAY
@@ -132,6 +133,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_tcy_report(data)
         elif isinstance(data, AlertNetworkStats):
             await self._handle_net_stats(data)
+        elif isinstance(data, EventLastBlock):
+            pass  # currently no action
         else:
             self.logger.error(f'Unknown alert data type: {type(data)}')
 
