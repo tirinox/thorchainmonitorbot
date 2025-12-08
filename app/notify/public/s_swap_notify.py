@@ -18,10 +18,9 @@ DB_KEY_ANNOUNCED_SS_START = 'ss-started:announced-hashes'
 
 
 class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
-    def __init__(self, deps: DepContainer, prefix='thor'):
+    def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.prefix = prefix
         self.detector = SwapStartDetector(deps)
         self._ev_db = EventDatabase(deps.db)
         self.min_streaming_swap_usd = self.deps.cfg.as_float(
@@ -125,10 +124,10 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
                 affiliate_bps=event.memo.affiliate_fee_bp,
                 height=event.block_height,  # for historical quotes
             )
-            if 'message' in event.quote:
-                self.logger.warning(f'Failed to load quote for {event.tx_id}: {event["message"]}')
+            if err_msg := event.quote.get('message'):
+                self.logger.warning(f'Failed to load quote for {event.tx_id}: {err_msg}')
         except Exception as e:
-            self.logger.warning(f'Failed to load quote for {event.tx_id}: {e}')
+            self.logger.error(f'Failed to load quote for {event.tx_id}: {e}')
 
     def _correct_streaming_swap_info(self, event: AlertSwapStart):
         if event.ss and event.ss.quantity == 0 and event.ss.interval > 0:
