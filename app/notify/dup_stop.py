@@ -35,7 +35,7 @@ class TxDeduplicator(WithLogger):
 
         self.logger.info(
             f'Initialized with key={key}, capacity={capacity}, error_rate={error_rate}. Size is {self._bf.size} bits or '
-            f' {sizeof_fmt(self.size_bytes)}.')
+            f'{sizeof_fmt(self.size_bytes)}.')
 
     async def load_stats(self):
         r: Redis = self.db.redis

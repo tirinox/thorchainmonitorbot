@@ -71,9 +71,3 @@ class BestPoolsNotifier(INotified, WithDelegates, WithLogger):
 
     async def _notify(self, pd: EventPools):
         await self.pass_data_to_listeners(pd)
-
-    async def _debug_twitter(self):
-        notifier: BestPoolsNotifier = self.deps.best_pools_notifier
-        loc = self.deps.loc_man[Language.ENGLISH_TWITTER]
-        text = loc.notification_text_best_pools(notifier.last_pool_detail)
-        await self.deps.twitter_bot.send_message('', BoardMessage(text))

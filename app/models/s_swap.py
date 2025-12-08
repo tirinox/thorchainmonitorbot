@@ -104,7 +104,7 @@ class StreamingSwap(NamedTuple):
 
 @dataclass
 class AlertSwapStart:
-    ss: StreamingSwap
+    ss: StreamingSwap  # todo: get rid of it!
     from_address: str
     in_amount: float
     in_asset: str
