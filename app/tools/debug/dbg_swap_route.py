@@ -43,7 +43,7 @@ async def tool_record_swap_routes(app: LpAppFramework, start_block: int = -1):
     else:
         start_block = 0
 
-    d.block_scanner = BlockScanner(d, max_attempts=3, last_block=start_block)
+    d.block_scanner = BlockScanner(d, max_attempts=3, last_block=start_block, role='debug')
     native_action_extractor = SwapExtractorBlock(d)
     d.block_scanner.add_subscriber(native_action_extractor)
 

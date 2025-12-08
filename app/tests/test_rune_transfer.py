@@ -19,7 +19,7 @@ def fixture_app():
 
 
 async def get_transfers_from_block(app, block_index):
-    scanner = BlockScanner(app.deps)
+    scanner = BlockScanner(app.deps, role='test')
     r = await scanner.fetch_one_block(block_index)
     parser = RuneTransferDetector()
     transfers = parser.process_events(r)

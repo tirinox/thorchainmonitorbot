@@ -273,7 +273,7 @@ class App(WithLogger):
         if d.cfg.get('native_scanner.enabled', True):
             # The block scanner itself
             max_attempts = d.cfg.as_int('native_scanner.max_attempts_per_block', 5)
-            d.block_scanner = BlockScanner(d, max_attempts=max_attempts)
+            d.block_scanner = BlockScanner(d, max_attempts=max_attempts, role='main')
             tasks.append(d.block_scanner)
             reserve_address = d.cfg.as_str('native_scanner.reserve_address')
 
@@ -500,8 +500,8 @@ class App(WithLogger):
         #     supply_notifier.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('supply.rune_burn.recorder.enabled', True):
-            burn_notifier = RuneBurnRecorder(d)
-            d.mimir_const_fetcher.add_subscriber(burn_notifier)
+            burn_recorder = RuneBurnRecorder(d)
+            d.mimir_const_holder.add_subscriber(burn_recorder)
 
         if d.cfg.get('wallet_counter.enabled', True) and achievements_enabled:  # only used along with achievements
             wallet_counter = AccountNumberFetcher(d)

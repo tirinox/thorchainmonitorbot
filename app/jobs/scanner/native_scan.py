@@ -1,8 +1,10 @@
 import asyncio
+import time
 from typing import Optional
 
 from jobs.fetch.base import BaseFetcher
 from jobs.scanner.block_result import BlockResult
+from jobs.scanner.scanner_state import ScannerStateDB
 from lib.constants import THOR_BLOCK_TIME
 from lib.date_utils import now_ts
 from lib.depcont import DepContainer
@@ -14,7 +16,8 @@ class BlockScanner(BaseFetcher):
 
     NAME = 'block_scanner'
 
-    def __init__(self, deps: DepContainer, sleep_period=None, last_block=0, max_attempts=MAX_ATTEMPTS_TO_SKIP_BLOCK):
+    def __init__(self, deps: DepContainer, sleep_period=None, last_block=0, max_attempts=MAX_ATTEMPTS_TO_SKIP_BLOCK,
+                 role='secondary'):
         sleep_period = sleep_period or THOR_BLOCK_TIME * 0.99
         super().__init__(deps, sleep_period)
         self._last_block = last_block
@@ -24,6 +27,8 @@ class BlockScanner(BaseFetcher):
         self.allow_jumps = True
         self._block_cycle = 0
         self._last_block_ts = 0
+        self.role = role
+        self.state_db = ScannerStateDB(deps.db, role)
 
         # if more time has passed since the last block, we should run aggressive scan
         self._time_tolerance_for_aggressive_scan = THOR_BLOCK_TIME * 1.5  # 6 sec + 50%
@@ -58,29 +63,18 @@ class BlockScanner(BaseFetcher):
             self._this_block_attempts = 0
 
     async def ensure_last_block(self):
+        last_thor_block = await self._fetch_last_block()
+        await self.state_db.set_thor_height(last_thor_block)
+
         while not self._last_block:
-            last_block = await self._fetch_last_block()
+            last_block = last_thor_block or (await self._fetch_last_block())
+            last_thor_block = 0  # reset to avoid multiple calls
             if last_block:
                 self._last_block = last_block
                 self.logger.info(f'Updated last block number: #{self._last_block}')
             else:
                 self.logger.error('Still no last_block height!')
                 await asyncio.sleep(self.sleep_period)
-
-    async def check_lagging(self):
-        # todo: use it!
-        real_last_block = await self._fetch_last_block()
-        if not real_last_block:
-            self.logger.error('Failed to get real last block number!')
-            return False
-        delta = real_last_block - self._last_block
-        if delta > 10:
-            self.logger.warning(f'Lagging behind {delta} blocks!')
-            self.deps.emergency.report(self.NAME, 'Lagging behind',
-                                       delta=delta,
-                                       my_block=self._last_block,
-                                       real_block=real_last_block)
-            return False
 
     def _on_error_block(self, block: BlockResult):
         self._on_error(f'Block.error #{block.error.code}: {block.error.message}',
@@ -102,6 +96,10 @@ class BlockScanner(BaseFetcher):
 
         return False
 
+    async def run(self):
+        await self.state_db.register()
+        return await super().run()
+
     async def fetch(self):
         await self.ensure_last_block()
 
@@ -115,15 +113,22 @@ class BlockScanner(BaseFetcher):
         aggressive = await self.should_run_aggressive_scan()
         if aggressive:
             self.logger.info('Aggressive scan will be run at this tick.')
+        await self.state_db.on_iteration_start(aggressive)
 
         while True:
             try:
                 self.logger.info(f'Fetching block #{self._last_block}. Cycle: {self._block_cycle}.')
+                start_ts = time.monotonic()
                 block_result = await self.fetch_one_block(self._last_block)
+                end_ts = time.monotonic()
 
                 if block_result is None:
                     self._on_error('None returned')
+                    await self.state_db.on_new_block_scanned(self._last_block, end_ts - start_ts, is_error=True,
+                                                             message='No block data returned')
                     break
+
+                await self.state_db.on_new_block_scanned(self._last_block, end_ts - start_ts)
 
                 # if block_result.timestamp:
                 #     self._last_block_ts = block_result.timestamp
@@ -156,13 +161,18 @@ class BlockScanner(BaseFetcher):
             except Exception as e:
                 self.logger.exception(f'Error while fetching block #{self._last_block}: {e}')
                 self._on_error(str(e))
+                await self.state_db.on_new_block_scanned(self._last_block, 0, is_error=True,
+                                                         message=str(e))
                 break
 
             self._last_block += 1
             self._this_block_attempts = 0
             self._block_cycle += 1
 
+            start_ts = time.monotonic()
             await self.pass_data_to_listeners(block_result)
+            end_ts = time.monotonic()
+            await self.state_db.on_new_block_processed(end_ts - start_ts)
 
             if self.one_block_per_run:
                 self.logger.warning('One block per run mode is on. Stopping.')
@@ -172,10 +182,14 @@ class BlockScanner(BaseFetcher):
                 # only one block at the time if it is not aggressive scan
                 break
 
+        await self.state_db.on_iteration_end()
+
     async def _fetch_last_block(self):
         result = await self.deps.thor_connector.query_native_status_raw()
         if result:
             return int(safe_get(result, 'result', 'sync_info', 'latest_block_height'))
+        else:
+            return None
 
     async def _fetch_raw_block(self, block_no):
         return await self.deps.thor_connector.query_thorchain_block_raw(block_no)

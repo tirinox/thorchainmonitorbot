@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from jobs.scanner.native_scan import BlockScanner
-from jobs.scanner.util import thor_decode_amount_field, pubkey_to_thor_address
+from jobs.scanner.util import thor_decode_amount_field
 from tools.lib.lp_common import LpAppFramework
 
 """
@@ -13,7 +13,7 @@ Contains send tx: 18994586
 
 async def dbg_get_block(app, block):
     d = app.deps
-    scanner = BlockScanner(d, sleep_period=10.0)
+    scanner = BlockScanner(d, sleep_period=10.0, role='debug')
 
     block = await scanner.fetch_one_block(block)
     print(block)

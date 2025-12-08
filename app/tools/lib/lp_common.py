@@ -37,7 +37,7 @@ class LpAppFramework(App):
 
         d.loc_man.set_name_service(d.name_service)
         d.twitter_bot = TwitterBotMock(d.cfg)
-        d.block_scanner = BlockScanner(d)
+        d.block_scanner = BlockScanner(d, role='tool')
 
         self.rune_yield: AsgardConsumerConnectorBase
         self.rune_yield_class = rune_yield_class

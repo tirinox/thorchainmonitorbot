@@ -73,7 +73,7 @@ async def auto_play_dau(app):
 
 
 async def real_life_active_scan_user_counter(app: LpAppFramework):
-    scanner = BlockScanner(app.deps)
+    scanner = BlockScanner(app.deps, role='debug')
     user_counter = UserCounterMiddleware(app.deps)
     scanner.add_subscriber(user_counter)
     await scanner.run()
@@ -81,7 +81,7 @@ async def real_life_active_scan_user_counter(app: LpAppFramework):
 
 async def demo_unique_users_of_block(app: LpAppFramework):
     user_counter = UserCounterMiddleware(app.deps)
-    scanner = BlockScanner(app.deps)
+    scanner = BlockScanner(app.deps, role='debug')
 
     r = await scanner.fetch_one_block(7499377)  # donate
     print('donate:', user_counter.get_unique_users(r))

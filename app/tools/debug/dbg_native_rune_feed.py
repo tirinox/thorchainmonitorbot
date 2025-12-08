@@ -29,7 +29,7 @@ class ReceiverPublicText(INotified):
 
 
 async def demo_native_block_action_detector(app, start=12209517):
-    scanner = BlockScanner(app.deps, last_block=start)
+    scanner = BlockScanner(app.deps, last_block=start, role='debug')
     scanner.one_block_per_run = True
     detector = RuneTransferDetector()
     scanner.add_subscriber(detector)
@@ -45,7 +45,7 @@ async def demo_block_scanner_active(app, send_alerts=False, catch_up=0, force_st
                                     print_txs=False):
     d = app.deps
     # scanner = BlockScanner(d, sleep_period=10.0)
-    scanner = BlockScanner(d)
+    scanner = BlockScanner(d, role='debug')
     detector = RuneTransferDetector()
     scanner.add_subscriber(detector)
 
@@ -67,7 +67,7 @@ async def demo_block_scanner_active(app, send_alerts=False, catch_up=0, force_st
 
 
 async def get_transfers_from_block(app, block_index):
-    scanner = BlockScanner(app.deps)
+    scanner = BlockScanner(app.deps, role='debug')
     r = await scanner.fetch_one_block(block_index)
     parser = RuneTransferDetector()
     transfers = await parser.process_block(r)
@@ -95,7 +95,7 @@ async def get_block_cached(app, block_index):
         with open(filename, 'rb') as f:
             block = pickle.load(f)
     except FileNotFoundError:
-        scanner = BlockScanner(app.deps)
+        scanner = BlockScanner(app.deps, role='debug')
         block = await scanner.fetch_one_block(block_index)
         with open(filename, 'wb') as f:
             pickle.dump(block, f)
@@ -134,7 +134,7 @@ async def demo_non_zero_code(app: LpAppFramework):
 async def debug_ill_transfers(app: LpAppFramework):
     block_id = 15264091
 
-    scanner = BlockScanner(app.deps, last_block=block_id)
+    scanner = BlockScanner(app.deps, last_block=block_id, role='debug')
     block = await scanner.fetch_one_block(block_id)
     detector = RuneTransferDetector()
     events = detector.process_block(block)

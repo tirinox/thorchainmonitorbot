@@ -23,7 +23,7 @@ DEPOSIT_TX_HEIGHT = 18961411
 
 async def demo_decode_runepool_deposit(app: LpAppFramework, height):
 
-    scanner = BlockScanner(app.deps)
+    scanner = BlockScanner(app.deps, role='debug')
 
     block = await scanner.fetch_one_block(height)
 
@@ -82,7 +82,7 @@ async def demo_simulate_deposit(app: LpAppFramework):
 
 async def demo_runepool_continuous(app: LpAppFramework, b=0):
     d = app.deps
-    d.block_scanner = BlockScanner(d, last_block=b)
+    d.block_scanner = BlockScanner(d, last_block=b, role='debug')
     d.block_scanner.one_block_per_run = b > 0
 
     runepool_decoder = RunePoolEventDecoder(d.db, d.pool_cache)

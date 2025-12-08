@@ -36,7 +36,7 @@ TX_ID_DEPOSIT_BTC = '442371c470efb32c1d91651889da5af900306dcff43cfdbf678d56ce2a8
 
 
 async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
-    scanner = BlockScanner(app.deps)
+    scanner = BlockScanner(app.deps, role='debug')
 
     tx = await app.deps.thor_connector.query_tx_details(tx_id)
     height = tx['consensus_height']
@@ -65,7 +65,7 @@ async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
 async def demo_trade_acc_decode_continuous(app: LpAppFramework, b=0):
     d = app.deps
 
-    scanner = BlockScanner(d, last_block=b)
+    scanner = BlockScanner(d, last_block=b, role='debug')
     # scanner.one_block_per_run = b > 0
 
     dcd = TradeAccEventDecoder(d.pool_cache)

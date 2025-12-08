@@ -35,7 +35,7 @@ async def dbg_record_continuous(app: LpAppFramework, rec: RuneBurnRecorder):
     d.mimir_const_holder = MimirHolder()
     d.mimir_const_holder.mimir_rules.load(MIMIR_DICT_FILENAME)
     mimir_f.add_subscriber(d.mimir_const_holder)
-    mimir_f.add_subscriber(rec)
+    d.mimir_const_holder.add_subscriber(rec)
     mimir_f.sleep_period = 5.0
     mimir_f.initial_sleep = 0.0
     await mimir_f.run()

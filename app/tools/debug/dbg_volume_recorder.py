@@ -34,7 +34,7 @@ async def continuous_volume_recording(lp_app):
     fetcher_tx.add_subscriber(aggregator)
 
     last_block = await d.last_block_cache.get_thor_block()
-    d.block_scanner = BlockScanner(d, max_attempts=3, last_block=last_block - 1000)
+    d.block_scanner = BlockScanner(d, max_attempts=3, last_block=last_block - 1000, role='debug')
     
     native_action_extractor = SwapExtractorBlock(d)
     d.block_scanner.add_subscriber(native_action_extractor)

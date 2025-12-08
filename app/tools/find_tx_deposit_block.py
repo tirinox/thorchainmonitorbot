@@ -38,7 +38,7 @@ async def run():
 
         height -= 1
 
-        scanner = BlockScanner(app.deps)
+        scanner = BlockScanner(app.deps, role='tool')
 
         finished = False
         while height > 0 and not finished:
