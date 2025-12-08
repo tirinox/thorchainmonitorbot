@@ -1,3 +1,5 @@
+import json
+
 from pydantic import BaseModel
 
 from lib.date_utils import now_ts
@@ -56,14 +58,17 @@ class ScannerStateDB(WithLogger):
 
     async def load_state(self) -> ScannerState:
         r = await self.db.get_redis()
-        data = await r.hgetall(self.db_key)
-        if data:
-            return ScannerState(**data)
-        return ScannerState(role=self.role)
+        # load as json
+        data = await r.get(self.db_key)
+        if not data:
+            return ScannerState(role=self.role)
+        data_dict = json.loads(data)
+        return ScannerState.model_validate(data_dict)
 
     async def save_state(self, state: ScannerState):
         r = await self.db.get_redis()
-        await r.hset(self.db_key, mapping=state.model_dump())
+        data = state.model_dump()
+        await r.set(self.db_key, json.dumps(data))
 
     async def register(self):
         try:
@@ -95,6 +100,7 @@ class ScannerStateDB(WithLogger):
             # Update average processing time
             n = state.total_blocks_scanned
             state.avg_block_scanning_time = ((state.avg_block_scanning_time * (n - 1)) + scan_time) / n
+            state.max_block_scanning_time = max(state.max_block_scanning_time, scan_time)
             if is_error:
                 state.errors_encountered += 1
             if message:
@@ -110,6 +116,7 @@ class ScannerStateDB(WithLogger):
             # Update average processing time
             n = state.total_blocks_processed
             state.avg_block_processing_time = ((state.avg_block_processing_time * (n - 1)) + processing_time) / n
+            state.max_block_processing_time = max(state.max_block_processing_time, processing_time)
             await self.save_state(state)
         except Exception as e:
             self.logger.exception(f'Error updating scanner state on new block processed: {e}')
