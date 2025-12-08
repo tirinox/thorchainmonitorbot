@@ -3,8 +3,13 @@ from datetime import datetime
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-from tools.dashboard.components import *
-from tools.dashboard.helpers import get_app, run_coro
+from tools.dashboard.components.cex_flow import cex_flow_dashboard_info
+from tools.dashboard.components.curve import curve_dashboard_info
+from tools.dashboard.components.dedup import dedup_dashboard_info
+from tools.dashboard.components.fetchers import fetchers_dashboard_info
+from tools.dashboard.components.scanner import block_scanner_info
+from tools.dashboard.components.stats import stats_dashboard_info
+from tools.dashboard.helpers import get_app
 
 st.set_page_config(page_title="Bot Dashboard")
 
@@ -17,33 +22,20 @@ st.title('Bot dashboard')
 st_autorefresh(interval=30000, limit=200, key="page_refresh")
 
 # last refresh time: now
-st.write(f"Last refresh: {datetime.now()}")
+st.write(f"Last refresh: {datetime.now().isoformat()}")
 
-tab_dedup, tab_fetchers, tab_curve, tab_stats, tab_cex_flow = st.tabs([
-    "TxDedup", "Fetchers", "Curve", "Stats", "CEX Flow"
-])
+tab_dict = {
+    "Tx Dedup": dedup_dashboard_info,
+    "Fetchers": fetchers_dashboard_info,
+    "Curve": curve_dashboard_info,
+    "Stats": stats_dashboard_info,
+    "CEX Flow": cex_flow_dashboard_info,
+    "Block scanner": block_scanner_info,
+}
 
-with tab_dedup:
-    st.subheader('TxDeduplication')
-    data = run_coro(dedup_dashboard_info(d))
-    st.table(data)
-
-with tab_fetchers:
-    st.subheader('Fetchers')
-    data = run_coro(fetchers_dashboard_info(d))
-    st.table(data)
-
-with tab_curve:
-    st.subheader('Curve')
-    data = run_coro(curve_dashboard_info(d))
-    st.table(data)
-
-with tab_stats:
-    st.subheader('Stats')
-    data = run_coro(stats_dashboard_info(d))
-    st.table(data)
-
-with tab_cex_flow:
-    st.subheader('CEX Flow')
-    data = run_coro(cex_flow_dashboard_info(d))
-    st.table(data)
+names = list(tab_dict.keys())
+tabs = st.tabs(names)
+for name, tab in zip(names, tabs):
+    with tab:
+        function = tab_dict[name]
+        function(app)
