@@ -8,7 +8,7 @@ import math
 
 from api.aionode.types import ThorConstants, ThorMimir, ThorMimirVote
 from lib.constants import bp_to_float
-from lib.delegates import INotified
+from lib.delegates import INotified, WithDelegates
 from lib.logs import WithLogger
 from lib.texts import split_by_camel_case
 from .base import BaseModelMixin
@@ -193,11 +193,12 @@ class MimirTuple(NamedTuple):
     last_thor_block: int
 
 
-class MimirHolder(INotified, WithLogger):
+class MimirHolder(INotified, WithLogger, WithDelegates):
     async def on_data(self, sender, data: MimirTuple):
         # test it!
         nodes: NetworkNodes = await sender.deps.node_cache.get()
         self.update(data, nodes.active_nodes)
+        await self.pass_data_to_listeners(self)
 
     def __init__(self):
         super().__init__()

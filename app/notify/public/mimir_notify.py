@@ -45,6 +45,7 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
             self.logger.error(f'Failed to save last Mimir change: {e}')
 
     async def _ensure_all_last_changes_in_holder(self, mimir: ThorMimir):
+        # fixme: wft why? rewrite it
         if not self.deps.mimir_const_holder.last_changes:
             for name in mimir.constants.keys():
                 ts = await self.last_mimir_change_date(name)

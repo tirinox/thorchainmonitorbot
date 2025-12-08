@@ -52,6 +52,7 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
             await cd.do()
 
     async def on_data(self, sender: ConstMimirFetcher, data: MimirTuple):
+        # todo: subscribe directly to mimir_const_holder, which passes itself as data
         holder = self.deps.mimir_const_holder
 
         prev_state = await self.read_prev_state()
