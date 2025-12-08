@@ -66,6 +66,21 @@ class Cooldown:
         await self.write(event_name, cd=CooldownRecord(0, 0))
 
 
+class CooldownAlwaysCan(Cooldown):
+    def __init__(self):
+        # noinspection PyTypeChecker
+        super().__init__(None, 'foo', 0.0)
+
+    async def can_do(self):
+        return True
+
+    async def do(self):
+        pass
+
+    async def clear(self, event_name=None):
+        pass
+
+
 class CooldownBiTrigger:
     def __init__(self, db: DB, event_name,
                  cooldown_on_sec: float = INFINITE_TIME,

@@ -33,7 +33,7 @@ class RuneCirculatingSupply(NamedTuple):
     holders: Dict[str, RuneHoldEntry]
 
     @classmethod
-    def from_dict(cls, d):
+    def from_json(cls, d):
         holders = {k: RuneHoldEntry.from_dict(v) for k, v in d['holders'].items()}
         return cls(d['total'], d['maximum'], holders)
 

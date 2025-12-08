@@ -163,7 +163,7 @@ BLOCK_RUJI_SEND = 21600000
 
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
-    async with app(brief=True):
+    async with app:
         await demo_block_scanner_active(app, send_alerts=True, catch_up=500)
         # await demo_rune_transfers_once(app, BLOCK_BOND)
         # await demo_rune_transfers_once(app, BLOCK_UNBOND)

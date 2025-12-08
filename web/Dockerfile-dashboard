@@ -29,8 +29,10 @@ COPY app/ /app/
 
 EXPOSE 8501
 
-# If dashboard.py expects its own argv, pass them after "--"
-# Example: streamlit run script.py -- --config /config/config.yaml
-CMD ["streamlit", "run", "dashboard.py", \
-     "--server.port=8501", "--server.enableCORS=false", "--server.address=0.0.0.0", \
+ENV PYTHONPATH=/app
+
+CMD ["streamlit", "run", "tools/dashboard/Dashboard.py", \
+     "--server.port=8501", \
+     "--server.enableCORS=false", \
+     "--server.address=0.0.0.0", \
      "--", "/config/config.yaml"]

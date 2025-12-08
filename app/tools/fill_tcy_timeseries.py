@@ -52,7 +52,7 @@ async def fill_tcy_timeseries_task(app):
 
 async def main():
     app = LpAppFramework(log_level=logging.DEBUG)
-    async with app(brief=True):
+    async with app:
         await fill_tcy_timeseries_task(app)
 
 

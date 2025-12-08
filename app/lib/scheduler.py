@@ -7,7 +7,7 @@ from lib.delegates import WithDelegates
 from lib.logs import WithLogger
 
 
-class Scheduler(WithLogger, WithDelegates):
+class PrivateScheduler(WithLogger, WithDelegates):
     def __init__(self, r: Redis, name, poll_interval: float = 10, forget_after=DAY):
         assert name
         super().__init__()

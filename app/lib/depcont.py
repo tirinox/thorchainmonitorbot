@@ -19,7 +19,7 @@ from lib.db import DB
 from lib.emergency import EmergencyReport
 from lib.http_ses import ObservableSession
 from lib.new_feature import NewFeatureManager, Features
-from lib.scheduler import Scheduler
+from lib.scheduler import PrivateScheduler
 from lib.settings_manager import SettingsManager
 from models.chains import ChainInfoHolder
 from models.mimir import MimirHolder
@@ -27,6 +27,7 @@ from models.net_stats import NetworkStats
 from models.node_watchers import AlertWatchers
 from models.queue import QueueInfo
 from notify.channel import Messengers
+from notify.pub_scheduler import PublicScheduler
 
 
 @dataclass
@@ -48,9 +49,7 @@ class DepContainer:
     name_service: Optional[NameService] = None
 
     block_scanner = None  # type: 'BlockScanner'
-
     rune_market_fetcher = None  # type: 'RuneMarketInfoFetcher'
-
     pool_fetcher = None  # type: 'PoolFetcher'
     node_info_fetcher = None  # type: 'NodeInfoFetcher'
     mimir_const_fetcher = None  # type: 'ConstMimirFetcher'
@@ -82,7 +81,8 @@ class DepContainer:
     affiliate_recorder = None
     route_recorder = None
 
-    scheduler: Optional[Scheduler] = None
+    scheduler: Optional[PrivateScheduler] = None
+    pub_scheduler: Optional[PublicScheduler] = None
 
     gen_alert_settings_proc = None
     alert_watcher: Optional[AlertWatchers] = None
@@ -98,8 +98,8 @@ class DepContainer:
     swap_history_cache: Optional[SwapHistoryFetcher] = None
     pool_cache = None
     node_cache = None
+    market_info_cache = None
 
-    # price_holder: PriceHolder = field(default_factory=PriceHolder)
     queue_holder: QueueInfo = field(default_factory=QueueInfo.error)
     mimir_const_holder: Optional[MimirHolder] = None
     chain_info: ChainInfoHolder = field(default_factory=ChainInfoHolder)

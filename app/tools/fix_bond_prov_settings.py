@@ -47,7 +47,7 @@ async def fix_bond_provider_off(app: LpAppFramework):
 
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
-    async with app(brief=True):
+    async with app:
         await fix_bond_provider_off(app)
 
 

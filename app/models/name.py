@@ -15,7 +15,7 @@ class ThorName(NamedTuple):
     owner: str
     aliases: List[ThorNameAlias]
 
-    def to_json(self):
+    def to_dict(self):
         d = {
             'name': self.name,
             'expiry': self.expire_block_height,

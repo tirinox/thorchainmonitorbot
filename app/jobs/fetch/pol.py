@@ -5,7 +5,7 @@ from api.midgard.parser import get_parser_by_network_id
 from api.midgard.urlgen import free_url_gen
 from jobs.fetch.base import BaseFetcher
 from lib.constants import bp_to_percent, thor_to_float
-from lib.date_utils import parse_timespan_to_seconds
+from lib.date_utils import parse_timespan_to_seconds, now_ts
 from lib.depcont import DepContainer
 from models.mimir_naming import MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH, MIMIR_KEY_POL_MAX_NETWORK_DEPOSIT
 from models.pool_member import PoolMemberDetails
@@ -60,8 +60,9 @@ class RunePoolFetcher(BaseFetcher):
 
         ph = await self.deps.pool_cache.get()
 
+        now = int(now_ts())
         return AlertPOLState(
-            POLState(ph.usd_per_rune, runepool.pol),
+            POLState(ph.usd_per_rune, runepool.pol, now),
             membership,
             prices=ph,
             mimir_max_deposit=max_deposit,
@@ -71,5 +72,6 @@ class RunePoolFetcher(BaseFetcher):
                 n_providers=len(rune_providers),
                 avg_deposit=avg_deposit,
                 usd_per_rune=ph.usd_per_rune,
+                timestamp=now,
             ),
         )

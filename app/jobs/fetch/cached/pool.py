@@ -161,7 +161,7 @@ class PoolCache(CachedDataSource[PriceHolder]):
             return
 
         r: Redis = await self.deps.db.get_redis()
-        j_pools = json.dumps({key: p.as_dict_brief() for key, p in pool_map.items()})
+        j_pools = json.dumps({key: p.to_dict() for key, p in pool_map.items()})
         await r.hset(self.DB_KEY_POOL_INFO_HASH, str(subkey), j_pools)
 
     async def _load_history_data(self, subkey) -> Optional[PoolInfoMap]:

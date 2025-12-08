@@ -28,7 +28,7 @@ async def demo_arb_detector(app: LpAppFramework):
 
 async def run():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         await demo_arb_detector(app)
 
 

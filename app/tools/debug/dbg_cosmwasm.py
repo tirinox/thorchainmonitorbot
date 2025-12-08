@@ -49,7 +49,7 @@ async def dbg_merge_program(app):
 
 async def main():
     app = LpAppFramework(log_level=logging.DEBUG)
-    async with app(brief=True):
+    async with app:
         # await dbg_query_merge_contract(app)
         await dbg_merge_program(app)
 

@@ -43,7 +43,7 @@ class POLNotifier(WithDelegates, INotified, WithLogger):
 
     async def _record_pol(self, event: AlertPOLState):
         try:
-            data = event.to_json_for_series
+            data = event.to_dict()
             await self.ts.add_as_json(data)
         except Exception as e:
             self.logger.exception(f'Failed to add a point to the POL time series: {e}')

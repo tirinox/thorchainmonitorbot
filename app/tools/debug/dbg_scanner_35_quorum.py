@@ -9,7 +9,6 @@ async def demo_one_block(app: LpAppFramework, block_no):
     d = app.deps
     d.block_scanner.initial_sleep = 0
 
-    d.user_counter = UserCounterMiddleware(d)
     d.block_scanner.add_subscriber(d.user_counter)
 
     await d.block_scanner.run()
@@ -17,7 +16,7 @@ async def demo_one_block(app: LpAppFramework, block_no):
 
 async def run():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         await demo_one_block(app, 20947105)
 
 

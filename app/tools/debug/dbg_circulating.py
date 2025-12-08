@@ -5,35 +5,28 @@ import time
 from comm.localization.languages import Language
 from comm.localization.manager import BaseLocalization
 from jobs.fetch.circulating import RuneCirculatingSupplyFetcher
-from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 
 async def my_test_circulating_telegram(lp_app: LpAppFramework):
-    rmf = lp_app.deps.rune_market_fetcher
-    rmf: RuneMarketInfoFetcher
-    # todo: debug
-    info = await rmf.fetch()
+    info = await lp_app.deps.market_info_cache.get()
     # loc: BaseLocalization = lp_app.deps.loc_man.default
     loc: BaseLocalization = lp_app.deps.loc_man.get_from_lang(Language.ENGLISH_TWITTER)
     await lp_app.send_test_tg_message(loc.text_metrics_supply(info))
 
 
 async def my_test_circulating(lp_app: LpAppFramework):
-    rmf = lp_app.deps.rune_market_fetcher
-    rmf: RuneMarketInfoFetcher
-
     t0 = time.perf_counter()
 
-    info = await rmf.fetch()
+    info = await lp_app.deps.market_info_cache.get()
     t1 = time.perf_counter()
     print(f'[{t1 - t0}]: {info}')
     sep()
 
     print('next? ------>')
-    info = await rmf.fetch()
+    info = await lp_app.deps.market_info_cache.get()
     t1 = time.perf_counter()
     print(f'[{t1 - t0}]: {info}')
 
@@ -42,7 +35,7 @@ async def my_test_circulating(lp_app: LpAppFramework):
     sep()
 
     print('and once again! (cached data had to expire now)')
-    info = await rmf.fetch()
+    info = await lp_app.deps.market_info_cache.get()
     t1 = time.perf_counter()
     print(f'[{t1 - t0}]: {info}')
     sep()
@@ -76,7 +69,7 @@ async def debug_circulating_rune_message(app: LpAppFramework):
     sep()
 
     # cached: no pool/bond info!
-    market_info = await app.deps.rune_market_fetcher.fetch()
+    market_info = await app.deps.market_info_cache.get()
 
     locs = app.deps.loc_man.all
     # locs = [app.deps.loc_man[Language.ENGLISH_TWITTER]]

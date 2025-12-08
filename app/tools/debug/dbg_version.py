@@ -73,7 +73,7 @@ class DbgNodeFetcherMockVersionAdoption(NodeInfoFetcher):
 
 async def main():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         # dbg = DbgVersion(app)
         # changes = NodeSetChanges()
         # await dbg.dbg_notify(changes)

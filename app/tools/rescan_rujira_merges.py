@@ -55,7 +55,7 @@ async def rescan_rujira_merges(app: LpAppFramework):
 
 async def run():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         await rescan_rujira_merges(app)
 
 

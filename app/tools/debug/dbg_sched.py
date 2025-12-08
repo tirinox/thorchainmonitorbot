@@ -2,7 +2,7 @@ import asyncio
 import random
 
 from lib.date_utils import now_ts
-from lib.scheduler import Scheduler
+from lib.scheduler import PrivateScheduler
 from tools.lib.lp_common import LpAppFramework, Receiver
 
 
@@ -10,7 +10,7 @@ async def handler(sender, data):
     print(f'handler called: {data}')
 
 
-async def demo_run_scheduler_simple_1(sched: Scheduler):
+async def demo_run_scheduler_simple_1(sched: PrivateScheduler):
     for i in range(20):
         delay = random.randint(1, 20)
         await sched.schedule(f'random-{i}', now_ts() + delay)
@@ -18,13 +18,13 @@ async def demo_run_scheduler_simple_1(sched: Scheduler):
     await sched.run()
 
 
-async def demo_run_scheduler_simple_2_per(sched: Scheduler):
+async def demo_run_scheduler_simple_2_per(sched: PrivateScheduler):
     await sched.schedule('1', now_ts() + 1.0, period=5)
     await sched.schedule('2', now_ts() + 1.5, period=5.1)
     await sched.run()
 
 
-async def demo_cancel_periodic_3(sched: Scheduler):
+async def demo_cancel_periodic_3(sched: PrivateScheduler):
     await sched.schedule('Troll', period=1)
 
     async def cancel_guy():
@@ -35,7 +35,7 @@ async def demo_cancel_periodic_3(sched: Scheduler):
     await sched.run()
 
 
-async def demo_ignore_old_4(sched: Scheduler):
+async def demo_ignore_old_4(sched: PrivateScheduler):
     sched.forget_after = 1
 
     await sched.schedule('Old', now_ts() + 2)
@@ -50,9 +50,9 @@ async def demo_ignore_old_4(sched: Scheduler):
 
 async def run():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         r = await app.deps.db.get_redis()
-        sched = Scheduler(r, 'demo', poll_interval=1)
+        sched = PrivateScheduler(r, 'demo', poll_interval=1)
         sched.add_subscriber(Receiver(tag='scheduler-demo', callback=handler))
 
         await sched.cancel_all_periodic()

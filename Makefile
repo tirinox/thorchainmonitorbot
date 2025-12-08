@@ -3,6 +3,7 @@ export
 
 BOTNAME = thtgbot
 DATE = $(shell date +'%Y-%m-%d-%H-%M-%S')
+PROJECT_ROOT := $(shell git rev-parse --show-toplevel 2>/dev/null || pwd)
 
 
 default: help
@@ -137,8 +138,9 @@ backup-db: # Backup the database Redis
 
 
 .PHONY: dashboard
-dashboard: # Start the dashboard
-	cd app && streamlit run dashboard.py
+dashboard:  # Run the Streamlit dashboard
+	@echo "Starting Streamlit Dashboard..."
+	cd $(PROJECT_ROOT)/app && PYTHONPATH="." streamlit run tools/dashboard/Dashboard.py
 
 
 .PHONY: redis-analysis

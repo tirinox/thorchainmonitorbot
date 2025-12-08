@@ -28,6 +28,7 @@ from models.key_stats_model import AlertKeyStats
 from models.last_block import EventBlockSpeed, BlockProduceState
 from models.memo import THORMemo
 from models.mimir import AlertMimirChange, AlertMimirVoting
+from models.net_stats import AlertNetworkStats
 from models.node_info import AlertNodeChurn
 from models.pool_info import PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
@@ -66,9 +67,9 @@ class AlertPresenter(INotified, WithLogger):
 
     async def on_data(self, sender, data):
         # noinspection PyAsyncCall
-        asyncio.create_task(self._handle_async(data))
+        asyncio.create_task(self.handle_data(data))
 
-    async def _handle_async(self, data):
+    async def handle_data(self, data):
         if isinstance(data, RuneCEXFlow):
             await self._handle_rune_cex_flow(data)
         elif isinstance(data, NativeTokenTransfer):
@@ -129,6 +130,10 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_secured_asset_summary(data)
         elif isinstance(data, TcyFullInfo):
             await self._handle_tcy_report(data)
+        elif isinstance(data, AlertNetworkStats):
+            await self._handle_net_stats(data)
+        else:
+            self.logger.error(f'Unknown alert data type: {type(data)}')
 
     async def load_names(self, addresses) -> NameMap:
         if isinstance(addresses, str):
@@ -436,7 +441,7 @@ class AlertPresenter(INotified, WithLogger):
         async def generate_pool_picture(loc: BaseLocalization, event: EventPools):
             pic_gen = PoolPictureGenerator(loc, event)
             pic, pic_name = await pic_gen.get_picture()
-            caption = loc.notification_text_best_pools(event, 5)
+            caption = loc.notification_text_best_pools(event)
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
         await self.deps.broadcaster.broadcast_to_all(generate_pool_picture, data)
@@ -589,3 +594,6 @@ class AlertPresenter(INotified, WithLogger):
                 return text
 
         await self.deps.broadcaster.broadcast_to_all(message_gen)
+
+    async def _handle_net_stats(self, data: AlertNetworkStats):
+        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_network_summary, data)

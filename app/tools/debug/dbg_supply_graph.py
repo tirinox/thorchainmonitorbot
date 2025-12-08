@@ -18,8 +18,9 @@ from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 @json_cached_to_file_async("../temp/supply_info_2.json")
 async def get_rune_supply(app: LpAppFramework):
-    rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.fetch()
+    rune_market_info: RuneMarketInfo = await app.deps.market_info_cache.get()
     return rune_market_info.supply_info._asdict()
+
 
 #
 # @json_cached_to_file_async("../temp/net_stats1.json")
@@ -65,7 +66,7 @@ async def debug_get_rune_market_data(app):
     fetcher_stats = NetworkStatisticsFetcher(d)
     d.net_stats = await fetcher_stats.fetch()
 
-    rune_market_info: RuneMarketInfo = await d.rune_market_fetcher.fetch()
+    rune_market_info: RuneMarketInfo = await d.market_info_cache.get()
     return d.net_stats, rune_market_info
 
 
@@ -90,11 +91,6 @@ async def post_supply_to_discord(app: LpAppFramework, pic):
     await asyncio.sleep(10)
 
 
-async def my_demo_market_info(app: LpAppFramework):
-    info = await app.deps.rune_market_fetcher.fetch()
-    pprint(info)
-
-
 async def debug_network_stats(app: LpAppFramework):
     ns_fetcher = NetworkStatisticsFetcher(app.deps)
     data = await ns_fetcher.fetch()
@@ -103,16 +99,13 @@ async def debug_network_stats(app: LpAppFramework):
 
 async def run():
     app = LpAppFramework()
-    async with app(brief=True):
-
+    async with app:
         # await app.deps.pool_fetcher.fetch()
 
         pic, _ = await get_supply_pic(app, cached=True)
         save_and_show_pic(pic, show=True, name='supply')
 
         # await post_supply_to_discord(app, pic)
-        # await my_demo_market_info(app)
-
         # await debug_network_stats(app)
 
 

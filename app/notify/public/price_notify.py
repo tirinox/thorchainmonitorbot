@@ -10,7 +10,7 @@ from lib.utils import make_stickers_iterator
 from models.price import RuneMarketInfo, AlertPrice, PriceATH
 
 
-class PriceNotifier(INotified, WithDelegates, WithLogger):
+class PriceChangeNotifier(INotified, WithDelegates, WithLogger):
     ATH_KEY = 'runeATH'
     CD_KEY_PRICE_NOTIFIED = 'price_notified'
     CD_KEY_PRICE_RISE_NOTIFIED = 'price_notified_rise'
@@ -38,6 +38,10 @@ class PriceNotifier(INotified, WithDelegates, WithLogger):
         self.ath_sticker_iter = make_stickers_iterator(self.ath_stickers)
 
         self.price_graph_period = parse_timespan_to_seconds(cfg.price_graph.default_period)
+
+    @property
+    def regular_cooldown(self):
+        return self._cd_price_regular
 
     async def on_data(self, sender, market_info: RuneMarketInfo):
         # market_info.pool_rune_price = 50.98  # fixme: debug! for ATH
@@ -105,10 +109,6 @@ class PriceNotifier(INotified, WithDelegates, WithLogger):
                     self.logger.info(f'price fall {pretty_money(percent_change)} %')
                     await self._cd_price_fall.do()
                     send_it = True
-
-        if not send_it and await self._cd_price_regular.can_do():
-            self.logger.info('no price change but it is long time elapsed (global cd), so notify anyway')
-            send_it = True
 
         if send_it:
             await self._cd_price_regular.do()

@@ -8,7 +8,7 @@ from tools.lib.lp_common import LpAppFramework
 async def my_test_midgard1():
     lp_app = LpAppFramework()
     async with lp_app:
-        await lp_app.prepare(brief=True)
+        
         mdg: MidgardConnector = lp_app.deps.midgard_connector
 
         sep()

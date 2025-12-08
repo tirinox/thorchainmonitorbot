@@ -1,10 +1,9 @@
 import copy
 import dataclasses
 import logging
-from dataclasses import dataclass
-from typing import List, Dict, NamedTuple, Optional
-
 import math
+from dataclasses import dataclass
+from typing import List, Dict, NamedTuple, Optional, Tuple
 
 from api.aionode.types import ThorPool
 from lib.constants import thor_to_float
@@ -63,7 +62,7 @@ class PoolInfo:
         full_balance_rune = 2 * thor_to_float(self.balance_rune) + correction
         return runes / full_balance_rune * 100.0
 
-    def get_share_rune_and_asset(self, units: int) -> (float, float):
+    def get_share_rune_and_asset(self, units: int) -> Tuple[float, float]:
         r, a = pool_share(self.balance_rune, self.balance_asset, my_units=units, pool_total_units=self.units)
         return thor_to_float(r), thor_to_float(a)
 
@@ -87,7 +86,7 @@ class PoolInfo:
 
     @property
     def runes_per_asset(self):
-        return self.balance_rune / self.balance_asset
+        return self.balance_rune / self.balance_asset if self.balance_asset else 0.0
 
     @property
     def usd_per_rune(self):
@@ -129,12 +128,12 @@ class PoolInfo:
         except TypeError:
             pass
 
-    def as_dict_brief(self):
+    def to_dict(self):
         return dataclasses.asdict(self)
 
     @property
     def rune_price(self):
-        return self.usd_per_asset / self.runes_per_asset
+        return self.usd_per_asset / self.runes_per_asset if self.runes_per_asset else 0.0
 
     @property
     def usd_volume_24h(self):
@@ -292,6 +291,23 @@ class PoolChanges(NamedTuple):
         return self.pools_changed or self.pools_added or self.pools_removed
 
 
+class PoolMapStruct(NamedTuple):
+    pool_map: PoolInfoMap
+    timestamp: int
+
+    @classmethod
+    def from_json(cls, j):
+        pool_map = {p['asset']: PoolInfo.from_midgard_json(p) for p in j.get('pools', [])}
+        timestamp = int(j.get('timestamp', 0))
+        return cls(pool_map, timestamp)
+
+    def to_dict(self):
+        return {
+            'pools': [p.to_dict() for p in self.pool_map.values()],
+            'timestamp': self.timestamp,
+        }
+
+
 class EventPools(NamedTuple):
     pool_detail_dic: PoolInfoMap
     pool_detail_dic_prev: PoolInfoMap
@@ -311,7 +327,8 @@ class EventPools(NamedTuple):
 
     @property
     def all_assets(self):
-        return set(self.pool_detail_dic.keys()) | set(self.pool_detail_dic_prev.keys())
+        return set(self.pool_detail_dic.keys()) | set(
+            self.pool_detail_dic_prev.keys() if self.pool_detail_dic_prev else [])
 
     def get_top_pools(self, criterion: str, n=None, descending=True) -> List[PoolInfo]:
         pools = self.pool_detail_dic.values()

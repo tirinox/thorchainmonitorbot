@@ -1,6 +1,7 @@
 import yaml
 
 from lib.path import get_data_path
+from models.asset import Asset
 
 MIMIR_KEY_KILL_SWITCH_START = 'KILLSWITCHSTART'
 MIMIR_KEY_KILL_SWITCH_DURATION = 'KILLSWITCHDURATION'
@@ -69,8 +70,26 @@ class MimirNameRules:
         self.make_words_proper()
         self.sort_word_transform()
 
+    def update_asset_names(self, assets):
+        if isinstance(assets, dict):
+            new_assets = set(assets.keys())
+        elif isinstance(assets, (list, set, tuple)):
+            new_assets = set(assets)
+        else:
+            return
+
+        words_to_add = []
+        for asset_name in new_assets:
+            # in Mimir asset names appear without dots (ETH-AAVE-0X...)
+            asset_pretty = Asset.from_string(asset_name).pretty_str
+
+            asset_name_hyphen = asset_name.replace('.', '-')
+            self.rules_word_transform[asset_name_hyphen] = asset_pretty
+            words_to_add.append(asset_name_hyphen)
+        self.add_words(words_to_add)
+
     @property
-    def dict_word_sorted(self):
+    def known_words(self):
         return self.rules.get('words', [])
 
     def save_to(self, filename):
@@ -83,18 +102,18 @@ class MimirNameRules:
 
     def make_words_proper(self):
         # upper and strip
-        words = [w.strip().upper() for w in self.dict_word_sorted]
+        words = [w.strip().upper() for w in self.known_words]
         # remove duplicates
         words = list(set(words))
         # sort by length longest first
         words = sorted(words, key=lambda w: (-len(w), w))
         # save
-        self.rules['words'] = words
+        self.rules['words'] = list(words)
 
     def sort_word_transform(self):
         transformed = {
             k.strip().upper(): v
-            for k, v in self.rules.get('word_transform', {}).items()
+            for k, v in self.rules_word_transform.items()
         }
         self.rules['word_transform'] = dict(sorted(transformed.items()))
 
@@ -116,7 +135,7 @@ class MimirNameRules:
     def excluded_from_voting(self):
         return self.rules.get('excluded_vote_keys', [])
 
-    def _take_care_of_asset_name(self, word: str):
+    def _transform_each_word(self, word: str):
         up_word = word.upper()
         if up_word in self.rules_word_transform:
             word = self.rules_word_transform.get(up_word)
@@ -132,8 +151,7 @@ class MimirNameRules:
         name = name.upper()
 
         word_offset = {}
-
-        for word in self.dict_word_sorted:
+        for word in self.known_words:
             word_len = len(word)
             while True:
                 index = name.find(word, word_offset.get(word, 0))
@@ -161,14 +179,11 @@ class MimirNameRules:
         if position < len(name):
             words.append(name[position:].upper())
 
-        words = [self._take_care_of_asset_name(w) for w in words]
+        words = [self._transform_each_word(w) for w in words]
 
         return glue.join(words)
 
     def name_to_human(self, name: str):
-        # if not self.rules:
-        #     logging.warning("No rules loaded")
-
         r = (
                 self.rules.get('translate', {}).get(name)
                 or self.try_deducting_mimir_name(name)

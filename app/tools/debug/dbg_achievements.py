@@ -231,7 +231,7 @@ def gen_ach_desc_translate_mapping(items):
 
 async def main():
     app = LpAppFramework()
-    async with app(brief=True):
+    async with app:
         clear_temp_achievements_folder()
         # await demo_debug_logic(app)
         # await demo_achievements_picture(Language.ENGLISH, A.ANNIVERSARY, 3, 3)

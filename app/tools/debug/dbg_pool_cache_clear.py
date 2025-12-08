@@ -68,7 +68,7 @@ async def do_job(app: LpAppFramework):
 
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
-    async with app(brief=True):
+    async with app:
         await do_job(app)
 
 

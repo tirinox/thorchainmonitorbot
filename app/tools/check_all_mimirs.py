@@ -7,22 +7,25 @@ from tools.lib.lp_common import LpAppFramework
 
 
 async def main():
-    # print(try_to_decompose_mimir_name('MAXNODETOCHURNOUTSUCKFORLOWVERSIONGGG'))
-
     lp_app = LpAppFramework(log_level=logging.INFO)
-    async with lp_app(brief=True):
+    async with lp_app:
 
         mimir = await lp_app.deps.mimir_cache.get_mimir_holder()
 
-        rules = mimir.mimir_rules
-        rules.load(MIMIR_DICT_FILENAME)
+        mimir.mimir_rules.load(MIMIR_DICT_FILENAME)
+
+        # pools = await lp_app.deps.pool_cache.get_pools()
+        # mimir.mimir_rules.update_asset_names(pools)
+
+        converter = mimir.mimir_rules.name_to_human
 
         current_names = set([k.upper() for k in mimir.all_names_including_voting])
+
         sep()
         code_gen = ''
+
         for name in sorted(current_names):
-            # fixme: ADVSWAPQUEUERAPIDSWAPMAX ->  'Advanced Swap Queue Rapid      Max'
-            pretty_name = rules.name_to_human(name)
+            pretty_name = converter(name)
             code_gen += f'    {name.upper()}: {pretty_name!r},\n'
 
         print(code_gen)

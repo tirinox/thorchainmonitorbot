@@ -4,10 +4,10 @@ import os
 from api.midgard.parser import MidgardParserV2
 from comm.telegram.telegram import telegram_send_message_basic, TG_TEST_USER
 from comm.twitter.twitter_bot import twitter_text_length, TwitterBotMock
-from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.fetch.tx import TxFetcher
 from jobs.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from jobs.scanner.native_scan import BlockScanner
+from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from lib.constants import NetworkIdents
 from lib.delegates import INotified
@@ -15,15 +15,14 @@ from lib.draw_utils import img_to_bio
 from lib.texts import sep
 from lib.utils import load_json
 from main import App
+from notify.pub_configure import PublicAlertJobExecutor
 
 
 class LpAppFramework(App):
-    def __init__(self, rune_yield_class=None, network=None, log_level=logging.DEBUG, brief=None,
-                 emergency=True) -> None:
+    def __init__(self, rune_yield_class=None, network=None, log_level=logging.DEBUG, emergency=True) -> None:
         self.solve_working_dir_mess()  # first of all!
 
         super().__init__(log_level)
-        self.brief = brief
 
         self.enable_aiohttp_debug_mode()
 
@@ -69,13 +68,17 @@ class LpAppFramework(App):
         print(f'TG:\n{txt}\n')
         return await telegram_send_message_basic(self.tg_token, TG_TEST_USER, txt, **kwargs)
 
-    async def prepare(self, brief=False):
+    async def prepare(self):
         d = self.deps
 
         # before all
         await d.db.get_redis()
-        
+
         d.make_http_session()
+
+        d.pub_alert_executor = PublicAlertJobExecutor(d)
+        d.pub_scheduler = await d.pub_alert_executor.configure_jobs()
+        d.user_counter = UserCounterMiddleware(d)
 
         # often required
         d.volume_recorder = VolumeRecorder(d)
@@ -96,8 +99,7 @@ class LpAppFramework(App):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
 
-    def __call__(self, brief=False):
-        self.brief = brief
+    def __call__(self):
         return self
 
     async def test_all_locs(self, f, locs=None, *args, **kwargs):

@@ -7,7 +7,7 @@ from tools.lib.lp_common import LpAppFramework
 async def main(block_start=9867681, block_end=9888681):
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app:
-        await lp_app.prepare(brief=True)
+        await lp_app.prepare
 
         thor = lp_app.deps.thor_connector
 

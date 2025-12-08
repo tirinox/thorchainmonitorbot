@@ -7,8 +7,8 @@ from comm.picture.nodes_pictures import NodePictureGenerator
 from comm.picture.pools_picture import PoolPictureGenerator
 from comm.picture.queue_picture import queue_graph
 from comm.picture.supply_picture import SupplyPictureGenerator
-from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.ruji_merge import RujiMergeTracker
+from jobs.rune_burn_recorder import RuneBurnRecorder
 from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from lib.draw_utils import img_to_bio
 from lib.texts import kbd
@@ -16,13 +16,11 @@ from models.net_stats import AlertNetworkStats
 from models.node_info import NodeInfo, NetworkNodes
 from models.ruji import AlertRujiraMergeStats
 from notify.public.best_pool_notify import BestPoolsNotifier
-from notify.public.burn_notify import BurnNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
-from notify.public.cex_flow import CEXFlowNotifier
+from notify.public.cex_flow import CEXFlowRecorder
 from notify.public.node_churn_notify import NodeChurnNotifier
-from notify.public.price_notify import PriceNotifier
+from notify.public.price_notify import PriceChangeNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
-from notify.public.transfer_notify import RuneMoveNotifier
 from .base import BaseDialog, message_handler
 
 
@@ -150,13 +148,13 @@ class MetricsDialog(BaseDialog):
 
         nodes: NetworkNodes = await self.deps.node_cache.get()
 
+        event = AlertNetworkStats(
+            old_info, new_info,
+            nodes.node_info_list,
+        )
+
         await message.answer(
-            loc.notification_text_network_summary(
-                AlertNetworkStats(
-                    old_info, new_info,
-                    nodes.node_info_list,
-                ),
-            ),
+            loc.notification_text_network_summary(event),
             disable_web_page_preview=True,
             disable_notification=True
         )
@@ -196,18 +194,15 @@ class MetricsDialog(BaseDialog):
     async def show_price(self, message, period):
         await self.start_typing(message)
 
-        market_info = await self.deps.rune_market_fetcher.fetch()
+        market_info = await self.deps.market_info_cache.get()
 
         if not market_info:
             await message.answer(self.loc.TEXT_PRICE_NO_DATA, disable_notification=True)
             return
 
-        pn = PriceNotifier(self.deps)
-        pn.price_graph_period = period or pn.price_graph_period
-        alert = await pn.make_event(
-            market_info,
-            ath=False, last_ath=None
-        )
+        pn = PriceChangeNotifier(self.deps)
+        pn.price_graph_period = 7 * DAY
+        alert = await pn.make_event(market_info, ath=False, last_ath=None)
 
         price_text = self.loc.notification_text_price_update(alert)
 
@@ -249,7 +244,7 @@ class MetricsDialog(BaseDialog):
             await message.answer(self.loc.TEXT_BEST_POOLS_NO_DATA, disable_notification=True)
             return
 
-        text = self.loc.notification_text_best_pools(event, notifier.n_pools)
+        text = self.loc.notification_text_best_pools(event)
         generator = PoolPictureGenerator(self.loc, event)
         pic, pic_name = await generator.get_picture()
         await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
@@ -263,17 +258,15 @@ class MetricsDialog(BaseDialog):
             await message.answer(self.loc.notification_text_pol_stats(event), disable_notification=True)
 
     async def show_cex_flow(self, message: Message, period=DAY):
-        cex_flow_notifier = CEXFlowNotifier(self.deps)
-        flow = await cex_flow_notifier.read_within_period(period=period)
-        flow.usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+        cex_flow_notifier = CEXFlowRecorder(self.deps)
+        flow = await cex_flow_notifier.get_event(period)
         text = self.loc.notification_text_cex_flow(flow)
         await message.answer(text, disable_notification=True)
 
     async def show_rune_supply(self, message: Message):
         await self.start_typing(message)
 
-        market_fetcher: RuneMarketInfoFetcher = self.deps.rune_market_fetcher
-        market_info = await market_fetcher.fetch()
+        market_info = await self.deps.market_info_cache.get()
 
         text = self.loc.text_metrics_supply(market_info)
 
@@ -330,7 +323,7 @@ class MetricsDialog(BaseDialog):
     async def show_rune_burned(self, message: Message):
         await self.start_typing(message)
 
-        notifier = BurnNotifier(self.deps)
+        notifier = RuneBurnRecorder(self.deps)
         event = await notifier.get_event()
         if not event:
             await message.answer(self.loc.TEXT_BURN_NO_DATA, disable_notification=True)

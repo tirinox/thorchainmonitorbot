@@ -2026,7 +2026,7 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_BEST_POOLS_NO_DATA = 'No pool data available. Please try again later.'
 
-    def notification_text_best_pools(self, pd: EventPools, n_pools):
+    def notification_text_best_pools(self, pd: EventPools):
         return 'THORChain top liquidity pools'
 
     # ------- INLINE BOT (English only) -------
@@ -2290,6 +2290,8 @@ class BaseLocalization(ABC):  # == English
         for i, details in enumerate(event.membership, start=1):
             pool: PoolInfo = event.prices.find_pool(details.pool)
             rune = pool.total_my_capital_of_pool_in_rune(details.liquidity_units)
+            if rune < 100.0:
+                continue
             share = pool.percent_share(rune)
             usd = rune * event.prices.usd_per_rune
             asset = self.pretty_asset(details.pool)

@@ -67,7 +67,7 @@ async def dbg_continuous_secured_assets(app):
 
 async def run():
     app = LpAppFramework(log_level='DEBUG')
-    async with app(brief=True):
+    async with app:
         # await dbg_fetch_secured_assets(app)
         # await dbg_fetch_secured_volumes(app)
         # await dbg_continuous_secured_assets(app)

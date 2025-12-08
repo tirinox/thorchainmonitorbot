@@ -1,10 +1,9 @@
 import asyncio
 import logging
 
-from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.scan_cache import BlockScannerCached
 from jobs.scanner.transfer_detector import RuneTransferDetector
-from notify.public.cex_flow import CEXFlowNotifier
+from notify.public.cex_flow import CEXFlowRecorder
 from notify.public.transfer_notify import RuneMoveNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -23,14 +22,13 @@ async def main():
 
         if d.cfg.get('token_transfer.enabled', True):
             d.rune_move_notifier = RuneMoveNotifier(d)
-            d.rune_move_notifier.min_usd_native = 10
+            d.rune_move_notifier.min_usd_native = 10000
             d.rune_move_notifier.add_subscriber(d.alert_presenter)
             transfer_decoder.add_subscriber(d.rune_move_notifier)
 
         if d.cfg.get('token_transfer.flow_summary.enabled', True):
-            cex_flow_notifier = CEXFlowNotifier(d)
+            cex_flow_notifier = CEXFlowRecorder(d)
             # cex_flow_notifier.summary_cd.cooldown = 10
-            cex_flow_notifier.add_subscriber(d.alert_presenter)
             transfer_decoder.add_subscriber(cex_flow_notifier)
 
         await d.block_scanner.run()

@@ -17,8 +17,8 @@ import argparse
 import asyncio
 import sys
 
+from jobs.rune_burn_recorder import RuneBurnRecorder
 from lib.date_utils import HOUR, DAY
-from notify.public.burn_notify import BurnNotifier
 from tools.lib.lp_common import LpAppFramework
 
 DAYS_TO_RESTORE = 10
@@ -51,8 +51,8 @@ async def run():
         print('Aborted')
         return
 
-    async with app(brief=True):
-        notifier = BurnNotifier(app.deps)
+    async with app:
+        notifier = RuneBurnRecorder(app.deps)
         await notifier.erase_and_populate_from_history(
             period=args.time_step,
             max_points=args.days * DAY / TIME_STEP

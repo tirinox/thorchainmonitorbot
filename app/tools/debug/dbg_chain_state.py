@@ -51,7 +51,7 @@ async def demo_chain_halt_notifications(app):
 
 async def main():
     app = LpAppFramework(log_level=logging.WARNING)
-    async with app(brief=True):
+    async with app:
         # await demo_chain_halt_notifications(app)
         await show_chain_state_once(app)
 

@@ -49,7 +49,7 @@ async def dbg_find_outbounds(app, tx_id, start_block_index):
 
 async def run():
     app = LpAppFramework(log_level=logging.INFO)
-    async with app(brief=True):
+    async with app:
         # await dbg_find_outbounds(app, "0F77D9743C8FE2557A2DBD48E59BBA1CAD9B9B771ED1111AB7E6632EEF1584FA", 19711750)
         await dbg_find_outbounds(app, "0F77D9743C8FE2557A2DBD48E59BBA1CAD9B9B771ED1111AB7E6632EEF1584FA", 19711750)
 

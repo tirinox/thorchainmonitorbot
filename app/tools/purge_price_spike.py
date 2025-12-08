@@ -13,7 +13,7 @@ DET_PRICE_THRESHOLD = 2.0
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app:
-        await lp_app.prepare(brief=True)
+        await lp_app.prepare
 
         price_recorder = PriceRecorder(lp_app.deps.db)
         await price_recorder.purge_spikes(INTERVAL,

@@ -10,6 +10,7 @@ from models.price import PriceHolder
 from models.secured import SecuredAssetsStats, SecureAssetInfo, AlertSecuredAssetSummary
 
 
+# This fetcher loads secured asset data for current and previous epochs
 class SecuredAssetAssetFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
         sleep_period = deps.cfg.as_interval("secured_assets.period", "10m")
