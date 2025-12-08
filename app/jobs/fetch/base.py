@@ -191,8 +191,10 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
             self.logger.info('This fetcher is disabled.')
             return
 
-        self.logger.info(f'Waiting {self.initial_sleep:.1f} sec before starting this fetcher...')
-        await asyncio.sleep(self.initial_sleep)
+        if self.initial_sleep:
+            self.logger.info(f'Waiting {self.initial_sleep:.1f} sec before starting this fetcher...')
+            await asyncio.sleep(self.initial_sleep)
+
         self.logger.info(f'Starting this fetcher with period {self.sleep_period:.1f} sec.')
 
         while True:
