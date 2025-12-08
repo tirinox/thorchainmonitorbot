@@ -4,7 +4,6 @@ import logging
 import pickle
 from datetime import datetime
 
-from api.vanahaimex import VanaheimixDataSource
 from comm.localization.languages import Language
 from comm.picture.key_stats_picture import KeyStatsPictureGenerator
 from jobs.fetch.key_stats import KeyStatsFetcher
@@ -15,7 +14,6 @@ from lib.delegates import INotified
 from lib.money import short_dollar, short_rune
 from lib.texts import sep
 from lib.utils import recursive_asdict, hex_to_obj
-from models.affiliate import AffiliateInterval
 from models.key_stats_model import AlertKeyStats, LockedValue
 from notify.public.key_metrics_notify import KeyMetricsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
@@ -177,29 +175,6 @@ async def dbg_affiliate_top(app: LpAppFramework):
     # sep()
     # sum_of_int = AffiliateInterval.sum_of_intervals_per_thorname(week).sort_thornames_by_usd_volume()
     # print_affiliate_table(sum_of_int)
-
-
-async def dbg_vanaheimix(app: LpAppFramework):
-    source = VanaheimixDataSource(app.deps.session)
-    data = await source.get_affiliate_fees(interval='day', count=14)
-    print(data)
-    sep()
-    print(f'Total intervals: {len(data.intervals)}')
-    if data.intervals[0].start_time > data.intervals[-1].start_time:
-        print('Intervals are in descending order')
-    else:
-        print('Intervals are in ascending order')
-
-    prev_week = data.intervals[0:7]
-    curr_week = data.intervals[7:]
-
-    prev_week_interval = AffiliateInterval.sum_of_intervals_per_thorname(prev_week).sort_thornames_by_usd_volume()
-    curr_week_interval = AffiliateInterval.sum_of_intervals_per_thorname(curr_week).sort_thornames_by_usd_volume()
-
-    sep('Previous')
-    print_affiliate_table(prev_week_interval)
-    sep('Current')
-    print_affiliate_table(curr_week_interval)
 
 
 async def dbg_recursive_asdict(app: LpAppFramework):

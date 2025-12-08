@@ -11,14 +11,6 @@ from models.runepool import AlertRunePoolAction, AlertRunepoolStats, RunepoolSta
 from notify.public.runepool_notify import RunePoolTransactionNotifier, RunepoolStatsNotifier
 from tools.lib.lp_common import LpAppFramework
 
-prepared = False
-
-
-async def prepare_once(app):
-    global prepared
-    if not prepared:
-        prepared = True
-
 
 WITHDRAW_TX_HASH = '6B27CC9346DF91559294DBDFD812D01E2FE79AFB18D6E5C0CD9EEED4C022AB77'
 WITHDRAW_TX_HEIGHT = 18990272
@@ -30,7 +22,6 @@ DEPOSIT_TX_HEIGHT = 18961411
 
 
 async def demo_decode_runepool_deposit(app: LpAppFramework, height):
-    await prepare_once(app)
 
     scanner = BlockScanner(app.deps)
 
@@ -90,8 +81,6 @@ async def demo_simulate_deposit(app: LpAppFramework):
     await app.test_all_locs(BaseLocalization.notification_runepool_action, None, event, name_map)
 
 async def demo_runepool_continuous(app: LpAppFramework, b=0):
-    await prepare_once(app)
-
     d = app.deps
     d.block_scanner = BlockScanner(d, last_block=b)
     d.block_scanner.one_block_per_run = b > 0
