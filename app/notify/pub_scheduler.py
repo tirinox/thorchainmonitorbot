@@ -148,6 +148,10 @@ class PublicScheduler(WithLogger):
         self.db_log = RedisLog(self.DB_KEY_PREFIX, db, max_lines=10_000)
         self._rpc = SimpleRPC(db, channel_prefix=self.DB_KEY_PREFIX)
 
+        self.retries = 3
+        self.retry_delay = 5
+        self.retry_delay_mult = 2
+
     async def clear_job_list(self, apply=False, save=False):
         await self.db_log.info('clear_jobs', phase='start', apply=apply, save=save)
         self._scheduled_jobs.clear()
@@ -198,6 +202,7 @@ class PublicScheduler(WithLogger):
                 return await self.run_job_by_function(func)
             else:
                 await self.logger.error(f'Cannot run {command} with parameters {payload}')
+                return None
         else:
             return "unknown_command"
 
@@ -214,12 +219,12 @@ class PublicScheduler(WithLogger):
 
         # Run the job immediately
         one_time_cfg = job_cfg.model_copy(update={'enabled': True})
-        await coro(one_time_cfg)
+        await coro(one_time_cfg, with_retries=False)
 
     async def run_job_by_function(self, func_name: str):
         self.logger.info(f'Function {func_name} is run by name')
         coro = self._registered_jobs.get(func_name)
-        return await coro(None)
+        return await coro(None, with_retries=False)
 
     async def post_command(self, command: str, timeout=15.0, **kwargs):
         return await self._rpc({
@@ -267,18 +272,19 @@ class PublicScheduler(WithLogger):
         stats = JobStats(self.db, key=job_id)
         await stats.set_is_dirty(value)
 
-    def _with_retry(self, func, retries=3, delay=5, delay_mult=2):
+    def _with_retry(self, func):
         func_name = func.__name__
 
         @functools.wraps(func)
-        async def wrapper(desc: Optional[SchedJobCfg]):
-            current_delay = delay
+        async def wrapper(desc: Optional[SchedJobCfg], with_retries=True):
+            current_delay = self.retry_delay
             stats = JobStats(self.db, key=desc.id if desc else f'_direct_{func_name}')
             self.logger.info(f"Starting job with retry logic: {func_name}.")
             await self.db_log.info('run', phase='start', job=func_name)
             start_time = time.monotonic()
             job_id = desc.id if desc else 0
-            for attempt in range(1, retries + 1):
+            retry_count = self.retries if with_retries else 1
+            for attempt in range(1, retry_count + 1):
                 try:
                     if desc and not desc.enabled:
                         # fixme: possible bug, are we sure the "desc" is the latest state?
@@ -302,23 +308,23 @@ class PublicScheduler(WithLogger):
                     return result
                 except Exception as e:
                     self.logger.warning(
-                        f"{func_name}: attempt {attempt}/{retries} failed: {e}. Retrying in {current_delay} seconds...")
+                        f"{func_name}: attempt {attempt}/{retry_count} failed: {e}. Retrying in {current_delay} seconds...")
 
                     elapsed = time.monotonic() - start_time
                     await stats.record_error(elapsed, error_message=str(e), ts=time.time())
                     await stats.set_is_running(False)
 
-                    if attempt < retries:
+                    if attempt < retry_count:
                         await self.db_log.error('run', phase='retry',
                                                 job=func_name, job_id=job_id,
                                                 attempt=attempt, error=str(e))
                         await asyncio.sleep(current_delay)
-                        current_delay = current_delay * delay_mult
+                        current_delay = current_delay * self.retry_delay
                     else:
                         await self.db_log.error('run', phase='failed',
                                                 job=func_name, job_id=job_id,
                                                 error=str(e))
-                        self.logger.error(f'{func_name}: all {retries} attempts failed.')
+                        self.logger.error(f'{func_name}: all {retry_count} attempts failed.')
             return 'failed'
 
         return wrapper
