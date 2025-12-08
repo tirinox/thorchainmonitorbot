@@ -98,19 +98,23 @@ if "action" in df.columns:
     action_list += sorted(df["action"].dropna().unique().tolist())
 
 phase_list = ["(all)"] + sorted(df["phase"].dropna().unique().tolist())
+job_types_list = ["(all)"] + sorted(df["job"].dropna().unique().tolist())
 
-col1, col2, col3 = st.columns([1, 1, 2])
+col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
 with col1:
     f_action = st.selectbox("action", action_list)
 with col2:
     f_phase = st.selectbox("phase", phase_list)
 with col3:
+    f_job = st.selectbox("job", job_types_list)
+with col4:
     if job_query_param:
         find_text = job_query_param
     else:
         find_text = ''
     f_text = st.text_input("search text", find_text)
 
+# noinspection PyNoneFunctionAssignment
 filtered = df.copy()
 
 if f_action != "(all)" and "action" in filtered.columns:
@@ -118,6 +122,10 @@ if f_action != "(all)" and "action" in filtered.columns:
 
 if f_phase != "(all)":
     filtered = filtered[filtered["phase"] == f_phase]
+
+if f_job != "(all)":
+    filtered = filtered[filtered["job"] == f_job]
+
 
 if f_text.strip():
     txt = f_text.lower()

@@ -103,14 +103,14 @@ for job in jobs:
         with b_cols[1]:
             if st.button("✍️", key=f"edit_{ident}"):
                 st.session_state.editing_job = job
-                st.switch_page("pages/_AddEditJob.py")
+                st.switch_page("pages/Add_Edit_Job.py")
             if st.button("Disable" if job.enabled else "Enable", key=f"toggle_{ident}"):
                 run_coro(sched.toggle_job_enabled(job.id, not job.enabled))
                 st.rerun()
 
             if st.button("Logs...", key=f'view_logs_{ident}'):
                 st.session_state['job_id_view_logs'] = ident
-                st.switch_page(f"pages/SchedLogs.py")
+                st.switch_page(f"pages/Sched_Logs.py")
 
 if not jobs:
     st.info("No jobs configured yet. Consider adding one below.")
@@ -126,7 +126,7 @@ if is_dirty:
 
 if st.button("Add New Job", use_container_width=True):
     st.session_state.editing_job = None
-    st.switch_page("pages/_AddEditJob.py")
+    st.switch_page("pages/Add_Edit_Job.py")
 
 with st.expander("Raw JSON configs"):
     for j in jobs:
