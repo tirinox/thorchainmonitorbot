@@ -179,6 +179,7 @@ class PublicScheduler(WithLogger):
         return self._scheduled_jobs
 
     async def _on_control_message(self, payload):
+        # The result of this function is dispatched to the dashboard via pub/sub channel
         await self.db_log.info('control_message', phase='received', message=payload)
         self.logger.warning(f'Received control message: {payload}')
         if not payload or not isinstance(payload, dict):
@@ -219,7 +220,7 @@ class PublicScheduler(WithLogger):
 
         # Run the job immediately
         one_time_cfg = job_cfg.model_copy(update={'enabled': True})
-        await coro(one_time_cfg, with_retries=False)
+        return await coro(one_time_cfg, with_retries=False)
 
     async def run_job_by_function(self, func_name: str):
         self.logger.info(f'Function {func_name} is run by name')
@@ -307,25 +308,27 @@ class PublicScheduler(WithLogger):
                     result = result if result is not None else 'success'
                     return result
                 except Exception as e:
+                    error_msg = str(e)
                     self.logger.warning(
                         f"{func_name}: attempt {attempt}/{retry_count} failed: {e}. Retrying in {current_delay} seconds...")
 
                     elapsed = time.monotonic() - start_time
-                    await stats.record_error(elapsed, error_message=str(e), ts=time.time())
+                    await stats.record_error(elapsed, error_message=error_msg, ts=time.time())
                     await stats.set_is_running(False)
 
                     if attempt < retry_count:
                         await self.db_log.error('run', phase='retry',
                                                 job=func_name, job_id=job_id,
-                                                attempt=attempt, error=str(e))
+                                                attempt=attempt, error=error_msg)
                         await asyncio.sleep(current_delay)
                         current_delay = current_delay * self.retry_delay
                     else:
                         await self.db_log.error('run', phase='failed',
                                                 job=func_name, job_id=job_id,
-                                                error=str(e))
+                                                error=error_msg)
                         self.logger.error(f'{func_name}: all {retry_count} attempts failed.')
-            return 'failed'
+                        return f'failed with error: {error_msg}'
+            return 'unknown failure'
 
         return wrapper
 
