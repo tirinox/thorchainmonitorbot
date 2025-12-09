@@ -6,7 +6,7 @@ import pandas as pd
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
-from lib.date_utils import seconds_human
+from lib.date_utils import seconds_human, format_date
 from notify.pub_scheduler import PublicScheduler
 from tools.dashboard.helpers import get_app, run_coro
 
@@ -54,7 +54,7 @@ if job_query_param:
 if "_ts" in df.columns:
     now = datetime.now().timestamp()
     df["Time"] = df["_ts"].apply(
-        lambda x: f'{datetime.fromtimestamp(x).strftime("%Y/%m/%d | %H:%M:%S")} | {seconds_human(now - x)} ago'
+        lambda x: f'{format_date(x, with_time=True)} | {seconds_human(now - x)} ago'
         if pd.notna(x)
         else ""
     )
@@ -125,7 +125,6 @@ if f_phase != "(all)":
 
 if f_job != "(all)":
     filtered = filtered[filtered["job"] == f_job]
-
 
 if f_text.strip():
     txt = f_text.lower()

@@ -15,5 +15,6 @@ async def send_reload_confing_message():
 
 
 # button sends a message to the log
-if st.button("PUB"):
-    run_coro(send_reload_confing_message())
+# if st.button("PUB"):
+#     run_coro(send_reload_confing_message())
+st.warning("Nothing here yet.")

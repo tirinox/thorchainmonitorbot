@@ -1,4 +1,3 @@
-import random
 from datetime import datetime
 from typing import Optional
 
@@ -14,14 +13,13 @@ from tools.dashboard.helpers import run_coro, get_app
 def form_add_job(edit_job: Optional[SchedJobCfg] = None):
     st.subheader("Select job trigger type")
     variants = [SchedVariant.INTERVAL, SchedVariant.CRON, SchedVariant.DATE]
-    variant = st.selectbox(
+    variant = st.segmented_control(
         "Trigger type",
         variants,
         key="variant",
-        index=variants.index(edit_job.variant) if edit_job and edit_job.variant else 0
+        default=edit_job.variant if edit_job else variants[0],
+        # index=variants.index(edit_job.variant) if edit_job and edit_job.variant else 0
     ) or SchedVariant.INTERVAL
-
-    st.subheader("Base parameters")
 
     if edit_job:
         func_name = st.text_input("Function (cannot edit)", value=edit_job.func, disabled=True)
