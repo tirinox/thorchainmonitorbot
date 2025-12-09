@@ -1,8 +1,7 @@
-from datetime import datetime
-
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
+from lib.date_utils import format_date, now_ts
 from tools.dashboard.components.cex_flow import cex_flow_dashboard_info
 from tools.dashboard.components.curve import curve_dashboard_info
 from tools.dashboard.components.dedup import dedup_dashboard_info
@@ -14,15 +13,15 @@ from tools.dashboard.helpers import get_app
 st.set_page_config(page_title="Bot Dashboard")
 
 app = get_app()
-d = app.deps
+
 st.set_page_config(layout="wide")
 st.title('Bot dashboard')
 
-# auto refresh page every 10 seconds
-st_autorefresh(interval=30000, limit=200, key="page_refresh")
+# auto refresh page
+st_autorefresh(interval=1000, limit=200, key="page_refresh")
 
 # last refresh time: now
-st.write(f"Last refresh: {datetime.now().isoformat()}")
+st.write(f"Last refresh: {format_date(now_ts())}")
 
 tab_dict = {
     "Tx Dedup": dedup_dashboard_info,

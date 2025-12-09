@@ -232,3 +232,12 @@ def convert_to_milliseconds(timestamp):
     else:
         # Timestamp is already in milliseconds, return as is
         return int(timestamp)
+
+
+def format_date(dt: datetime | float | int, with_time=True) -> str:
+    if isinstance(dt, (int, float)):
+        dt = datetime.fromtimestamp(dt)
+    if with_time:
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        return dt.strftime("%Y-%m-%d")

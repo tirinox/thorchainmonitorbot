@@ -6,17 +6,10 @@ from tools.dashboard.helpers import run_coro
 from tools.lib.lp_common import LpAppFramework
 
 
-async def dedup_dashboard_info_async(app: LpAppFramework):
-    d = app.deps
-    items = [
-        "scanner:last_seen", 'route:seen_tx', 'TxCount', 'VolumeRecorder',
-        'RunePool:announced-hashes', 'ss-started:announced-hashes', 'TradeAcc:announced-hashes',
-        'large-tx:announced-hashes'
-    ]
-
+async def dedup_dashboard_info_async(app: LpAppFramework, deduplicators):
     summary = []
-    for name in items:
-        dedup = TxDeduplicator(d.db, name)
+    for name, dedup in deduplicators.items():
+        dedup = deduplicators[name]
         bit_count = await dedup.bit_count()
         size = await dedup.length()
         stats = await dedup.load_stats()
@@ -35,6 +28,14 @@ async def dedup_dashboard_info_async(app: LpAppFramework):
 
 
 def dedup_dashboard_info(app):
+    d = app.deps
+    items = [
+        "scanner:last_seen", 'route:seen_tx', 'TxCount', 'VolumeRecorder',
+        'RunePool:announced-hashes', 'ss-started:announced-hashes', 'TradeAcc:announced-hashes',
+        'large-tx:announced-hashes'
+    ]
+    if 'deduplicators' not in st.session_state:
+        st.session_state.deduplicators = {name: TxDeduplicator(d.db, name) for name in items}
     st.subheader('TxDeduplication')
-    data = run_coro(dedup_dashboard_info_async(app))
+    data = run_coro(dedup_dashboard_info_async(app, st.session_state.deduplicators))
     st.table(data)

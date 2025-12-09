@@ -1,6 +1,5 @@
 import streamlit as st
 
-from lib.depcont import DepContainer
 from tools.dashboard.helpers import run_coro
 
 

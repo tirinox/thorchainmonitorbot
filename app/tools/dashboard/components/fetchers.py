@@ -21,8 +21,8 @@ async def fetchers_dashboard_info_async(app):
             'interval': seconds_human(f['sleep_period']),
             'success_rate': format_percent(f['success_rate']),
             'total_ticks': str(f['total_ticks']) if f['total_ticks'] > 0 else '🤷 none yet!',
-            'avg_run_time': round(f['avg_run_time'], 2) if f.get('avg_run_time') else 'N/A',
-            'last_run_time': round(f['last_run_time'], 2) if f.get('last_run_time') else 'N/A',
+            'avg_run_time': str(round(f['avg_run_time'], 2) if f.get('avg_run_time') else 'N/A'),
+            'last_run_time': str(round(f['last_run_time'], 2) if f.get('last_run_time') else 'N/A'),
         } for f in data['trackers']
     ]
 
