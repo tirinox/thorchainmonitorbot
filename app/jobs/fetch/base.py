@@ -50,6 +50,7 @@ class DataController(WithLogger):
         super().__init__()
         self._tracker = {}
         self._all_paused = False
+        self.enabled = True
 
     @property
     def all_paused(self):
@@ -64,6 +65,9 @@ class DataController(WithLogger):
         self._all_paused = False
 
     def register(self, entity: WatchedEntity):
+        if not self.enabled:
+            return
+
         if not entity:
             return
         name = entity.name
@@ -71,6 +75,9 @@ class DataController(WithLogger):
         self.logger.info(f'Registered: {entity} ({id(entity)})')
 
     def unregister(self, entity):
+        if not self.enabled:
+            return
+
         if not entity:
             return
         self._tracker.pop(entity.name)
@@ -82,6 +89,9 @@ class DataController(WithLogger):
     DB_KEY = 'DataController:FetcherStats'
 
     async def save_stats(self, db: DB):
+        if not self.enabled:
+            return
+
         v: BaseFetcher
         data = {
             'all_paused': self._all_paused,
@@ -102,11 +112,17 @@ class DataController(WithLogger):
     async def load_stats(self, db: DB):
         data = await db.redis.get(self.DB_KEY)
         if not data:
-            return
+            return None
         return json.loads(data)
 
     async def run_save_job(self, db: DB, interval=20):
+        if not self.enabled:
+            return
+
         while True:
+            if not self.enabled:
+                break
+
             try:
                 await self.save_stats(db)
             except Exception as e:

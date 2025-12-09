@@ -61,10 +61,12 @@ def get_app():
 
     async def _get_app():
         app = LpAppFramework(log_level=logging.INFO)
+        app.deps.data_controller.enabled = False
         app.deps.loop = loop
         await app.prepare()
         # noinspection PyProtectedMember
         await app.deps.pub_scheduler.start_rpc_client()
+        print("🍑 App initialized ")
         return app
 
     return run_coro(_get_app())
