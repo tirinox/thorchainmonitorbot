@@ -140,7 +140,8 @@ backup-db: # Backup the database Redis
 .PHONY: dashboard
 dashboard:  # Run the Streamlit dashboard
 	@echo "Starting Streamlit Dashboard..."
-	cd $(PROJECT_ROOT)/app && PYTHONPATH="." streamlit run tools/dashboard/Dashboard.py --server.fileWatcherType=all
+	cd $(PROJECT_ROOT)/app && PYTHONPATH="." streamlit run tools/dashboard/Dashboard.py
+	#cd $(PROJECT_ROOT)/app && PYTHONPATH="." streamlit run tools/dashboard/Dashboard.py --server.fileWatcherType=all
 
 
 .PHONY: redis-analysis

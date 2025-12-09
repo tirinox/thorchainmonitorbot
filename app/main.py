@@ -717,7 +717,7 @@ class App(WithLogger):
             self.die()
 
     async def _debug_command(self):
-        await self._print_curves()
+        # await self._print_curves()
 
         await self.deps.telegram_bot.send_message(
             self.deps.cfg.first_admin_id,

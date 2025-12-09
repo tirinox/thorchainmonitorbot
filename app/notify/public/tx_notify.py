@@ -164,7 +164,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         if tx.full_volume_in_rune >= min_rune_volume and tx.full_volume_in_rune >= min_share_rune_volume:
             return True
 
-    def dbg_evaluate_curve_for_pools(self, ph, max_pools=20):
+    def dbg_evaluate_curve_for_pools(self, ph, max_pools=20, silent=False):
         pools = sorted(ph.pool_info_map.values(), key=lambda p: p.balance_rune, reverse=True)
         usd_per_rune = ph.usd_per_rune
 
@@ -176,7 +176,8 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
             depth_usd = pool.usd_depth(usd_per_rune)
             min_pool_share = self.curve.evaluate(depth_usd) * self.curve_mult
             min_share_usd_volume = depth_usd * min_pool_share
-            summary += f"Pool: {pool.asset[:20]:<20} => Min Tx volume is {pretty_dollar(min_share_usd_volume)}\n"
+            if not silent:
+                summary += f"Pool: {pool.asset[:20]:<20} => Min Tx volume is {pretty_dollar(min_share_usd_volume)}\n"
             pool_thresholds.append(
                 {
                     'pool': f'{pool.asset[:20]}',
@@ -187,8 +188,8 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
                     'min_rune_volume': min_share_usd_volume / usd_per_rune,
                 }
             )
-        print(summary)
-        self.logger.info(summary)
+        if not silent:
+            self.logger.info(summary)
         return pool_thresholds
 
 
