@@ -67,7 +67,7 @@ class AioRedisAdapterBase(ABC):
 
     async def get(self, name, **kwargs):
         """Return the value at key ``name`` or None."""
-        return await self._redis.get(name, **kwargs)
+        return await self._redis.get(name)
 
     async def delete(self, *names):
         """Delete one or more keys specified by ``names``"""
@@ -158,9 +158,9 @@ class RedisStorage3(BaseStorage):
             return await self._redis.close()
 
     async def wait_closed(self):
-        if self._redis:
+        if self._redis and hasattr(self._redis, 'wait_closed'):
             await self._redis.wait_closed()
-            self._redis = None
+        self._redis = None
 
     async def get_state(self, *, chat: typing.Union[str, int, None] = None, user: typing.Union[str, int, None] = None,
                         default: typing.Optional[str] = None) -> typing.Optional[str]:
