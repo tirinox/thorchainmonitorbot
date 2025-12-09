@@ -1,5 +1,6 @@
 import asyncio
 import time
+from contextlib import suppress
 from typing import Optional
 
 from jobs.fetch.base import BaseFetcher
@@ -63,11 +64,8 @@ class BlockScanner(BaseFetcher):
             self._this_block_attempts = 0
 
     async def ensure_last_block(self):
-        last_thor_block = await self._fetch_last_block()
-        await self.state_db.set_thor_height(last_thor_block)
-
         while not self._last_block:
-            last_block = last_thor_block or (await self._fetch_last_block())
+            last_block = await self._fetch_last_block()
             last_thor_block = 0  # reset to avoid multiple calls
             if last_block:
                 self._last_block = last_block
@@ -75,6 +73,12 @@ class BlockScanner(BaseFetcher):
             else:
                 self.logger.error('Still no last_block height!')
                 await asyncio.sleep(self.sleep_period)
+
+    async def _refresh_thor_block_for_state(self):
+        with suppress(Exception):
+            last_thor_block = await self._fetch_last_block()
+            if last_thor_block:
+                await self.state_db.set_thor_height(last_thor_block)
 
     def _on_error_block(self, block: BlockResult):
         self._on_error(f'Block.error #{block.error.code}: {block.error.message}',
@@ -117,6 +121,7 @@ class BlockScanner(BaseFetcher):
 
         while True:
             try:
+                asyncio.create_task(self._refresh_thor_block_for_state())
                 self.logger.info(f'Fetching block #{self._last_block}. Cycle: {self._block_cycle}.')
                 start_ts = time.monotonic()
                 block_result = await self.fetch_one_block(self._last_block)
