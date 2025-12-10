@@ -23,6 +23,21 @@ class IntervalCfg(BaseModel):
             raise ValueError("Interval trigger requires at least one time field")
         return self
 
+    @property
+    def human_readable(self) -> str:
+        parts = []
+        if self.weeks:
+            parts.append(f"{self.weeks} week")
+        if self.days:
+            parts.append(f"{self.days} day")
+        if self.hours:
+            parts.append(f"{self.hours} hour")
+        if self.minutes:
+            parts.append(f"{self.minutes} min")
+        if self.seconds:
+            parts.append(f"{self.seconds} sec")
+        return ", ".join(parts)
+
 
 class CronCfg(BaseModel):
     year: Optional[str] = None
@@ -34,9 +49,34 @@ class CronCfg(BaseModel):
     minute: Optional[str] = None
     second: Optional[str] = None
 
+    @property
+    def human_readable(self) -> str:
+        parts = []
+        if self.year:
+            parts.append(f"year={self.year}")
+        if self.month:
+            parts.append(f"month={self.month}")
+        if self.day:
+            parts.append(f"day={self.day}")
+        if self.week:
+            parts.append(f"week={self.week}")
+        if self.day_of_week:
+            parts.append(f"day_of_week={self.day_of_week}")
+        if self.hour:
+            parts.append(f"hour={self.hour}")
+        if self.minute:
+            parts.append(f"minute={self.minute}")
+        if self.second:
+            parts.append(f"second={self.second}")
+        return ", ".join(parts)
+
 
 class DateCfg(BaseModel):
     run_date: datetime
+
+    @property
+    def human_readable(self) -> str:
+        return self.run_date.strftime("%Y-%m-%d %H:%M:%S")
 
 
 class SchedJobCfg(BaseModel):

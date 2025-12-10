@@ -3,6 +3,7 @@ import datetime
 import functools
 import json
 import time
+from collections import defaultdict
 from typing import List
 from typing import Optional, Literal
 
@@ -454,3 +455,10 @@ class PublicScheduler(WithLogger):
 
     async def start_rpc_client(self):
         await self._rpc.run_as_client()
+
+    @staticmethod
+    def job_distribution(jobs: List[SchedJobCfg]):
+        distribution = defaultdict(int)
+        for job in jobs:
+            distribution[job.func] += 1
+        return distribution

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from jobs.fetch.key_stats import KeyStatsFetcher
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
@@ -224,3 +224,11 @@ class PublicAlertJobExecutor(WithLogger):
         for job_name, job_func in self.AVAILABLE_TYPES.items():
             await scheduler.register_job_type(job_name, job_func.__get__(self))
         return scheduler
+
+    @staticmethod
+    def get_function_that_are_absent(functions: List[str]) -> list[str]:
+        absent = []
+        for job_func in PublicAlertJobExecutor.AVAILABLE_TYPES.keys():
+            if job_func not in functions:
+                absent.append(job_func)
+        return absent

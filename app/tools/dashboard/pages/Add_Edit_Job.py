@@ -152,4 +152,4 @@ if job_cfg:
     app = get_app()
     sched: PublicScheduler = app.deps.pub_scheduler
     run_coro(sched.add_new_job(job_cfg, load_before=True, allow_replace=(any_editing_job is not None)))
-    st.switch_page("pages/ListSchedJobs.py")
+    st.switch_page("pages/List_Sched_Jobs.py")
