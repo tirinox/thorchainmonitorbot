@@ -2,7 +2,7 @@ import streamlit as st
 
 from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.scanner_state import ScannerState
-from lib.date_utils import format_time_ago, format_date, now_ts
+from lib.date_utils import format_time_ago, format_date, now_ts, MINUTE
 from tools.dashboard.helpers import run_coro
 
 
@@ -37,9 +37,11 @@ def block_scanner_info(app):
         st.markdown(f"Lag: **{data.lag_behind_thor}** blocks")
 
     st.markdown(f"Last scanned at: **{format_date(data.last_scanned_at_ts)}** or "
-                f"**{format_time_ago(last_scan_ago)}**")
-    st.markdown(f"Scanner started at: **{format_date(data.started_at_ts)}** or "
-                f"**{format_time_ago(now - data.started_at_ts)}**")
+                f"**{format_time_ago(last_scan_ago)}** {('‼️' if last_scan_ago > 5 * MINUTE else '')}")
+    st.markdown(f"Scanner started at: **"
+                f"{format_date(data.started_at_ts)}** or "
+                f"**{format_time_ago(now - data.started_at_ts)}** "
+                f"{('‼️' if now - data.started_at_ts > 60 * MINUTE else '')}")
     st.markdown(f"Total blocks scanned: **{data.total_blocks_scanned}**")
     st.markdown(f"Total blocks processed: **{data.total_blocks_processed}**")
     st.markdown(
