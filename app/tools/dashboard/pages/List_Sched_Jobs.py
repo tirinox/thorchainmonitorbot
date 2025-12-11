@@ -45,7 +45,7 @@ def call_add_job():
     st.switch_page("pages/Add_Edit_Job.py")
 
 
-if st.button("Add New Job", use_container_width=True, key='add_1'):
+if st.button("➕ Add New Job", use_container_width=True, key='add_1'):
     call_add_job()
 st.divider()
 
@@ -153,14 +153,15 @@ if not jobs:
 
 is_dirty = run_coro(sched.any_job_is_dirty())
 if is_dirty:
-    if 'apply_clicked' not in st.session_state:
-        st.warning("Scheduler configuration has unsaved changes. Please apply the configuration.")
+    # if 'apply_clicked' not in st.session_state:
+    st.warning("Scheduler configuration has unsaved changes. Please apply the configuration.")
     if applied := st.button("Apply", type="primary", use_container_width=True):
         run_coro(sched.post_command(sched.COMMAND_RELOAD))
-        st.session_state['apply_clicked'] = True
+        time.sleep(0.5)
+        # st.session_state['apply_clicked'] = True
         st.rerun()
 
-if st.button("Add New Job", use_container_width=True):
+if st.button("➕ Add New Job", use_container_width=True):
     call_add_job()
 
 with st.expander("Raw JSON configs"):

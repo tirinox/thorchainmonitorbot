@@ -7,6 +7,7 @@ from models.key_stats_model import AlertKeyStats
 from models.time_series import TimeSeries
 
 
+# todo: marked for deletion
 class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
     MAX_POINTS = 10000
     MAX_DATA_AGE_DEFAULT = '36h'
