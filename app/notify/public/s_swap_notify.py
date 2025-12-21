@@ -38,10 +38,15 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
 
         ph = await self.deps.pool_cache.get()
         swaps = self.detector.detect_swaps(data, ph)
+        if swaps:
+            self.logger.info(f'Found {len(swaps)} swap starts in block #{data.block_no}')
+            asyncio.create_task(self._handle_new_swaps(swaps))
 
-        self.logger.info(f'Found {len(swaps)} swap starts in block #{data.block_no}')
+    async def _handle_new_swaps(self, swap_start_events: list[AlertSwapStart]):
+        self.logger.info(f'Sleeping to ensure tx is in the blockchain...')
+        await asyncio.sleep(THOR_BLOCK_TIME * 1.1)  # Sleep 1 block to ensure the tx appears in the blockchain
 
-        for swap_start_ev in swaps:
+        for swap_start_ev in swap_start_events:
             if await self.is_swap_eligible(swap_start_ev):
                 await self._relay_new_event(swap_start_ev)
 
@@ -62,7 +67,8 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
             return False
 
         if e.volume_usd < self.min_streaming_swap_usd:
-            log_f(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: {e.volume_usd = } < {self.min_streaming_swap_usd}')
+            log_f(
+                f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: {e.volume_usd = } < {self.min_streaming_swap_usd}')
             return False
 
         if self.check_unique:
@@ -74,8 +80,6 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         return True
 
     async def _relay_new_event(self, event: AlertSwapStart):
-        await asyncio.sleep(THOR_BLOCK_TIME * 1.1)  # Sleep 1 block to ensure the tx appears in the blockchain
-
         await self.load_extra_tx_information(event)
         self._correct_streaming_swap_info(event)
         if event.is_streaming:
@@ -87,13 +91,11 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         try:
             event.status = await self.deps.thor_connector.query_tx_status(event.tx_id)
 
-            ss = event.status.get_streaming_swap()
-            if ss:
-                event.ss = event.ss._replace(
-                    interval=ss.get('interval', 0),
-                    quantity=ss.get('quantity', 0),
-                    count=ss.get('count', 0),
-                )
+            ss_status = event.status.get_streaming_swap()
+            if ss_status:
+                event.interval = ss_status.get('interval', 0)
+                event.quantity = ss_status.get('quantity', 0)
+                event.count = ss_status.get('count', 0)
             else:
                 self.logger.warning(f'No streaming swap info in status for {event.tx_id}')
 
@@ -117,8 +119,8 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
                 to_asset=to_asset,
                 amount=event.in_amount,
                 # refund_address=event.from_address,
-                streaming_quantity=event.ss.quantity,
-                streaming_interval=event.ss.interval,
+                streaming_quantity=event.quantity,
+                streaming_interval=event.interval,
                 tolerance_bps=10000,  # MAX
                 affiliate='t' if event.memo.affiliates else '',  # does not matter for quote
                 affiliate_bps=event.memo.affiliate_fee_bp,
@@ -130,9 +132,9 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
             self.logger.error(f'Failed to load quote for {event.tx_id}: {e}')
 
     def _correct_streaming_swap_info(self, event: AlertSwapStart):
-        if event.ss and event.ss.quantity == 0 and event.ss.interval > 0:
+        if event.quantity == 0 and event.interval > 0:
             if event.status:
                 new_quantity = safe_get(event.status.stages, 'swap_status', 'streaming', 'quantity')
                 if new_quantity:
-                    self.logger.info(f'Updated SS quantity {event.ss.quantity} => {new_quantity}')
-                    event.ss = event.ss._replace(quantity=new_quantity)
+                    self.logger.info(f'Updated SS quantity {event.quantity} => {new_quantity}')
+                    event.quantity = new_quantity

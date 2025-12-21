@@ -206,6 +206,7 @@ class AlertPresenter(INotified, WithLogger):
             if event.with_picture:
                 async def _gen(loc: BaseLocalization):
                     gen = NodePictureGenerator(event.network_info, event.bond_chart, loc)
+                    # noinspection PyUnresolvedReferences
                     pic = await gen.generate()
                     bio_graph = img_to_bio(pic, gen.proper_name())
                     caption = loc.PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION
@@ -323,8 +324,8 @@ class AlertPresenter(INotified, WithLogger):
             "affiliate_logos": aff_logos,
             "affiliate_fee": aff_fee_percent,
 
-            "swap_quantity": data.ss.quantity,
-            "swap_interval": data.ss.interval,
+            "swap_quantity": data.quantity,
+            "swap_interval": data.interval,
             "total_estimated_time_sec": data.expected_total_swap_sec,
         }
         photo = await self.renderer.render('swap_start.jinja2', parameters)
@@ -382,9 +383,6 @@ class AlertPresenter(INotified, WithLogger):
             "affiliate_names": aff_names,
             "affiliate_logos": aff_logos,
             "affiliate_fee": aff_fee_percent,
-
-            # "swap_quantity": tx.ss.quantity,
-            # "swap_interval": tx.ss.interval,
 
             "streaming_count": tx.meta_swap.streaming.quantity if tx.meta_swap.streaming else 0,
 
@@ -484,7 +482,6 @@ class AlertPresenter(INotified, WithLogger):
             )
             pic, pic_name = await gen.get_picture()
             text = loc.text_metrics_supply(market_info)
-            # text = loc.SUPPLY_PIC_CAPTION
             return BoardMessage.make_photo(pic, text, pic_name)
 
         await self.deps.broadcaster.broadcast_to_all(supply_pic_gen)

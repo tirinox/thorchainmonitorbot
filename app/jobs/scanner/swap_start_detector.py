@@ -10,7 +10,7 @@ from models.asset import Asset, is_rune
 from models.memo import ActionType
 from models.memo import THORMemo
 from models.price import PriceHolder
-from models.s_swap import StreamingSwap, AlertSwapStart
+from models.s_swap import AlertSwapStart
 
 
 class SwapStartDetector(WithLogger):
@@ -76,12 +76,7 @@ class SwapStartDetector(WithLogger):
                 in_asset.is_trade = True
 
         return AlertSwapStart(
-            StreamingSwap(
-                tx_hash,
-                memo.s_swap_interval,
-                memo.s_swap_quantity,
-                0, 0, memo.limit, 0, '', 0, '', 0, '', [], [],
-            ),
+            tx_id=tx_hash,
             from_address=from_address,
             in_amount=int(amount),
             in_asset=str(in_asset),
@@ -90,6 +85,8 @@ class SwapStartDetector(WithLogger):
             block_height=height,
             memo=memo,
             memo_str=memo_str,  # original memo
+            interval=memo.s_swap_interval,
+            quantity=memo.s_swap_quantity,
         )
 
     def handle_deposits(self, txs: Iterable[NativeThorTx], height):
