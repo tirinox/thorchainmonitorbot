@@ -1,5 +1,6 @@
 import logging
 import time
+import traceback
 from abc import ABC, abstractmethod
 
 
@@ -19,6 +20,8 @@ class WithDelegates:
     def add_subscriber(self, delegate: INotified):
         if not delegate:
             raise ValueError("Delegate is None")
+        if delegate is self:
+            raise ValueError("Cannot add self as delegate")
         if delegate not in self.delegates:
             self.delegates.append(delegate)
         return self
@@ -30,7 +33,7 @@ class WithDelegates:
 
     async def pass_data_to_listeners(self, data, sender=None):
         if not data:
-            return
+            return None
         sender = sender or self
 
         summary = {}
@@ -42,6 +45,10 @@ class WithDelegates:
                 await delegate.on_data(sender, data)
             except Exception as e:
                 logging.exception(f"{e!r}")
+                # logging.error(
+                #     "Call stack at pass_data_to_listeners catch site:\n%s",
+                #     "".join(traceback.format_stack())
+                # )
             t1 = time.monotonic()
             summary[str(delegate)] = t1 - t0
 

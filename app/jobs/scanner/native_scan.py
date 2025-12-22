@@ -63,7 +63,9 @@ class BlockScanner(BaseFetcher):
             self._last_block += 1
             self._this_block_attempts = 0
 
-    async def ensure_last_block(self):
+    async def ensure_last_block(self, reset=False):
+        if reset:
+            self._last_block = 0
         while not self._last_block:
             last_block = await self._fetch_last_block()
             last_thor_block = 0  # reset to avoid multiple calls
@@ -152,9 +154,10 @@ class BlockScanner(BaseFetcher):
                             self._last_block = last_av_b
                             self._this_block_attempts = 0
                         elif block_result.is_ahead:
-                            self.logger.debug(f'We are running ahead of real block height. '
-                                              f'{self._last_block = },'
-                                              f'{last_av_b = }')
+                            self.logger.warning(f'We are running ahead of real block height. '
+                                                f'{self._last_block = },'
+                                                f'{last_av_b = }')
+                            await self.ensure_last_block(reset=True)
                             break
                         else:
                             self._on_error_block(block_result)

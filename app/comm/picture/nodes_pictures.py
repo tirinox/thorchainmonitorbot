@@ -282,6 +282,7 @@ class NodePictureGenerator:
     @async_wrap
     def generate(self):
         active_nodes = self.data.active_nodes
+        # noinspection PyTypeChecker
         providers_all = self.get_providers(self.data.node_info_list, unknown=self.loc.TEXT_PIC_UNKNOWN)
         providers = self.get_providers(active_nodes, unknown=self.loc.TEXT_PIC_UNKNOWN)
         countries = self.get_countries(active_nodes, unknown=self.loc.TEXT_PIC_UNKNOWN)
