@@ -217,10 +217,8 @@ class ThorConnector:
         if tolerance_bps:
             query['tolerance_bps'] = tolerance_bps
 
-        if affiliate_bps:
+        if affiliate_bps and affiliate:
             query['affiliate_bps'] = affiliate_bps
-
-        if affiliate:
             query['affiliate'] = affiliate
 
         if height:

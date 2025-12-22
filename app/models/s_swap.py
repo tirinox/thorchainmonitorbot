@@ -91,6 +91,7 @@ class StreamingSwap(BaseModel):
 class AlertSwapStart:
     tx_id: str
     from_address: str
+    destination_address: str
     in_amount: float
     in_asset: str
     out_asset: str

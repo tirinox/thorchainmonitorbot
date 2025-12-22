@@ -139,6 +139,7 @@ async def dbg_try_to_quote_almost_naturally(app: LpAppFramework):
 
     event = AlertSwapStart(
         from_address=tx['from_address'],
+        destination_address=tx['to_address'],
         in_amount=int(coin['amount']),
         in_asset=str(coin['asset']),
         out_asset=out_asset_name,
