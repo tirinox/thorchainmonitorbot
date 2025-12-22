@@ -1,8 +1,10 @@
+import asyncio
 from typing import Optional, Iterable
 
 from jobs.scanner.native_scan import BlockResult
 from jobs.scanner.tx import NativeThorTx, ThorTxMessage, ThorObservedTx
-from lib.constants import NATIVE_RUNE_SYMBOL, thor_to_float
+from lib.constants import NATIVE_RUNE_SYMBOL, thor_to_float, THOR_BLOCK_TIME
+from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.utils import safe_get
@@ -121,3 +123,22 @@ class SwapStartDetector(WithLogger):
         observed_in_txs = list(self.handle_observed_txs(observed_in_txs, b.block_no))
 
         return deposit_swap_starts + observed_in_txs
+
+
+class SwapStartDetectorChained(SwapStartDetector, INotified, WithDelegates):
+    def __init__(self, deps: DepContainer):
+        super().__init__(deps)
+
+    async def on_data(self, sender, data: BlockResult):
+        ph = await self.deps.pool_cache.get()
+        swaps = self.detect_swaps(data, ph)
+        if swaps:
+            self.logger.info(f'Found {len(swaps)} swap starts in block #{data.block_no}')
+            asyncio.create_task(self._handle_new_swaps(swaps))
+
+    async def _handle_new_swaps(self, swap_start_events: list[AlertSwapStart]):
+        self.logger.info(f'Sleeping to ensure tx is in the blockchain...')
+        await asyncio.sleep(THOR_BLOCK_TIME * 1.1)  # Sleep 1 block to ensure the tx appears in the blockchain
+
+        for swap_start_ev in swap_start_events:
+            await self.pass_data_to_listeners(swap_start_ev)

@@ -1,15 +1,10 @@
-import asyncio
-
 from jobs.scanner.arb_detector import ArbBotDetector, ArbStatus
 from jobs.scanner.event_db import EventDatabase
-from jobs.scanner.native_scan import BlockResult
 from jobs.scanner.swap_start_detector import SwapStartDetector
-from lib.constants import THOR_BLOCK_TIME
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.money import pretty_dollar
-from lib.utils import safe_get
 from models.asset import Asset
 from models.s_swap import AlertSwapStart
 from notify.dup_stop import TxDeduplicator
@@ -32,28 +27,17 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
 
         self.deduplicator = TxDeduplicator(deps.db, DB_KEY_ANNOUNCED_SS_START)
 
-    async def on_data(self, sender, data: BlockResult):
-        if self.min_streaming_swap_usd <= 0.0:
+    async def on_data(self, sender, event: AlertSwapStart):
+        if not await self.is_swap_eligible(event):
             return
 
-        ph = await self.deps.pool_cache.get()
-        swaps = self.detector.detect_swaps(data, ph)
-        if swaps:
-            self.logger.info(f'Found {len(swaps)} swap starts in block #{data.block_no}')
-            asyncio.create_task(self._handle_new_swaps(swaps))
-
-    async def _handle_new_swaps(self, swap_start_events: list[AlertSwapStart]):
-        self.logger.info(f'Sleeping to ensure tx is in the blockchain...')
-        await asyncio.sleep(THOR_BLOCK_TIME * 1.1)  # Sleep 1 block to ensure the tx appears in the blockchain
-
-        for swap_start_ev in swap_start_events:
-            if await self.is_swap_eligible(swap_start_ev):
-                await self._relay_new_event(swap_start_ev)
+        await self.load_extra_tx_information(event)
+        await self.deduplicator.mark_as_seen(event.tx_id)
+        await self.pass_data_to_listeners(event)  # alert!
 
     async def is_swap_eligible(self, swap_start_ev: AlertSwapStart):
         e = swap_start_ev
 
-        # todo: switch to "debug"
         log_f = self.logger.debug
 
         if self.hide_arb_bots:
@@ -79,29 +63,7 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         self.logger.info(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: eligible')
         return True
 
-    async def _relay_new_event(self, event: AlertSwapStart):
-        await self.load_extra_tx_information(event)
-        self._correct_streaming_swap_info(event)
-        if event.is_streaming:
-            await self.deduplicator.mark_as_seen(event.tx_id)
-
-        await self.pass_data_to_listeners(event)  # alert!
-
     async def load_extra_tx_information(self, event: AlertSwapStart):
-        try:
-            event.status = await self.deps.thor_connector.query_tx_status(event.tx_id)
-
-            ss_status = event.status.get_streaming_swap()
-            if ss_status:
-                event.interval = ss_status.get('interval', 0)
-                event.quantity = ss_status.get('quantity', 0)
-                event.count = ss_status.get('count', 0)
-            else:
-                self.logger.warning(f'No streaming swap info in status for {event.tx_id}')
-
-        except Exception as e:
-            self.logger.warning(f'Failed to load status for {event.tx_id}: {e}')
-
         try:
             event.clout = await self.deps.thor_connector.query_swapper_clout(event.from_address)
         except Exception as e:
@@ -130,11 +92,3 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
                 self.logger.warning(f'Failed to load quote for {event.tx_id}: {err_msg}')
         except Exception as e:
             self.logger.error(f'Failed to load quote for {event.tx_id}: {e}')
-
-    def _correct_streaming_swap_info(self, event: AlertSwapStart):
-        if event.quantity == 0 and event.interval > 0:
-            if event.status:
-                new_quantity = safe_get(event.status.stages, 'swap_status', 'streaming', 'quantity')
-                if new_quantity:
-                    self.logger.info(f'Updated SS quantity {event.quantity} => {new_quantity}')
-                    event.quantity = new_quantity

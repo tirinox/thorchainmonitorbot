@@ -1,110 +1,95 @@
 from dataclasses import dataclass
 from typing import NamedTuple, List, Optional
 
+from pydantic import ConfigDict, BaseModel, Field
+
 from api.aionode.types import ThorSwapperClout, ThorTxStatus
 from lib.constants import THOR_BLOCK_TIME, thor_to_float
 from .memo import THORMemo
 
 
-class StreamingSwap(NamedTuple):
+class StreamingSwap(BaseModel):
+    """
+    Pydantic v2 replacement for your NamedTuple.
+    """
+
+    model_config = ConfigDict(
+        populate_by_name=True,  # allow passing either field names or aliases
+        frozen=True,  # immutable like NamedTuple
+        extra="ignore",  # ignore unknown keys in incoming JSON
+    )
+
     # the hash of a transaction
-    tx_id: str
+    tx_id: str = ""
 
     # how often each swap is made, in blocks
-    interval: int
+    interval: int = 0
 
     # the total number of swaps in a streaming swaps
-    quantity: int
+    quantity: int = 0
 
     # the amount of swap attempts so far
-    count: int
+    count: int = 1
 
     # the block height of the latest swap
-    last_height: int
+    last_height: int = 0
 
     # the total number of tokens the swapper wants to receive of the output asset
-    trade_target: int
+    trade_target: int = 0
 
     # the number of input tokens the swapper has deposited
-    deposit: int
-    deposit_asset: str
+    deposit: int = 0
 
     # the amount of input tokens that have been swapped so far
-    in_amt: int
-    in_asset: str
+    in_amt: int = Field(default=0, alias="in")
+    source_asset: str = ""
 
     # the amount of output tokens that have been swapped so far
-    out_amt: int
-    out_asset: str
+    out_amt: int = Field(default=0, alias="out")
+    target_asset: str = ""
+
+    destination: str = ""
 
     # the list of swap indexes that failed
-    failed_swaps: List[int]
+    failed_swaps: List[int] = Field(default_factory=list)
 
     # the list of reasons that sub-swaps have failed
-    failed_swap_reasons: List[str]
+    failed_swap_reasons: List[str] = Field(default_factory=list)
 
     @property
-    def progress_on_amount(self):
-        """
-        Swap progress on input amount in %
-        @return: float 0.0...100.0
-        """
+    def progress_on_amount(self) -> float:
+        """Swap progress on input amount in % (0.0..100.0)."""
         return 100.0 * self.in_amt / self.deposit if self.deposit else 0.0
 
     @property
-    def progress_on_swap_count(self):
-        """
-        Swap progress on swap count in % (count/quantity)
-        @return: float 0.0...100.0
-
-        @return:
-        """
+    def progress_on_swap_count(self) -> float:
+        """Swap progress on swap count in % (count/quantity) (0.0..100.0)."""
         return 100.0 * self.count / self.quantity if self.quantity else 0.0
 
-    @classmethod
-    def from_json(cls, j):
-        return cls(
-            j.get('tx_id', ''),
-            j.get('interval', 0),
-            j.get('quantity', 0),
-            j.get('count', 1),
-            j.get('last_height', 0),
-            j.get('trade_target', 0),
-            int(j.get('deposit', 0)), '',
-            int(j.get('in', 0)), '',
-            int(j.get('out', 0)), '',
-            j.get('failed_swaps', []),
-            j.get('failed_swap_reasons', []),
-        )
-
     @property
-    def blocks_to_wait(self):
+    def blocks_to_wait(self) -> int:
         return (self.quantity - self.count) * self.interval
 
     @property
-    def second_to_wait(self):
+    def second_to_wait(self) -> float:
         return self.blocks_to_wait * THOR_BLOCK_TIME
 
     @property
-    def total_duration(self):
-        # fixme!
+    def total_duration(self) -> float:
         return self.quantity * self.interval * THOR_BLOCK_TIME
 
     @property
-    def successful_swaps(self):
+    def successful_swaps(self) -> int:
         return self.quantity - len(self.failed_swaps)
 
     @property
-    def success_rate(self):
-        if self.quantity:
-            return self.successful_swaps / self.quantity * 1.0
-        else:
-            return 1.0
+    def success_rate(self) -> float:
+        return (self.successful_swaps / self.quantity) if self.quantity else 1.0
 
 
 @dataclass
 class AlertSwapStart:
-    ss: StreamingSwap  # todo: get rid of it!
+    tx_id: str
     from_address: str
     in_amount: float
     in_asset: str
@@ -114,20 +99,14 @@ class AlertSwapStart:
     memo: THORMemo
     memo_str: str
     clout: Optional[ThorSwapperClout] = None
-    status: Optional[ThorTxStatus] = None
     quote: Optional[dict] = None
+    quantity: Optional[int] = 1
+    interval: Optional[int] = 1
 
     @property
     def is_streaming(self):
-        return self.ss.interval and self.ss.interval >= 1
-
-    @property
-    def tx_id(self):
-        return self.ss.tx_id
-
-    @property
-    def in_amount_float(self):
-        return thor_to_float(self.in_amount)
+        # fixme: unreliable check? maybe interval is detected automatically?
+        return self.interval and self.interval >= 1
 
     @property
     def expected_out_amount(self):
@@ -135,8 +114,14 @@ class AlertSwapStart:
 
     @property
     def expected_total_swap_sec(self):
-        return self.quote.get('total_swap_seconds', 0) if self.quote else self.ss.interval * self.ss.quantity * THOR_BLOCK_TIME
+        return self.quote.get('total_swap_seconds',
+                              0) if self.quote else self.interval * self.quantity * THOR_BLOCK_TIME
 
     @property
     def expected_outbound_delay_sec(self):
         return self.quote.get('outbound_delay_seconds', 0) if self.quote else 0
+
+
+class EventChangedStreamingSwapList(NamedTuple):
+    new_swaps: List[StreamingSwap]
+    completed_swaps: List[StreamingSwap]

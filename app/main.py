@@ -40,6 +40,7 @@ from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.runepool import RunePoolEventDecoder
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.scanner.swap_routes import SwapRouteRecorder
+from jobs.scanner.swap_start_detector import SwapStartDetectorChained
 from jobs.scanner.trade_acc import TradeAccEventDecoder
 from jobs.scanner.transfer_detector import RuneTransferDetector
 from jobs.user_counter import UserCounterMiddleware
@@ -373,8 +374,12 @@ class App(WithLogger):
                 d.swap_notifier_tx.add_subscriber(d.alert_presenter)
 
                 if d.cfg.tx.swap.also_trigger_when.streaming_swap.get('notify_start', True):
+                    # todo: integrate SwapStartWatchList
+                    swap_start_detector = SwapStartDetectorChained(d)
+                    d.block_scanner.add_subscriber(swap_start_detector)
+
                     stream_swap_notifier = StreamingSwapStartTxNotifier(d)
-                    d.block_scanner.add_subscriber(stream_swap_notifier)
+                    swap_start_detector.add_subscriber(stream_swap_notifier)
                     stream_swap_notifier.add_subscriber(d.alert_presenter)
 
             if d.cfg.tx.refund.get('enabled', True):

@@ -280,6 +280,10 @@ tx:
       trade_asset_swap:
         volume_greater: 10_000
 
+    streaming_watchlist:  # (!) new
+      enabled: true
+      period: 5s
+
   donate:
     enabled: true
     min_usd_total: 1000

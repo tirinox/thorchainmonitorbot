@@ -15,7 +15,7 @@ from tools.lib.lp_common import LpAppFramework
 
 async def pick_random_ongoing_streaming_swap(app: LpAppFramework):
     s_swaps = await app.deps.thor_connector.query_raw('/thorchain/swaps/streaming')
-    s_swaps = [StreamingSwap.from_json(ss) for ss in s_swaps]
+    s_swaps = [StreamingSwap.model_validate(ss) for ss in s_swaps]
     if not s_swaps:
         raise RuntimeError("There is no ongoing streaming swaps!")
 
@@ -138,7 +138,6 @@ async def dbg_try_to_quote_almost_naturally(app: LpAppFramework):
     height = safe_get(details, 'consensus_height', 0)
 
     event = AlertSwapStart(
-        s_swap,
         from_address=tx['from_address'],
         in_amount=int(coin['amount']),
         in_asset=str(coin['asset']),
@@ -147,6 +146,9 @@ async def dbg_try_to_quote_almost_naturally(app: LpAppFramework):
         block_height=height,
         memo=memo,
         memo_str=memo_str,  # original memo
+        tx_id=s_swap.tx_id,
+        quantity=s_swap.quantity,
+        interval=s_swap.interval,
     )
 
     event = await notifier.load_extra_tx_information(event)
