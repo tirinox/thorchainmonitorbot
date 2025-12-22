@@ -1,6 +1,7 @@
 from jobs.scanner.arb_detector import ArbBotDetector, ArbStatus
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.swap_start_detector import SwapStartDetector
+from lib.constants import float_to_thor
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -74,13 +75,14 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
 
     async def load_quote(self, event: AlertSwapStart):
         try:
-            from_asset = str(Asset(event.in_asset).l1_asset)
-            to_asset = str(Asset(event.out_asset).l1_asset)
+            from_asset = str(Asset(event.in_asset))
+            to_asset = str(Asset(event.out_asset))
             event.quote = await self.deps.thor_connector.query_swap_quote(
                 from_asset=from_asset,
                 to_asset=to_asset,
-                amount=event.in_amount,
+                amount=float_to_thor(event.in_amount),
                 # refund_address=event.from_address,
+                destination=event.destination_address,
                 streaming_quantity=event.quantity,
                 streaming_interval=event.interval,
                 tolerance_bps=10000,  # MAX
