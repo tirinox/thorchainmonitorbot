@@ -2,13 +2,15 @@ import json
 
 from jobs.fetch.base import BaseFetcher
 from lib.constants import thor_to_float
+from lib.date_utils import now_ts
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.utils import safe_get
-from models.memo import THORMemo
+from models.memo import THORMemo, ActionType
 from models.price import PriceHolder
 from models.s_swap import StreamingSwap, EventChangedStreamingSwapList, AlertSwapStart
+from models.tx import ThorAction, EventLargeTransaction, SUCCESS, ThorMetaSwap
 
 
 class StreamingSwapWatchListFetcher(BaseFetcher):
@@ -87,20 +89,64 @@ class StreamingSwapStatusChecker(INotified, WithDelegates, WithLogger):
             self.logger.warning(
                 f'Too many tracked streaming swap txs ({len(tracked_tx_ids)}), checking only first {max_tx_to_check}.')
             tracked_tx_ids = list(tracked_tx_ids)[:max_tx_to_check]
+        else:
+            self.logger.info(f'Checking status of {len(tracked_tx_ids)} tracked streaming swap txs.')
 
+        # todo: implement priority queue if needed, also parallel checks
         for tx_id in tracked_tx_ids:
-            details = await self.deps.thor_connector.query_tx_details(tx_id)
-            status = safe_get(details, 'tx', 'tx', 'status')
-            if status == 'done':
-                self.logger.info(f'Streaming swap tx {tx_id} has been completed on-chain.')
-                await self._remove_tracked_tx_ids([tx_id])
+            try:
+                status, details = await self.get_status_and_details(tx_id)
+                if status == 'done':
+                    self.logger.info(f'Streaming swap tx {tx_id} has been completed on-chain.')
+                    action = self.make_event(details)
+                    await self.pass_data_to_listeners(action)
+                    await self._remove_tracked_tx_ids([tx_id])
 
-                # todo: notify subscribers about completed tracked swap
-                await self.pass_data_to_listeners((tx_id, details))
-            elif status is not None:
-                self.deps.emergency.report("SwapWatchlist", "Unknown streaming swap status",
-                                           status=status,
+
+                elif status is not None:
+                    self.deps.emergency.report("SwapWatchlist", "Unknown streaming swap status",
+                                               status=status,
+                                               tx_id=tx_id)
+            except Exception as e:
+                self.logger.exception(f'Error checking status of tracked streaming swap tx {tx_id}: {e!r}')
+                self.deps.emergency.report("SwapWatchlist", "Error checking tracked streaming swap status",
                                            tx_id=tx_id)
+                continue
+
+    @staticmethod
+    def make_event(details: dict) -> EventLargeTransaction:
+        tx = safe_get(details, 'tx', 'tx')
+
+        # todo:
+        usd_per_rune = 0.0
+        usd_volume_input = 0.0
+        usd_volume_output = 0.0
+
+        memo = THORMemo.parse_memo(tx['memo'], no_raise=True)
+
+        return EventLargeTransaction(
+            ThorAction(
+                date_timestamp=int(now_ts()),  # approximate, not always accurate
+                height=details.get('outbound_height') or details['finalised_height'],
+                status=SUCCESS,
+                type=ActionType.SWAP.value,
+                pools=[],  # todo
+                in_tx=[], # todo
+                out_tx=[],  # todo
+                meta_swap=ThorMetaSwap(
+                    # todo
+                ),
+            ),
+            usd_per_rune=usd_per_rune,
+            pool_info=None,
+            usd_volume_input=usd_volume_input,
+            usd_volume_output=usd_volume_output,
+        )
+
+    async def get_status_and_details(self, tx_id: str):
+        details = await self.deps.thor_connector.query_tx_details(tx_id)
+        status = safe_get(details, 'tx', 'tx', 'status')
+        return status, details
 
     async def get_tracked_tx_ids(self) -> set[str]:
         r = await self.deps.db.get_redis()

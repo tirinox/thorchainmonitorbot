@@ -1,6 +1,7 @@
 import asyncio
 
-from jobs.fetch.stream_watchlist import StreamingSwapWatchListFetcher, StreamingSwapStartDetector
+from jobs.fetch.stream_watchlist import StreamingSwapWatchListFetcher, StreamingSwapStartDetector, \
+    StreamingSwapStatusChecker
 from lib.delegates import INotified
 from models.s_swap import EventChangedStreamingSwapList, StreamingSwap
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
@@ -22,6 +23,22 @@ async def dbg_tests_parts_watchlist(app: LpAppFramework):
     swl.add_subscriber(Receiver())
 
     await swl.run()
+
+
+async def dbg_run_track_of_completed_swaps(app: LpAppFramework):
+    d = app.deps
+
+    swl = StreamingSwapWatchListFetcher(d)
+
+    checker = StreamingSwapStatusChecker(d)
+    swl.add_subscriber(checker)
+
+    class Receiver(INotified):
+        async def on_data(self, sender, data):
+            tx_id, details = data
+            print(f'Streaming swap completed on-chain: {tx_id}')
+
+    checker.add_subscriber(Receiver())
 
 
 async def dbg_run_watchlist(app: LpAppFramework):
@@ -48,7 +65,8 @@ async def run():
     app = LpAppFramework()
     async with app():
         # await dbg_tests_parts_watchlist(app)
-        await dbg_run_watchlist(app)
+        # await dbg_run_watchlist(app)
+        await dbg_run_track_of_completed_swaps(app)
 
 
 if __name__ == '__main__':
