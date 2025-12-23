@@ -239,9 +239,9 @@ class SwapProps(NamedTuple):
                 count=ss_ev.quantity - ss_ev.number_of_failed_swaps,
                 last_height=ss_ev.last_height,
                 trade_target=trade_target,
-                deposit=dep_amt, deposit_asset=dep_asset,
-                in_amt=in_amt, in_asset=in_asset,
-                out_amt=out_amt, out_asset=out_asset,
+                deposit=dep_amt,
+                in_amt=in_amt, source_asset=dep_asset,
+                out_amt=out_amt, target_asset=out_asset,
                 failed_swaps=ss_ev.failed_swap_list,
                 failed_swap_reasons=ss_ev.failed_swap_reason_list,
             )
@@ -253,20 +253,17 @@ class SwapProps(NamedTuple):
                 count=1,
                 last_height=0,
                 trade_target=0,
-                deposit=0, deposit_asset='',
-                in_amt=0, in_asset='',
-                out_amt=0, out_asset='',
+                deposit=0, source_asset='',
+                in_amt=0,
+                out_amt=0, target_asset='',
                 failed_swaps=[],
                 failed_swap_reasons=[]
             )
 
         network_fees = []  # ignore so far, not really used
 
-        # timestamp = int(datetime.now().timestamp() * 1e9)
-        timestamp = int(ts * 1e9)
-
         tx = ThorAction(
-            date=timestamp,
+            date_timestamp=int(ts),
             height=height,
             type=ActionType.SWAP.value,
             pools=pools,

@@ -65,7 +65,8 @@ class MidgardParserV2:
             metadata.get('refund', {})) if is_action(tx_type, ActionType.REFUND) else None
 
         return ThorAction(
-            int(date), int(block_height), status, tx_type,
+            int(int(date) * 1e-9),
+            int(block_height), status, tx_type,
             pools, in_tx_list, out_tx_list,
             meta_add, meta_withdraw, meta_swap, meta_refund
         )

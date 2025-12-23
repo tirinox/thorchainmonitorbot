@@ -3,17 +3,14 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Optional, NamedTuple
 
-from api.aionode.types import ThorSwapperClout
 from api.w3.token_record import SwapInOut
 from lib.constants import Chains, thor_to_float, bp_to_float, THOR_BLOCK_TIME
 from lib.date_utils import now_ts
 from lib.texts import safe_sum
 from .asset import Asset, is_rune, Delimiter, AssetKind
-from .cap_info import ThorCapInfo
 from .lp_info import LPAddress
 from .memo import ActionType, is_action
 from .memo import THORMemo
-from .mimir import MimirHolder
 from .pool_info import PoolInfo
 from .price import PriceHolder
 from .s_swap import StreamingSwap
@@ -208,7 +205,7 @@ PENDING = 'pending'
 
 @dataclass
 class ThorAction:
-    date: int
+    date_timestamp: int
     height: int
     status: str
     type: str
@@ -251,10 +248,6 @@ class ThorAction:
         return self.status == PENDING
 
     @property
-    def date_timestamp(self):
-        return int(int(self.date) * 1e-9)
-
-    @property
     def age_sec(self):
         return now_ts() - self.date_timestamp
 
@@ -262,7 +255,7 @@ class ThorAction:
     def tx_hash(self):
         sub_tx_set = self.in_tx or self.out_tx
         if not sub_tx_set:
-            return self.date
+            return self.date_timestamp
         hashes = [sub_tx.tx_id for sub_tx in sub_tx_set if sub_tx.tx_id]
         hashes.sort()
         return hashes[0]
@@ -288,6 +281,7 @@ class ThorAction:
         for in_tx in self.in_tx:
             if Chains.detect_chain(in_tx.address) == Chains.THOR:
                 return in_tx.address
+        return None
 
     @property
     def is_asset_side_only(self):
@@ -522,7 +516,7 @@ class ThorAction:
     def get_usd_volume(self, usd_per_rune):
         return usd_per_rune * self.full_volume_in_rune
 
-    def what_percent_of_pool(self, pool_info: PoolInfo) -> float:
+    def what_percent_of_pool(self, pool_info: Optional[PoolInfo]) -> float:
         percent_of_pool = 100.0
         if pool_info:
             correction = self.full_volume_in_rune if self.is_of_type(ActionType.WITHDRAW) else 0.0
@@ -541,10 +535,11 @@ class ThorAction:
         return bool(self.meta_swap and self.meta_swap.streaming and self.meta_swap.streaming.quantity > 1)
 
     @property
-    def memo(self) -> THORMemo:
+    def memo(self) -> Optional[THORMemo]:
         meta = self.meta_swap or self.meta_add or self.meta_withdraw or self.meta_refund
         if hasattr(meta, 'memo'):
             return THORMemo.parse_memo(meta.memo)
+        return None
 
     def first_out_coin_other_than_input(self):
         in_assets = set(a.first_asset for a in self.in_tx)
@@ -558,7 +553,7 @@ class ThorAction:
     @property
     def swap_profit_vs_cex(self):
         if not self.meta_swap:
-            return
+            return None
 
         real_out = thor_to_float(self.first_out_coin_other_than_input().amount)
         cex_out = self.meta_swap.cex_out_amount
@@ -567,7 +562,7 @@ class ThorAction:
     @property
     def percent_profit_vs_cex(self):
         if not self.meta_swap:
-            return
+            return None
 
         real_out = thor_to_float(self.first_out_coin_other_than_input().amount)
         cex_out = self.meta_swap.cex_out_amount
@@ -625,11 +620,8 @@ class ThorAction:
 class EventLargeTransaction:
     transaction: ThorAction
     usd_per_rune: float
-    pool_info: PoolInfo
-    cap_info: Optional[ThorCapInfo] = None
-    mimir: Optional[MimirHolder] = None
+    pool_info: Optional[PoolInfo] = None
     details: Optional[dict] = None
-    clout: Optional[ThorSwapperClout] = None
 
     # For swaps
     usd_volume_input: float = 0.0

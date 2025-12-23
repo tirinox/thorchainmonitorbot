@@ -28,7 +28,7 @@ def convert_trade_actions_to_txs(txs, last_thor_block: int, ph: PriceHolder) -> 
         tx = event.as_thor_tx
         tx.calc_full_rune_amount(ph)
         tx.height = last_thor_block
-        tx.date = int(now_ts() * 1e9)
+        tx.date_timestamp = int(now_ts())
         return [tx]
     else:
         return txs

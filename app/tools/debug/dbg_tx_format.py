@@ -114,7 +114,6 @@ async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
         text = loc.notification_text_large_single_tx(
             EventLargeTransaction(
                 ex_tx, rune_price, pool_info,
-                mimir=app.deps.mimir_const_holder
             ), name_map=nm
         )
         await app.send_test_tg_message(text)

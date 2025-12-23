@@ -14,7 +14,6 @@ from models.memo import ActionType
 from models.price import PriceHolder
 from models.tx import ThorAction, EventLargeTransaction
 from notify.dup_stop import TxDeduplicator, TxDeduplicatorSenderCooldown
-from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.s_swap_notify import DB_KEY_ANNOUNCED_SS_START
 
 DB_KEY_TX_ANNOUNCED_HASHES = 'large-tx:announced-hashes'
@@ -82,21 +81,12 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
             self.logger.info(f"Large Tx: {tx}")
         self.logger.info(f"Large Txs count is {len(large_txs)}.")
 
-        cap_info = await LiquidityCapNotifier.get_last_cap_from_db(self.deps.db)
-        has_liquidity = any(tx.is_liquidity_type for tx in large_txs)
-
         for tx in large_txs:
             pool_info = ph.pool_info_map.get(tx.first_pool_l1)
 
-            clout = await self._get_clout(tx.sender_address)
-
-            is_last = tx == large_txs[-1]
             event = EventLargeTransaction(
                 tx, ph.usd_per_rune,
                 pool_info,
-                cap_info=(cap_info if has_liquidity and is_last else None),
-                mimir=self.deps.mimir_const_holder,
-                clout=clout,
             )
 
             event = await self._event_transform(event)
@@ -249,25 +239,6 @@ class SwapTxNotifier(GenericTxNotifier):
             self.logger.error(f'Failed to verify liquidity fee: {e}')
         finally:
             return event
-
-    # async def load_extra_tx_details(self, event: EventLargeTransaction):
-    #     if not event or not event.transaction:
-    #         self.logger.error('No event or transaction!')
-    #         return
-    # tx_id = event.transaction.tx_hash
-    #
-    # if self.hide_arb_bots:
-    #     try:
-    #         await self.arb_detector.try_to_detect_arb_bot(event.transaction.sender_address)
-    #         if recipient := event.transaction.recipient_address:
-    #             await self.arb_detector.try_to_detect_arb_bot(recipient)
-    #     except Exception as e:
-    #         self.logger.error(f'Error loading Arbitrage bot details for {tx_id}: {e}')
-
-    # try:
-    #     event.details = await self.deps.thor_connector.query_tx_details(tx_id)
-    # except Exception as e:
-    #     self.logger.warning(f'Failed to load status for {tx_id}: {e}')
 
     async def _load_tx_volumes(self, event: EventLargeTransaction):
         event.usd_volume_input = 0.0
