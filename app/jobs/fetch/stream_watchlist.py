@@ -124,6 +124,7 @@ class StreamingSwapStatusChecker(INotified, WithDelegates, WithLogger):
 
         memo = THORMemo.parse_memo(tx['memo'], no_raise=True)
 
+        # idea: just load it from Midgard!
         return EventLargeTransaction(
             ThorAction(
                 date_timestamp=int(now_ts()),  # approximate, not always accurate
