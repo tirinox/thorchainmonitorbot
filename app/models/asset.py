@@ -323,6 +323,7 @@ class Asset:
         Chains.THOR: 'RUNE',
         Chains.BSC: 'BNB',
         Chains.BASE: 'ETH',
+        Chains.TRON: 'TRX',
         # to be continued...
     }
 
