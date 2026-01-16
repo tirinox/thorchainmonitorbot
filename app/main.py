@@ -374,8 +374,6 @@ class App(WithLogger):
                 d.swap_notifier_tx.add_subscriber(d.alert_presenter)
 
                 if d.cfg.tx.swap.also_trigger_when.streaming_swap.get('notify_start', True):
-                    # todo: integrate SwapStartWatchList
-
                     swl = StreamingSwapWatchListFetcher(d)
                     tasks.append(swl)
 

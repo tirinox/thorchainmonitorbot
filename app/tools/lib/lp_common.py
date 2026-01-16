@@ -1,6 +1,7 @@
 import logging
 import os
 
+from api.midgard.connector import MidgardConnector
 from api.midgard.parser import MidgardParserV2
 from comm.telegram.telegram import telegram_send_message_basic, TG_TEST_USER
 from comm.twitter.twitter_bot import twitter_text_length, TwitterBotMock
@@ -9,6 +10,7 @@ from jobs.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from jobs.scanner.native_scan import BlockScanner
 from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
+from lib.config import SubConfig
 from lib.constants import NetworkIdents
 from lib.delegates import INotified
 from lib.draw_utils import img_to_bio
@@ -85,6 +87,14 @@ class LpAppFramework(App):
         d.tx_count_recorder = TxCountRecorder(d)
 
         await self.create_thor_node_connector()
+
+        thor_env = d.cfg.get_thor_env_by_network_id()
+        cfg: SubConfig = d.cfg.get('thor.midgard')
+        d.midgard_connector = MidgardConnector(
+            d.session,
+            int(cfg.get_pure('tries', 3)),
+            public_url=thor_env.midgard_url
+        )
 
         if self.emergency:
             d.emergency.run_in_background()

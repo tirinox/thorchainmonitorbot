@@ -42,7 +42,6 @@ async def demo_midgard_test_large_ilp(app):
     await present_one_aff_tx(app, q_path)
 
 
-
 async def demo_test_aff_add_liq(app):
     q_path = free_url_gen.url_for_tx(0, 50,
                                      tx_type=ActionType.ADD_LIQUIDITY,
@@ -92,7 +91,7 @@ async def load_tx(app, mdg, q_path, find_aff=False):
     return tx
 
 
-async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
+async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None, render_pic=True):
     pool = ex_tx.first_pool_l1
     ph = await app.deps.pool_cache.get()
     pool_info: PoolInfo = ph.pool_info_map.get(pool)
@@ -108,17 +107,20 @@ async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
     print(f'{full_rune = } R')
 
     nm = NameMap.empty()
+    ev = EventLargeTransaction(
+        ex_tx, rune_price, pool_info,
+    )
 
-    for lang in [Language.RUSSIAN, Language.ENGLISH, Language.ENGLISH_TWITTER]:
-        loc = app.deps.loc_man[lang]
-        text = loc.notification_text_large_single_tx(
-            EventLargeTransaction(
-                ex_tx, rune_price, pool_info,
-            ), name_map=nm
-        )
-        await app.send_test_tg_message(text)
-        sep()
-        print(text)
+    if render_pic:
+        await app.deps.alert_presenter.handle_data(ev)
+    else:
+
+        for lang in [Language.RUSSIAN, Language.ENGLISH, Language.ENGLISH_TWITTER]:
+            loc = app.deps.loc_man[lang]
+            text = loc.notification_text_large_single_tx(ev, nm)
+            await app.send_test_tg_message(text)
+            sep()
+            print(text)
 
 
 async def refund_full_rune(app):
@@ -346,9 +348,15 @@ async def dbg_refund_spam(app):
         await asyncio.sleep(1)
 
 
+async def dbg_tron_logo(app):
+    q_path = free_url_gen.url_for_tx(0, 50, txid='8BC553B659B7E474A900AE61E73D2530B554CF43C8BBF439C42F29A4E9E798AA')
+    await present_one_aff_tx(app, q_path)
+
+
 async def main():
     app = LpAppFramework()
-    
+    async with app:
+        await dbg_tron_logo(app)
 
     # await midgard_test_donate(app, mdg, tx_parser)
     # await midgard_test_1(app, mdg, tx_parser)

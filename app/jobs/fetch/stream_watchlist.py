@@ -1,4 +1,5 @@
 import json
+from typing import List, Optional
 
 from jobs.fetch.base import BaseFetcher
 from lib.constants import thor_to_float
@@ -43,6 +44,12 @@ class StreamingSwapWatchListFetcher(BaseFetcher):
 
     async def load_current_state_raw(self):
         return await self.deps.thor_connector.query_raw('/thorchain/swaps/streaming')
+
+    async def load_streaming_swap_details(self, tx_id: str) -> Optional[StreamingSwap]:
+        raw_data = await self.deps.thor_connector.query_raw(f'/thorchain/swap/streaming/{tx_id}')
+        if not raw_data:
+            return None
+        return StreamingSwap.model_validate(raw_data)
 
     async def load_list_from_db(self):
         r = await self.deps.db.get_redis()
@@ -132,7 +139,7 @@ class StreamingSwapStatusChecker(INotified, WithDelegates, WithLogger):
                 status=SUCCESS,
                 type=ActionType.SWAP.value,
                 pools=[],  # todo
-                in_tx=[], # todo
+                in_tx=[],  # todo
                 out_tx=[],  # todo
                 meta_swap=ThorMetaSwap(
                     # todo
