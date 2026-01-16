@@ -5,7 +5,7 @@ from typing import List, Optional
 from api.aionode.types import thor_to_float
 from jobs.fetch.base import BaseFetcher
 from jobs.fetch.cached.pool import PoolCache
-from jobs.fetch.pol import RunePoolFetcher
+from jobs.fetch.pol import POLAndRunePoolFetcher
 from jobs.scanner.swap_routes import SwapRouteRecorder
 from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
@@ -28,7 +28,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         self.tally_days_period = deps.cfg.as_int('key_metrics.tally_period_days', 7)
 
         self._swap_route_recorder = SwapRouteRecorder(deps.db)
-        self._runepool = RunePoolFetcher(deps)
+        self._runepool = POLAndRunePoolFetcher(deps)
 
         self._prev_data = None
 

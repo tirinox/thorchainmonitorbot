@@ -2,7 +2,7 @@ import asyncio
 import pprint
 
 from comm.localization.eng_base import BaseLocalization
-from jobs.fetch.pol import RunePoolFetcher
+from jobs.fetch.pol import POLAndRunePoolFetcher
 from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.runepool import RunePoolEventDecoder
 from lib.money import distort_randomly
@@ -107,12 +107,12 @@ async def demo_runepool_stats(app: LpAppFramework):
     await prepare_once(app)
 
     d = app.deps
-    runepool_fetcher = RunePoolFetcher(d)
+    pol_fetcher = POLAndRunePoolFetcher(d)
 
     notifier = RunepoolStatsNotifier(d)
     # notifier.add_subscriber(d.alert_presenter)
-    # runepool_fetcher.add_subscriber(notifier)
-    e = await runepool_fetcher.fetch()
+    # pol_fetcher.add_subscriber(notifier)
+    e = await pol_fetcher.fetch()
 
     previous: RunepoolState = await notifier.load_last_event()
 

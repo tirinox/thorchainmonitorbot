@@ -2,7 +2,7 @@ from typing import Optional, List
 
 from jobs.fetch.key_stats import KeyStatsFetcher
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
-from jobs.fetch.pol import RunePoolFetcher
+from jobs.fetch.pol import POLAndRunePoolFetcher
 from jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
 from jobs.fetch.tcy import TCYInfoFetcher
@@ -48,7 +48,7 @@ class PublicAlertJobExecutor(WithLogger):
         self.deps = deps
         self.tcy_info_fetcher = TCYInfoFetcher(deps)
         self.secured_asset_fetcher = SecuredAssetAssetFetcher(deps)
-        self.runepool_fetcher = RunePoolFetcher(deps)
+        self.pol_fetcher = POLAndRunePoolFetcher(deps)
         self.key_stats_fetcher = KeyStatsFetcher(deps)
         self.trade_acc_fetcher = TradeAccountFetcher(deps)
         self.cex_flow_recorder = CEXFlowRecorder(deps)
@@ -70,7 +70,7 @@ class PublicAlertJobExecutor(WithLogger):
         pvdb = PrevStateDB(self.deps.db, POLState)
         previous: Optional[POLState] = await pvdb.get()
 
-        data: AlertPOLState = await self.runepool_fetcher.fetch()
+        data: AlertPOLState = await self.pol_fetcher.fetch()
 
         data = data._replace(previous=previous if previous else None)
 
@@ -79,7 +79,7 @@ class PublicAlertJobExecutor(WithLogger):
         await pvdb.set(data.current)
 
     async def job_runepool_summary(self):
-        data = await self.runepool_fetcher.fetch()
+        data = await self.pol_fetcher.fetch()
         usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
 
         pvdb = PrevStateDB(self.deps.db, RunepoolState)

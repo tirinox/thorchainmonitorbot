@@ -7,6 +7,7 @@ from comm.picture.nodes_pictures import NodePictureGenerator
 from comm.picture.pools_picture import PoolPictureGenerator
 from comm.picture.queue_picture import queue_graph
 from comm.picture.supply_picture import SupplyPictureGenerator
+from jobs.pol_recorder import POLStateRecorder
 from jobs.ruji_merge import RujiMergeTracker
 from jobs.rune_burn_recorder import RuneBurnRecorder
 from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
@@ -92,7 +93,7 @@ class MetricsDialog(BaseDialog):
             await self.ask_generic_duration(message, 'price', back_state)
             return
         elif message.text == self.loc.BUTTON_METR_POL:
-            await self.show_pol(message)
+            await self.show_pol_state(message)
         elif message.text == self.loc.BUTTON_METR_STATS:
             await self.show_last_stats(message)
         elif message.text == self.loc.BUTTON_METR_TOP_POOLS:
@@ -250,10 +251,9 @@ class MetricsDialog(BaseDialog):
         await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
 
     async def show_pol_state(self, message: Message):
-        event = self.deps.pol_notifier.last_event
+        event = self.deps.pol_recorder.last_event
         if not event:
             await message.answer(self.loc.TEXT_POL_NO_DATA, disable_notification=True)
-            return
         else:
             await message.answer(self.loc.notification_text_pol_stats(event), disable_notification=True)
 
@@ -282,15 +282,6 @@ class MetricsDialog(BaseDialog):
 
         report = await self.deps.dex_analytics.get_analytics(period)
         text = self.loc.notification_text_dex_report(report)
-        await message.answer(text,
-                             disable_web_page_preview=True,
-                             disable_notification=True)
-
-    async def show_pol(self, message: Message):
-        await self.start_typing(message)
-
-        report = self.deps.pol_notifier.last_event
-        text = self.loc.notification_text_pol_stats(report)
         await message.answer(text,
                              disable_web_page_preview=True,
                              disable_notification=True)

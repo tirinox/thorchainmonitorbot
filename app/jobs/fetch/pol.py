@@ -12,7 +12,7 @@ from models.pool_member import PoolMemberDetails
 from models.runepool import AlertPOLState, POLState, RunepoolState
 
 
-class RunePoolFetcher(BaseFetcher):
+class POLAndRunePoolFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer, reserve_address=None):
         period = parse_timespan_to_seconds(deps.cfg.runepool.fetch_period)
         super().__init__(deps, period)

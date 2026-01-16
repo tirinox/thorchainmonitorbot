@@ -72,10 +72,10 @@ class DepContainer:
     tx_count_recorder = None  # type: 'TxCountRecorder'
     user_counter = None  # type: 'UserCounterMiddleware'
     weekly_stats_notifier = None
-    pol_notifier = None
     lend_stats_notifier = None
     secured_asset_notifier = None
     tcy_summary_notifier = None
+    pol_recorder = None  # type: 'POLStateRecorder'
 
     dex_analytics = None
     affiliate_recorder = None
