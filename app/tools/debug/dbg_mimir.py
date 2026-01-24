@@ -31,7 +31,6 @@ async def demo_cap_test(app: LpAppFramework):
 
 async def demo_voting(app: LpAppFramework):
     mimir_to_test = 'CHURNINTERVAL'.upper()
-    # mimir_to_test = NEXT_CHAIN_KEY
 
     mm = app.deps.mimir_const_holder
     vot_man = mm.voting_manager
@@ -54,7 +53,7 @@ async def demo_voting(app: LpAppFramework):
     # await app.deps.broadcaster.notify_preconfigured_channels(
     #     BaseLocalization.notification_text_mimir_voting_progress,
     #     app.deps.mimir_const_holder,
-    #     NEXT_CHAIN_KEY, prev_progress, voting, option,
+    #     XXXXXXX_KEY, prev_progress, voting, option,
     # )
 
     # print(loc, app)

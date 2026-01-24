@@ -39,7 +39,7 @@ if POLMaxPoolMovement == 1:
 
 MIMIR_KEY_POL_SYNTH_UTILIZATION = "POLSYNTHUTILIZATION"
 
-NEXT_CHAIN_KEY = 'NextChain'.upper()
+SOL_RPC_PROVIDER_KEY = 'SOL-RPC-PROVIDER'
 
 EXTRA_AUTO_SOLVENCY_MIMIRS = [
     'STOPFUNDYGGDRASIL'
@@ -55,10 +55,11 @@ class MimirUnits:
     UNITS_BLOCKS = 'blocks'
     UNITS_UNTIL_BLOCK = 'until_block'
     UNITS_BOOL = 'bool'
-    UNITS_NEXT_CHAIN = 'next_chain'
     UNITS_USD = 'usd'
     UNITS_BASIS_POINTS = 'basis_points'
     UNITS_INT = 'int'
+
+    UNITS_SPECIAL_MAP = 'special_map'
 
 
 class MimirNameRules:
@@ -123,9 +124,8 @@ class MimirNameRules:
             data = yaml.safe_load(f)
         return data
 
-    @property
-    def next_chain_voting_map(self):
-        return self.rules.get('next_chain_voting_map', {})
+    def get_special_voting_value_map(self, mimir_key):
+        return self.rules.get('special_vote_values', {}).get(mimir_key, {})
 
     @property
     def rules_word_transform(self):
@@ -210,9 +210,9 @@ class MimirNameRules:
             return MimirUnits.UNITS_BOOL
         elif name in self.rules['types']['usd']:
             return MimirUnits.UNITS_USD
-        elif name == NEXT_CHAIN_KEY:
-            return MimirUnits.UNITS_NEXT_CHAIN
         elif name in self.rules['types']['basis_points']:
             return MimirUnits.UNITS_BASIS_POINTS
+        elif self.get_special_voting_value_map(name):
+            return MimirUnits.UNITS_SPECIAL_MAP
         else:
             return ''

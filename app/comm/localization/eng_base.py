@@ -1,9 +1,8 @@
 import logging
 from abc import ABC
 from datetime import datetime
-from typing import List, Optional, Tuple
-
 from math import ceil
+from typing import List, Optional, Tuple
 
 from api.aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout
 from api.midgard.name_service import NameService, add_thor_suffix, NameMap
@@ -1425,13 +1424,14 @@ class BaseLocalization(ABC):  # == English
         elif units == MimirUnits.UNITS_BOOL:
             s = self.MIMIR_YES if bool(int(v)) else self.MIMIR_NO
             return f'{s}'
-        elif units == MimirUnits.UNITS_NEXT_CHAIN:
+
+        elif units == MimirUnits.UNITS_SPECIAL_MAP:
             try:
                 v = int(v)
-                chain_name = self.mimir_rules.next_chain_voting_map.get(v, self.MIMIR_UNKNOWN_CHAIN)
-                return f'"{chain_name}"'
+                return self.mimir_rules.get_special_voting_value_map(name).get(v, f"Unknown ({v})")
             except ValueError:
                 return str(v)
+
         elif units == MimirUnits.UNITS_USD:
             return short_dollar(thor_to_float(v))
         elif units == MimirUnits.UNITS_BASIS_POINTS:
