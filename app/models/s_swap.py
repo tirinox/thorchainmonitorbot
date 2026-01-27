@@ -3,8 +3,8 @@ from typing import NamedTuple, List, Optional
 
 from pydantic import ConfigDict, BaseModel, Field
 
-from api.aionode.types import ThorSwapperClout, ThorTxStatus
-from lib.constants import THOR_BLOCK_TIME, thor_to_float
+from api.aionode.types import ThorSwapperClout
+from lib.constants import THOR_BLOCK_TIME
 from .memo import THORMemo
 
 
@@ -126,3 +126,7 @@ class AlertSwapStart:
 class EventChangedStreamingSwapList(NamedTuple):
     new_swaps: List[StreamingSwap]
     completed_swaps: List[StreamingSwap]
+
+    @classmethod
+    def empty(cls):
+        return cls(new_swaps=[], completed_swaps=[])

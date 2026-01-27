@@ -75,9 +75,6 @@ class SwapProps(NamedTuple):
             if any(isinstance(ev, EventOutbound) and ev.asset.upper() == out_asset for ev in self.events):
                 return True
         else:
-            # if any(isinstance(ev, EventScheduledOutbound) for ev in self.events):
-            #     return True
-
             # if there is any outbound to my address, except internal outbounds (in the middle of double swap)
             if any((isinstance(ev, EventOutbound) and ev.to_address == self.from_address) for ev in self.true_outbounds):
                 return True
@@ -118,11 +115,6 @@ class SwapProps(NamedTuple):
             if isinstance(ev, EventOutbound) and (ev.is_outbound_memo or ev.is_refund_memo)
         ]
 
-        # looks like we don't need this anymore, because it's already processed above
-        # outbounds += [
-        #     ev for ev in self.events
-        #     if isinstance(ev, EventTradeAccountDeposit) and ev.rune_address
-        # ]
         return outbounds
 
     def gather_outbounds(self) -> List[ThorSubTx]:

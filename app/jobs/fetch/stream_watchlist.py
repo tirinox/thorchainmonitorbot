@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional
+from typing import Optional
 
 from jobs.fetch.base import BaseFetcher
 from lib.constants import thor_to_float
@@ -26,6 +26,8 @@ class StreamingSwapWatchListFetcher(BaseFetcher):
 
     async def fetch(self) -> EventChangedStreamingSwapList:
         raw_s_swaps = await self.load_current_state_raw()
+        if raw_s_swaps is None:
+            return EventChangedStreamingSwapList.empty()
         if not isinstance(raw_s_swaps, list):
             raise ValueError(f'Invalid response from /thorchain/swaps/streaming: {raw_s_swaps}')
 
