@@ -50,9 +50,13 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
 
         NodeEvent.new(node, NodeEventType.CHURNING,
                       EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=True)),
-        NodeEvent.new(node, NodeEventType.CHURNING,
-                      EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=False,
-                                          previous_ts=now_ts() - 12888)),
+        NodeEvent.new(
+            node, NodeEventType.CHURNING,
+            EventProviderStatus(
+                bp_address, bond_provider.rune_bond, appeared=False,
+                previous_ts=now_ts() - 12888
+            )
+        ),
 
         NodeEvent.new(node, NodeEventType.BOND_CHANGE,
                       EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
@@ -63,8 +67,11 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
                                               random.uniform(0.997, 1.0), on_churn=True,
                                               duration_sec=5 * DAY)),
         NodeEvent.new(node, NodeEventType.BOND_CHANGE,
-                      EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
-                                              random.uniform(1.01, 1.5), on_churn=False)),
+                      EventProviderBondChange(
+                          bp_address, bond_provider.rune_bond,
+                          bond_provider.rune_bond * random.uniform(1.01, 1.5),
+                          on_churn=False,
+                          duration_sec=50)),
         NodeEvent.new(node, NodeEventType.BOND_CHANGE,
                       EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
                                               random.uniform(0.5, 0.99), on_churn=False)),
@@ -205,12 +212,12 @@ async def main():
         # await run_realtime(app)
         # await run_playback(app, delay=0.01)
         # await debug_fee_change(app)
-        # await demo_all_kinds_of_messages(app)
+        await demo_all_kinds_of_messages(app)
         # await analise_churn(app)
         # await dbg_second_chance_before_deactivating_channel(app)
 
         # await run_recorder(app, 18298005 - 3, 18298005 + 3, file='../temp/whitelist1.json')
-        await run_playback(app, file='../temp/whitelist1.json', delay=1)
+        # await run_playback(app, file='../temp/whitelist1.json', delay=1)
 
 
 if __name__ == '__main__':

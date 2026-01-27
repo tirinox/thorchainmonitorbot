@@ -2582,12 +2582,14 @@ class BaseLocalization(ABC):  # == English
             emoji = '📈' if delta > 0 else '📉'
             usd_val = delta * event.usd_per_rune
             apy_str = f' | APY: {bold(format_percent(data.apy, signed=True))}' if data.apy else ''
+            duration_str = f" Since last change: {self.seconds_human(data.duration_sec)}" if data.duration_sec else ''
 
             return (
                 f'{emoji} Bond amount has {bold(verb)} '
                 f'from {pre(pretty_rune(data.prev_bond))} '
                 f'to {pre(pretty_rune(data.curr_bond))} '
-                f'({ital(delta_str)} | {ital(self.bp_bond_percent(data))} | {short_dollar(usd_val)}{apy_str})'
+                f'({ital(delta_str)} | {ital(self.bp_bond_percent(data))} | {short_dollar(usd_val)}{apy_str}).'
+                f'{duration_str}'
             )
         elif event.type == NodeEventType.BP_PRESENCE:
             data: EventProviderStatus = event.data
