@@ -11,7 +11,6 @@ from jobs.scanner.tx import ThorObservedTx, ThorEvent
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from lib.texts import sep
 from lib.utils import hash_of_string_repr, say, safe_get
 from models.events import EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut, EventSwap
@@ -190,7 +189,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             # Check if the swap is completed and not given away
             if swap_props.is_completed and not given_away:
 
-                if not await self.check_is_outbound_signed(tx_id, height):
+                if not await self.check_is_outbound_signed(tx_id, height, swap_props):
                     self.logger.info(f'Tx {tx_id} outbound is not signed yet, skipping.')
                     continue
 
@@ -229,7 +228,10 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             raise ValueError(f'Tx {tx_id} is not completed')
         return swap_props.build_action(ts)
 
-    async def check_is_outbound_signed(self, tx_id, height=None):
+    async def check_is_outbound_signed(self, tx_id, height=None, swap_props: SwapProps = None):
+        if not swap_props.is_output_l1_asset:
+            return True
+
         stages = await self.deps.thor_connector.query_tx_stages(tx_id, height)
         if not stages:
             self.logger.error(f'Cannot get stages for tx {tx_id}')
