@@ -11,7 +11,8 @@ from jobs.scanner.tx import ThorObservedTx, ThorEvent
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from lib.utils import hash_of_string_repr, say
+from lib.texts import sep
+from lib.utils import hash_of_string_repr, say, safe_get
 from models.events import EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut, EventSwap
 from models.tx import ThorAction
@@ -52,7 +53,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
         # Extract finished TX from these two sources
         all_outbounds_tx_id_set = end_block_outbounds_tx_ids | outbound_tx_id_set
-        txs = await self.handle_finished_swaps(all_outbounds_tx_id_set)
+        txs = await self.handle_finished_swaps(all_outbounds_tx_id_set, block.block_no)
 
         self.dbg_track_swap_id(txs)
 
@@ -63,6 +64,9 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         await self.pass_data_to_listeners(txs)
 
         return txs
+
+    async def set_status(self, tx_id, status):
+        await self._db.write_tx_status_kw(tx_id, status=status)
 
     async def register_new_swaps(self, block):
         ph = await self.deps.pool_cache.get()
@@ -120,8 +124,6 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 event_ident: event.original.attrs
             })
 
-            # boom = await self.dbg_on_swap_events(swap_ev, boom)
-
     @staticmethod
     def get_end_block_events_of_interest(block: BlockResult):
         for ev in block.end_block_events:
@@ -165,13 +167,13 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         events = []
         for tx in block.all_observed_txs:
             if tx.is_outbound:
-                events = list(self.make_events_from_observed_tx(tx))
-                events.extend(events)
+                this_events = list(self.make_events_from_observed_tx(tx))
+                events.extend(this_events)
                 # EventOutbound.tx_id is the original inbound tx id (in_tx_id field)
-                completed_txs_ids.update(e.tx_id for e in events)
+                completed_txs_ids.update(e.tx_id for e in this_events)
         return completed_txs_ids, events
 
-    async def handle_finished_swaps(self, outbound_tx_id_set: set) -> List[ThorAction]:
+    async def handle_finished_swaps(self, outbound_tx_id_set: set, height: int) -> List[ThorAction]:
         """
         Outbound can come from end_block_events or from observed quorum txs.
         """
@@ -184,11 +186,14 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 continue
 
             given_away = swap_props.given_away
-            if self.dbg_ignore_finished_status:
-                given_away = False
 
             # Check if the swap is completed and not given away
             if swap_props.is_completed and not given_away:
+
+                if not await self.check_is_outbound_signed(tx_id, height):
+                    self.logger.info(f'Tx {tx_id} outbound is not signed yet, skipping.')
+                    continue
+
                 # Update the status to avoid double processing in the future
                 await self._db.write_tx_status_kw(tx_id, status=SwapProps.STATUS_GIVEN_AWAY)
 
@@ -223,6 +228,15 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         if not swap_props.is_completed:
             raise ValueError(f'Tx {tx_id} is not completed')
         return swap_props.build_action(ts)
+
+    async def check_is_outbound_signed(self, tx_id, height=None):
+        stages = await self.deps.thor_connector.query_tx_stages(tx_id, height)
+        if not stages:
+            self.logger.error(f'Cannot get stages for tx {tx_id}')
+            return False
+
+        outbound_signed = safe_get(stages, 'outbound_signed', 'completed')
+        return bool(outbound_signed)
 
     # ------------------------------------ debug and research ---------------------------------------
 
@@ -286,4 +300,3 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         self.dbg_start_time = datetime.datetime.now()
         self.dbg_swaps = 0
         self.dbg_file = None
-        self.dbg_ignore_finished_status = False

@@ -105,7 +105,8 @@ class BlockResult:
                     is_inbound = quo_tx.get('inbound', False)
                     obs_tx['__is_inbound'] = is_inbound
                     obs_tx['__is_quorum'] = True
-                    observed_txs[obs_tx['tx']['id']] = obs_tx
+                    real_observed_tx_id = obs_tx['tx']['id']
+                    observed_txs[real_observed_tx_id] = obs_tx
         return [
             ThorObservedTx.from_dict(d) for d in observed_txs.values()
         ]

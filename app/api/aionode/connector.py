@@ -136,8 +136,10 @@ class ThorConnector:
         if data:
             return ThorTxStatus.from_json(data)
 
-    async def query_tx_stages(self, tx_hash: str):
+    async def query_tx_stages(self, tx_hash: str, height=None):
         url = self.env.path_tx_stages.format(txid=tx_hash)
+        if height is not None:
+            url += f'?height={height}'
         data = await self._request(url)
         return data
 

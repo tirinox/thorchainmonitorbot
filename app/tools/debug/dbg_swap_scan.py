@@ -6,6 +6,7 @@ from jobs.scanner.block_result import BlockResult
 from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.scan_cache import BlockScannerCached
 from jobs.scanner.swap_extractor import SwapExtractorBlock
+from jobs.scanner.swap_props import SwapProps
 from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_filler import VolumeFillerUpdater
 from lib.delegates import INotified
@@ -33,7 +34,8 @@ class FindOutbound(INotified):
                     await say('Outbound!')
 
 
-async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, ignore_traders=False, from_db=False):
+async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, ignore_traders=False, from_db=False,
+                              reset_status=False, no_alert=False):
     d = app.deps
 
     if start is not None and start < 0:
@@ -64,10 +66,12 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, i
 
     # Extract ThorTx from BlockResult
     native_action_extractor = SwapExtractorBlock(d)
-    native_action_extractor.dbg_ignore_finished_status = True
 
     if tx_id:
         native_action_extractor.dbg_watch_swap_id = tx_id
+        if reset_status:
+            print(f"Resetting status of swap {tx_id} to OBSERVED_IN")
+            await native_action_extractor.set_status(tx_id, SwapProps.STATUS_OBSERVED_IN)
 
     d.block_scanner.add_subscriber(native_action_extractor)
 
@@ -98,7 +102,9 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False, i
     ph = await d.pool_cache.get()
     swap_notifier_tx.dbg_evaluate_curve_for_pools(ph)
     volume_filler.add_subscriber(swap_notifier_tx)
-    swap_notifier_tx.add_subscriber(d.alert_presenter)
+
+    if not no_alert:
+        swap_notifier_tx.add_subscriber(d.alert_presenter)
 
     # Run all together
     if from_db and tx_id:
@@ -120,6 +126,34 @@ async def dbg_one_finished_swap(app, tx_id):
     print(tx)
 
 
+async def dbg_find_missing_outs(app):
+    block_height = 24548357
+    big_tx_id = "9C00705E343059E99E0DCE45992777D32A34EB0FCB00D83D50026D22EEAC4CD8"
+    scanner = BlockScannerClass(app.deps)
+    block = await scanner.fetch_one_block(block_height)
+    txs = block.txs
+
+    for tx in txs:
+        if big_tx_id in repr(tx):
+            sep()
+            print(f"Found big tx {big_tx_id} mention in block {block_height}: {tx.tx_hash}")
+            # print(tx)
+
+    sep('observed from block')
+
+    for i, tx in enumerate(block.all_observed_txs, start=1):
+        if big_tx_id in tx.memo:
+            print(f"{i:03}: {tx}")
+            sep()
+
+    sep('Events')
+
+    extractor = SwapExtractorBlock(app.deps)
+    outbound_tx_id_set, outbound_events = extractor.detect_observed_quorum_outbounds(block)
+    for ev in outbound_events:
+        sep()
+        print(ev)
+
 
 async def run():
     app = LpAppFramework(log_level=logging.DEBUG)
@@ -133,14 +167,25 @@ async def run():
         # await debug_full_pipeline(app, ignore_traders=True,
         #                           tx_id="97C2DAF7AD2A43BF4CC822A873C980FAF939719361DBD24641368EF32D9D5C27")
         #
+
+        # await dbg_find_missing_outs(app)
+
         await debug_full_pipeline(
             app,
             # start=24541138 - 5,  # before start
-            start=24548352 - 5,  # outbound
+            # start=24548352 - 5,  # outbound
+            start=24548357,  # final outbounds
             tx_id='9C00705E343059E99E0DCE45992777D32A34EB0FCB00D83D50026D22EEAC4CD8',
-            single_block=False,
+            single_block=True,
+            # single_block=False,
             ignore_traders=True,
+            reset_status=True,
+            no_alert=False,
         )
+
+        # todo!
+        # the issue that we give out the tx when we see the first outbound, but the second outbound comes much later
+        # solution:
 
         # await debug_full_pipeline(
         #     app, from_db=True,
