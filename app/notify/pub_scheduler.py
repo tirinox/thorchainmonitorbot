@@ -339,6 +339,7 @@ class PublicScheduler(WithLogger):
             return
         await self.load_config_from_db()
         self.scheduler.start()
+        await self.apply_scheduler_configuration()
         await self._rpc.run_as_server(self._on_control_message)
         self.logger.info("Scheduler started.")
 
