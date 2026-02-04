@@ -117,6 +117,7 @@ MEMO_ACTION_TABLE = {
     "pool+": ActionType.RUNEPOOL_ADD,
     "pool-": ActionType.RUNEPOOL_WITHDRAW,
     "switch": ActionType.SWITCH,
+    "=<": ActionType.LIMIT_ORDER,  # new!
     # "migrate": TxMigrate,
     # "ragnarok": TxRagnarok,
     # "consolidate": TxConsolidate,
@@ -255,7 +256,7 @@ class THORMemo:
                 affiliates=affiliates,
             )
 
-        elif tx_type == ActionType.SWAP:
+        elif tx_type == ActionType.SWAP or tx_type == ActionType.LIMIT_ORDER:
             # 0    1     2         3   4         5   6                   7                8
             # SWAP:ASSET:DEST_ADDR:LIM:AFFILIATE:FEE:DEX Aggregator Addr:Final Asset Addr:MinAmountOut
             limit_and_s_swap = ith(components, 3, '')
@@ -274,7 +275,9 @@ class THORMemo:
                 dex_final_asset_address=ith(components, 7, ''),
                 dex_min_amount_out=ith(components, 8, 0, is_number=True),
                 refund_address=refund_address,  # /2
+                is_limit_order=(tx_type == ActionType.LIMIT_ORDER),
             )
+
 
         elif tx_type == ActionType.WITHDRAW:
             # WD:POOL:BASIS_POINTS:ASSET
@@ -487,9 +490,10 @@ class THORMemo:
              affiliate_address: str = '', affiliate_fee_bp: int = 0,
              affiliates: Optional[List[Affiliate]] = None,
              dex_aggregator_address: str = '', dex_final_asset_address: str = '', dex_min_amount_out: int = 0,
-             refund_address: str = ''):
+             refund_address: str = '',
+             is_limit_order: bool = False):
         return cls(
-            ActionType.SWAP,
+            ActionType.LIMIT_ORDER if is_limit_order else ActionType.SWAP,
             asset, dest_address, limit,
             s_swap_interval, s_swap_quantity,
             pool=asset,

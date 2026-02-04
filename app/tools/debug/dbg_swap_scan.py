@@ -170,18 +170,18 @@ async def run():
 
         # await dbg_find_missing_outs(app)
 
-        await debug_full_pipeline(
-            app,
-            # start=24541138 - 5,  # before start
-            # start=24548352 - 5,  # outbound
-            start=24548357,  # final outbounds
-            tx_id='9C00705E343059E99E0DCE45992777D32A34EB0FCB00D83D50026D22EEAC4CD8',
-            single_block=True,
-            # single_block=False,
-            ignore_traders=True,
-            reset_status=True,
-            no_alert=False,
-        )
+        # await debug_full_pipeline(
+        #     app,
+        #     # start=24541138 - 5,  # before start
+        #     # start=24548352 - 5,  # outbound
+        #     start=24548357,  # final outbounds
+        #     tx_id='9C00705E343059E99E0DCE45992777D32A34EB0FCB00D83D50026D22EEAC4CD8',
+        #     single_block=True,
+        #     # single_block=False,
+        #     ignore_traders=True,
+        #     reset_status=True,
+        #     no_alert=False,
+        # )
 
         # todo!
         # the issue that we give out the tx when we see the first outbound, but the second outbound comes much later
@@ -195,6 +195,20 @@ async def run():
         # )
 
         # await debug_full_pipeline(app)
+
+        await debug_full_pipeline(
+            app,
+            # start=24541138 - 5,  # before start
+            # start=24548352 - 5,  # outbound
+            start=24812771,  # final outbounds
+            tx_id='0D4AE0E0CAFD0D0C4F99746A20595A90A08B92D16AB99E90537E39D0B41C7FEF',
+            single_block=False,
+            # single_block=False,
+            ignore_traders=False,
+            reset_status=True,
+            no_alert=False,
+        )
+
 
 
 if __name__ == '__main__':

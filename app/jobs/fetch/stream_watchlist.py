@@ -131,7 +131,7 @@ class StreamingSwapStatusChecker(INotified, WithDelegates, WithLogger):
         usd_volume_input = 0.0
         usd_volume_output = 0.0
 
-        memo = THORMemo.parse_memo(tx['memo'], no_raise=True)
+        # memo = THORMemo.parse_memo(tx['memo'], no_raise=True)
 
         # idea: just load it from Midgard!
         return EventLargeTransaction(

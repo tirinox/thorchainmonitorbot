@@ -32,6 +32,11 @@ class SwapStartDetector(WithLogger):
 
         memo = THORMemo.parse_memo(memo_str, no_raise=True)
 
+        if memo.action == ActionType.LIMIT_ORDER:
+            # Limit orders are not currently supported
+            self.logger.error("Implement limit order handling in swap start detector! ASAP!")
+            return None
+
         # Must be a swap!
         if not memo or memo.action != ActionType.SWAP:
             return None

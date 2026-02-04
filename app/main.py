@@ -42,6 +42,7 @@ from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.runepool import RunePoolEventDecoder
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.scanner.swap_routes import SwapRouteRecorder
+from jobs.scanner.swap_start_detector import SwapStartDetectorChained
 from jobs.scanner.trade_acc import TradeAccEventDecoder
 from jobs.scanner.transfer_detector import RuneTransferDetector
 from jobs.user_counter import UserCounterMiddleware
@@ -306,7 +307,6 @@ class App(WithLogger):
 
         if d.cfg.get('tx.enabled', True):
             main_tx_types = [
-                # ThorTxType.TYPE_SWAP,  # fixme: using the native block scanner
                 ActionType.REFUND,
                 ActionType.ADD_LIQUIDITY,
                 ActionType.WITHDRAW,
@@ -372,6 +372,7 @@ class App(WithLogger):
                 volume_filler.add_subscriber(d.swap_notifier_tx)
                 d.swap_notifier_tx.add_subscriber(d.alert_presenter)
 
+                # Big Streaming swap start detection and notification
                 if d.cfg.tx.swap.also_trigger_when.streaming_swap.get('notify_start', True):
                     swl = StreamingSwapWatchListFetcher(d)
                     tasks.append(swl)
