@@ -3,9 +3,9 @@ from typing import Optional, List
 from jobs.fetch.key_stats import KeyStatsFetcher
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from jobs.fetch.pol import POLAndRunePoolFetcher
-from jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
 from jobs.fetch.tcy import TCYInfoFetcher
+from jobs.fetch.top_pools import BestPoolsFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.rune_burn_recorder import RuneBurnRecorder
 from lib.date_utils import DAY
@@ -16,8 +16,7 @@ from models.circ_supply import RuneCirculatingSupply
 from models.key_stats_model import AlertKeyStats
 from models.net_stats import AlertNetworkStats
 from models.node_info import NetworkNodes
-from models.pool_info import EventPools, PoolMapStruct
-from models.price import PriceHolder, RuneMarketInfo
+from models.price import RuneMarketInfo
 from models.runepool import AlertRunepoolStats, POLState, AlertPOLState, RunepoolState
 from models.trade_acc import AlertTradeAccountStats
 from notify.pub_scheduler import PublicScheduler
@@ -106,32 +105,10 @@ class PublicAlertJobExecutor(WithLogger):
         await self._send_alert(data, "key metrics infographic")
 
     async def job_top_pools(self):
-        income_intervals = 7
-        income_period = 'day'
-
-        earnings = await self.deps.midgard_connector.query_earnings(count=income_intervals * 2 + 1,
-                                                                    interval=income_period)
-
-        mdg_pool_fetcher = PoolInfoFetcherMidgard(self.deps, 1.0)
-        pool_map_struct = await mdg_pool_fetcher.fetch_as_pool_map_struct()
-        if not pool_map_struct or not pool_map_struct.pool_map:
-            raise ValueError("No pools loaded!")
-
-        pvdb = PrevStateDB(self.deps.db, PoolMapStruct)
-        prev_pool_map = await pvdb.get()
-
-        usd_per_rune = PriceHolder(self.deps.cfg.stable_coins).calculate_rune_price_here(pool_map_struct.pool_map)
-        if not usd_per_rune:
-            raise ValueError("Rune price is not available!")
-
-        event_pools = EventPools(
-            pool_map_struct.pool_map, prev_pool_map.pool_map,
-            earnings,
-            usd_per_rune=usd_per_rune
-        )
-
+        fetcher = BestPoolsFetcher(self.deps)
+        event_pools, pool_map_struct = await fetcher.get_top_pools()
         await self._send_alert(event_pools, "top pools alert")
-        await pvdb.set(pool_map_struct)
+        await fetcher.save_prev_pool_map(pool_map_struct)
 
     async def job_supply_chart(self):
         market_info: RuneMarketInfo = await self.deps.market_info_cache.get()

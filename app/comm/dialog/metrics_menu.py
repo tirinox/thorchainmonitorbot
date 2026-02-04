@@ -4,10 +4,9 @@ from aiogram.utils.helper import HelperMode
 
 from comm.localization.manager import BaseLocalization
 from comm.picture.nodes_pictures import NodePictureGenerator
-from comm.picture.pools_picture import PoolPictureGenerator
 from comm.picture.queue_picture import queue_graph
 from comm.picture.supply_picture import SupplyPictureGenerator
-from jobs.pol_recorder import POLStateRecorder
+from jobs.fetch.top_pools import BestPoolsFetcher
 from jobs.ruji_merge import RujiMergeTracker
 from jobs.rune_burn_recorder import RuneBurnRecorder
 from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
@@ -16,13 +15,13 @@ from lib.texts import kbd
 from models.net_stats import AlertNetworkStats
 from models.node_info import NodeInfo, NetworkNodes
 from models.ruji import AlertRujiraMergeStats
-from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.cex_flow import CEXFlowRecorder
 from notify.public.node_churn_notify import NodeChurnNotifier
 from notify.public.price_notify import PriceChangeNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
 from .base import BaseDialog, message_handler
+from ..picture.pools_picture import PoolPictureGenerator
 
 
 class MetricsStates(StatesGroup):
@@ -239,14 +238,14 @@ class MetricsDialog(BaseDialog):
 
     async def show_top_pools(self, message: Message):
         await self.start_typing(message)
-
-        notifier: BestPoolsNotifier = self.deps.best_pools_notifier
-        if not (event := notifier.last_pool_detail):
+        fetcher = BestPoolsFetcher(self.deps)
+        event_pools, _ = await fetcher.get_top_pools()
+        if not event_pools or not event_pools.pool_detail_dic:
             await message.answer(self.loc.TEXT_BEST_POOLS_NO_DATA, disable_notification=True)
             return
 
-        text = self.loc.notification_text_best_pools(event)
-        generator = PoolPictureGenerator(self.loc, event)
+        text = self.loc.notification_text_best_pools(event_pools)
+        generator = PoolPictureGenerator(self.loc, event_pools)
         pic, pic_name = await generator.get_picture()
         await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
 

@@ -61,7 +61,6 @@ class DepContainer:
 
     node_op_notifier = None  # type: 'NodeChangePersonalNotifier'
     block_notifier = None  # type: 'BlockHeightNotifier'
-    best_pools_notifier = None  # type: 'BestPoolsNotifier'
     rune_move_notifier = None  # type: 'RuneMoveNotifier'
     tr_acc_summary_notifier = None  # type: 'TradeAccSummaryNotifier'
     swap_notifier_tx = None

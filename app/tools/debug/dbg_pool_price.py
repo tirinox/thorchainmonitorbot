@@ -10,7 +10,6 @@ from lib.texts import sep
 from lib.utils import recursive_asdict
 from models.price import PriceHolder
 from notify.alert_presenter import AlertPresenter
-from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.price_notify import PriceChangeNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -46,14 +45,6 @@ async def demo_cache_blocks(app: LpAppFramework):
     print(pools)
 
 
-# noinspection PyProtectedMember
-async def demo_top_pools(app: LpAppFramework):
-    d = app.deps
-    fetcher_pool_info = PoolInfoFetcherMidgard(d, 1)
-    d.best_pools_notifier = BestPoolsNotifier(d)
-    await d.best_pools_notifier._cooldown.clear()
-    fetcher_pool_info.add_subscriber(d.best_pools_notifier)
-    await fetcher_pool_info.run_once()
 
 
 async def _create_price_alert(app: LpAppFramework, fill=False):
