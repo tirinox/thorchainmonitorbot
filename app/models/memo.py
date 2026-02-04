@@ -86,6 +86,9 @@ class ActionType(Enum):
 
     SWITCH = 'switch'
 
+    REFERENCE = 'reference'
+    USE_REFERENCE = 'use_reference'
+
     UNKNOWN = '_unknown_'
 
 
@@ -121,6 +124,8 @@ MEMO_ACTION_TABLE = {
     # "migrate": TxMigrate,
     # "ragnarok": TxRagnarok,
     # "consolidate": TxConsolidate,
+    "reference": ActionType.REFERENCE,
+    "r": ActionType.USE_REFERENCE,
 }
 
 
@@ -163,6 +168,8 @@ class THORMemo:
     chain: str = 'THOR'
     affiliate_asset: str = ''
     name_expiry: Union[str, int] = ''
+
+    reference_memo: str = ''
 
     def __str__(self):
         return self.build()
@@ -364,8 +371,15 @@ class THORMemo:
                 destination_address=destination_address,
             )
 
+        elif tx_type == ActionType.REFERENCE:
+            reference_memo = gist.split(':', maxsplit=1)[1].strip()
+            return cls(ActionType.REFERENCE, reference_memo=reference_memo)
+
+        elif tx_type == ActionType.USE_REFERENCE:
+            reference_id = ith(components, 1, 0, is_number=True)
+            return cls(ActionType.USE_REFERENCE, reference_memo=str(reference_id))
+
         else:
-            # todo: limit order, register memo, etc.
             if no_raise:
                 return None
             else:
@@ -380,7 +394,7 @@ class THORMemo:
             # ADD:POOL:PAIRED_ADDR:AFFILIATE:FEE
             memo = f'+:{self.pool}:{self.dest_address}:{self._affiliate_part}'
 
-        elif self.action == ActionType.SWAP:
+        elif self.action == ActionType.SWAP or self.action == ActionType.LIMIT_ORDER:
             # 0    1     2         3   4         5   6                   7                8
             # SWAP:ASSET:DEST_ADDR:LIM:AFFILIATE:FEE:DEX Aggregator Addr:Final Asset Addr:MinAmountOut
             limit_or_ss = f'{nothing_if_0(self.limit)}'
@@ -393,8 +407,13 @@ class THORMemo:
             if self.refund_address and self.refund_address != dest_addr:
                 dest_addr += f"/{self.refund_address}"
 
+            if self.action == ActionType.SWAP:
+                action_name = '='
+            else:
+                action_name = '=<'
+
             memo = (
-                f'=:{self.asset}:{dest_addr}:{limit_or_ss}'
+                f'{action_name}:{self.asset}:{dest_addr}:{limit_or_ss}'
                 f':{self._affiliate_part}'
                 f':{self.dex_aggregator_address}:{self.final_asset_address}:{nothing_if_0(self.min_amount_out)}'
             )
@@ -459,6 +478,12 @@ class THORMemo:
 
         elif self.action == ActionType.SWITCH:
             return f'SWITCH:{self.dest_address}'
+
+        elif self.action == ActionType.REFERENCE:
+            return f'REFERENCE:{self.reference_memo}'
+
+        elif self.action == ActionType.USE_REFERENCE:
+            return f'R:{self.reference_memo}'
 
         else:
             raise NotImplementedError(f"Can not build memo for {self.action}")
