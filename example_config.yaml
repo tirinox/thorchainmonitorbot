@@ -89,10 +89,6 @@ telegram:
     node_op_tools:
       enabled: true
 
-  inline_bot:
-    enabled: true
-    cache_time: 5m
-
 
 discord:
   enabled: true

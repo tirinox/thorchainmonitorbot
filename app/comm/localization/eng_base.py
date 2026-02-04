@@ -2029,38 +2029,6 @@ class BaseLocalization(ABC):  # == English
     def notification_text_best_pools(self, pd: EventPools):
         return 'THORChain top liquidity pools'
 
-    # ------- INLINE BOT (English only) -------
-
-    INLINE_INVALID_QUERY_TITLE = 'Invalid query!'
-    INLINE_INVALID_QUERY_CONTENT = 'Use scheme: <code>@{bot} lp ADDRESS POOL</code>'
-    INLINE_INVALID_QUERY_DESC = 'Use scheme: @{bot} lp ADDRESS POOL'
-    INLINE_POOL_NOT_FOUND_TITLE = 'Pool not found!'
-    INLINE_POOL_NOT_FOUND_TEXT = '{pool}": no such pool.'
-    INLINE_INVALID_ADDRESS_TITLE = 'Invalid address!'
-    INLINE_INVALID_ADDRESS_TEXT = 'Use THOR or Asset address here.'
-    INLINE_LP_CARD = 'LP card of {address} on pool {exact_pool}.'
-
-    INLINE_HINT_HELP_TITLE = 'ℹ️ Help'
-    INLINE_HINT_HELP_DESC = 'Use: @{bot} command. Send this to show commands.'
-    INLINE_HINT_HELP_CONTENT = (
-        'Commands are\n'
-        '<code>@{bot} price [1h/24h/7d]</code>\n'
-        '<code>@{bot} pools</code>\n'
-        '<code>@{bot} stats</code>\n'
-        # '<code>@{bot} blocks</code>\n'  # todo
-        # '<code>@{bot} queue</code>\n'  # todo
-        '<code>@{bot} lp ADDRESS POOL</code>\n'
-    )
-
-    INLINE_INTERNAL_ERROR_TITLE = 'Internal error!'
-    INLINE_INTERNAL_ERROR_CONTENT = f'Sorry, something went wrong! Please report it to {CREATOR_TG}.'
-
-    INLINE_TOP_POOLS_TITLE = '🏊 THORChain Top Pools'
-    INLINE_TOP_POOLS_DESC = 'Top 5 by APY, volume and liquidity'
-
-    INLINE_STATS_TITLE = '📊 THORChain Statistics'
-    INLINE_STATS_DESC = 'Last 24h summary of key stats'
-
     # ---- MISC ----
 
     def format_time_ago(self, d):

@@ -8,7 +8,7 @@ from typing import Optional
 
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.dispatcher.storage import FSMContextProxy, FSMContext
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InlineQuery
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.utils.exceptions import MessageCantBeDeleted, MessageToEditNotFound, MessageToDeleteNotFound
 
 from comm.localization.eng_base import CREATOR_TG
@@ -76,16 +76,6 @@ def query_handler(*custom_filters, state=None):
     return outer
 
 
-def inline_bot_handler(*custom_filters):
-    def outer(f):
-        f.inline_bot_stuff = {
-            'custom_filters': custom_filters
-        }
-        return f
-
-    return outer
-
-
 class AccessRestrictedError(Exception):
     ...
 
@@ -125,8 +115,6 @@ class BaseDialog(ABC):
                 cls.register_handler(d, f, name)
             elif hasattr(f, 'query_stuff'):
                 cls.register_query_handler(d, f, name)
-            elif hasattr(f, 'inline_bot_stuff'):
-                cls.register_inline_bot_handler(d, f, name)
 
     @staticmethod
     async def if_loading_please_wait(deps: DepContainer, loc: BaseLocalization, user):
@@ -149,30 +137,6 @@ class BaseDialog(ABC):
                 loc = await d.loc_man.get_from_db(query.from_user.id, d.db)
                 handler_class = cls(loc, data, d, query.message)
                 return await handler_class.call_in_context(that_name, query)
-
-    @classmethod
-    def register_inline_bot_handler(cls, d: DepContainer, f, name):
-        inline_bot_stuff = f.inline_bot_stuff
-
-        @d.telegram_bot.dp.inline_handler(*inline_bot_stuff['custom_filters'], state='*')
-        async def handler(inline_query: InlineQuery, that_name=name):  # name=name important!!
-            try:
-                logger.info({
-                    'from': (inline_query.from_user.id,
-                             inline_query.from_user.username,
-                             inline_query.from_user.first_name),
-                    'query': inline_query.query
-                })
-
-                loc = d.loc_man.default
-
-                if await cls.if_loading_please_wait(d, loc, inline_query.from_user.id):
-                    return
-
-                handler_class = cls(loc, None, d, None)
-                return await handler_class.call_in_context(that_name, inline_query)
-            except Exception as e:
-                logger.exception(f'Inline bot query exception! {e}')
 
     @classmethod
     def register_handler(cls, d: DepContainer, f, name):

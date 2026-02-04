@@ -4,7 +4,6 @@ from aiogram.types import ContentTypes, Message
 
 from .admin_menu import AdminDialog
 from .avatar_picture_dialog import AvatarDialog
-from .inline_bot_handler import InlineBotHandlerDialog
 from .main_menu import MainMenuDialog
 from .metrics_menu import MetricsDialog
 from .my_wallets_menu import MyWalletsMenu
@@ -33,10 +32,6 @@ def init_dialogs(d: DepContainer):
     MetricsDialog.register(d, mm, mm.entry_point)
     AvatarDialog.register(d, mm, mm.entry_point)
     AdminDialog.register(d, mm, mm.entry_point)
-
-    if InlineBotHandlerDialog.is_enabled(d.cfg):
-        logging.info('InlineBotHandlerDialog is enabled.')
-        InlineBotHandlerDialog.register(d, mm, mm.entry_point)
 
     if NodeOpDialog.is_enabled(d.cfg):
         logging.info('NodeOpDialog is enabled.')
