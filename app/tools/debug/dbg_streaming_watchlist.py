@@ -1,6 +1,6 @@
 import asyncio
 
-from jobs.fetch.stream_watchlist import StreamingSwapWatchListFetcher, StreamingSwapStartDetector, \
+from jobs.fetch.stream_watchlist import StreamingSwapWatchListFetcher, StreamingSwapStartDetectorFromList, \
     StreamingSwapStatusChecker
 from lib.delegates import INotified
 from models.s_swap import EventChangedStreamingSwapList, StreamingSwap
@@ -50,7 +50,7 @@ async def dbg_run_watchlist(app: LpAppFramework):
 
     swl = StreamingSwapWatchListFetcher(d)
 
-    start_detector = StreamingSwapStartDetector(d)
+    start_detector = StreamingSwapStartDetectorFromList(d)
     swl.add_subscriber(start_detector)
 
     stream_swap_notifier = StreamingSwapStartTxNotifier(d)
