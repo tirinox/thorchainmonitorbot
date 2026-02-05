@@ -1,6 +1,6 @@
 from jobs.scanner.arb_detector import ArbBotDetector, ArbStatus
 from jobs.scanner.event_db import EventDatabase
-from jobs.scanner.swap_start_detector import SwapStartDetector
+from jobs.scanner.swap_start_detector import SwapStartDetectorFromBlock
 from lib.constants import float_to_thor
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
@@ -17,7 +17,7 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.detector = SwapStartDetector(deps)
+        self.detector = SwapStartDetectorFromBlock(deps)
         self._ev_db = EventDatabase(deps.db)
         self.min_streaming_swap_usd = self.deps.cfg.as_float(
             'tx.swap.also_trigger_when.streaming_swap.volume_greater', 2500.0)

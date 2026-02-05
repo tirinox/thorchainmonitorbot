@@ -15,7 +15,7 @@ from models.price import PriceHolder
 from models.s_swap import AlertSwapStart
 
 
-class SwapStartDetector(WithLogger):
+class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -31,6 +31,9 @@ class SwapStartDetector(WithLogger):
             return None
 
         memo = THORMemo.parse_memo(memo_str, no_raise=True)
+        if not memo:
+            self.logger.error(f'Could not parse memo in swap tx: {msg}')
+            return None
 
         if memo.action == ActionType.LIMIT_ORDER:
             # Limit orders are not currently supported
@@ -130,11 +133,6 @@ class SwapStartDetector(WithLogger):
         observed_in_txs = list(self.handle_observed_txs(observed_in_txs, b.block_no))
 
         return deposit_swap_starts + observed_in_txs
-
-
-class SwapStartDetectorChained(SwapStartDetector, INotified, WithDelegates):
-    def __init__(self, deps: DepContainer):
-        super().__init__(deps)
 
     async def on_data(self, sender, data: BlockResult):
         ph = await self.deps.pool_cache.get()

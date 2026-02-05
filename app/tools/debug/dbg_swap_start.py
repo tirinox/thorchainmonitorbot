@@ -1,8 +1,8 @@
 import asyncio
 
-from jobs.fetch.stream_watchlist import StreamingSwapStartDetector, StreamingSwapWatchListFetcher
+from jobs.fetch.stream_watchlist import StreamingSwapStartDetectorFromList, StreamingSwapWatchListFetcher
 from jobs.scanner.scan_cache import BlockScannerCached
-from jobs.scanner.swap_start_detector import SwapStartDetectorChained
+from jobs.scanner.swap_start_detector import SwapStartDetectorFromBlock
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -12,7 +12,7 @@ async def dbg_run_continuous(app: LpAppFramework):
 
     d.block_scanner = BlockScannerCached(d)
 
-    swap_start_detector = SwapStartDetectorChained(d)
+    swap_start_detector = SwapStartDetectorFromBlock(d)
     d.block_scanner.add_subscriber(swap_start_detector)
 
     stream_swap_notifier = StreamingSwapStartTxNotifier(d)
@@ -29,7 +29,7 @@ async def dbg_run_specific_tx(app: LpAppFramework, tx_id: str):
     watchlist = StreamingSwapWatchListFetcher(d)
     s_swap = await watchlist.load_streaming_swap_details(tx_id)
 
-    sssd = StreamingSwapStartDetector(d)
+    sssd = StreamingSwapStartDetectorFromList(d)
     sssd.add_subscriber(d.alert_presenter)
     ph = await d.pool_cache.get()
     # noinspection PyProtectedMember

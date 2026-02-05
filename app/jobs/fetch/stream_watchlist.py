@@ -79,6 +79,10 @@ class StreamingSwapWatchListFetcher(BaseFetcher):
 
 
 class StreamingSwapStatusChecker(INotified, WithDelegates, WithLogger):
+    """
+    Not ready yet!
+    """
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -174,7 +178,7 @@ class StreamingSwapStatusChecker(INotified, WithDelegates, WithLogger):
             await r.srem(self.DB_KEY_TRACKED_SWAPS, *tx_ids)
 
 
-class StreamingSwapStartDetector(INotified, WithDelegates, WithLogger):
+class StreamingSwapStartDetectorFromList(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -195,8 +199,9 @@ class StreamingSwapStartDetector(INotified, WithDelegates, WithLogger):
                 await self._handle_swap_start(s, ph)
             except Exception as e:
                 self.logger.exception(f'Error handling streaming swap start {s.tx_id}: {e!r}')
-                self.deps.emergency.report('StreamingSwapStartDetector', 'Error handling streaming swap start',
-                                           tx_id=s.tx_id)
+                self.deps.emergency.report(self.logger.name, 'Error handling streaming swap start',
+                                           tx_id=s.tx_id,
+                                           exc=str(e))
 
     async def _handle_swap_start(self, s: StreamingSwap, ph: PriceHolder):
         details = await self.deps.thor_connector.query_tx_details(s.tx_id)

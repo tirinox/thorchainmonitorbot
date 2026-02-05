@@ -6,7 +6,7 @@ from typing import List
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.native_scan import BlockResult
 from jobs.scanner.swap_props import SwapProps
-from jobs.scanner.swap_start_detector import SwapStartDetector
+from jobs.scanner.swap_start_detector import SwapStartDetectorFromBlock
 from jobs.scanner.tx import ThorObservedTx, ThorEvent
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
@@ -25,7 +25,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self._swap_detector = SwapStartDetector(deps)
+        self._swap_detector = SwapStartDetectorFromBlock(deps)
 
         expiration_sec = deps.cfg.as_interval('native_scanner.db.ttl', '3d')
         self._db = EventDatabase(deps.db, expiration_sec=expiration_sec)

@@ -31,7 +31,7 @@ from jobs.fetch.pol import POLAndRunePoolFetcher
 from jobs.fetch.pool_price import PoolFetcher
 from jobs.fetch.queue import QueueFetcher
 from jobs.fetch.rune_market import RuneMarketInfoFetcher
-from jobs.fetch.stream_watchlist import StreamingSwapWatchListFetcher, StreamingSwapStartDetector
+from jobs.fetch.stream_watchlist import StreamingSwapWatchListFetcher, StreamingSwapStartDetectorFromList
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.tx import TxFetcher
 from jobs.node_churn import NodeChurnDetector
@@ -42,7 +42,7 @@ from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.runepool import RunePoolEventDecoder
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.scanner.swap_routes import SwapRouteRecorder
-from jobs.scanner.swap_start_detector import SwapStartDetectorChained
+from jobs.scanner.swap_start_detector import SwapStartDetectorFromBlock
 from jobs.scanner.trade_acc import TradeAccEventDecoder
 from jobs.scanner.transfer_detector import RuneTransferDetector
 from jobs.user_counter import UserCounterMiddleware
@@ -377,7 +377,7 @@ class App(WithLogger):
                     swl = StreamingSwapWatchListFetcher(d)
                     tasks.append(swl)
 
-                    start_detector = StreamingSwapStartDetector(d)
+                    start_detector = StreamingSwapStartDetectorFromList(d)
                     swl.add_subscriber(start_detector)
 
                     # swap_start_detector = SwapStartDetectorChained(d)
