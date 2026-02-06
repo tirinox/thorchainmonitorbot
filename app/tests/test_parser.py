@@ -36,36 +36,6 @@ def test_parser_v2_smoke(fn, example_tx_gen):
     assert res.total_count > 0
 
 
-def test_merge_two_coins():
-    a = ThorCoin('1', NATIVE_RUNE_SYMBOL)
-    b = ThorCoin('2', NATIVE_RUNE_SYMBOL)
-    assert ThorCoin.merge_two(a, b).amount == '3'
-    assert is_rune(ThorCoin.merge_two(a, b).asset)
-
-    with pytest.raises(AssertionError):
-        ThorCoin.merge_two(ThorCoin('1', 'ffs'), ThorCoin('2', 'abc'))
-
-    with pytest.raises(ValueError):
-        ThorCoin.merge_two(ThorCoin('gg', 'THOR'), ThorCoin('2', 'THOR'))
-
-    assert ThorCoin.merge_two(ThorCoin('0', 'THOR'), ThorCoin('0', 'THOR')) == ThorCoin('0', 'THOR')
-
-
-# noinspection PyTypeChecker
-def test_merge_two_swap_events():
-    a = ThorMetaSwap('10', [ThorCoin('10', NATIVE_RUNE_SYMBOL), ThorCoin('11', NATIVE_RUNE_SYMBOL)], 333, 1200000)
-    b = ThorMetaSwap('20', [ThorCoin('44', NATIVE_RUNE_SYMBOL), ThorCoin('45', NATIVE_RUNE_SYMBOL)], 22, 2300000)
-    c = ThorMetaSwap.merge_two(a, b)
-    assert c.liquidity_fee == 30
-    assert c.trade_slip == 355
-    assert len(c.network_fees) == 4
-    assert c.trade_target == 3500000
-
-    assert ThorMetaSwap.merge_two(a, None) == a
-    assert ThorMetaSwap.merge_two(None, a) == a
-    assert ThorMetaSwap.merge_two(None, None) is None
-
-
 @pytest.fixture
 def v2_single_tx_gen(example_tx_gen):
     return lambda: example_tx_gen('v2_single.json').txs[0]

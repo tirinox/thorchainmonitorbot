@@ -6,7 +6,6 @@ from typing import List, Optional, NamedTuple
 from api.w3.token_record import SwapInOut
 from lib.constants import Chains, thor_to_float, bp_to_float, THOR_BLOCK_TIME
 from lib.date_utils import now_ts
-from lib.texts import safe_sum
 from .asset import Asset, is_rune, Delimiter, AssetKind
 from .lp_info import LPAddress
 from .memo import ActionType, is_action
@@ -25,11 +24,6 @@ class ThorCoin(NamedTuple):
     @property
     def amount_float(self):
         return thor_to_float(self.amount)
-
-    @staticmethod
-    def merge_two(a: 'ThorCoin', b: 'ThorCoin'):
-        assert a.asset == b.asset
-        return ThorCoin(safe_sum(a.amount, b.amount), a.asset)
 
     @classmethod
     def from_json(cls, j):
@@ -117,21 +111,6 @@ class ThorMetaSwap:
     def liquidity_fee_in_percent(self, full_rune_volume):
         return self.liquidity_fee_rune_float / full_rune_volume * 100.0
 
-    @staticmethod
-    def merge_two(a: 'ThorMetaSwap', b: 'ThorMetaSwap'):
-        if a and b:
-            return ThorMetaSwap(
-                liquidity_fee=safe_sum(a.liquidity_fee, b.liquidity_fee),
-                network_fees=a.network_fees + b.network_fees,
-                trade_slip=safe_sum(a.trade_slip, b.trade_slip),
-                trade_target=safe_sum(a.trade_target, b.trade_target),
-                affiliate_fee=max(a.affiliate_fee, b.affiliate_fee),
-                affiliate_address=a.affiliate_address if a.affiliate_address else b.affiliate_address,
-                memo=a.memo if a.memo else b.memo,
-            )
-        else:
-            return a or b
-
 
 @dataclass
 class ThorMetaWithdraw:
@@ -188,15 +167,6 @@ class ThorMetaAddLiquidity:
     @classmethod
     def parse(cls, j):
         return cls(liquidity_units=j.get('liquidityUnits', '0'))
-
-    @staticmethod
-    def merge_two(a: 'ThorMetaAddLiquidity', b: 'ThorMetaAddLiquidity'):
-        if a and b:
-            return ThorMetaAddLiquidity(
-                liquidity_units=safe_sum(a.liquidity_units, b.liquidity_units)
-            )
-        else:
-            return a or b
 
 
 SUCCESS = 'success'
