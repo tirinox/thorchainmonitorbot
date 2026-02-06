@@ -1,6 +1,6 @@
 import asyncio
 import random
-from typing import List
+from typing import List, Tuple
 
 from comm.localization.eng_base import BaseLocalization
 from comm.localization.manager import LocalizationManager
@@ -132,7 +132,7 @@ class Broadcaster(WithLogger):
         return result
 
     async def safe_send_message_rate(self, channel_info: ChannelDescriptor,
-                                     message: BoardMessage, **kwargs) -> (bool, bool):
+                                     message: BoardMessage, **kwargs) -> Tuple[str, bool]:
         async with self._rate_limit_lock:
             # message is already BoarMessage!
             # message = await self._form_message(message, channel_info, message.msg_type)
@@ -167,6 +167,7 @@ class Broadcaster(WithLogger):
                 raise ValueError('msg_type is required when data_source is a string')
             return BoardMessage(data_source, msg_type=msg_type)
         elif callable(data_source):
+            # noinspection PyUnresolvedReferences
             b_message = await data_source(channel_info.channel_id, **kwargs)
             if isinstance(b_message, BoardMessage):
                 b_message.msg_type = msg_type or b_message.msg_type
@@ -192,6 +193,12 @@ class Broadcaster(WithLogger):
                     # make from any message a BoardMessage
                     b_message = await self._form_message(message, channel_info, msg_type, **kwargs)
                     if b_message.is_empty:
+                        continue
+
+                    if not await self.deps.flagship.is_flag_set(f"broadcast:{channel_info.type}:{msg_type}"):
+                        self.logger.warning(
+                            f"Flag is not set for broadcasting {msg_type} to "
+                            f"{channel_info.type} ({channel_info.short_coded})! Skipping.")
                         continue
 
                     send_results = await self._safe_send_message(

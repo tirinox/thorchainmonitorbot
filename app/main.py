@@ -53,6 +53,7 @@ from lib.date_utils import parse_timespan_to_seconds
 from lib.db import DB
 from lib.depcont import DepContainer
 from lib.emergency import EmergencyReport
+from lib.flagship import Flagship
 from lib.logs import WithLogger, setup_logs_from_config
 from lib.money import DepthCurve
 from lib.scheduler import PrivateScheduler
@@ -108,6 +109,7 @@ class App(WithLogger):
         self._init_configuration(log_level)
 
         d.db = DB()
+        d.flagship = Flagship(d.db)
 
         d.node_info_fetcher = NodeInfoFetcher(d)
 

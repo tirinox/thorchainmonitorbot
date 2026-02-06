@@ -17,6 +17,7 @@ from jobs.fetch.cached.swap_history import SwapHistoryFetcher
 from lib.config import Config
 from lib.db import DB
 from lib.emergency import EmergencyReport
+from lib.flagship import Flagship
 from lib.http_ses import ObservableSession
 from lib.new_feature import NewFeatureManager, Features
 from lib.scheduler import PrivateScheduler
@@ -39,6 +40,7 @@ class DepContainer:
     broadcaster = None  # type: 'Broadcaster'
     alert_presenter = None
     data_controller = None
+    flagship: Flagship = None
 
     session: Optional[ClientSession] = None
 
