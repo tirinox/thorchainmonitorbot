@@ -137,8 +137,10 @@ backup-db: # Backup the database Redis
 	cp -r ./redis_data/dump.rdb ./redis_data/dump-${DATE}.rdb
 
 
-.PHONY: dashboard
-dashboard:  # Run the Streamlit dashboard
+.PHONY: dashboard-dev
+dashboard-dev:  # Run the Streamlit dashboard in development mode (with hot reload)
+	@echo "Stopping Streamlit Dashboard if it's running..."
+	docker compose down dashboard
 	@echo "Starting Streamlit Dashboard..."
 	cd $(PROJECT_ROOT)/app && PYTHONPATH="." streamlit run tools/dashboard/Dashboard.py
 	#cd $(PROJECT_ROOT)/app && PYTHONPATH="." streamlit run tools/dashboard/Dashboard.py --server.fileWatcherType=all

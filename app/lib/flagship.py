@@ -11,6 +11,7 @@ class FlagDescriptor(BaseModel):
     value: bool
     last_changed_ts: float
     last_access_ts: float
+    full_path: str | None = None
 
     def access(self):
         self.last_access_ts = now_ts()
@@ -86,7 +87,8 @@ class Flagship(WithLogger):
     async def set_flag(self, flag_name: str, value: bool):
         flag = await self.get_flag_object(flag_name)
         if not flag:
-            flag = FlagDescriptor(value=value, last_changed_ts=now_ts(), last_access_ts=now_ts())
+            flag = FlagDescriptor(value=value, last_changed_ts=now_ts(), last_access_ts=now_ts(),
+                                  full_path=flag_name)
         else:
             flag.change_to(value)
         await self.save_flag_object(flag_name, flag)
@@ -125,3 +127,11 @@ class Flagship(WithLogger):
                 current_level = current_level[part]
             current_level[parts[-1]] = await self.get_flag_object(flag_name)
         return hierarchy
+
+    async def delete_flag(self, flag_name: str):
+        if not self.db.redis:
+            self.logger.warning('Redis is not available, cannot delete flags')
+            return
+
+        key = self.key(flag_name)
+        await self.db.redis.delete(key)
