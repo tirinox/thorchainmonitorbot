@@ -240,7 +240,7 @@ class SwapProps(NamedTuple):
         else:
             ss_desc = StreamingSwap(
                 tx_id=tx_id,
-                interval=0,
+                interval=1,
                 quantity=1,
                 count=1,
                 last_height=0,
@@ -269,7 +269,8 @@ class SwapProps(NamedTuple):
                 memo=memo_str,
                 affiliate_fee=self.memo.affiliate_fee_0_1,
                 affiliate_address=self.memo.affiliate_address,
-                streaming=ss_desc
+                streaming=ss_desc,
+                is_streaming_swap=ss_desc.count > 1,
             ),
             status=SUCCESS
         )

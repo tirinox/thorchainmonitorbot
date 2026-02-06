@@ -225,7 +225,7 @@ class THORMemo:
 
     @property
     def is_streaming(self):
-        return self.s_swap_quantity is not None and self.s_swap_quantity > 1
+        return not (self.s_swap_quantity == 1 and self.s_swap_interval == 1)
 
     @property
     def uses_aggregator_out(self):
