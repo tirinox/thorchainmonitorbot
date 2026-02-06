@@ -14,6 +14,7 @@ from lib.logs import WithLogger
 from lib.utils import hash_of_string_repr, say, safe_get
 from models.events import EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut, EventSwap
+from models.s_swap import AlertSwapStart
 from models.tx import ThorAction
 
 
@@ -67,11 +68,16 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
     async def set_status(self, tx_id, status):
         await self._db.write_tx_status_kw(tx_id, status=status)
 
-    async def register_new_swaps(self, block):
+    async def register_new_swaps(self, block: BlockResult):
         ph = await self.deps.pool_cache.get()
         swaps = self._swap_detector.detect_swaps(block, ph)
 
         for swap in swaps:
+            swap: AlertSwapStart
+            # skip limit orders, handle only real swaps.
+            if swap.is_limit:
+                continue
+
             props = await self._db.read_tx_status(swap.tx_id)
             if not props or not props.attrs.get('status'):
                 # self.logger.debug(f'Detect new swap: {swap.tx_id} from {swap.from_address} ({swap.memo})')

@@ -229,4 +229,5 @@ class StreamingSwapStartDetectorFromList(INotified, WithDelegates, WithLogger):
             memo_str=raw_tx_memo,
             interval=s.interval,
             quantity=s.quantity,
+            is_limit=False,
         ))

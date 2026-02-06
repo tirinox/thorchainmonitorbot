@@ -47,6 +47,11 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
             log_f(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: not streaming')
             return False
 
+        if self.check_unique:
+            if await self.deduplicator.have_ever_seen_hash(e.tx_id):
+                log_f(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: already seen')
+                return False
+
         if self.hide_arb_bots:
             sender = swap_start_ev.from_address
             if await self.arb_detector.try_to_detect_arb_bot(sender) == ArbStatus.ARB:
@@ -57,11 +62,6 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
             log_f(
                 f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: {e.volume_usd = } < {self.min_streaming_swap_usd}')
             return False
-
-        if self.check_unique:
-            if await self.deduplicator.have_ever_seen_hash(e.tx_id):
-                log_f(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: already seen')
-                return False
 
         self.logger.info(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: eligible')
         return True
