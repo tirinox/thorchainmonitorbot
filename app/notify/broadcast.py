@@ -195,7 +195,7 @@ class Broadcaster(WithLogger):
                     if b_message.is_empty:
                         continue
 
-                    if not await self.deps.flagship.is_flag_set(f"broadcast:{channel_info.type}:{msg_type}"):
+                    if not await self.deps.flagship.is_flag_set(f"{msg_type}:broadcast:{channel_info.type}"):
                         self.logger.warning(
                             f"Flag is not set for broadcasting {msg_type} to "
                             f"{channel_info.type} ({channel_info.short_coded})! Skipping.")
