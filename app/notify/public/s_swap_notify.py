@@ -1,6 +1,5 @@
 from jobs.scanner.arb_detector import ArbBotDetector, ArbStatus
 from jobs.scanner.event_db import EventDatabase
-from jobs.scanner.swap_start_detector import SwapStartDetectorFromBlock
 from lib.constants import float_to_thor
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
@@ -17,7 +16,6 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.detector = SwapStartDetectorFromBlock(deps)
         self._ev_db = EventDatabase(deps.db)
         self.min_streaming_swap_usd = self.deps.cfg.as_float(
             'tx.swap.also_trigger_when.streaming_swap.volume_greater', 2500.0)
@@ -41,15 +39,19 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
 
         log_f = self.logger.debug
 
+        if e.is_limit:
+            # fixme
+            return False
+
+        if not e.is_streaming:
+            log_f(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: not streaming')
+            return False
+
         if self.hide_arb_bots:
             sender = swap_start_ev.from_address
             if await self.arb_detector.try_to_detect_arb_bot(sender) == ArbStatus.ARB:
                 self.logger.warning(f'Ignoring Tx from Arb bot: {swap_start_ev.tx_id} by {sender}')
                 return False
-
-        if not e.is_streaming:
-            log_f(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: not streaming')
-            return False
 
         if e.volume_usd < self.min_streaming_swap_usd:
             log_f(

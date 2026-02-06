@@ -502,7 +502,13 @@ class ThorAction:
 
     @property
     def is_streaming(self):
-        return bool(self.meta_swap and self.meta_swap.streaming and self.meta_swap.streaming.quantity > 1)
+        # return bool(self.meta_swap and self.meta_swap.streaming and self.meta_swap.streaming.quantity > 1)
+        if self.meta_swap:
+            if self.meta_swap.streaming:
+                return True
+            if self.meta_swap.streaming.quantity == 1 and self.meta_swap.streaming.interval == 1:
+                return False
+        return True
 
     @property
     def memo(self) -> Optional[THORMemo]:

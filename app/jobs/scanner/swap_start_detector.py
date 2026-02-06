@@ -35,13 +35,7 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
             self.logger.error(f'Could not parse memo in swap tx: {msg}')
             return None
 
-        if memo.action == ActionType.LIMIT_ORDER:
-            # Limit orders are not currently supported
-            self.logger.error("Implement limit order handling in swap start detector! ASAP!")
-            return None
-
-        # Must be a swap!
-        if not memo or memo.action != ActionType.SWAP:
+        if memo.action not in (ActionType.SWAP, ActionType.LIMIT_ORDER):
             return None
 
         coins = msg.get('coins') or safe_get(msg, 'tx', 'coins')
@@ -90,7 +84,7 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
             tx_id=tx_hash,
             from_address=from_address,
             destination_address=to_address,
-            in_amount=int(amount),
+            in_amount=in_amount,
             in_asset=str(in_asset),
             out_asset=out_asset_name,
             volume_usd=volume_usd,
@@ -99,6 +93,7 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
             memo_str=memo_str,  # original memo
             interval=memo.s_swap_interval,
             quantity=memo.s_swap_quantity,
+            is_limit=(memo.action == ActionType.LIMIT_ORDER),
         )
 
     def handle_deposits(self, txs: Iterable[NativeThorTx], height):

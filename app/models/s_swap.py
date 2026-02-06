@@ -103,11 +103,14 @@ class AlertSwapStart:
     quote: Optional[dict] = None
     quantity: Optional[int] = 1
     interval: Optional[int] = 1
+    is_limit: Optional[bool] = False
 
     @property
     def is_streaming(self):
         # fixme: unreliable check? maybe interval is detected automatically?
-        return self.interval and self.interval >= 1
+        # !!!!
+        # with advanced queue, every swap is streaming if not quantity=1 and interval=1
+        return not (self.quantity == 1 and self.interval == 1)
 
     @property
     def expected_out_amount(self):
