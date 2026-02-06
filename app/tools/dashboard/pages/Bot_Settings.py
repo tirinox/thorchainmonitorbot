@@ -40,7 +40,7 @@ def render_node(node, path_parts: list[str], expanded):
                 if state_key not in st.session_state:
                     st.session_state[state_key] = value.value
 
-                c1, c2, c4, c3 = st.columns([6, 1, 1, 4])
+                c1, c2, c3, c4 = st.columns([6, 1, 1, 4])
 
                 with c1:
                     st.write(path)
