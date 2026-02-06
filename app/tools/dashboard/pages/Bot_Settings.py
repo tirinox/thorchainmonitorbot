@@ -129,13 +129,13 @@ def print_stats(node):
 # optional: nice tabs at root level
 if isinstance(hierarchy, dict):
     print_stats(hierarchy)
-    expanded = st.checkbox("Expand all", value=False)
+    everything_expanded = st.checkbox("Expand all", value=True)
     tabs = st.tabs(list(hierarchy.keys()))
     for tab, key in zip(tabs, hierarchy.keys()):
         with tab:
             st.text("Tab stats:")
             print_stats(hierarchy[key])
-            render_node(hierarchy[key], [key], expanded)
+            render_node(hierarchy[key], [key], everything_expanded)
 
 else:
     st.error("Hierarchy is not a dict")
