@@ -18,9 +18,9 @@ async def twitter_post_supply(app: LpAppFramework):
     save_and_show_pic(pic, name='supply')
 
     loc = app.deps.loc_man[Language.ENGLISH_TWITTER]
-    b_message = BoardMessage.make_photo(pic, loc.SUPPLY_PIC_CAPTION)
+    b_message = BoardMessage.make_photo(pic, loc.SUPPLY_PIC_CAPTION, msg_type='public:rune_supply')
 
-    await app.deps.broadcaster.broadcast_to_all(b_message)
+    await app.deps.broadcaster.broadcast_to_all("debug:supply", b_message)
 
 
 async def twitter_post_price(app: LpAppFramework):
@@ -42,12 +42,9 @@ async def twitter_post_price(app: LpAppFramework):
     caption = loc.notification_text_price_update(event)
 
     await app.deps.broadcaster.broadcast_to_all(
-        BoardMessage.make_photo(graph, caption=caption, photo_file_name=graph_name)
+        "debug:rune_price",
+        BoardMessage.make_photo(graph, caption=caption, photo_file_name=graph_name, msg_type='public:rune_price')
     )
-
-    # await app.deps.broadcaster.notify_preconfigured_channels(
-    #     BoardMessage('Test Twitter API v2')
-    # )
 
 
 async def twitter_post_burned_rune(app: LpAppFramework):
@@ -57,6 +54,7 @@ async def twitter_post_burned_rune(app: LpAppFramework):
     loc = app.deps.loc_man.default
     text = loc.notification_rune_burn(event)
     await app.deps.broadcaster.broadcast_to_all(
+        'public:rune_burn',
         BoardMessage.make_photo(photo, caption=text, photo_file_name=name)
     )
 

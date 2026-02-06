@@ -25,13 +25,14 @@ class BoardMessage:
     message_type: MessageType = MessageType.TEXT
     photo: PIL.Image.Image = None
     photo_file_name: str = 'photo.png'
+    msg_type: str = ""
 
     @classmethod
-    def make_photo(cls, photo, caption='', photo_file_name='photo.png'):
-        return cls(caption, MessageType.PHOTO, photo, photo_file_name)
+    def make_photo(cls, photo, caption='', photo_file_name='photo.png', msg_type=None):
+        return cls(caption, MessageType.PHOTO, photo, photo_file_name, msg_type or 'unknown_photo')
 
     @property
-    def empty(self):
+    def is_empty(self):
         return not self.text and not self.photo
 
     def get_bio(self):

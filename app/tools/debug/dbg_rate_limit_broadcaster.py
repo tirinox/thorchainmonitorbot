@@ -23,9 +23,7 @@ async def main():
                 Messengers.TELEGRAM,
                 "192398802",
                 lang='rus'
-            ), BoardMessage(
-                f"☣️ This is spam message #{i}"
-            ))
+            ), BoardMessage(f"☣️ This is spam message #{i}", msg_type='debug:spam'))
 
             print(f'#{i}: {outcome = }')
 

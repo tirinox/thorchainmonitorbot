@@ -18,19 +18,19 @@ class BasePersonalNotifier(INotified, WithLogger, ABC):
         self.watcher = watcher
         self.max_events_per_message = max_events_per_message
 
-    async def _send_message(self, message, settings, user):
+    async def _send_message(self, message, settings, user, msg_type):
         platform = SettingsManager.get_platform(settings)
 
         message = message.strip()
         if message:
             task = self.deps.broadcaster.safe_send_message_rate(
                 ChannelDescriptor(platform, user),
-                BoardMessage(message),
+                BoardMessage(message, msg_type=msg_type),
                 disable_web_page_preview=True
             )
             asyncio.create_task(task)
 
-    async def group_and_send_messages(self, addresses, events, glue='\n\n'):
+    async def group_and_send_messages(self, addresses, events, glue='\n\n', msg_type='personal:generic'):
         if not addresses:
             return
 
@@ -88,7 +88,7 @@ class BasePersonalNotifier(INotified, WithLogger, ABC):
                         if not isinstance(message, str):
                             message = glue.join(message)
 
-                        await self._send_message(message, settings, user)
+                        await self._send_message(message, settings, user, msg_type)
 
     async def filter_events(self, event_list, user, settings):
         # no operation

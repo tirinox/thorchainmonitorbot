@@ -122,14 +122,15 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
                                                           unsub_id)
 
         # Send it to the user
-        message = BoardMessage.make_photo(picture_bio, caption=caption)
+        message = BoardMessage.make_photo(picture_bio, caption=caption, msg_type='personal:scheduled:lp_report')
         await self._deliver_message_generic(message, platform, tr.user_id)
 
         self.logger.info(f'Report for {tr} sent successfully.')
 
     async def _deliver_error_message(self, details, tr: PersonalIdTriplet):
         loc, local_name, unsub_id, platform = await self._prepare_state(tr)
-        message = BoardMessage(loc.text_error_delivering_report(details, tr.address, tr.pool))
+        message = BoardMessage(loc.text_error_delivering_report(details, tr.address, tr.pool),
+                               msg_type='personal:scheduled:error')
         await self._deliver_message_generic(message, platform, tr.user_id)
 
     async def _deliver_message_generic(self, message: BoardMessage, platform, user):

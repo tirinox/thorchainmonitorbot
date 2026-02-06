@@ -6,9 +6,9 @@ from comm.localization.eng_base import BaseLocalization
 from comm.localization.manager import LocalizationManager
 from lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from lib.depcont import DepContainer
+from lib.logs import WithLogger
 from lib.rate_limit import RateLimitCooldown
 from lib.texts import shorten_text
-from lib.logs import WithLogger
 from notify.channel import Messengers, ChannelDescriptor, CHANNEL_INACTIVE, BoardMessage
 
 
@@ -41,7 +41,7 @@ class Broadcaster(WithLogger):
     async def get_subscribed_channels(self):
         return await self.deps.gen_alert_settings_proc.get_general_alerts_channels(self.deps.settings_manager)
 
-    async def broadcast_to_all(self, f, *args, **kwargs):
+    async def broadcast_to_all(self, msg_type, f, *args, **kwargs):
         subscribed_channels = await self.get_subscribed_channels()
         all_channels = self.channels + subscribed_channels
 
@@ -55,7 +55,7 @@ class Broadcaster(WithLogger):
         }
 
         if not callable(f):  # if constant
-            await self.broadcast_to(all_channels, f, *args, **kwargs)
+            await self._broadcast_to(all_channels, f, msg_type, *args, **kwargs)
             return
 
         # not to generate same content for different channels with the same languages. test it!
@@ -84,7 +84,7 @@ class Broadcaster(WithLogger):
             results_cached_by_lang[locale.name] = result
             return result
 
-        await self.broadcast_to(all_channels, message_gen)
+        await self._broadcast_to(all_channels, message_gen, msg_type)
 
     async def _handle_bad_user(self, channel_info):
         self.logger.warning(f'{channel_info} is about to be paused!')
@@ -107,12 +107,13 @@ class Broadcaster(WithLogger):
                 self.logger.warning(f'Fail counter for {channel_id} is {context.fail_counter}/{max_fails}.')
 
     # noinspection PyBroadException
-    async def safe_send_message(self, channel_info: ChannelDescriptor,
-                                message: BoardMessage, **kwargs) -> bool:
+    async def _safe_send_message(self, channel_info: ChannelDescriptor,
+                                 message: BoardMessage, **kwargs) -> bool:
         result = False
         try:
-            if isinstance(message, str):
-                message = BoardMessage(message)
+            if not isinstance(message, BoardMessage):
+                self.logger.error(f"We should not send this! {message!r} Please make it a BoardMessage!")
+                return False
 
             if channel_info.type not in Messengers.SUPPORTED:
                 self.logger.error(f'Unsupported channel type: {channel_info.type}!')
@@ -133,7 +134,8 @@ class Broadcaster(WithLogger):
     async def safe_send_message_rate(self, channel_info: ChannelDescriptor,
                                      message: BoardMessage, **kwargs) -> (bool, bool):
         async with self._rate_limit_lock:
-            message = await self._form_message(message, channel_info)
+            # message is already BoarMessage!
+            # message = await self._form_message(message, channel_info, message.msg_type)
 
             limiter = RateLimitCooldown(self.deps.db,
                                         f'SendMessage:{channel_info.short_coded}',
@@ -144,33 +146,40 @@ class Broadcaster(WithLogger):
             send_result = None
             if outcome == limiter.GOOD:
                 # all good: pass through
-                send_result = await self.safe_send_message(channel_info, message, **kwargs)
+                send_result = await self._safe_send_message(channel_info, message, **kwargs)
             elif outcome == limiter.HIT_LIMIT:
                 # oops! just hit the limit, tell about it once
                 loc = self.deps.loc_man.get_from_lang(channel_info.lang)
-                warning_message = BoardMessage(loc.RATE_LIMIT_WARNING)
-                send_result = await self.safe_send_message(channel_info, warning_message, **kwargs)
+                warning_message = BoardMessage(loc.RATE_LIMIT_WARNING, msg_type='bot:rate_limit_warning')
+                send_result = await self._safe_send_message(channel_info, warning_message, **kwargs)
             else:
                 s_text = shorten_text(message.text, 200)
                 self.logger.warning(f'Rate limit for channel "{channel_info.short_coded}"! Text: "{s_text}"')
             return outcome, send_result
 
     @staticmethod
-    async def _form_message(data_source, channel_info: ChannelDescriptor, **kwargs) -> BoardMessage:
+    async def _form_message(data_source, channel_info: ChannelDescriptor, msg_type, **kwargs) -> BoardMessage:
         if isinstance(data_source, BoardMessage):
+            data_source.msg_type = msg_type or data_source.msg_type
             return data_source
         elif isinstance(data_source, str):
-            return BoardMessage(data_source)
+            if not msg_type:
+                raise ValueError('msg_type is required when data_source is a string')
+            return BoardMessage(data_source, msg_type=msg_type)
         elif callable(data_source):
             b_message = await data_source(channel_info.channel_id, **kwargs)
             if isinstance(b_message, BoardMessage):
+                b_message.msg_type = msg_type or b_message.msg_type
                 return b_message
             else:
-                return BoardMessage(str(b_message))
+                if not msg_type:
+                    raise ValueError(
+                        'msg_type is required when data_source is a callable that does not return BoardMessage')
+                return BoardMessage(str(b_message).strip(), msg_type=msg_type)
         else:
-            return BoardMessage(str(data_source))
+            raise ValueError(f'Unsupported message data source: {data_source!r}')
 
-    async def broadcast_to(self, channels: List[ChannelDescriptor], message, delay=0.075, **kwargs) -> int:
+    async def _broadcast_to(self, channels: List[ChannelDescriptor], message, msg_type, delay=0.075, **kwargs) -> int:
         if now_ts() < self._skip_all_before:
             self.logger.warning('Skip message.')
             return 0
@@ -181,16 +190,16 @@ class Broadcaster(WithLogger):
             try:
                 for channel_info in channels:
                     # make from any message a BoardMessage
-                    b_message = await self._form_message(message, channel_info, **kwargs)
-                    if b_message.empty:
+                    b_message = await self._form_message(message, channel_info, msg_type, **kwargs)
+                    if b_message.is_empty:
                         continue
 
-                    send_results = await self.safe_send_message(
+                    send_results = await self._safe_send_message(
                         channel_info, b_message,
                         disable_web_page_preview=True,
                         disable_notification=False, **kwargs)
 
-                    if send_results is True:
+                    if send_results:
                         count += 1
 
                     await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)

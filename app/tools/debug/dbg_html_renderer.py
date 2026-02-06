@@ -61,6 +61,7 @@ async def demo_render_v2_alert_presenter_benchmark(app):
     text = f"Rendered secured asset summary in {avg_elapsed_time:.2f} seconds.\n"
 
     await app.deps.broadcaster.broadcast_to_all(
+        "debug:html",
         BoardMessage.make_photo(photo, caption=text, photo_file_name=photo_name)
     )
 

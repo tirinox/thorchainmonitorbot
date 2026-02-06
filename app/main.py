@@ -42,7 +42,6 @@ from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.runepool import RunePoolEventDecoder
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.scanner.swap_routes import SwapRouteRecorder
-from jobs.scanner.swap_start_detector import SwapStartDetectorFromBlock
 from jobs.scanner.trade_acc import TradeAccEventDecoder
 from jobs.scanner.transfer_detector import RuneTransferDetector
 from jobs.user_counter import UserCounterMiddleware
@@ -639,11 +638,9 @@ class App(WithLogger):
             self.die()
 
     async def _debug_command(self):
-        # await self._print_curves()
-
         await self.deps.telegram_bot.send_message(
             self.deps.cfg.first_admin_id,
-            BoardMessage(self._admin_messages.text_bot_restarted())
+            BoardMessage(self._admin_messages.text_bot_restarted(), msg_type='bot:restarted')
         )
 
     async def on_startup(self, _):

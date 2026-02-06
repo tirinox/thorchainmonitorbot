@@ -152,36 +152,47 @@ class AlertPresenter(INotified, WithLogger):
         ])
 
         await self.broadcaster.broadcast_to_all(
+            "public:rune_transfer",
             BaseLocalization.notification_text_rune_transfer_public,
             transfer, name_map)
 
     async def _handle_rune_cex_flow(self, flow: RuneCEXFlow):
-        await self.broadcaster.broadcast_to_all(BaseLocalization.notification_text_cex_flow, flow)
-
-    @staticmethod
-    async def _block_speed_picture_generator(loc: BaseLocalization, points, event):
-        chart, chart_name = await block_speed_chart(points, loc,
-                                                    normal_bpm=THOR_BLOCKS_PER_MINUTE,
-                                                    time_scale_mode='time')
-
-        if event.state in (BlockProduceState.StateStuck, BlockProduceState.Producing):
-            caption = loc.notification_text_block_stuck(event)
-        else:
-            caption = loc.notification_text_block_pace(event)
-
-        return BoardMessage.make_photo(chart, caption=caption, photo_file_name=chart_name)
+        await self.broadcaster.broadcast_to_all(
+            "public:rune_cex_flow",
+            BaseLocalization.notification_text_cex_flow,
+            flow)
 
     async def _handle_block_speed(self, event: EventBlockSpeed):
-        await self.broadcaster.broadcast_to_all(self._block_speed_picture_generator, event.points, event)
+        async def _block_speed_picture_generator(loc: BaseLocalization, points, event):
+            chart, chart_name = await block_speed_chart(points, loc,
+                                                        normal_bpm=THOR_BLOCKS_PER_MINUTE,
+                                                        time_scale_mode='time')
+
+            if event.state in (BlockProduceState.StateStuck, BlockProduceState.Producing):
+                caption = loc.notification_text_block_stuck(event)
+            else:
+                caption = loc.notification_text_block_pace(event)
+
+            return BoardMessage.make_photo(chart, caption=caption, photo_file_name=chart_name)
+
+        await self.broadcaster.broadcast_to_all(
+            "public:block_speed",
+            _block_speed_picture_generator, event.points,
+            event
+        )
 
     async def _handle_dex_report(self, event: DexReport):
         await self.broadcaster.broadcast_to_all(
+            "public:dex_report",
             BaseLocalization.notification_text_dex_report,
             event
         )
 
     async def _handle_pool_churn(self, event: PoolChanges):
-        await self.broadcaster.broadcast_to_all(BaseLocalization.notification_text_pool_churn, event)
+        await self.broadcaster.broadcast_to_all(
+            "public:pool_churn",
+            BaseLocalization.notification_text_pool_churn, event
+        )
 
     async def _handle_achievement(self, event: Achievement):
         async def _gen(loc: BaseLocalization, _a: Achievement):
@@ -190,16 +201,21 @@ class AlertPresenter(INotified, WithLogger):
             caption = loc.ach.notification_achievement_unlocked(event)
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
-        await self.broadcaster.broadcast_to_all(_gen, event)
+        await self.broadcaster.broadcast_to_all(
+            "public:achievement",
+            _gen, event
+        )
 
     async def _handle_pol(self, event: AlertPOLState):
         await self.broadcaster.broadcast_to_all(
+            "public:pol",
             BaseLocalization.notification_text_pol_stats, event
         )
 
     async def _handle_node_churn(self, event: AlertNodeChurn):
         if event.finished:
             await self.broadcaster.broadcast_to_all(
+                "public:node_churn:finish",
                 BaseLocalization.notification_text_node_churn_finish,
                 event.changes)
 
@@ -212,11 +228,14 @@ class AlertPresenter(INotified, WithLogger):
                     caption = loc.PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION
                     return BoardMessage.make_photo(bio_graph, caption)
 
-                await self.broadcaster.broadcast_to_all(_gen)
+                await self.broadcaster.broadcast_to_all(
+                    "public:node_churn:finish:picture",
+                    _gen)
 
         else:
             # started
             await self.broadcaster.broadcast_to_all(
+                "public:node_churn:start",
                 BaseLocalization.notification_churn_started,
                 event.changes
             )
@@ -234,7 +253,10 @@ class AlertPresenter(INotified, WithLogger):
             caption = loc.notification_text_key_metrics_caption(event)
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
-        await self.broadcaster.broadcast_to_all(_gen, event)
+        await self.broadcaster.broadcast_to_all(
+            "public:key_stats",
+            _gen, event
+        )
 
     # ----- swaps and other actions -----
 
@@ -247,6 +269,7 @@ class AlertPresenter(INotified, WithLogger):
         else:
             # old style text notification
             await self.broadcaster.broadcast_to_all(
+                "public:large_tx",
                 BaseLocalization.notification_text_large_single_tx,
                 tx_event, name_map
             )
@@ -260,7 +283,10 @@ class AlertPresenter(INotified, WithLogger):
             else:
                 return text
 
-        await self.deps.broadcaster.broadcast_to_all(message_gen)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:swap_finished",
+            message_gen
+        )
 
     @staticmethod
     def _gen_user_address_for_renderer(name_map, address):
@@ -406,7 +432,9 @@ class AlertPresenter(INotified, WithLogger):
             else:
                 return text
 
-        await self.deps.broadcaster.broadcast_to_all(message_gen)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:streaming_swap_start",
+            message_gen)
 
     async def render_price_graph(self, loc: BaseLocalization, event: AlertPrice):
         parameters = recursive_asdict(event, add_properties=True)
@@ -423,16 +451,20 @@ class AlertPresenter(INotified, WithLogger):
             caption = loc.notification_text_price_update(event)
             return BoardMessage.make_photo(graph, caption=caption, photo_file_name=graph_name)
 
-        await self.broadcaster.broadcast_to_all(price_graph_gen)
+        await self.broadcaster.broadcast_to_all(
+            "public:rune_price",
+            price_graph_gen)
 
     async def _handle_chain_halt(self, event: AlertChainHalt):
         await self.broadcaster.broadcast_to_all(
+            "public:chain_halt",
             BaseLocalization.notification_text_trading_halted_multi,
             event.changed_chains
         )
 
     async def _handle_mimir(self, data: AlertMimirChange):
         await self.deps.broadcaster.broadcast_to_all(
+            "public:mimir_change",
             BaseLocalization.notification_text_mimir_changed,
             data.changes,
             data.holder,
@@ -445,11 +477,15 @@ class AlertPresenter(INotified, WithLogger):
             caption = loc.notification_text_best_pools(event)
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
-        await self.deps.broadcaster.broadcast_to_all(generate_pool_picture, data)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:best_pools",
+            generate_pool_picture, data
+        )
 
     async def _handle_trade_account_move(self, data: AlertTradeAccountAction):
         name_map = await self.load_names([data.actor, data.destination_address])
         await self.deps.broadcaster.broadcast_to_all(
+            "public:trade_account:action",
             BaseLocalization.notification_text_trade_account_move,
             data,
             name_map
@@ -457,6 +493,7 @@ class AlertPresenter(INotified, WithLogger):
 
     async def _handle_trade_account_summary(self, data: AlertTradeAccountStats):
         await self.deps.broadcaster.broadcast_to_all(
+            "public:trade_account:summary",
             BaseLocalization.notification_text_trade_account_summary,
             data,
         )
@@ -464,16 +501,23 @@ class AlertPresenter(INotified, WithLogger):
     async def _handle_runepool_action(self, data: AlertRunePoolAction):
         name_map = await self.load_names([data.actor, data.destination_address])
         await self.deps.broadcaster.broadcast_to_all(
+            "public:runepool:action",
             BaseLocalization.notification_runepool_action,
             data,
             name_map
         )
 
     async def _handle_runepool_stats(self, data: AlertRunepoolStats):
-        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_runepool_stats, data)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:runepool_stats",
+            BaseLocalization.notification_runepool_stats, data
+        )
 
     async def _handle_chain_id(self, data: AlertChainIdChange):
-        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_chain_id_changed, data)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:chain_id_change",
+            BaseLocalization.notification_text_chain_id_changed, data
+        )
 
     async def _handle_supply(self, market_info: RuneMarketInfo):
         async def supply_pic_gen(loc: BaseLocalization):
@@ -484,19 +528,28 @@ class AlertPresenter(INotified, WithLogger):
             text = loc.text_metrics_supply(market_info)
             return BoardMessage.make_photo(pic, text, pic_name)
 
-        await self.deps.broadcaster.broadcast_to_all(supply_pic_gen)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:rune_supply",
+            supply_pic_gen
+        )
 
     async def _handle_version_upgrade_progress(self, data: AlertVersionUpgradeProgress):
         await self.deps.broadcaster.broadcast_to_all(
+            "public:version:progress",
             BaseLocalization.notification_text_version_changed_progress,
             data
         )
 
     async def _handle_version_changed(self, data: AlertVersionChanged):
-        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_version_changed, data)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:version:changed",
+            BaseLocalization.notification_text_version_changed, data
+        )
 
     async def _handle_mimir_voting(self, e: AlertMimirVoting):
-        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_mimir_voting_progress, e)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:mimir:voting",
+            BaseLocalization.notification_text_mimir_voting_progress, e)
 
     async def _handle_queue(self, e: AlertQueue):
         photo_name = ''
@@ -512,15 +565,21 @@ class AlertPresenter(INotified, WithLogger):
             else:
                 return text
 
-        await self.deps.broadcaster.broadcast_to_all(message_gen)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:queue",
+            message_gen)
 
     async def _handle_liquidity_cap(self, data: AlertLiquidityCap):
         f = BaseLocalization.notification_text_cap_full if data.is_full \
             else BaseLocalization.notification_text_cap_opened_up
-        await self.deps.broadcaster.broadcast_to_all(f, data.cap)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:liquidity_cap",
+            f, data.cap)
 
     async def _handle_price_divergence(self, data: AlertPriceDiverge):
-        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_price_divergence, data)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:price_divergence",
+            BaseLocalization.notification_text_price_divergence, data)
 
     async def render_rune_burn_graph(self, loc, data: EventRuneBurn):
         # todo: share EventRuneBurn between the components, use Pydantic
@@ -537,7 +596,9 @@ class AlertPresenter(INotified, WithLogger):
             else:
                 return text
 
-        await self.deps.broadcaster.broadcast_to_all(message_gen)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:rune_burn",
+            message_gen)
 
     async def render_rujira_merge_graph(self, loc, data: AlertRujiraMergeStats):
         photo = await self.renderer.render('rujira_merge.jinja2', namedtuple_to_dict(data))
@@ -559,7 +620,9 @@ class AlertPresenter(INotified, WithLogger):
             else:
                 return text
 
-        await self.deps.broadcaster.broadcast_to_all(message_gen)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:rujira:merge_stats",
+            message_gen)
 
     async def render_secured_asset_summary(self, loc: BaseLocalization, data: AlertSecuredAssetSummary):
         photo = await self.renderer.render('secured_asset_summary.jinja2', {
@@ -577,7 +640,9 @@ class AlertPresenter(INotified, WithLogger):
             else:
                 return text
 
-        await self.deps.broadcaster.broadcast_to_all(message_gen)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:secured_asset:summary",
+            message_gen)
 
     async def render_tcy_infographic(self, loc: BaseLocalization, data: TcyFullInfo):
         photo = await self.renderer.render('tcy_info.jinja2', data.model_dump())
@@ -593,7 +658,11 @@ class AlertPresenter(INotified, WithLogger):
             else:
                 return text
 
-        await self.deps.broadcaster.broadcast_to_all(message_gen)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:tcy:summary",
+            message_gen)
 
     async def _handle_net_stats(self, data: AlertNetworkStats):
-        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_network_summary, data)
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:network_stats",
+            BaseLocalization.notification_text_network_summary, data)

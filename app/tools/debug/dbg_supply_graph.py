@@ -86,7 +86,7 @@ async def post_supply_to_discord(app: LpAppFramework, pic):
     async def supply_pic_gen(loc: BaseLocalization):
         return BoardMessage.make_photo(pic, loc.SUPPLY_PIC_CAPTION, f'rune_supply_{today_str()}.png')
 
-    await app.deps.broadcaster.broadcast_to_all(supply_pic_gen)
+    await app.deps.broadcaster.broadcast_to_all("debug_supply", supply_pic_gen)
 
     await asyncio.sleep(10)
 

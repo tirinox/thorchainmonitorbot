@@ -119,7 +119,9 @@ class BaseDialog(ABC):
     @staticmethod
     async def if_loading_please_wait(deps: DepContainer, loc: BaseLocalization, user):
         if deps.is_loading:
-            await deps.telegram_bot.send_message(user, BoardMessage(loc.BOT_LOADING), disable_notification=True)
+            await deps.telegram_bot.send_message(user,
+                                                 BoardMessage(loc.BOT_LOADING, msg_type='bot:loading'),
+                                                 disable_notification=True)
             return True
 
     @classmethod

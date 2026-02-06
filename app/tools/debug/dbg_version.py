@@ -20,6 +20,7 @@ class DbgVersion:
 
     async def dbg_notify(self, changes):
         await self.deps.broadcaster.broadcast_to_all(
+            "debug:version",
             BaseLocalization.notification_text_version_changed,
             changes,
             [VersionInfo.parse('1.90.2')],
@@ -27,6 +28,7 @@ class DbgVersion:
         )
 
         await self.deps.broadcaster.broadcast_to_all(
+            "debug:version",
             BaseLocalization.notification_text_version_changed,
             changes, [],
             VersionInfo.parse('1.90.4'),
@@ -34,6 +36,7 @@ class DbgVersion:
         )
 
         await self.deps.broadcaster.broadcast_to_all(
+            "debug:version",
             BaseLocalization.notification_text_version_changed_progress,
             changes, changes.version_consensus
         )

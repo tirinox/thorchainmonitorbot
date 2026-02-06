@@ -49,7 +49,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
 
         self.logger.info(f'Total: {len(events)} events affecting {len(addresses)} addresses')
 
-        await self.group_and_send_messages(addresses, events)
+        await self.group_and_send_messages(addresses, events, msg_type='personal:bond_provider')
 
     async def _handle_fee_events(self, data: NodeSetChanges):
         fee_events = list(self._extract_fee_changes(data))

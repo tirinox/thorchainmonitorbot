@@ -3,8 +3,8 @@ import asyncio
 from lib.date_utils import parse_timespan_to_seconds
 from lib.delegates import INotified
 from lib.depcont import DepContainer
-from lib.settings_manager import SettingsManager, SettingsContext
 from lib.logs import WithLogger
+from lib.settings_manager import SettingsManager, SettingsContext
 from models.node_watchers import AlertWatchers
 from models.price import RuneMarketInfo
 from notify.channel import ChannelDescriptor, BoardMessage
@@ -56,7 +56,7 @@ class PersonalPriceDivergenceNotifier(INotified, WithLogger):
         text = loc.notification_text_price_divergence(rune_market_info, normal)
         await self.deps.broadcaster.safe_send_message_rate(
             ChannelDescriptor(SettingsManager.get_platform(settings), user),
-            BoardMessage(text),
+            BoardMessage(text, msg_type='personal:price_divergence'),
             disable_web_page_preview=True,
         )
 

@@ -10,7 +10,7 @@ async def dbg_run_all_jobs(app: LpAppFramework):
     ex: PublicAlertJobExecutor = app.deps.pub_alert_executor
     for call in ex.AVAILABLE_TYPES.values():
         sep()
-        await app.deps.broadcaster.broadcast_to_all('------')
+        await app.deps.broadcaster.broadcast_to_all("debug", '------')
         await call(ex)
 
 

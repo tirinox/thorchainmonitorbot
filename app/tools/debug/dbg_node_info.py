@@ -250,7 +250,7 @@ async def demo_churn_simulator(app: LpAppFramework, version=False):
     nodes: NetworkNodes = await d.node_cache.get()
     print(f"There are {len(nodes)} nodes")
 
-    await d.broadcaster.broadcast_to_all('---------')
+    await d.broadcaster.broadcast_to_all("debug", '---------')
 
     # simulator
     # node_fetcher_simulator.set_thor_network(d.node_info_fetcher.thor_network)
@@ -416,9 +416,9 @@ async def dbg_None_in_message(app: LpAppFramework):
         churn_duration=1234
     )
 
-    await app.deps.broadcaster.broadcast_to_all(
-        BaseLocalization.notification_text_node_churn_finish,
-        changes)
+    await app.deps.broadcaster.broadcast_to_all("debug:node",
+                                                BaseLocalization.notification_text_node_churn_finish,
+                                                changes)
 
 
 async def main():

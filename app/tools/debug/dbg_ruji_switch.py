@@ -103,7 +103,10 @@ async def demo_send_merge_stats_pic_once(app):
     text = app.deps.loc_man.default.notification_rujira_merge_stats(event)
     photo, photo_name = await app.deps.alert_presenter.render_rujira_merge_graph(None, event)
 
-    await app.deps.broadcaster.broadcast_to_all(BoardMessage.make_photo(photo, text, photo_name))
+    await app.deps.broadcaster.broadcast_to_all(
+        "debug:ruji_switch",
+        BoardMessage.make_photo(photo, text, photo_name)
+        )
 
 
 async def run():

@@ -37,7 +37,7 @@ class PersonalBalanceNotifier(BasePersonalNotifier):
             return
 
         # Group, filter and send
-        await self.group_and_send_messages(addresses, transfers)
+        await self.group_and_send_messages(addresses, transfers, msg_type='personal:balance')
 
     @staticmethod
     def _fill_asset_price(transfers, ph: PriceHolder):

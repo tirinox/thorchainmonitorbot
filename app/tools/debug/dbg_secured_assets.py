@@ -50,6 +50,7 @@ async def dbg_send_picture_of_secured_assets(app):
     app.deps.alert_presenter.renderer.dbg_log_full_requests = True
     img, img_name = await app.deps.alert_presenter.render_secured_asset_summary(None, secured_asset_info)
     await app.deps.broadcaster.broadcast_to_all(
+        "debug:secured_assets",
         BoardMessage.make_photo(img, caption="Secured assets", photo_file_name=img_name)
     )
 
