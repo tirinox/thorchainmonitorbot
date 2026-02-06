@@ -43,7 +43,13 @@ def render_node(node, path_parts: list[str], expanded):
                 c1, c2, c3, c4 = st.columns([6, 1, 1, 4])
 
                 with c1:
-                    st.write(path)
+                    # st.write(path)
+                    # pretty write, arrow between path parts, and color based on value
+                    path_display = " → ".join(new_path)
+                    if value.value:
+                        st.markdown(f"<span style='color: green;'>{path_display}</span>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"<span style='color: red;'>{path_display}</span>", unsafe_allow_html=True)
 
                 with c2:
                     st.toggle(
