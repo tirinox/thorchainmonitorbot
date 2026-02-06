@@ -5,7 +5,7 @@ from lib.db import DB
 from lib.logs import WithLogger
 
 
-class RedisLog(WithLogger):
+class CircularLog(WithLogger):
     def __init__(self, prefix: str, db: DB, max_lines=10_000):
         super().__init__()
         self.prefix = prefix

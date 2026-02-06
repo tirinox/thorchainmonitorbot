@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from lib.config import Config
 from lib.db import DB
 from lib.interchan import SimpleRPC
-from lib.log_db import RedisLog
+from lib.log_db import CircularLog
 from lib.logs import WithLogger
 from models.sched import SchedJobCfg
 
@@ -146,7 +146,7 @@ class PublicScheduler(WithLogger):
         self.scheduler.add_listener(self._fail_listener, EVENT_JOB_MISSED | EVENT_JOB_ERROR)
         self._registered_jobs = {}
         self._scheduled_jobs: List[SchedJobCfg] = []
-        self.db_log = RedisLog(self.DB_KEY_PREFIX, db, max_lines=10_000)
+        self.db_log = CircularLog(self.DB_KEY_PREFIX, db, max_lines=10_000)
         self._rpc = SimpleRPC(db, channel_prefix=self.DB_KEY_PREFIX)
 
         self.retries = 3
