@@ -1446,8 +1446,8 @@ class BaseLocalization(ABC):  # == English
             old_units = MimirUnits.UNITS_INT
         else:
             old_units = units
-        old_value_fmt = self.format_mimir_value(change.name, change.old_value, old_units, mimir.last_thor_block)
-        new_value_fmt = self.format_mimir_value(change.name, change.new_value, units, mimir.last_thor_block)
+        old_value_fmt = self.format_mimir_value(change.name, change.old_value, old_units, mimir.thor_height)
+        new_value_fmt = self.format_mimir_value(change.name, change.new_value, units, mimir.thor_height)
         return old_value_fmt, new_value_fmt
 
     def format_mimir_entry(self, i: int, m: MimirEntry, thor_block=0):

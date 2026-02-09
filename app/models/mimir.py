@@ -2,7 +2,7 @@ import logging
 import math
 import operator
 from dataclasses import dataclass
-from itertools import chain
+from itertools import chain, groupby
 from typing import Dict, List, Optional, NamedTuple
 
 from api.aionode.types import ThorConstants, ThorMimir, ThorMimirVote
@@ -184,18 +184,23 @@ class MimirChange(BaseModelMixin):
         return self.new_value if self.new_value != 0 else self.old_value
 
 
-class MimirTuple(NamedTuple):
+@dataclass
+class MimirTuple:
     constants: ThorConstants
     mimir: ThorMimir
     node_mimir: dict  # accepted by nodes
     votes: List[ThorMimirVote]
-    last_thor_block: int
+    thor_height: int
     ts: float
+
+    @property
+    def votes_grouped_by_key(self) -> Dict[str, List[ThorMimirVote]]:
+        gr = groupby(self.votes, key=operator.attrgetter('key'))
+        return {k: list(g) for k, g in gr}
 
 
 class MimirHolder(INotified, WithLogger, WithDelegates):
     async def on_data(self, sender, data: MimirTuple):
-        # test it!
         nodes: NetworkNodes = await sender.deps.node_cache.get()
         self.update(data, nodes.active_nodes)
         await self.pass_data_to_listeners(self)
@@ -254,7 +259,7 @@ class MimirHolder(INotified, WithLogger, WithDelegates):
         self.logger.info(f'Got {len(data.constants.constants)} CONST entries'
                          f' and {len(data.mimir.constants)} MIMIR entries.')
 
-        self.last_thor_block = data.last_thor_block
+        self.last_thor_block = data.thor_height
 
         if with_voting:
             self.voting_manager = MimirVoteManager(data.votes, active_nodes, self.mimir_rules.excluded_from_voting)
