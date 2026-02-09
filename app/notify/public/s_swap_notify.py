@@ -1,6 +1,5 @@
 from jobs.scanner.arb_detector import ArbBotDetector, ArbStatus
 from jobs.scanner.event_db import EventDatabase
-from lib.constants import float_to_thor
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -82,7 +81,7 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
             event.quote = await self.deps.thor_connector.query_swap_quote(
                 from_asset=from_asset,
                 to_asset=to_asset,
-                amount=float_to_thor(event.in_amount),
+                amount=event.in_amount,
                 # refund_address=event.from_address,
                 destination=event.destination_address,
                 streaming_quantity=event.quantity,
