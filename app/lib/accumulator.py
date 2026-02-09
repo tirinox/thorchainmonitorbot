@@ -1,4 +1,5 @@
-from lib.date_utils import now_ts
+from datetime import datetime
+from lib.date_utils import now_ts, DAY
 from lib.db import DB
 from lib.utils import take_closest, gather_in_batches
 
@@ -116,3 +117,12 @@ class Accumulator:
         if keys:
             await self.db.redis.delete(*keys)
         return len(keys)
+
+
+class DailyAccumulator(Accumulator):
+    def __init__(self, name, db: DB):
+        super().__init__(name, db, DAY)
+
+    def key_from_ts(self, ts):
+        dt = datetime.fromtimestamp(ts)
+        return self.key(dt.strftime("%Y-%m-%d"))
