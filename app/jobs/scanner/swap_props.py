@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import NamedTuple, List, Optional
 
 from jobs.scanner.block_result import ThorEvent
+from lib.constants import float_to_thor
 from models.asset import is_rune, is_trade_asset, Asset
 from models.events import EventSwap, EventStreamingSwap, EventOutbound, parse_swap_and_out_event, TypeEventSwapAndOut, \
     EventTradeAccountDeposit
@@ -76,7 +77,8 @@ class SwapProps(NamedTuple):
                 return True
         else:
             # if there is any outbound to my address, except internal outbounds (in the middle of double swap)
-            if any((isinstance(ev, EventOutbound) and ev.to_address == self.from_address) for ev in self.true_outbounds):
+            if any((isinstance(ev, EventOutbound) and ev.to_address == self.from_address) for ev in
+                   self.true_outbounds):
                 return True
 
             # if there is any streaming swap event, it's done
@@ -92,7 +94,7 @@ class SwapProps(NamedTuple):
     @property
     def in_coin(self):
         return ThorCoin(
-            int(self.attrs.get('in_amount', 0)),
+            self.attrs.get('in_amount', 0),
             self.attrs.get('in_asset', '')
         )
 

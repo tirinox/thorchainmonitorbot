@@ -59,8 +59,8 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
             return None
 
         # get data
-        amount = coins[0]['amount']
-        in_amount = thor_to_float(amount)
+        in_amount8 = coins[0]['amount']
+        in_amount = thor_to_float(in_amount8)
         in_asset = Asset.from_string(coins[0]["asset"])
         from_address = msg.get('from_address', None) or msg.get('signer', '') or safe_get(msg, 'tx', 'from_address')
         to_address = msg.get('to_address', None) or safe_get(msg, 'tx', 'to_address')
@@ -84,7 +84,7 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
             tx_id=tx_hash,
             from_address=from_address,
             destination_address=to_address,
-            in_amount=in_amount,
+            in_amount=in_amount8,
             in_asset=str(in_asset),
             out_asset=out_asset_name,
             volume_usd=volume_usd,

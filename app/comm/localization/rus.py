@@ -489,7 +489,7 @@ class RussianLocalization(BaseLocalization):
         track_link = link(self.url_for_tx_tracker(e.tx_id), '👁️‍🗨️Отследить')
 
         asset_str = Asset(e.in_asset).pretty_str
-        amount_str = self.format_op_amount(e.in_amount)
+        amount_str = self.format_op_amount(e.in_amount_float)
         target_asset_str = Asset(e.out_asset).pretty_str
 
         return (

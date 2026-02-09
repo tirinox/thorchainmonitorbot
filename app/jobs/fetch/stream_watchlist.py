@@ -212,7 +212,7 @@ class StreamingSwapStartDetectorFromList(INotified, WithDelegates, WithLogger):
 
         block_height = details.get('consensus_height', s.last_height)
         coin = safe_get(details, 'tx', 'tx', 'coins', 0)
-        asset, amount = coin['asset'], thor_to_float(coin['amount']) if coin else (None, 0.0)
+        asset, amount = coin['asset'], coin['amount'] if coin else (None, 0.0)
         price_source_asset = ph.get_asset_price_in_usd(asset)
         volume_usd = amount * price_source_asset
 

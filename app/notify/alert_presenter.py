@@ -342,7 +342,7 @@ class AlertPresenter(INotified, WithLogger):
             "destination_asset_name": to_asset.name,
             "destination_chain_logo": self._get_chain_logo(to_asset),
 
-            "source_amount": data.in_amount,
+            "source_amount": data.in_amount_float,
             "destination_amount": thor_to_float(data.expected_out_amount),
             "volume_usd": data.volume_usd,
 

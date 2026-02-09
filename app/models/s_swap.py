@@ -4,7 +4,7 @@ from typing import NamedTuple, List, Optional
 from pydantic import ConfigDict, BaseModel, Field
 
 from api.aionode.types import ThorSwapperClout
-from lib.constants import THOR_BLOCK_TIME
+from lib.constants import THOR_BLOCK_TIME, thor_to_float
 from .memo import THORMemo
 
 
@@ -92,7 +92,7 @@ class AlertSwapStart:
     tx_id: str
     from_address: str
     destination_address: str
-    in_amount: float
+    in_amount: int
     in_asset: str
     out_asset: str
     volume_usd: float
@@ -104,6 +104,10 @@ class AlertSwapStart:
     quantity: Optional[int] = 1
     interval: Optional[int] = 1
     is_limit: Optional[bool] = False
+
+    @property
+    def in_amount_float(self) -> float:
+        return thor_to_float(self.in_amount)
 
     @property
     def is_streaming(self):
