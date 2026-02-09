@@ -15,7 +15,7 @@ import string
 import time
 from bisect import bisect_left
 from collections import deque, Counter, defaultdict
-from functools import wraps, partial
+from functools import partial, wraps
 from io import BytesIO
 from itertools import tee
 from typing import Iterable, List, Any, Awaitable
@@ -769,3 +769,24 @@ def hex_to_obj(hex_str: str) -> Any:
 
 def dict_sorted_by_keys(d: dict, key=None) -> dict:
     return {k: d[k] for k in sorted(d.keys(), key=key)}
+
+
+def once_every(n: int):
+    if n <= 0:
+        raise ValueError("n must be >= 1")
+
+    def decorator(func):
+        counter = 0
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            nonlocal counter
+            counter += 1
+
+            if counter % n == 0:
+                return func(*args, **kwargs)
+            return None
+
+        return wrapper
+
+    return decorator

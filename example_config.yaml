@@ -371,7 +371,8 @@ price:
 
   volume:
     record_tolerance: 1h
-    record_deduplication: true  # (!) new
+    record_deduplication: true
+    retain_history_period: 90d
 
 
 token_transfer:

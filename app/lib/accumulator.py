@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from lib.date_utils import now_ts, DAY
 from lib.db import DB
 from lib.utils import take_closest, gather_in_batches
@@ -110,12 +111,18 @@ class Accumulator:
     async def all_my_keys(self):
         return await self.db.redis.keys(self.key('*'))
 
-    async def clear(self, before=None):
+    async def clear(self, before=None, dry_run=False):
         keys = await self.all_my_keys()
         if before:
             keys = [k for k in keys if int(k.split(':')[-1]) < before]
         if keys:
-            await self.db.redis.delete(*keys)
+            if dry_run:
+                timestamps = [int(k.split(':')[-1]) for k in keys]
+                min_ts, max_ts = min(timestamps), max(timestamps)
+                print(f'Would delete {len(keys)}: '
+                      f'from {datetime.fromtimestamp(min_ts)} to {datetime.fromtimestamp(max_ts)}')
+            else:
+                await self.db.redis.delete(*keys)
         return len(keys)
 
 

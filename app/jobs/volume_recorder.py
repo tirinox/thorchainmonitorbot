@@ -3,10 +3,11 @@ from typing import List, Tuple, Union
 
 from lib.accumulator import Accumulator
 from lib.active_users import DailyActiveUserCounter
-from lib.date_utils import HOUR, now_ts
+from lib.date_utils import HOUR, now_ts, DAY
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
+from lib.utils import once_every
 from models.memo import ActionType
 from models.price import PriceHolder
 from models.runepool import AlertRunePoolAction
@@ -127,11 +128,25 @@ class VolumeRecorder(INotified, WithLogger):
         self.deps = deps
         t = deps.cfg.as_interval('price.volume.record_tolerance', HOUR)
 
-        # todo: auto clean
+        self._retain_seconds = deps.cfg.as_interval('price.volume.retain_history_period', DAY * 60)
+        if self._retain_seconds < DAY:
+            self.logger.warning(
+                f'VolumeRecorder retain period is set to {self._retain_seconds} seconds, which is less than 1 day. This may lead to data loss.')
+
         self._accumulator = Accumulator('Volume', deps.db, tolerance=t)
 
         self._deduplicator = TxDeduplicator(deps.db, 'VolumeRecorder')
         self.use_deduplication = deps.cfg.as_bool('price.volume.record_deduplication', True)
+
+    @once_every(5)
+    async def _clean_accumulator_occasionally(self):
+        n_deleted = await self.clean_accumulator()
+        if n_deleted:
+            self.logger(f'Cleaned {n_deleted} old accumulator keys')
+
+    async def clean_accumulator(self, dry_run=False):
+        cutoff = now_ts() - self._retain_seconds
+        return await self._accumulator.clear(before=cutoff, dry_run=dry_run)
 
     async def on_data(self, sender, txs: Union[List[ThorAction], AlertTradeAccountAction]):
         try:
@@ -146,6 +161,8 @@ class VolumeRecorder(INotified, WithLogger):
 
             if self.use_deduplication:
                 await self._deduplicator.mark_as_seen_txs(txs)
+
+            await self._clean_accumulator_occasionally()
         except Exception as e:
             self.logger.exception('Error while writing volume', exc_info=e)
 
