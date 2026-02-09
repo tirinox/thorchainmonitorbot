@@ -31,6 +31,7 @@ class DateToBlockMapper(WithLogger):
 
     DB_KEY_BLOCK_TO_TS_ZSET = "Block2Ts:Thorchain:Anchors"  # zset: score=height, value=ts
     DB_KEY_ANCHOR_LOCK_PREFIX = "Block2Ts:Thorchain:lock"
+    DB_KEY_TS_TO_BLOCK_ZSET = "Block2Ts:Thorchain:Anchors-Reverse"
 
     def __init__(self, deps: DepContainer, *, anchor_step: int = 2000):
         super().__init__()
@@ -82,6 +83,7 @@ class DateToBlockMapper(WithLogger):
     async def clear(self):
         r: Redis = await self.deps.db.get_redis()
         await r.delete(self.DB_KEY_BLOCK_TO_TS_ZSET)
+        await r.delete(self.DB_KEY_TS_TO_BLOCK_ZSET)
 
     @asynccontextmanager
     async def _anchor_lock(self, bucket_key: str, ttl_sec: int = 30):
@@ -105,9 +107,13 @@ class DateToBlockMapper(WithLogger):
             return None
         return float(items[0])
 
+    # noinspection PyAsyncCall
     async def _save_anchor(self, height: int, ts: float):
         r: Redis = await self.deps.db.get_redis()
-        await r.zadd(self.DB_KEY_BLOCK_TO_TS_ZSET, {str(float(ts)): int(height)})
+        pipe = r.pipeline()
+        pipe.zadd(self.DB_KEY_BLOCK_TO_TS_ZSET, {str(float(ts)): int(height)})
+        pipe.zadd(self.DB_KEY_TS_TO_BLOCK_ZSET, {str(int(height)): float(ts)})
+        await pipe.execute()
 
     async def _get_neighbor_anchors(self, height: int) -> Tuple[Optional[Anchor], Optional[Anchor]]:
         """
@@ -296,3 +302,139 @@ class DateToBlockMapper(WithLogger):
 
         ts = await self.get_timestamp_by_block_height_precise(height)
         return self._ts_to_datetime(ts if ts >= 0 else 0.0)
+
+    # ----
+
+    async def _get_neighbor_anchors_by_ts(self, ts: float) -> Tuple[Optional[Anchor], Optional[Anchor]]:
+        """
+        Returns (left_anchor, right_anchor) by timestamp.
+        - left:  max anchor ts <= ts
+        - right: min anchor ts >= ts
+        """
+        r: Redis = await self.deps.db.get_redis()
+
+        # noinspection PyUnresolvedReferences
+        left = await r.zrevrangebyscore(
+            self.DB_KEY_TS_TO_BLOCK_ZSET,
+            max=ts,
+            min="-inf",
+            start=0,
+            num=1,
+            withscores=True,
+        )
+        right = await r.zrangebyscore(
+            self.DB_KEY_TS_TO_BLOCK_ZSET,
+            min=ts,
+            max="+inf",
+            start=0,
+            num=1,
+            withscores=True,
+        )
+
+        left_anchor = None
+        if left:
+            val, score = left[0]  # val=str(height), score=float(ts)
+            left_anchor = Anchor(height=int(val), ts=float(score))
+
+        right_anchor = None
+        if right:
+            val, score = right[0]
+            right_anchor = Anchor(height=int(val), ts=float(score))
+
+        return left_anchor, right_anchor
+
+    def _interpolate_height(self, ts: float, a: Anchor, b: Anchor) -> int:
+        if a.ts == b.ts:
+            return a.height
+        ratio = (ts - a.ts) / (b.ts - a.ts)
+        h = a.height + ratio * (b.height - a.height)
+        return int(max(1, round(h)))
+
+    async def get_block_height_by_timestamp(self, ts: float, *, last_block: Optional[int] = None) -> int:
+        """
+        Fast approximate conversion: timestamp -> block height.
+
+        - Uses interpolation between timestamp anchors when possible
+        - Creates anchors lazily (slow) if missing
+        - Falls back to iterative discovery if still missing
+        """
+        if ts <= 0:
+            raise ValueError("Timestamp must be > 0")
+
+        left, right = await self._get_neighbor_anchors_by_ts(ts)
+
+        if left is None or right is None:
+            # Ensure anchors around estimated height derived from last_block
+            if last_block is None:
+                last_block = await self.get_last_thorchain_block()
+
+            now = datetime.now(timezone.utc if self.use_utc else None).timestamp()
+            est_h = int(max(1, int(last_block - (now - ts) / THOR_BLOCK_TIME)))
+
+            await self._ensure_anchors_around(est_h, last_block=last_block)
+            left, right = await self._get_neighbor_anchors_by_ts(ts)
+
+        if left and right:
+            # Optionally densify when anchors are too far apart in time
+            if self._should_densify(left, right):
+                est_h = self._interpolate_height(ts, left, right)
+                await self._densify_near(est_h, last_block=last_block)
+                left, right = await self._get_neighbor_anchors_by_ts(ts)
+
+            if left and right:
+                return self._interpolate_height(ts, left, right)
+
+        if left:
+            # Extrapolate forward from left anchor
+            return int(max(1, round(left.height + (ts - left.ts) / THOR_BLOCK_TIME)))
+
+        if right:
+            # Extrapolate backward from right anchor
+            return int(max(1, round(right.height - (right.ts - ts) / THOR_BLOCK_TIME)))
+
+        # Final fallback: slow but robust
+        return await self.iterative_block_discovery_by_timestamp(
+            ts,
+            last_block=last_block,
+            max_steps=10,
+            tolerance_sec=THOR_BLOCK_TIME * 1.5,
+        )
+
+    async def get_block_height_by_datetime(self, dt: datetime, *, last_block: Optional[int] = None) -> int:
+        if dt.tzinfo is None and self.use_utc:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return await self.get_block_height_by_timestamp(dt.timestamp(), last_block=last_block)
+
+    async def iterative_block_discovery_by_timestamp(self, ts: float, last_block=None, max_steps=10,
+                                                     tolerance_sec=THOR_BLOCK_TIME * 1.5):
+        if not last_block:
+            last_block = await self.get_last_thorchain_block()
+
+        now = datetime.now()
+        total_seconds = now.timestamp() - ts
+        assert total_seconds > 0
+
+        estimated_block_height = int(last_block - total_seconds / THOR_BLOCK_TIME)
+        estimated_block_height = int(max(1, estimated_block_height))
+
+        self.logger.info(f'Initial guess for {ts = } is #{estimated_block_height}')
+
+        for step in range(max_steps):
+            guess_ts = await self.get_timestamp_by_block_height_precise(estimated_block_height)
+
+            if guess_ts < 0:
+                self.logger.warning(f'Probably there is no block #{estimated_block_height}.')
+                # hard fork fallback
+                return estimated_block_height
+
+            seconds_diff = guess_ts - ts
+            if abs(seconds_diff) <= tolerance_sec or estimated_block_height == 1:
+                self.logger.info(f'Success. #{estimated_block_height = }!')
+                break
+
+            estimated_block_height -= seconds_diff / THOR_BLOCK_TIME
+            estimated_block_height = int(max(1, estimated_block_height))
+
+            self.logger.info(f'Step #{step + 1}. {estimated_block_height = }')
+
+        return estimated_block_height

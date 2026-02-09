@@ -28,7 +28,7 @@ async def rescan_vote_history(app: LpAppFramework,
             else:
                 app.logger.info(f"Already have data for timestamp {ts}, but overwrite is True, processing anyway")
 
-        block = await vote_recorder.block_mapper.bl
+        block = await vote_recorder.block_mapper.get_block_height_by_timestamp(ts)
         mimir_tuple = await app.deps.mimir_cache.get(height=block, forced=True)
         mimir_tuple.ts = ts
         await vote_recorder.on_data(sender=None, data=mimir_tuple)
