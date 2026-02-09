@@ -8,6 +8,7 @@ from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.scanner.trade_acc import TradeAccEventDecoder
 from jobs.volume_filler import VolumeFillerUpdater
+from jobs.volume_recorder import VolumeRecorder
 from lib.date_utils import now_ts, DAY
 from lib.depcont import DepContainer
 from models.memo import ActionType
@@ -35,7 +36,7 @@ async def continuous_volume_recording(lp_app):
 
     last_block = await d.last_block_cache.get_thor_block()
     d.block_scanner = BlockScanner(d, max_attempts=3, last_block=last_block - 1000, role='debug')
-    
+
     native_action_extractor = SwapExtractorBlock(d)
     d.block_scanner.add_subscriber(native_action_extractor)
 
@@ -80,13 +81,21 @@ async def tool_get_total_volume_and_tx_count(app: LpAppFramework):
     print(txs)
 
 
+async def dbg_clean_accumulators(app: LpAppFramework):
+    vr: VolumeRecorder = app.deps.volume_recorder
+    vr._retain_seconds = DAY * 120
+    keys_deleted = await vr.clean_accumulator()
+    print(f'VolumeRecorder: Deleted {keys_deleted} keys')
+
+
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app:
-        await continuous_volume_recording(app)
+        # await continuous_volume_recording(app)
         # await demo_show_price_graph(app)
         # await debug_post_price_graph_to_discord(app)
         # await tool_get_total_volume_and_tx_count(app)
+        await dbg_clean_accumulators(app)
 
 
 if __name__ == '__main__':

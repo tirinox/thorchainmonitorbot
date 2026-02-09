@@ -62,7 +62,7 @@ async def my_test_block_by_date(lpgen: LpAppFramework, d: date):
 
 async def demo_test_block_to_date(lpgen: LpAppFramework, block_no):
     dbm = DateToBlockMapper(lpgen.deps)
-    r = await dbm.get_timestamp_by_block_height(block_no)
+    r = await dbm.get_timestamp_by_block_height_precise(block_no)
     print(f"Block #{block_no} => date {r}")
     sep()
 
