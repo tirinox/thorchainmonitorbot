@@ -15,11 +15,13 @@ from models.time_series import TimeSeries
 
 
 class RuneBurnRecorder(INotified, WithLogger):
+    MAX_POINTS = 20_000
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
         self.tally_period = deps.cfg.as_int('supply.rune_burn.notification.tally_period_days', 7) * DAY
-        self.ts = TimeSeries('RuneMaxSupply', deps.db)
+        self.ts = TimeSeries('RuneMaxSupply', deps.db, self.MAX_POINTS)
 
     async def on_data(self, sender, mimir: MimirHolder):
         curr_max_supply_8 = self.get_current_max_supply(mimir)
