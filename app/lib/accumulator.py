@@ -33,8 +33,7 @@ class Accumulator:
 
     async def set(self, ts, **kwargs):
         accum_key = self.key_from_ts(ts)
-        for k, v in kwargs.items():
-            await self.db.redis.hset(accum_key, k, v)
+        await self.db.redis.hset(accum_key, mapping=kwargs)
 
     async def get(self, timestamp=None, conv_to_float=True):
         timestamp = timestamp or now_ts()
