@@ -3,7 +3,6 @@ from collections import defaultdict
 from typing import NamedTuple, List, Optional
 
 from jobs.scanner.block_result import ThorEvent
-from lib.constants import float_to_thor
 from models.asset import is_rune, is_trade_asset, Asset
 from models.events import EventSwap, EventStreamingSwap, EventOutbound, parse_swap_and_out_event, TypeEventSwapAndOut, \
     EventTradeAccountDeposit

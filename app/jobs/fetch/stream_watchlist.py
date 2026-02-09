@@ -214,7 +214,7 @@ class StreamingSwapStartDetectorFromList(INotified, WithDelegates, WithLogger):
         coin = safe_get(details, 'tx', 'tx', 'coins', 0)
         asset, amount = coin['asset'], coin['amount'] if coin else (None, 0.0)
         price_source_asset = ph.get_asset_price_in_usd(asset)
-        volume_usd = amount * price_source_asset
+        volume_usd = thor_to_float(amount) * price_source_asset
 
         await self.pass_data_to_listeners(AlertSwapStart(
             tx_id=s.tx_id,
