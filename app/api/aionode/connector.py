@@ -47,8 +47,8 @@ class ThorConnector:
         data = await self._request(self.env.path_last_blocks)
         return [ThorLastBlock.from_json(j) for j in data] if isinstance(data, list) else [ThorLastBlock.from_json(data)]
 
-    async def query_constants(self) -> ThorConstants:
-        data = await self._request(self.env.path_constants)
+    async def query_constants(self, height=None) -> ThorConstants:
+        data = await self._request(self.env.path_constants, height=height)
         return ThorConstants.from_json(data) if data else ThorConstants()
 
     async def query_mimir(self, height=None) -> ThorMimir:
@@ -56,13 +56,13 @@ class ThorConnector:
 
         return ThorMimir.from_json(data) if data else ThorMimir()
 
-    async def query_mimir_votes(self) -> List[ThorMimirVote]:
-        response = await self._request(self.env.path_mimir_votes)
+    async def query_mimir_votes(self, height=None) -> List[ThorMimirVote]:
+        response = await self._request(self.env.path_mimir_votes, height=height)
         mimirs = response.get('mimirs', [])
         return ThorMimirVote.from_json_array(mimirs)
 
-    async def query_mimir_node_accepted(self) -> dict:
-        response = await self._request(self.env.path_mimir_nodes)
+    async def query_mimir_node_accepted(self, height=None) -> dict:
+        response = await self._request(self.env.path_mimir_nodes, height=height)
         return response or {}
 
     async def query_chain_info(self) -> Dict[str, ThorChainInfo]:

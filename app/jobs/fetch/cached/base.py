@@ -22,7 +22,7 @@ class CachedDataSource(Generic[T], WithLogger, metaclass=ABCMeta):
         self._load_lock = asyncio.Lock()
 
     @abstractmethod
-    async def _load(self) -> T:
+    async def _load(self, *args, **kwargs) -> T:
         ...
 
     @property
@@ -30,7 +30,7 @@ class CachedDataSource(Generic[T], WithLogger, metaclass=ABCMeta):
         """Check if the cached data is still fresh."""
         return self._cache is not None and (time.time() - self._last_load_time) < self.cache_period
 
-    async def get(self) -> T:
+    async def get(self, *args, **kwargs) -> T:
         now = time.time()
 
         # If we have cached data, and it's still fresh, return it
@@ -53,7 +53,7 @@ class CachedDataSource(Generic[T], WithLogger, metaclass=ABCMeta):
                 try:
                     if attempt > 1:
                         self.logger.info(f"Loading data (attempt {attempt}/{self.retry_times})...")
-                    data = await self._load()
+                    data = await self._load(*args, **kwargs)
 
                     # On success, cache it and update timestamp
                     self._cache = data

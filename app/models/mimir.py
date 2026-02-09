@@ -1,10 +1,9 @@
 import logging
+import math
 import operator
 from dataclasses import dataclass
 from itertools import chain
 from typing import Dict, List, Optional, NamedTuple
-
-import math
 
 from api.aionode.types import ThorConstants, ThorMimir, ThorMimirVote
 from lib.constants import bp_to_float
@@ -191,6 +190,7 @@ class MimirTuple(NamedTuple):
     node_mimir: dict  # accepted by nodes
     votes: List[ThorMimirVote]
     last_thor_block: int
+    ts: float
 
 
 class MimirHolder(INotified, WithLogger, WithDelegates):
