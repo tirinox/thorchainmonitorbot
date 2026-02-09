@@ -49,7 +49,7 @@ class MimirCached(CachedDataSource[MimirTuple]):
 
         return MimirTuple(
             constants, mimir, accepted_node_mimir, votes,
-            last_thor_block=last_block,
+            thor_height=last_block,
             ts=(now_ts() if height is None else 0)
         )
 

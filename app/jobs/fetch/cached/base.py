@@ -30,11 +30,11 @@ class CachedDataSource(Generic[T], WithLogger, metaclass=ABCMeta):
         """Check if the cached data is still fresh."""
         return self._cache is not None and (time.time() - self._last_load_time) < self.cache_period
 
-    async def get(self, *args, **kwargs) -> T:
+    async def get(self, forced=False, *args, **kwargs) -> T:
         now = time.time()
 
         # If we have cached data, and it's still fresh, return it
-        if self.is_fresh:
+        if self.is_fresh and not forced:
             age = now - self._last_load_time
             self.logger.debug(f"Returning cached data (age: {age:.2f}s)")
             return self._cache
@@ -43,7 +43,7 @@ class CachedDataSource(Generic[T], WithLogger, metaclass=ABCMeta):
         async with self._load_lock:
             # Check again in case another task refreshed while waiting
             now = time.time()
-            if self.is_fresh:
+            if self.is_fresh and not forced:
                 age = now - self._last_load_time
                 self.logger.debug(f"Cache refreshed by another task; returning updated data (age: {age:.2f}s)")
                 return self._cache
