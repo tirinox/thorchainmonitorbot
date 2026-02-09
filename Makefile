@@ -149,6 +149,8 @@ dashboard-dev:  # Run the Streamlit dashboard in development mode (with hot relo
 .PHONY: redis-analysis
 redis-analysis: # Run the Redis analytics tool
 	docker compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/redis_analytics.py /config/config.yaml'
+	@echo "------------------------------"
+	docker compose exec redis redis-cli -p $(REDIS_PORT) -a $(REDIS_PASSWORD) --memkeys
 
 
 .PHONY: renderer-up

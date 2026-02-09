@@ -25,7 +25,7 @@ async def do_job(app):
             # try again
             await asyncio.sleep(0.1)
             key_type = await r.type(key)
-        
+
         if key_type == 'hash':
             data_len = await r.hlen(key)
         elif key_type == 'set':
@@ -36,6 +36,10 @@ async def do_job(app):
             data_len = await r.xlen(key)
         elif key_type == 'string':
             data_len = 1
+        elif key_type == 'list':
+            data_len = await r.llen(key)
+        elif key_type == 'none':
+            continue
         else:
             logging.warning(f'Unknown type {key_type} for key {key}')
             data_len = 1
