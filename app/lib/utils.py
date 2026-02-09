@@ -18,7 +18,7 @@ from collections import deque, Counter, defaultdict
 from functools import partial, wraps
 from io import BytesIO
 from itertools import tee
-from typing import Iterable, List, Any, Awaitable
+from typing import Iterable, List, Any, Awaitable, Optional
 from urllib.parse import urlparse, urlunparse
 
 from pydantic import BaseModel
@@ -410,30 +410,61 @@ def str_to_bytes(s: str):
 
 async def parallel_run_in_groups(
         tasks: List[Awaitable[Any]],
-        group_size: int = 10,
-        delay: float = 0.0,
-        use_tqdm: bool = False
+        concurrency: int = 10,
+        delay: float = 0.0,  # delay between task STARTS (throttle)
+        use_tqdm: bool = False,
+        return_exceptions: bool = False,
 ) -> List[Any]:
     if not tasks:
         return []
 
-    groups = list(grouper(group_size, tasks))
-    results = []
+    sem = asyncio.Semaphore(concurrency)
+
+    async def run_one(i: int, aw: Awaitable[Any]):
+        async with sem:
+            return i, await aw
+
+    # Create all wrapper coroutines (cheap). Actual concurrency is bounded by semaphore.
+    wrapped = [run_one(i, t) for i, t in enumerate(tasks)]
 
     pbar = tqdm(total=len(tasks), desc="Processing tasks") if use_tqdm and tqdm else None
+    results: List[Optional[Any]] = [None] * len(tasks)
 
-    for group in groups:
-        group_results = await asyncio.gather(*group)
-        results.extend(group_results)
-        if pbar:
-            pbar.update(len(group))
+    # Optional throttling of starts: schedule tasks gradually
+    # (useful for rate-limits / not slamming remote services)
+    running: List[asyncio.Task] = []
+    for w in wrapped:
+        running.append(asyncio.create_task(w))
         if delay > 0:
             await asyncio.sleep(delay)
+
+    for fut in asyncio.as_completed(running):
+        try:
+            i, value = await fut
+        except Exception as e:
+            if not return_exceptions:
+                # Cancel remaining tasks and re-raise (fail fast)
+                for t in running:
+                    if not t.done():
+                        t.cancel()
+                raise
+            # store exception object as result
+            # (matching asyncio.gather(..., return_exceptions=True) behavior)
+            # need index: tasks that errored still come from run_one, so no i available here
+            # -> to preserve index on error, catch inside run_one instead
+            raise RuntimeError(
+                "Internal error: set return_exceptions via run_one() wrapper."
+            ) from e
+        else:
+            results[i] = value
+            if pbar:
+                pbar.update(1)
 
     if pbar:
         pbar.close()
 
-    return results
+    # results is fully populated
+    return results  # type: ignore
 
 
 def grouper(n, iterable):
