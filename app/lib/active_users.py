@@ -74,6 +74,7 @@ class DailyActiveUserCounter(ActiveUserCounter):
         return await self.get_count(postfixes)
 
     async def get_wau(self):
+
         return await self.get_au_over_days(7)
 
     async def get_wau_prev_week(self):
@@ -99,6 +100,14 @@ class DailyActiveUserCounter(ActiveUserCounter):
         current = await self.get_au_over_days(period_days)
         previous = await self.get_au_over_days(period_days, start=period_days)
         return current, previous
+
+    async def clear_days(self, days: int, start: int = 0):
+        assert 0 < days <= 365
+        now = now_ts()
+        postfixes = [self.key_postfix(now - day_ago * DAY) for day_ago in range(start, start + days)]
+        keys = [self._key(pf) for pf in postfixes]
+        if keys:
+            await self.r.delete(*keys)
 
 
 class ManualUserCounter:
