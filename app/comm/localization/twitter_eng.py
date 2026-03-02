@@ -234,7 +234,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         def pool_text(pool_name, status, to_status=None, can_swap=True):
             if can_swap and PoolInfo.is_status_enabled(to_status):
-                extra = '🎉 BECAME ACTIVE!'
+                extra = '🎉 Now Active!'
             else:
                 extra = status
                 if to_status is not None and status != to_status:  # fix: staged -> staged
