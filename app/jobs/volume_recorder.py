@@ -7,7 +7,7 @@ from lib.date_utils import HOUR, now_ts, DAY
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from lib.utils import once_every
+from lib.utils import async_once_every
 from models.memo import ActionType
 from models.price import PriceHolder
 from models.runepool import AlertRunePoolAction
@@ -138,7 +138,7 @@ class VolumeRecorder(INotified, WithLogger):
         self._deduplicator = TxDeduplicator(deps.db, 'VolumeRecorder')
         self.use_deduplication = deps.cfg.as_bool('price.volume.record_deduplication', True)
 
-    @once_every(5)
+    @async_once_every(5)
     async def _clean_accumulator_occasionally(self):
         n_deleted = await self.clean_accumulator()
         if n_deleted:

@@ -821,3 +821,25 @@ def once_every(n: int):
         return wrapper
 
     return decorator
+
+
+def async_once_every(n: int):
+    if n <= 0:
+        raise ValueError("n must be >= 1")
+
+    def decorator(func):
+        counter = 0
+
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            nonlocal counter
+            counter += 1
+
+            if counter % n == 0:
+                return await func(*args, **kwargs)
+            return None
+
+        return wrapper
+
+    return decorator
+
