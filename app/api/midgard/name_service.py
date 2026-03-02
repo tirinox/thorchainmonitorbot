@@ -13,7 +13,6 @@ from lib.date_utils import parse_timespan_to_seconds
 from lib.db import DB
 from lib.logs import WithLogger
 from lib.texts import shorten_text
-from lib.utils import dict_sorted_by_keys
 from models.memo import THORMemo
 from models.name import ThorName, make_virtual_thor_name, ThorNameAlias
 from models.node_info import NetworkNodes
@@ -393,30 +392,42 @@ class AffiliateManager(WithLogger):
         # load the affiliate data from the YAML file
         with open(self.FILE, 'r', encoding='utf-8') as file:
             data = yaml.load(file, Loader=yaml.SafeLoader)
-            self.thorname_to_name = self.remove_space_and_lowercase(data['affiliates']['names'])
-            self.name_to_logo = self.remove_space_and_lowercase(data['affiliates']['logos'])
-            self.logger.info(f'Loaded {len(self.thorname_to_name)} affiliate names and '
-                             f'{len(self.name_to_logo)} logos from {self.FILE}')
+            self._entries: list[dict] = data['affiliates']
+            # Build lookup dicts from the list-based format
+            self.thorname_to_name: dict[str, str] = {}
+            self.name_to_logo: dict[str, str] = {}
+            for entry in self._entries:
+                name = entry['name']
+                logo = entry.get('logo', '')
+                self.name_to_logo[self._simplify_name(name)] = logo
+                for code in entry.get('codes', []):
+                    self.thorname_to_name[self._simplify_name(str(code))] = name
+            self.logger.info(f'Loaded {len(self._entries)} affiliates '
+                             f'({len(self.thorname_to_name)} codes) from {self.FILE}')
             self.check_integrity()
 
     def add(self, code, name, logo=""):
-        code_simplified = self._simplify_name(code)
+        code_simplified = self._simplify_name(str(code))
         name_simplified = self._simplify_name(name)
 
+        # Update in-memory lookups
         self.thorname_to_name[code_simplified] = name
 
         if name_simplified not in self.name_to_logo:
             self.name_to_logo[name_simplified] = logo
+            # Also append a new entry to the list
+            self._entries.append({'name': name, 'logo': logo, 'codes': [str(code)]})
         else:
+            # Find existing entry and add the code
+            for entry in self._entries:
+                if self._simplify_name(entry['name']) == name_simplified:
+                    if str(code) not in entry.get('codes', []):
+                        entry.setdefault('codes', []).append(str(code))
+                    break
             self.logger.warning(f'Affiliate logo for {name!r} already exists, not updating.')
 
     def save(self):
-        data = {
-            'affiliates': {
-                'names': dict_sorted_by_keys(self.thorname_to_name),
-                'logos': dict_sorted_by_keys(self.name_to_logo),
-            }
-        }
+        data = {'affiliates': self._entries}
         with open(self.FILE, 'w', encoding='utf-8') as file:
             yaml.dump(data, file, sort_keys=False, allow_unicode=True)
         self.logger.info(f'Saved affiliate data to {self.FILE}')
@@ -450,33 +461,14 @@ class AffiliateManager(WithLogger):
             logo = f'{self.LOCAL_PATH_PREFIX}{logo}'
         return logo
 
-    def remove_space_and_lowercase(self, d: dict) -> dict:
-        """
-        Removes spaces and converts the name to lowercase.
-        """
-        return {
-            self._simplify_name(k): v for k, v in d.items()
-        }
-
     def check_integrity(self):
         """
         Checks the integrity of the affiliate data.
-        Ensures that all keys in thorname_to_name are present in name_to_logo.
+        Ensures that all entries have a logo (or empty string) and that local logo files exist.
         """
         missing_logos = []
-        for name in self.thorname_to_name.values():
-            name = self._simplify_name(name)
-            if name not in self.name_to_logo:
-                missing_logos.append(name)
-
-        if missing_logos:
-            missing_logos = ', '.join(missing_logos)
-            raise ValueError(f'Affiliate names {missing_logos} are missing logos in {self.FILE}. '
-                             f'Please add them to the logos section of the file.')
-
-        missing_logos = []
         for name, logo in self.name_to_logo.items():
-            logo = logo.strip()
+            logo = logo.strip() if logo else ''
             if logo.startswith('http'):
                 continue
             elif not logo:

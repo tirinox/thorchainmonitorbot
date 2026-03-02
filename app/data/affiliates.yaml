@@ -1,162 +1,268 @@
 affiliates:
-  names:
-    -_: SwapKit
-    -t: THORSwap (RUNE Edition)
-    0xbami: Unizen
-    ahi: Ctrl Wallet
-    asgardex: Asgardex
-    be: WinBit32
-    bdc: OrangeRock
-    bgw: Bitget
-    bk: BitGet Wallet
-    bp: BitPay
-    bqx: Ethos Wallet
-    burrito: Burrito Wallet
-    byb: BiorBank
-    c98: Coin98
-    cakewallet: Cake Wallet
-    cb: CoinBot
-    cbx: Coolwallet
-    cs: CacaoSwap
-    cs3: Coinstore Web3 Wallet
-    dcf: Decentralfi
-    dcg: Dash Core
-    decentralfi: Decentralfi
-    dp: Astrolescent
-    dph: Delphibets
-    ds: Defispot
-    dx: Asgardex
-    edge: Edge
-    ej: Edge
-    eld: El Dorito
-    elp: ELLIPAL
-    g1: Gem Wallet
-    hvl: SafePal
-    is: InstaSwap
-    kf: Kensho Finance
-    kns: Keystone
-    lends: Lends
-    leo: LeoDex
-    lifi: LI.FI
-    ll: Ledger Live
-    ma: Moca
-    matias: THORWallet
-    mc: Moca
-    mis: Coinex Wallet
-    mo: Moca
-    moca: Moca
-    ns: NativeSwap
-    okw: OKX
-    oky: OneKey
-    origamix: Origamix
-    os: Osaia
-    pl: Plexus
-    plm: Polemos
-    rg: Rango Exchange
-    rj: Rujira
-    ro: Rango Exchange
-    runifier: Runifier
-    shapeshift: ShapeShift
-    sk: SwapKit
-    ss: ShapeShift
-    ssp: ShardSpace
-    sto: thorchain.org
-    sy: Symbiosis
-    t: THORSwap
-    t1: TrustWallet
-    tb: TrustWallet
-    td: TrustWallet
-    te: TrustWallet
-    te-ios: Trust Wallet iOS
-    tgt: THORWallet DEX
-    thor160yye65pf9rzwrgqmtgav69n6zlsyfpgm9a7xk: THORSwap
-    thorwallet: THORWallet
-    ti: TrustWallet
-    tl: THORSwap Ledger
-    tps: TokenPocket
-    tr: TrustWallet
-    ts: THORSwap
-    tt: Turbo Trade
-    v0: Vultisig
-    v1: Vultisig
-    va: Vultisig
-    vi: Vultisig
-    wr: THORWallet
-    xv: Xverse
-    xdf: Ctrl
-    zcx-com: Unizen
-    zengo: Zengo
-    zyp: Zypto
-  logos:
-    asgardex: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/asgardex/logo.png
-    astrolescent: astrolescent.png
-    babylonswap: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/babylonswap/logo.png
-    bitget: bitget.png
-    bitgetwallet: bitget.png
-    bitpay: bitpay.webp
-    biorbank: bior.png
-    burritowallet: burrito.png
-    cacaoswap: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/cacaoswap/logo.svg
-    cakewallet: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/cakewallet/logo.png
-    coinbot: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/coinbot/logo.png
-    coin98: coin98.png
-    coinexwallet: coinex.png
-    coinstoreweb3wallet: coinstore.png
-    coolwallet: coolwallet.png
-    ctrlwallet: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/ctrl/logo.svg
-    dashcore: dashcore.png
-    decentralfi: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/decentralfi/logo.png
-    defispot: defispot.png
-    delphibets: delphibets.png
-    easycross: easycross.png
-    edge: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/edgewallet/logo.svg
-    eldorito: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/eldorito/logo.png
-    ellipal: ELLIPAL.png
-    ethos: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/ethos/logo.svg
-    ethoswallet: ''
-    gemwallet: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/gemwallet/logo.svg
-    giddy: giddy.png
-    hasherwallet: hasher-wallet.png
-    hyperpay: hyperpay.png
-    instaswap: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/instaswap/logo.png
-    kenshofinance: kensho.svg
-    keystone: key-stone.png
-    ledgerlive: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/ledgerlive/logo.svg
-    lends: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/lends/logo.svg
-    leodex: leodex.png
-    li.fi: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/lifi/logo.svg
-    moca: moca.png
-    nativeswap: ''
-    okx: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/okx/logo.svg
-    onekey: onekey.png
-    origamix: https://origamix.io/app-logo/origamix-logo.png
-    orangerock: orangerock.png
-    osaia: osaia.jpg
-    plexus: plexus.webp
-    polemos: polemos.jpg
-    rango: rango.png
-    rangoexchange: rango.png
-    rujira: rujira.png
-    runifier: ''
-    shapeshift: fox.png
-    shardspace: shardspace.png
-    safepal: safepal.png
-    swapkit: swapkit.png
-    symbiosis: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/symbiosis/logo.svg
-    thorchain.org: thorchain.org.svg
-    thorswap: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorswap/logo.svg
-    thorswap(runeedition): https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorswap/logo.svg
-    thorswapledger: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorswap/logo.svg
-    thorwallet: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorwallet/logo.png
-    thorwalletdex: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorwallet/logo.png
-    tokenpocket: tps.png
-    trust: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/trust/logo.svg
-    trustwallet: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/trust/logo.svg
-    trustwalletios: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/trust/logo.svg
-    turbotrade: ''
-    unizen: unizen.png
-    vultisig: vult.svg
-    winbit32: winbit32.jpg
-    xverse: xverse.png
-    zengo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/zengo/logo.svg
-    zypto: zypto.png
+  - name: SwapKit
+    logo: swapkit.png
+    codes: [-_, sk]
+
+  - name: THORSwap
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorswap/logo.svg
+    codes: [t, ts, thor160yye65pf9rzwrgqmtgav69n6zlsyfpgm9a7xk]
+
+  - name: THORSwap (RUNE Edition)
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorswap/logo.svg
+    codes: [-t]
+
+  - name: THORSwap Ledger
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorswap/logo.svg
+    codes: [tl]
+
+  - name: THORWallet
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorwallet/logo.png
+    codes: [matias, thorwallet, wr]
+
+  - name: THORWallet DEX
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorwallet/logo.png
+    codes: [tgt]
+
+  - name: Asgardex
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/asgardex/logo.png
+    codes: [asgardex, dx]
+
+  - name: TrustWallet
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/trust/logo.svg
+    codes: [t1, tb, td, te, ti, tr]
+
+  - name: Trust Wallet iOS
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/trust/logo.svg
+    codes: [te-ios]
+
+  - name: Vultisig
+    logo: vult.svg
+    codes: [v0, v1, va, vi]
+
+  - name: Ledger Live
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/ledgerlive/logo.svg
+    codes: [ll]
+
+  - name: Cake Wallet
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/cakewallet/logo.png
+    codes: [cakewallet]
+
+  - name: Edge
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/edgewallet/logo.svg
+    codes: [edge, ej]
+
+  - name: ShapeShift
+    logo: fox.png
+    codes: [shapeshift, ss]
+
+  - name: Rango Exchange
+    logo: rango.png
+    codes: [rg, ro]
+
+  - name: Defispot
+    logo: defispot.png
+    codes: [ds]
+
+  - name: Bitget
+    logo: bitget.png
+    codes: [bgw, bk]
+
+  - name: BitPay
+    logo: bitpay.webp
+    codes: [bp]
+
+  - name: Unizen
+    logo: unizen.png
+    codes: [0xbami, zcx-com]
+
+  - name: Ctrl Wallet
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/ctrl/logo.svg
+    codes: [ahi, xdf]
+
+  - name: OrangeRock
+    logo: orangerock.png
+    codes: [bdc]
+
+  - name: WinBit32
+    logo: winbit32.jpg
+    codes: [be]
+
+  - name: Ethos Wallet
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/ethos/logo.svg
+    codes: [bqx]
+
+  - name: Burrito Wallet
+    logo: burrito.png
+    codes: [burrito]
+
+  - name: BiorBank
+    logo: bior.png
+    codes: [byb]
+
+  - name: Coin98
+    logo: coin98.png
+    codes: [c98]
+
+  - name: Coinex Wallet
+    logo: coinex.png
+    codes: [mis]
+
+  - name: Coolwallet
+    logo: coolwallet.png
+    codes: [cbx]
+
+  - name: CacaoSwap
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/cacaoswap/logo.svg
+    codes: [cs]
+
+  - name: Coinstore Web3 Wallet
+    logo: coinstore.png
+    codes: [cs3]
+
+  - name: Decentralfi
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/decentralfi/logo.png
+    codes: [dcf, decentralfi]
+
+  - name: Dash Core
+    logo: dashcore.png
+    codes: [dcg]
+
+  - name: Astrolescent
+    logo: astrolescent.png
+    codes: [dp]
+
+  - name: Delphibets
+    logo: delphibets.png
+    codes: [dph]
+
+  - name: El Dorito
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/eldorito/logo.png
+    codes: [eld]
+
+  - name: ELLIPAL
+    logo: ELLIPAL.png
+    codes: [elp]
+
+  - name: Gem Wallet
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/gemwallet/logo.svg
+    codes: [g1]
+
+  - name: SafePal
+    logo: safepal.png
+    codes: [hvl]
+
+  - name: InstaSwap
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/instaswap/logo.png
+    codes: [is]
+
+  - name: Kensho Finance
+    logo: kensho.svg
+    codes: [kf]
+
+  - name: Keystone
+    logo: key-stone.png
+    codes: [kns]
+
+  - name: Lends
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/lends/logo.svg
+    codes: [lends]
+
+  - name: LeoDex
+    logo: leodex.png
+    codes: [leo]
+
+  - name: LI.FI
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/lifi/logo.svg
+    codes: [lifi]
+
+  - name: Moca
+    logo: moca.png
+    codes: [ma, mc, mo, moca]
+
+  - name: NativeSwap
+    logo: ''
+    codes: [ns]
+
+  - name: OKX
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/okx/logo.svg
+    codes: [okw]
+
+  - name: OneKey
+    logo: onekey.png
+    codes: [oky]
+
+  - name: Origamix
+    logo: https://origamix.io/app-logo/origamix-logo.png
+    codes: [origamix]
+
+  - name: Osaia
+    logo: osaia.jpg
+    codes: [os]
+
+  - name: Plexus
+    logo: plexus.webp
+    codes: [pl]
+
+  - name: Polemos
+    logo: polemos.jpg
+    codes: [plm]
+
+  - name: Rujira
+    logo: rujira.png
+    codes: [rj]
+
+  - name: Runifier
+    logo: ''
+    codes: [runifier]
+
+  - name: ShardSpace
+    logo: shardspace.png
+    codes: [ssp]
+
+  - name: thorchain.org
+    logo: thorchain.org.svg
+    codes: [sto]
+
+  - name: Symbiosis
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/symbiosis/logo.svg
+    codes: [sy]
+
+  - name: TokenPocket
+    logo: tps.png
+    codes: [tps]
+
+  - name: Turbo Trade
+    logo: ''
+    codes: [tt]
+
+  - name: Xverse
+    logo: xverse.png
+    codes: [xv]
+
+  - name: Zengo
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/zengo/logo.svg
+    codes: [zengo]
+
+  - name: Zypto
+    logo: zypto.png
+    codes: [zyp]
+
+  - name: CoinBot
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/coinbot/logo.png
+    codes: [cb]
+
+  - name: EasyCross
+    logo: easycross.png
+    codes: [easycross]
+
+  - name: Giddy
+    logo: giddy.png
+    codes: [giddy]
+
+  - name: Hasher Wallet
+    logo: hasher-wallet.png
+    codes: [hasher]
+
+  - name: HyperPay
+    logo: hyperpay.png
+    codes: [hyperpay]
