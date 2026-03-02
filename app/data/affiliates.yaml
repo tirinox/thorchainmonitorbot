@@ -3,20 +3,26 @@ affiliates:
     -_: SwapKit
     -t: THORSwap (RUNE Edition)
     0xbami: Unizen
-    ahi: CTRL
+    ahi: Ctrl Wallet
     asgardex: Asgardex
     be: WinBit32
+    bdc: OrangeRock
     bgw: Bitget
     bk: BitGet Wallet
     bp: BitPay
     bqx: Ethos Wallet
+    burrito: Burrito Wallet
+    byb: BiorBank
+    c98: Coin98
     cakewallet: Cake Wallet
     cb: CoinBot
+    cbx: Coolwallet
     cs: CacaoSwap
     cs3: Coinstore Web3 Wallet
     dcf: Decentralfi
     dcg: Dash Core
     decentralfi: Decentralfi
+    dp: Astrolescent
     dph: Delphibets
     ds: Defispot
     dx: Asgardex
@@ -25,6 +31,7 @@ affiliates:
     eld: El Dorito
     elp: ELLIPAL
     g1: Gem Wallet
+    hvl: SafePal
     is: InstaSwap
     kf: Kensho Finance
     kns: Keystone
@@ -35,6 +42,7 @@ affiliates:
     ma: Moca
     matias: THORWallet
     mc: Moca
+    mis: Coinex Wallet
     mo: Moca
     moca: Moca
     ns: NativeSwap
@@ -74,9 +82,11 @@ affiliates:
     va: Vultisig
     vi: Vultisig
     wr: THORWallet
+    xv: Xverse
     xdf: Ctrl
     zcx-com: Unizen
     zengo: Zengo
+    zyp: Zypto
   logos:
     asgardex: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/asgardex/logo.png
     astrolescent: astrolescent.png
@@ -84,11 +94,16 @@ affiliates:
     bitget: bitget.png
     bitgetwallet: bitget.png
     bitpay: bitpay.webp
+    biorbank: bior.png
+    burritowallet: burrito.png
     cacaoswap: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/cacaoswap/logo.svg
     cakewallet: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/cakewallet/logo.png
     coinbot: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/coinbot/logo.png
+    coin98: coin98.png
+    coinexwallet: coinex.png
     coinstoreweb3wallet: coinstore.png
-    ctrl: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/ctrl/logo.svg
+    coolwallet: coolwallet.png
+    ctrlwallet: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/ctrl/logo.svg
     dashcore: dashcore.png
     decentralfi: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/decentralfi/logo.png
     defispot: defispot.png
@@ -115,6 +130,7 @@ affiliates:
     okx: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/okx/logo.svg
     onekey: onekey.png
     origamix: https://origamix.io/app-logo/origamix-logo.png
+    orangerock: orangerock.png
     osaia: osaia.jpg
     plexus: plexus.webp
     polemos: polemos.jpg
@@ -124,6 +140,7 @@ affiliates:
     runifier: ''
     shapeshift: fox.png
     shardspace: shardspace.png
+    safepal: safepal.png
     swapkit: swapkit.png
     symbiosis: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/symbiosis/logo.svg
     thorchain.org: thorchain.org.svg
@@ -140,4 +157,6 @@ affiliates:
     unizen: unizen.png
     vultisig: vult.svg
     winbit32: winbit32.jpg
+    xverse: xverse.png
     zengo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/zengo/logo.svg
+    zypto: zypto.png
