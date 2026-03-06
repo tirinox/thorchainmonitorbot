@@ -1,0 +1,395 @@
+{% set _width, _height = set_viewport_size(1280, 720) %}
+{% extends "base.jinja2" %}
+
+{% block content %}
+<style>
+    .voting-wrapper {
+        position: absolute;
+        top: 130px;
+        left: 3%;
+        right: 3%;
+        bottom: 5%;
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        align-items: stretch;
+    }
+
+    /* ── Left panel: chart ─────────────────── */
+    .chart-panel {
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .chart-box {
+        flex: 1;
+        position: relative;
+        padding: 16px 16px 8px 16px;
+    }
+
+    #votingChart {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    /* ── Right panel: current state + stats ── */
+    .side-panel {
+        width: 320px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .key-box {
+        padding: 14px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .key-label {
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        color: #888;
+        font-weight: 600;
+    }
+
+    .key-name {
+        font-size: 32px;
+        font-weight: bold;
+        color: #fff;
+        letter-spacing: 0.05em;
+        line-height: 1.1;
+        word-break: break-all;
+    }
+
+    .key-pretty {
+        font-size: 17px;
+        color: #aaa;
+        letter-spacing: 0.08em;
+        margin-top: 2px;
+    }
+
+    .active-nodes-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    .active-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #23DCC8;
+        box-shadow: 0 0 6px #23DCC8;
+    }
+
+    .active-nodes-text {
+        font-size: 16px;
+        color: #23DCC8;
+        letter-spacing: 0.05em;
+    }
+
+    /* current votes breakdown */
+    .votes-box {
+        flex: 1;
+        padding: 14px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        overflow: hidden;
+    }
+
+    .votes-title {
+        font-size: 15px;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: #888;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .vote-row {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        margin-bottom: 10px;
+    }
+
+    .vote-row-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+    }
+
+    .vote-value-label {
+        font-size: 18px;
+        font-weight: bold;
+        color: #fff;
+    }
+
+    .vote-count-label {
+        font-size: 14px;
+        color: #aaa;
+    }
+
+    .vote-bar-bg {
+        width: 100%;
+        height: 8px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .vote-bar-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.4s ease;
+    }
+
+    /* consensus threshold line */
+    .threshold-note {
+        margin-top: auto;
+        font-size: 13px;
+        color: #555;
+        text-align: center;
+        letter-spacing: 0.05em;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* chart panel sub-title */
+    .chart-subtitle {
+        font-size: 14px;
+        color: #666;
+        text-align: center;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+    }
+</style>
+
+{% with title="MIMIR VOTE" %}
+    {% include "components/header.jinja2" %}
+{% endwith %}
+
+<div class="voting-wrapper">
+
+    <!-- LEFT: stacked area chart -->
+    <div class="chart-panel">
+        <div class="chart-box shadow-box">
+            <canvas id="votingChart"></canvas>
+        </div>
+        <div class="chart-subtitle">Vote distribution over time</div>
+    </div>
+
+    <!-- RIGHT: key info + current breakdown -->
+    <div class="side-panel">
+
+        <div class="key-box shadow-box">
+            <div class="key-label">Mimir Key</div>
+            <div class="key-name">{{ key }}</div>
+            {% if pretty_name and pretty_name != key %}
+            <div class="key-pretty">{{ pretty_name }}</div>
+            {% endif %}
+            <div class="active-nodes-row">
+                <div class="active-dot"></div>
+                <div class="active-nodes-text">{{ active_nodes }} active nodes</div>
+            </div>
+        </div>
+
+        <div class="votes-box shadow-box" id="votes-breakdown">
+            <div class="votes-title">Current vote snapshot</div>
+            <!-- populated by JS -->
+            <div class="threshold-note" id="threshold-note"></div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // ── data from Jinja ─────────────────────────────────────────────────────
+    const historyRaw = {{ history | tojson }};
+    const activeNodes = {{ active_nodes }};
+    const CONSENSUS = 0.667; // 2/3 threshold
+
+    // ── colour palette (vibrant, dark-background friendly) ──────────────────
+    const PALETTE = [
+        '#23DCC8', // teal
+        '#00CCFF', // cyan
+        '#33FF99', // green
+        '#FF9933', // orange
+        '#FF6699', // pink
+        '#AA88FF', // purple
+        '#FFDD44', // yellow
+        '#FF4444', // red
+        '#44AAFF', // blue
+        '#88FF44', // lime
+    ];
+
+    // ── collect all unique option keys, sorted by latest vote count desc ────
+    const latestSnapshot = historyRaw[historyRaw.length - 1];
+    const latestOptions  = latestSnapshot ? latestSnapshot.options : {};
+    const allKeys = Object.keys(latestOptions)
+        .sort((a, b) => (latestOptions[b] || 0) - (latestOptions[a] || 0));
+
+    // also make sure any key that appeared earlier is included
+    historyRaw.forEach(snap => {
+        Object.keys(snap.options).forEach(k => {
+            if (!allKeys.includes(k)) allKeys.push(k);
+        });
+    });
+
+    const colorMap = {};
+    allKeys.forEach((k, i) => { colorMap[k] = PALETTE[i % PALETTE.length]; });
+
+    // ── build chart datasets (one per option key) ────────────────────────────
+    const labels = historyRaw.map(snap => {
+        const d = new Date(snap.ts * 1000);
+        const pad = n => String(n).padStart(2, '0');
+        return `${pad(d.getUTCDate())}.${pad(d.getUTCMonth()+1)} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+    });
+
+    const datasets = allKeys.map(optKey => {
+        const col = colorMap[optKey];
+        return {
+            label: `Value ${optKey}`,
+            data: historyRaw.map(snap => snap.options[optKey] || 0),
+            backgroundColor: col + '55',  // semi-transparent fill
+            borderColor:     col,
+            borderWidth:     2,
+            pointRadius:     0,
+            pointHoverRadius: 4,
+            fill: true,
+            tension: 0.35,
+        };
+    });
+
+    // ── render chart ─────────────────────────────────────────────────────────
+    Chart.defaults.font.family = 'ThorFontLight';
+    Chart.defaults.color = 'rgb(180,180,180)';
+
+    const ctx = document.getElementById('votingChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            interaction: { mode: 'index', intersect: false },
+            stacked: false,
+            scales: {
+                x: {
+                    ticks: {
+                        maxTicksLimit: 12,
+                        maxRotation: 30,
+                        font: { size: 12 },
+                        color: '#666',
+                        autoSkip: true,
+                    },
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                },
+                y: {
+                    beginAtZero: true,
+                    max: activeNodes,
+                    ticks: {
+                        font: { size: 12 },
+                        color: '#666',
+                        stepSize: Math.ceil(activeNodes / 5),
+                    },
+                    grid: { color: 'rgba(255,255,255,0.06)' },
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        boxWidth: 14,
+                        boxHeight: 8,
+                        borderRadius: 4,
+                        useBorderRadius: true,
+                        font: { size: 13 },
+                        color: '#bbb',
+                        padding: 16,
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(10,16,21,0.92)',
+                    borderColor: 'rgba(255,255,255,0.12)',
+                    borderWidth: 1,
+                    titleColor: '#eee',
+                    bodyColor:  '#bbb',
+                    callbacks: {
+                        label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} nodes (${(ctx.parsed.y / activeNodes * 100).toFixed(1)}%)`,
+                    }
+                },
+                // consensus threshold annotation (drawn manually via afterDraw)
+                afterDraw: null,
+            },
+            // draw consensus line via plugin
+        },
+        plugins: [{
+            id: 'consensusLine',
+            afterDraw(chart) {
+                const { ctx, scales: { y } } = chart;
+                const yVal = Math.round(activeNodes * CONSENSUS);
+                const yPx  = y.getPixelForValue(yVal);
+                ctx.save();
+                ctx.setLineDash([6, 4]);
+                ctx.strokeStyle = 'rgba(255, 200, 50, 0.5)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(chart.chartArea.left,  yPx);
+                ctx.lineTo(chart.chartArea.right, yPx);
+                ctx.stroke();
+                // label
+                ctx.setLineDash([]);
+                ctx.font = '12px ThorFontLight';
+                ctx.fillStyle = 'rgba(255,200,50,0.7)';
+                ctx.fillText(`Consensus (${yVal})`, chart.chartArea.left + 6, yPx - 4);
+                ctx.restore();
+            }
+        }]
+    });
+
+    // ── populate right-panel vote breakdown ───────────────────────────────────
+    const breakdownEl = document.getElementById('votes-breakdown');
+    const thresholdEl = document.getElementById('threshold-note');
+    const consensusCount = Math.ceil(activeNodes * CONSENSUS);
+
+    allKeys.forEach(optKey => {
+        const count = latestOptions[optKey] || 0;
+        const pct   = activeNodes > 0 ? (count / activeNodes * 100) : 0;
+        const col   = colorMap[optKey];
+        const isWinning = count >= consensusCount;
+
+        const row = document.createElement('div');
+        row.className = 'vote-row';
+        row.innerHTML = `
+            <div class="vote-row-header">
+                <span class="vote-value-label" style="color:${col}">${isWinning ? '✓ ' : ''}Value: ${optKey}</span>
+                <span class="vote-count-label">${count} / ${activeNodes} &nbsp; <strong>${pct.toFixed(1)}%</strong></span>
+            </div>
+            <div class="vote-bar-bg">
+                <div class="vote-bar-fill" style="width:${pct}%; background:${col};"></div>
+            </div>
+        `;
+        breakdownEl.insertBefore(row, thresholdEl);
+    });
+
+    const leadCount  = latestOptions[allKeys[0]] || 0;
+    const leadPct    = activeNodes > 0 ? (leadCount / activeNodes * 100).toFixed(1) : 0;
+    const reached    = leadCount >= consensusCount;
+    thresholdEl.textContent = reached
+        ? `✅ Consensus reached! (≥ ${(CONSENSUS*100).toFixed(0)}%)`
+        : `Consensus threshold: ${consensusCount} nodes (${(CONSENSUS*100).toFixed(0)}%) — leader at ${leadPct}%`;
+    thresholdEl.style.color = reached ? '#33FF99' : '#666';
+</script>
+
+{% endblock %}
