@@ -353,7 +353,7 @@ class AlertMimirVoting(NamedTuple):
     def pretty_name(self):
         return self.holder.pretty_name(self.voting.key)
 
-    def to_dict(self) -> dict:
+    def to_dict(self, loc) -> dict:
         history = []
         if self.voting_history:
             for ts, v in sorted(self.voting_history.items()):
@@ -363,9 +363,28 @@ class AlertMimirVoting(NamedTuple):
                     'ts': ts,
                     'options': {str(opt.value): opt.signer_count for opt in v.top_options}
                 })
+
+        decoded_values = {}
+        units = self.holder.mimir_rules.get_mimir_units(self.voting.key)
+        for opt in self.all_unique_options_over_history:
+            decoded_values[opt] = loc.format_mimir_value(self.voting.key, opt, units=units)
+
         return {
             'key': self.voting.key,
             'pretty_name': self.pretty_name,
             'active_nodes': self.voting.active_nodes,
             'history': history,
+            'decoded_values': decoded_values
         }
+
+    @property
+    def all_unique_options_over_history(self) -> List[str]:
+        options = {}
+        if self.voting_history:
+            for v in self.voting_history.values():
+                if v is None:
+                    continue
+                for opt in v.top_options:
+                    if opt.value not in options:
+                        options[opt.value] = opt.value
+        return list(options.values())

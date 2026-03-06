@@ -4,6 +4,14 @@
     "key": "NEXTCHAIN",
     "pretty_name": "Next Chain",
     "active_nodes": 100,
+    "decoded_values": {
+      "16": "BNB Chain (BSC)",
+      "10": "HAVEN",
+      "9": "DASH",
+      "26": "Unknown (26)",
+      "20": "Unknown (20)",
+      "1": "Unknown (1)"
+    },
     "history": [
       {
         "ts": 1772219000.696964,
