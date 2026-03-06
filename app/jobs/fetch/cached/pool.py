@@ -122,7 +122,7 @@ class PoolCache(CachedDataSource[PriceHolder]):
 
         results = await parallel_run_in_groups(
             tasks,
-            group_size=group_size,
+            concurrency=group_size,
             delay=0.0,
             use_tqdm=use_tqdm
         )

@@ -21,7 +21,7 @@ class TradeAccountFetcher(BaseFetcher):
         traders_list = await parallel_run_in_groups([
             self.deps.thor_connector.query_trade_accounts(u.asset, height=height)
             for u in trade_units if u.units > 0
-        ], group_size=4, delay=0.5)
+        ], concurrency=4, delay=0.5)
 
         return {traders[0].asset: traders for traders in traders_list}
 

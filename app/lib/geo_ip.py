@@ -103,7 +103,7 @@ class GeoIPManager(WithLogger):
 
     async def get_ip_info_bulk(self, ip_list: List[str], cached=True):
         tasks = [self.get_ip_info(ip, cached) for ip in ip_list]
-        return await parallel_run_in_groups(tasks, group_size=self.PARALLEL_FETCH_GROUP_SIZE)
+        return await parallel_run_in_groups(tasks, concurrency=self.PARALLEL_FETCH_GROUP_SIZE)
 
     async def get_ip_info_bulk_as_dict(self, ip_list: List[str], cached=True):
         ip_set = set(ip for ip in ip_list if ip)
