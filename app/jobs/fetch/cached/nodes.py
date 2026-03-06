@@ -31,7 +31,7 @@ class NodeCache(CachedDataSource[NetworkNodes]):
                                       stack_info=True)
 
         supply_fetcher = RuneCirculatingSupplyFetcher(self.deps.session, self.deps.thor_connector,
-                                                     self.deps.midgard_connector)
+                                                      self.deps.midgard_connector)
 
         total_rune_supply = await supply_fetcher.get_thor_rune_total_supply()
 
@@ -75,3 +75,7 @@ class NodeCache(CachedDataSource[NetworkNodes]):
             node.ip_info = ip_info_dict.get(node.ip_address)
 
         return ip_info_dict
+
+    async def get_active_node_count(self):
+        nodes = await self.get()
+        return len(nodes.active_nodes)
