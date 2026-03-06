@@ -5,6 +5,7 @@ from jobs.fetch.cached.base import CachedDataSource
 from jobs.fetch.cached.last_block import LastBlockCached
 from lib.date_utils import MINUTE, now_ts
 from models.mimir import MimirTuple, MimirHolder
+from models.mimir_naming import MimirNameRules, MIMIR_DICT_FILENAME
 
 
 class MimirCached(CachedDataSource[MimirTuple]):
@@ -16,6 +17,8 @@ class MimirCached(CachedDataSource[MimirTuple]):
         self.step_sleep = 0.5
         self.thor_connector = thor_connector
         self.last_block_cache = last_block_cache
+        self.rules = MimirNameRules()
+        self.rules.load(MIMIR_DICT_FILENAME)
 
     async def _load(self, height=None) -> MimirTuple:
         thor = self.thor_connector
@@ -55,4 +58,6 @@ class MimirCached(CachedDataSource[MimirTuple]):
 
     async def get_mimir_holder(self, height=None) -> MimirHolder:
         mimir_tuple = await self.get(height=height)
-        return MimirHolder().update(mimir_tuple, [], with_voting=False)
+        holder = MimirHolder()
+        holder.mimir_rules = self.rules
+        return holder.update(mimir_tuple, [], with_voting=False)
