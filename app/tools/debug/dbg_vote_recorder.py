@@ -8,9 +8,10 @@ from jobs.fetch.mimir import ConstMimirFetcher
 from jobs.runeyield.date2block import DateToBlockMapper
 from jobs.vote_recorder import VoteRecorder
 from lib.constants import THOR_BLOCK_TIME
-from lib.date_utils import DAY
+from lib.date_utils import DAY, HOUR
 from lib.texts import sep
-from lib.utils import parallel_run_in_groups
+from lib.utils import parallel_run_in_groups, namedtuple_to_dict
+from models.mimir import AlertMimirVoting
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -40,8 +41,24 @@ async def dbg_vote_record_from_past(app: LpAppFramework, overwrite=False):
         mimir_tuple = await app.deps.mimir_cache.get(height=block, forced=True)
         await vote_recorder.on_data(sender=None, data=mimir_tuple)
 
-    tasks = [process_one_block(block) for block in range(past_block, last_block, interval)]
+    tasks = [process_one_block(block) for block in reversed(range(past_block, last_block, interval))]
     await parallel_run_in_groups(tasks, 10, use_tqdm=True)
+
+
+async def dbg_vote_retrieve(app: LpAppFramework):
+    d = app.deps
+    vote_recorder = VoteRecorder(d)
+
+    active_nodes = await app.deps.node_cache.get_active_node_count()
+    mimir = await app.deps.mimir_cache.get()
+
+    history = await vote_recorder.get_key_progress("NEXTCHAIN", 7 * 24 * HOUR, active_nodes)
+
+    alert = AlertMimirVoting(mimir, history[-1], history[-1].options[0], history)
+    r = namedtuple_to_dict(alert)
+    sep()
+    print(r)
+
 
 
 async def dbg_time_discovery_single(app: LpAppFramework, block: int):
@@ -94,7 +111,8 @@ async def main():
         # await dbg_mimir_at_block(app)
         # await dbg_time_discovery_single(app, 24703873)
         # await dbg_time_discovery_benchmark(app, 300)
-        await dbg_vote_record_from_past(app)
+        # await dbg_vote_record_from_past(app)
+        await dbg_vote_retrieve(app)
 
 
 if __name__ == '__main__':
