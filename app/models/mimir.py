@@ -2,6 +2,7 @@ import logging
 import math
 import operator
 from dataclasses import dataclass
+from functools import cached_property
 from itertools import chain, groupby
 from typing import Dict, List, Optional, NamedTuple
 
@@ -22,40 +23,26 @@ ADMIN_VALUE = 1
 @dataclass
 class MimirVoteOption:
     value: int
-    signers: list
+    signer_count: int = 0
     progress: float = 0.0
     need_votes_to_pass: int = 0
 
     @property
     def number_votes(self):
-        return len(self.signers)
+        return self.signer_count
 
 
-@dataclass
 class MimirVoting:
-    key: str
-    options: Dict[int, MimirVoteOption]
-    active_nodes: int
-    top_options: List[MimirVoteOption]
-
     SUPER_MAJORITY = 0.66666667
+
+    def __init__(self, key: str, options: Dict[int, 'MimirVoteOption'], active_nodes: int):
+        self.key = key
+        self.options = options
+        self.active_nodes = active_nodes or 1  # Avoid division by zero
 
     @property
     def all_values(self):
         return list(self.options.keys())
-
-    def finalize_calculations(self):
-        options = list(self.options.values())
-        options.sort(key=operator.attrgetter('number_votes'), reverse=True)
-
-        if not self.active_nodes:
-            self.active_nodes = 1  # Just to avoid division by zero
-
-        min_votes_to_pass = self.min_votes_to_pass
-        for opt in options:
-            opt.progress = len(opt.signers) / self.active_nodes
-            opt.need_votes_to_pass = abs(min_votes_to_pass - opt.number_votes)
-        self.top_options = options
 
     @property
     def min_votes_to_pass(self):
@@ -63,15 +50,30 @@ class MimirVoting:
 
     @property
     def total_voters(self):
-        if not self.options:
-            return 0
-        return sum(len(opt.signers) for opt in self.options.values())
+        return sum(opt.signer_count for opt in self.options.values())
+
+    @cached_property
+    def top_options(self) -> List['MimirVoteOption']:
+        options = list(self.options.values())
+        options.sort(key=operator.attrgetter('number_votes'), reverse=True)
+        min_votes_to_pass = self.min_votes_to_pass
+        for opt in options:
+            opt.progress = opt.signer_count / self.active_nodes
+            opt.need_votes_to_pass = abs(min_votes_to_pass - opt.number_votes)
+        return options
 
     @property
     def passed(self):
         if not self.top_options:
             return False
         return self.top_options[0].progress >= self.SUPER_MAJORITY
+
+    def __str__(self):
+        opts = ', '.join(f'{opt.value}({opt.signer_count})' for opt in self.top_options)
+        return f'MimirVoting({self.key!r}: [{opts}] / {self.active_nodes} nodes)'
+
+    def __repr__(self):
+        return self.__str__()
 
 
 class MimirVoteManager:
@@ -91,15 +93,12 @@ class MimirVoteManager:
             if vote.key in exclude_keys:
                 continue
             if vote.key not in self.all_voting:
-                self.all_voting[vote.key] = MimirVoting(vote.key, {}, self.active_node_count, [])
+                self.all_voting[vote.key] = MimirVoting(vote.key, {}, self.active_node_count)
             voting = self.all_voting.get(vote.key)
             if voting:
                 if vote.value not in voting.options:
-                    voting.options[vote.value] = MimirVoteOption(vote.value, [])
-                voting.options[vote.value].signers.append(vote.singer)
-
-        for voting in self.all_voting.values():
-            voting.finalize_calculations()
+                    voting.options[vote.value] = MimirVoteOption(vote.value)
+                voting.options[vote.value].signer_count += 1
 
     @property
     def all_voting_list(self) -> List[MimirVoting]:
@@ -343,8 +342,13 @@ class AlertMimirVoting(NamedTuple):
     holder: MimirHolder
     voting: MimirVoting
     triggered_option: MimirVoteOption
+    voting_history: Dict[float, MimirVoting] = None  # timestamp -> voting snapshot
 
     @property
     def current_value(self):
         e = self.holder.get_entry(self.voting.key)
         return e.real_value if e else None
+
+    @property
+    def pretty_name(self):
+        return self.holder.pretty_name(self.voting.key)
