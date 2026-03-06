@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 import random
 import time
@@ -33,9 +34,9 @@ async def dbg_vote_record_from_past(app: LpAppFramework, overwrite=False):
     app.deps.mimir_cache.step_sleep = 0.01
 
     last_block = await app.deps.last_block_cache.get_thor_block()
-    past_block = last_block - int(120 * DAY / THOR_BLOCK_TIME)
+    past_block = last_block - int(10 * DAY / THOR_BLOCK_TIME)
     # interval = (last_block - past_block) // 10
-    interval = 1000
+    interval = 100
 
     async def process_one_block(block):
         mimir_tuple = await app.deps.mimir_cache.get(height=block, forced=True)
@@ -50,14 +51,18 @@ async def dbg_vote_retrieve(app: LpAppFramework):
     vote_recorder = VoteRecorder(d)
 
     active_nodes = await app.deps.node_cache.get_active_node_count()
-    mimir = await app.deps.mimir_cache.get()
+    mimir = await app.deps.mimir_cache.get_mimir_holder()
 
     history = await vote_recorder.get_key_progress("NEXTCHAIN", 7 * 24 * HOUR, active_nodes)
 
-    alert = AlertMimirVoting(mimir, history[-1], history[-1].options[0], history)
-    r = namedtuple_to_dict(alert)
+    last_ts = max(history)
+    alert = AlertMimirVoting(mimir, history[last_ts], None, history)
+
     sep()
+    r = alert.to_dict()
     print(r)
+    sep()
+    print(json.dumps(r, indent=2))
 
 
 

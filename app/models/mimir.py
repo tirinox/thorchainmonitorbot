@@ -341,7 +341,7 @@ class AlertMimirChange(NamedTuple):
 class AlertMimirVoting(NamedTuple):
     holder: MimirHolder
     voting: MimirVoting
-    triggered_option: MimirVoteOption
+    triggered_option: MimirVoteOption | None = None
     voting_history: Dict[float, MimirVoting] = None  # timestamp -> voting snapshot
 
     @property
@@ -352,3 +352,20 @@ class AlertMimirVoting(NamedTuple):
     @property
     def pretty_name(self):
         return self.holder.pretty_name(self.voting.key)
+
+    def to_dict(self) -> dict:
+        history = []
+        if self.voting_history:
+            for ts, v in sorted(self.voting_history.items()):
+                if v is None:
+                    continue
+                history.append({
+                    'ts': ts,
+                    'options': {str(opt.value): opt.signer_count for opt in v.top_options}
+                })
+        return {
+            'key': self.voting.key,
+            'pretty_name': self.pretty_name,
+            'active_nodes': self.voting.active_nodes,
+            'history': history,
+        }

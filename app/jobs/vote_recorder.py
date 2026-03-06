@@ -81,6 +81,7 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
         return {
             ts: votings[0] if votings else None
             for ts, votings in all_progress.items()
+            if votings
         }
 
     async def get_recent_progress(self, duration_sec: float, active_nodes: int,

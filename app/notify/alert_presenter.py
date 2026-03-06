@@ -546,10 +546,24 @@ class AlertPresenter(INotified, WithLogger):
             BaseLocalization.notification_text_version_changed, data
         )
 
+
+    async def render_voting_chart(self, loc, data: AlertMimirVoting):
+        photo = await self.renderer.render('mimir_voting.jinja2', namedtuple_to_dict(data))
+        photo_name = 'mimir_voting.png'
+        return photo, photo_name
+
     async def _handle_mimir_voting(self, e: AlertMimirVoting):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_mimir_voting_progress(e)
+            photo, photo_name = await self.render_voting_chart(loc, e)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
         await self.deps.broadcaster.broadcast_to_all(
             "public:mimir:voting",
-            BaseLocalization.notification_text_mimir_voting_progress, e)
+            message_gen)
 
     async def _handle_queue(self, e: AlertQueue):
         photo_name = ''

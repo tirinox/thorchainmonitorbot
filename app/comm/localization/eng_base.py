@@ -1581,15 +1581,16 @@ class BaseLocalization(ABC):  # == English
     TEXT_MIMIR_VOTING_TO_SET_IT = 'to set it'
 
     def notification_text_mimir_voting_progress(self, e: AlertMimirVoting):
-        message = self.TEXT_MIMIR_VOTING_PROGRESS_TITLE
+        message = f"{self.TEXT_MIMIR_VOTING_PROGRESS_TITLE}{e.pretty_name}"
 
-        # get up to 3 top options, if there are more options in the voting, add "there are N more..."
-        n_options = min(3, len(e.voting.options))
-        message += self._text_mimir_voting_options(
-            e.holder, e.voting, e.voting.top_options[:n_options],
-            e.triggered_option.value if e.triggered_option else None,
-            e.current_value
-        )
+        # note! we don't need this text anymore, it is going to be displayed as a pic
+        # # get up to 3 top options, if there are more options in the voting, add "there are N more..."
+        # n_options = min(3, len(e.voting.options))
+        # message += self._text_mimir_voting_options(
+        #     e.holder, e.voting, e.voting.top_options[:n_options],
+        #     e.triggered_option.value if e.triggered_option else None,
+        #     e.current_value
+        # )
         return message
 
     @staticmethod
