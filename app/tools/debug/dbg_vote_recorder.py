@@ -5,15 +5,95 @@ import random
 import time
 from datetime import datetime
 
-from jobs.fetch.mimir import ConstMimirFetcher
+import copy
+
+from api.aionode.types import ThorMimirVote
+from jobs.fetch.mimir import ConstMimirFetcher, MimirFetcherHistory
 from jobs.runeyield.date2block import DateToBlockMapper
 from jobs.vote_recorder import VoteRecorder
 from lib.constants import THOR_BLOCK_TIME
 from lib.date_utils import DAY
+from lib.delegates import INotified, WithDelegates
 from lib.texts import sep
 from lib.utils import parallel_run_in_groups
-from models.mimir import AlertMimirVoting
+from models.mimir import MimirHolder, AlertMimirVoting, MimirTuple
+from models.mimir_naming import MIMIR_DICT_FILENAME
+from notify.public.voting_notify import VotingNotifier
 from tools.lib.lp_common import LpAppFramework
+
+
+class FakeVoteInjector(INotified, WithDelegates):
+    """
+    Debug middleware: sits between ConstMimirFetcher and the rest of the chain.
+    On every tick it randomly shuffles a few synthetic votes to make the
+    vote-progress chart interesting without needing real network traffic.
+
+    Parameters
+    ----------
+    keys          : mimir keys to inject votes on (all present ones if None)
+    max_extra     : maximum extra synthetic signers to add per option
+    flip_chance   : probability (0-1) that a random node switches its vote this tick
+    """
+
+    def __init__(self,
+                 keys: list[str] | None = None,
+                 max_extra: int = 8,
+                 flip_chance: float = 0.3):
+        super().__init__()
+        self.keys = keys        # None → inject on every key found in the tuple
+        self.max_extra = max_extra
+        self.flip_chance = flip_chance
+        self._fake_node_prefix = 'fake_signer_'
+        self._fake_node_count = 20   # pool of fake node addresses to draw from
+
+    def _fake_signer(self, i: int) -> str:
+        return f'{self._fake_node_prefix}{i:04d}'
+
+    def _inject(self, data: MimirTuple) -> MimirTuple:
+        # collect which keys to mess with
+        present_keys = list({v.key for v in data.votes})
+        target_keys = self.keys if self.keys else present_keys
+        if not target_keys:
+            return data
+
+
+        extra_votes: list[ThorMimirVote] = []
+        changes: list[str] = []
+
+        for key in target_keys:
+            key_votes = [v for v in data.votes if v.key == key]
+            options = list({v.value for v in key_votes})
+            if not options:
+                options = [1, 2]
+
+            for i in range(self._fake_node_count):
+                signer = self._fake_signer(i)
+                existing = next((v for v in data.votes if v.key == key and v.singer == signer), None)
+                if existing and random.random() > self.flip_chance:
+                    extra_votes.append(existing)
+                else:
+                    weights = [max(1, self.max_extra - j * 2) for j in range(len(options))]
+                    chosen = random.choices(options, weights=weights, k=1)[0]
+                    new_vote = ThorMimirVote(key=key, value=chosen, singer=signer)
+                    extra_votes.append(new_vote)
+                    if not existing or existing.value != chosen:
+                        prev = existing.value if existing else '—'
+                        changes.append(f"  {key}  signer={signer}  {prev} → {chosen}")
+
+        if changes:
+            print(f"[FakeVoteInjector] {len(changes)} synthetic vote change(s):")
+            for line in changes:
+                print(line)
+        else:
+            print(f"[FakeVoteInjector] no changes this tick ({self._fake_node_count} fake nodes across {len(target_keys)} key(s))")
+
+        new_data = copy.copy(data)
+        object.__setattr__(new_data, 'votes', data.votes + extra_votes)
+        return new_data
+
+    async def on_data(self, sender, data: MimirTuple):
+        patched = self._inject(data)
+        await self.pass_data_to_listeners(patched, sender=sender)
 
 
 async def dbg_vote_recorder_continuous(app: LpAppFramework):
@@ -51,7 +131,6 @@ async def dbg_print_recent_changes(app: LpAppFramework):
     vote_recorder = VoteRecorder(d)
 
     active_nodes = await app.deps.node_cache.get_active_node_count()
-    mimir = await app.deps.mimir_cache.get_mimir_holder()
 
     history = await vote_recorder.get_recent_progress(DAY * 30, active_nodes)
     if len(history) < 2:
@@ -130,6 +209,78 @@ async def dbg_time_discovery_benchmark(app: LpAppFramework, n_tests=100):
         await dbg_time_discovery_single(app, block)
 
 
+async def dbg_vote_continuous_monitor(app: LpAppFramework):
+    """
+    Continuously poll mimir, record every snapshot and print a line whenever
+    any option's vote count changes.  Wires the real pipeline:
+
+        ConstMimirFetcher
+            → MimirHolder        (updates the in-memory mimir state)
+            → VoteRecorder       (persists snapshots to Redis accumulator)
+            → VotingNotifier     (detects changes, emits AlertMimirVoting)
+            → _PrintSubscriber   (pretty-prints to console)
+    """
+    d = app.deps
+
+    # ── mimir holder (keeps current state for VotingNotifier) ────────────────
+    holder = MimirHolder()
+    holder.mimir_rules.load(MIMIR_DICT_FILENAME)
+    d.mimir_const_holder = holder          # VotingNotifier reads this from deps
+
+    # ── notifier ─────────────────────────────────────────────────────────────
+    voting_notifier = VotingNotifier(d)
+    voting_notifier.add_subscriber(d.alert_presenter)
+    voting_notifier.notification_cd_time = 0.1
+
+    # ── console subscriber ────────────────────────────────────────────────────
+    class _PrintSubscriber(INotified):
+        async def on_data(self, sender, alert: AlertMimirVoting):
+            sep()
+            key         = alert.voting.key
+            pretty      = alert.pretty_name or key
+            opt         = alert.triggered_option
+            active      = alert.voting.active_nodes
+            units       = holder.mimir_rules.get_mimir_units(key)
+            loc         = d.loc_man.default
+            decoded_val = loc.format_mimir_value(key, opt.value, units=units) if opt else '?'
+
+            print(
+                f"[MIMIR VOTE CHANGE]  {pretty}  ({key})\n"
+                f"  option  : {opt.value!r}  →  {decoded_val}\n"
+                f"  signers : {opt.signer_count} / {active}"
+                f"  ({opt.progress:.1f}%)\n"
+                f"  top options: "
+                + ", ".join(
+                    f"{o.value}={o.signer_count}"
+                    for o in alert.voting.top_options
+                )
+            )
+            sep()
+
+    voting_notifier.add_subscriber(_PrintSubscriber())
+
+    # ── fetcher pipeline ──────────────────────────────────────────────────────
+    current_height = await d.last_block_cache.get_thor_block()
+    mimir_fetcher = MimirFetcherHistory(d, current_height - 10000, step=10, sleep_period=0.1)
+
+    # Debug middleware: inject random extra votes so the chart has movement.
+    # Remove / comment out for production-like behaviour.
+    fake_injector = FakeVoteInjector(
+        keys=["NEXTCHAIN"],        # None = all keys; or e.g. ['NEXTCHAIN', 'HALTBNBCHAIN']
+        max_extra=8,      # up to 8 extra synthetic signers per option
+        flip_chance=0.25, # 25% chance each fake node switches its vote per tick
+    )
+    mimir_fetcher.add_subscriber(fake_injector)
+
+    # downstream subscribers hang off fake_injector instead of directly on fetcher
+    fake_injector.add_subscriber(holder)
+    fake_injector.add_subscriber(voting_notifier.vote_recorder)
+    fake_injector.add_subscriber(voting_notifier)
+
+    print("Starting continuous mimir vote monitor. Press Ctrl+C to stop.")
+    await mimir_fetcher.run()
+
+
 async def dbg_mimir_at_block(app: LpAppFramework):
     last_block = await app.deps.last_block_cache.get_thor_block()
     print('last_block', last_block)
@@ -143,6 +294,9 @@ async def dbg_mimir_at_block(app: LpAppFramework):
     print('block_ts', block_ts, datetime.fromtimestamp(block_ts))
 
 
+
+
+
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app:
@@ -150,8 +304,9 @@ async def main():
         # await dbg_time_discovery_single(app, 24703873)
         # await dbg_time_discovery_benchmark(app, 300)
         # await dbg_vote_record_from_past(app)
-        await dbg_vote_retrieve(app, "NEXTCHAIN")
+        # await dbg_vote_retrieve(app, "NEXTCHAIN")
         # await dbg_print_recent_changes(app)
+        await dbg_vote_continuous_monitor(app)
 
 
 if __name__ == '__main__':

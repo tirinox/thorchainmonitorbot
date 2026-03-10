@@ -1,8 +1,9 @@
 import json
 
 from jobs.fetch.mimir import ConstMimirFetcher
+from jobs.vote_recorder import VoteRecorder
 from lib.cooldown import Cooldown
-from lib.date_utils import parse_timespan_to_seconds
+from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -18,6 +19,10 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
         cfg = deps.cfg.get('constants.voting')
         self.notification_cd_time = parse_timespan_to_seconds(cfg.as_str('notification.cooldown'))
         assert self.notification_cd_time > 0
+        self.vote_recorder = VoteRecorder(deps)
+
+        self.ignore_more_thant = cfg.as_int('ignore_if_more_than_event', self.IGNORE_IF_THERE_ARE_MORE_UPDATES_THAN)
+        self.progress_tolerance = cfg.as_float('progress_tolerance_pct', 1.0)
 
     KEY_PREV_STATE = 'NodeMimir:Voting:PrevState'
 
@@ -37,7 +42,9 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
             options = {}
             for option in voting.options.values():
                 option: MimirVoteOption
-                options[option.value] = option.progress
+                if option.value not in options:
+                    options[option.value] = option.progress
+                    # print(f'Voting {voting.key} option {option.value} progress is {option.progress}')
             data[voting.key] = options
 
         await self.deps.db.redis.set(self.KEY_PREV_STATE, json.dumps(data))
@@ -45,10 +52,15 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
     async def _on_progress_changed(self, key, prev_progress, voting: MimirVoting, vote_option: MimirVoteOption):
         cd = Cooldown(self.deps.db, f'VotingNotification:{key}:{vote_option.value}', self.notification_cd_time)
         if await cd.can_do():
-            await self.pass_data_to_listeners(AlertMimirVoting(
-                holder=self.deps.mimir_const_holder,
-                voting=voting, triggered_option=vote_option,
-            ))
+            voting_history = await self.vote_recorder.get_key_progress(key, 7 * DAY, voting.active_nodes)
+            await self.pass_data_to_listeners(
+                AlertMimirVoting(
+                    holder=self.deps.mimir_const_holder,
+                    voting=voting,
+                    triggered_option=vote_option,
+                    voting_history=voting_history,
+                )
+            )
             await cd.do()
 
     async def on_data(self, sender: ConstMimirFetcher, data: MimirTuple):
@@ -67,14 +79,14 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
             for option in voting.options.values():
                 prev_progress = prev_voting.get(str(option.value))  # str(.), that's because JSON keys are strings
 
-                if prev_progress != option.progress:
+                if abs(float(prev_progress) - float(option.progress)) > self.progress_tolerance * 0.01:
                     events.append((voting.key, prev_progress, voting, option))
-                    # await self._on_progress_changed(voting.key, prev_progress, voting, option)
 
         # no flood after churn
         if len(events) > self.IGNORE_IF_THERE_ARE_MORE_UPDATES_THAN:
             self.logger.warning('To many voting updates; probably after churn. Ignore them for now.')
         else:
+            self.logger.info(f'Voting progress changed for {len(events)} options. Send notifications.')
             for ev in events:
                 await self._on_progress_changed(*ev)
 

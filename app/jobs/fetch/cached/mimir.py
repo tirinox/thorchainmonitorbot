@@ -14,7 +14,7 @@ class MimirCached(CachedDataSource[MimirTuple]):
     def __init__(self, thor_connector: ThorConnector, last_block_cache: LastBlockCached):
         # todo: make it configurable in the future
         super().__init__(cache_period=MINUTE, retry_times=self.ATTEMPTS)
-        self.step_sleep = 0.5
+        self.step_sleep = 0.2
         self.thor_connector = thor_connector
         self.last_block_cache = last_block_cache
         self.rules = MimirNameRules()
@@ -55,6 +55,9 @@ class MimirCached(CachedDataSource[MimirTuple]):
             thor_height=last_block,
             ts=(now_ts() if height is None else 0)
         )
+
+    async def get_for_height_no_cache(self, height) -> MimirTuple:
+        return await self._load(height=height)
 
     async def get_mimir_holder(self, height=None) -> MimirHolder:
         mimir_tuple = await self.get(height=height)

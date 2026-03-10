@@ -11,3 +11,15 @@ class ConstMimirFetcher(BaseFetcher):
 
     async def fetch(self) -> MimirTuple:
         return await self.deps.mimir_cache.get()
+
+
+class MimirFetcherHistory(BaseFetcher):
+    def __init__(self, deps: DepContainer, start_height, step=10, sleep_period=0.1):
+        super().__init__(deps, sleep_period=sleep_period)
+        self.current_height = start_height
+        self.step = step
+
+    async def fetch(self) -> MimirTuple:
+        data = await self.deps.mimir_cache.get_for_height_no_cache(self.current_height)
+        self.current_height += self.step
+        return data

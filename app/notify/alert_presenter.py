@@ -546,9 +546,9 @@ class AlertPresenter(INotified, WithLogger):
             BaseLocalization.notification_text_version_changed, data
         )
 
-
     async def render_voting_chart(self, loc, data: AlertMimirVoting):
-        photo = await self.renderer.render('mimir_voting.jinja2', namedtuple_to_dict(data))
+        data = data.to_dict(loc)
+        photo = await self.renderer.render('mimir_voting.jinja2', data)
         photo_name = 'mimir_voting.png'
         return photo, photo_name
 

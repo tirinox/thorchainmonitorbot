@@ -72,7 +72,11 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
                 int(value): MimirVoteOption(value=int(value), signer_count=count)
                 for value, count in counts.items()
             }
-            result.append(MimirVoting(key=key, options=options, active_nodes=active_nodes))
+            voting = MimirVoting(key=key, options=options, active_nodes=active_nodes)
+            for opt in voting.options.values():
+                opt.calculate_progress(voting.active_nodes)
+            result.append(voting)
+
         return result
 
     async def get_key_progress(self, key: str, duration_sec: float, active_nodes: int) \

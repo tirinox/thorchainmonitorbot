@@ -48,6 +48,7 @@ from jobs.scanner.transfer_detector import RuneTransferDetector
 from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_filler import VolumeFillerUpdater
 from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
+from jobs.vote_recorder import VoteRecorder
 from lib.config import Config, SubConfig
 from lib.constants import HTTP_CLIENT_ID
 from lib.date_utils import parse_timespan_to_seconds
@@ -489,8 +490,12 @@ class App(WithLogger):
             notifier_mimir_change.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('constants.voting.enabled', True):
+            vote_recorder = VoteRecorder(d)
+            d.mimir_const_fetcher.add_subscriber(vote_recorder)
+
             voting_notifier = VotingNotifier(d)
             d.mimir_const_fetcher.add_subscriber(voting_notifier)
+
             voting_notifier.add_subscriber(d.alert_presenter)
             if achievements_enabled:
                 d.mimir_const_fetcher.add_subscriber(achievements)

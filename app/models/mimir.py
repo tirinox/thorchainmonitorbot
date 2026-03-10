@@ -18,6 +18,7 @@ from .node_info import NodeInfo, NetworkNodes
 
 # for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
 ADMIN_VALUE = 1
+SUPER_MAJORITY = 0.66666667
 
 
 @dataclass
@@ -31,9 +32,13 @@ class MimirVoteOption:
     def number_votes(self):
         return self.signer_count
 
+    def calculate_progress(self, active_nodes):
+        self.progress = self.signer_count / active_nodes if active_nodes else 0
+        self.need_votes_to_pass = abs(int(math.ceil(active_nodes * SUPER_MAJORITY)) - self.number_votes)
+        return self.progress
+
 
 class MimirVoting:
-    SUPER_MAJORITY = 0.66666667
 
     def __init__(self, key: str, options: Dict[int, 'MimirVoteOption'], active_nodes: int):
         self.key = key
@@ -46,7 +51,7 @@ class MimirVoting:
 
     @property
     def min_votes_to_pass(self):
-        return int(math.ceil(self.active_nodes * self.SUPER_MAJORITY))
+        return int(math.ceil(self.active_nodes * SUPER_MAJORITY))
 
     @property
     def total_voters(self):
@@ -56,17 +61,15 @@ class MimirVoting:
     def top_options(self) -> List['MimirVoteOption']:
         options = list(self.options.values())
         options.sort(key=operator.attrgetter('number_votes'), reverse=True)
-        min_votes_to_pass = self.min_votes_to_pass
         for opt in options:
-            opt.progress = opt.signer_count / self.active_nodes
-            opt.need_votes_to_pass = abs(min_votes_to_pass - opt.number_votes)
+            opt.calculate_progress(self.active_nodes)
         return options
 
     @property
     def passed(self):
         if not self.top_options:
             return False
-        return self.top_options[0].progress >= self.SUPER_MAJORITY
+        return self.top_options[0].progress >= SUPER_MAJORITY
 
     def __str__(self):
         opts = ', '.join(f'{opt.value}({opt.signer_count})' for opt in self.top_options)
@@ -99,6 +102,13 @@ class MimirVoteManager:
                 if vote.value not in voting.options:
                     voting.options[vote.value] = MimirVoteOption(vote.value)
                 voting.options[vote.value].signer_count += 1
+
+        self.recalculate_progress()
+
+    def recalculate_progress(self):
+        for voting in self.all_voting.values():
+            for opt in voting.options.values():
+                opt.calculate_progress(voting.active_nodes)
 
     @property
     def all_voting_list(self) -> List[MimirVoting]:
