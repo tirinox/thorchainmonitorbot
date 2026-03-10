@@ -43,19 +43,18 @@ class FakeVoteInjector(INotified, WithDelegates):
         self.keys = keys        # None → inject on every key found in the tuple
         self.max_extra = max_extra
         self.flip_chance = flip_chance
-        self._fake_node_prefix = 'fake_signer_'
-        self._fake_node_count = 20   # pool of fake node addresses to draw from
 
-    def _fake_signer(self, i: int) -> str:
-        return f'{self._fake_node_prefix}{i:04d}'
+    def _inject(self, data: MimirTuple, active_signers: list[str]) -> MimirTuple:
+        active_signers = [signer for signer in active_signers if signer]
+        if not active_signers:
+            print('[FakeVoteInjector] no active node signers available, skipping injection')
+            return data
 
-    def _inject(self, data: MimirTuple) -> MimirTuple:
         # collect which keys to mess with
         present_keys = list({v.key for v in data.votes})
         target_keys = self.keys if self.keys else present_keys
         if not target_keys:
             return data
-
 
         extra_votes: list[ThorMimirVote] = []
         changes: list[str] = []
@@ -66,33 +65,55 @@ class FakeVoteInjector(INotified, WithDelegates):
             if not options:
                 options = [1, 2]
 
-            for i in range(self._fake_node_count):
-                signer = self._fake_signer(i)
-                existing = next((v for v in data.votes if v.key == key and v.singer == signer), None)
+            existing_votes_by_signer = {
+                vote.singer: vote
+                for vote in key_votes
+                if vote.singer in active_signers
+            }
+            eligible_signers = active_signers[:]
+            random.shuffle(eligible_signers)
+            eligible_signers = eligible_signers[:min(self.max_extra, len(eligible_signers))]
+
+            for signer in eligible_signers:
+                existing = existing_votes_by_signer.get(signer)
                 if existing and random.random() > self.flip_chance:
-                    extra_votes.append(existing)
-                else:
-                    weights = [max(1, self.max_extra - j * 2) for j in range(len(options))]
-                    chosen = random.choices(options, weights=weights, k=1)[0]
-                    new_vote = ThorMimirVote(key=key, value=chosen, singer=signer)
-                    extra_votes.append(new_vote)
-                    if not existing or existing.value != chosen:
-                        prev = existing.value if existing else '—'
-                        changes.append(f"  {key}  signer={signer}  {prev} → {chosen}")
+                    continue
+
+                weights = [max(1, self.max_extra - j * 2) for j in range(len(options))]
+                chosen = random.choices(options, weights=weights, k=1)[0]
+
+                if existing and existing.value == chosen:
+                    continue
+
+                new_vote = ThorMimirVote(key=key, value=chosen, singer=signer)
+                extra_votes.append(new_vote)
+
+                prev = existing.value if existing else '—'
+                changes.append(f"  {key}  signer={signer}  {prev} → {chosen}")
 
         if changes:
-            print(f"[FakeVoteInjector] {len(changes)} synthetic vote change(s):")
+            print(f"[FakeVoteInjector] {len(changes)} active-node synthetic vote change(s):")
             for line in changes:
                 print(line)
         else:
-            print(f"[FakeVoteInjector] no changes this tick ({self._fake_node_count} fake nodes across {len(target_keys)} key(s))")
+            print(f"[FakeVoteInjector] no changes this tick ({len(active_signers)} active signers, {len(target_keys)} key(s))")
+
+        if not extra_votes:
+            return data
+
+        untouched_votes = [
+            vote for vote in data.votes
+            if (vote.key, vote.singer) not in {(vote.key, vote.singer) for vote in extra_votes}
+        ]
 
         new_data = copy.copy(data)
-        object.__setattr__(new_data, 'votes', data.votes + extra_votes)
+        object.__setattr__(new_data, 'votes', untouched_votes + extra_votes)
         return new_data
 
     async def on_data(self, sender, data: MimirTuple):
-        patched = self._inject(data)
+        nodes = await sender.deps.node_cache.get()
+        active_signers = [node.node_address for node in nodes.active_nodes if node.node_address]
+        patched = self._inject(data, active_signers)
         await self.pass_data_to_listeners(patched, sender=sender)
 
 
@@ -230,7 +251,7 @@ async def dbg_vote_continuous_monitor(app: LpAppFramework):
     # ── notifier ─────────────────────────────────────────────────────────────
     voting_notifier = VotingNotifier(d)
     voting_notifier.add_subscriber(d.alert_presenter)
-    voting_notifier.notification_cd_time = 0.1
+    voting_notifier.notification_cd_time = 60
 
     # ── console subscriber ────────────────────────────────────────────────────
     class _PrintSubscriber(INotified):
@@ -261,7 +282,7 @@ async def dbg_vote_continuous_monitor(app: LpAppFramework):
 
     # ── fetcher pipeline ──────────────────────────────────────────────────────
     current_height = await d.last_block_cache.get_thor_block()
-    mimir_fetcher = MimirFetcherHistory(d, current_height - 10000, step=10, sleep_period=0.1)
+    mimir_fetcher = MimirFetcherHistory(d, current_height - 20000, step=1000, sleep_period=0.1)
 
     # Debug middleware: inject random extra votes so the chart has movement.
     # Remove / comment out for production-like behaviour.

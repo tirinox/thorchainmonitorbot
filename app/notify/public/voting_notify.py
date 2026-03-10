@@ -79,13 +79,14 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
             for option in voting.options.values():
                 prev_progress = prev_voting.get(str(option.value))  # str(.), that's because JSON keys are strings
 
-                if abs(float(prev_progress) - float(option.progress)) > self.progress_tolerance * 0.01:
-                    events.append((voting.key, prev_progress, voting, option))
+                if prev_progress is not None:
+                    if abs(float(prev_progress) - float(option.progress)) > self.progress_tolerance * 0.01:
+                        events.append((voting.key, prev_progress, voting, option))
 
         # no flood after churn
         if len(events) > self.IGNORE_IF_THERE_ARE_MORE_UPDATES_THAN:
             self.logger.warning('To many voting updates; probably after churn. Ignore them for now.')
-        else:
+        elif events:
             self.logger.info(f'Voting progress changed for {len(events)} options. Send notifications.')
             for ev in events:
                 await self._on_progress_changed(*ev)

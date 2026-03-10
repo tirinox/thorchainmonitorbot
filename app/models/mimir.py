@@ -80,8 +80,8 @@ class MimirVoting:
 
 
 class MimirVoteManager:
-    def __init__(self, all_votes: List[ThorMimirVote], active_nodes: List[NodeInfo], exclude_keys):
-        active_signers = [n.node_address for n in active_nodes if n.node_address and n.is_active]
+    def __init__(self, all_votes: List[ThorMimirVote], active_node_addresses: List[str], exclude_keys):
+        active_signers = [address for address in active_node_addresses if address]
 
         # only active signer is allowed to vote
         active_votes = [vote for vote in all_votes if vote.singer in active_signers]
@@ -89,7 +89,7 @@ class MimirVoteManager:
             raise ValueError('No active votes found!')
 
         self.votes = active_votes
-        self.active_node_count = len(active_nodes)
+        self.active_node_count = len(active_signers)
 
         self.all_voting = {}
         for vote in active_votes:
@@ -271,7 +271,12 @@ class MimirHolder(INotified, WithLogger, WithDelegates):
         self.last_thor_block = data.thor_height
 
         if with_voting:
-            self.voting_manager = MimirVoteManager(data.votes, active_nodes, self.mimir_rules.excluded_from_voting)
+            active_node_addresses = [n.node_address for n in active_nodes if n.node_address and n.is_active]
+            self.voting_manager = MimirVoteManager(
+                data.votes,
+                active_node_addresses,
+                self.mimir_rules.excluded_from_voting
+            )
 
         hard_coded_constants = {n.upper(): v for n, v in data.constants.constants.items()}
         self.hard_coded_pretty_names = {
