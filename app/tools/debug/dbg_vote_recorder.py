@@ -43,6 +43,7 @@ class FakeVoteInjector(INotified, WithDelegates):
         self.keys = keys        # None → inject on every key found in the tuple
         self.max_extra = max_extra
         self.flip_chance = flip_chance
+        self.synthetic_votes_by_key: dict[str, dict[str, int]] = {}
 
     def _inject(self, data: MimirTuple, active_signers: list[str]) -> MimirTuple:
         active_signers = [signer for signer in active_signers if signer]
@@ -56,7 +57,18 @@ class FakeVoteInjector(INotified, WithDelegates):
         if not target_keys:
             return data
 
-        extra_votes: list[ThorMimirVote] = []
+        active_signer_set = set(active_signers)
+        target_key_set = set(target_keys)
+        self.synthetic_votes_by_key = {
+            key: {
+                signer: value
+                for signer, value in synthetic_votes.items()
+                if signer in active_signer_set
+            }
+            for key, synthetic_votes in self.synthetic_votes_by_key.items()
+            if key in target_key_set
+        }
+
         changes: list[str] = []
 
         for key in target_keys:
@@ -65,31 +77,39 @@ class FakeVoteInjector(INotified, WithDelegates):
             if not options:
                 options = [1, 2]
 
-            existing_votes_by_signer = {
+            real_votes_by_signer = {
                 vote.singer: vote
                 for vote in key_votes
-                if vote.singer in active_signers
+                if vote.singer in active_signer_set
             }
-            eligible_signers = active_signers[:]
-            random.shuffle(eligible_signers)
-            eligible_signers = eligible_signers[:min(self.max_extra, len(eligible_signers))]
+            synthetic_votes = self.synthetic_votes_by_key.setdefault(key, {})
 
-            for signer in eligible_signers:
-                existing = existing_votes_by_signer.get(signer)
-                if existing and random.random() > self.flip_chance:
-                    continue
+            for signer in list(synthetic_votes.keys()):
+                if signer not in active_signer_set or signer in real_votes_by_signer:
+                    synthetic_votes.pop(signer, None)
 
-                weights = [max(1, self.max_extra - j * 2) for j in range(len(options))]
+            unused_signers = [
+                signer for signer in active_signers
+                if signer not in real_votes_by_signer and signer not in synthetic_votes
+            ]
+            random.shuffle(unused_signers)
+
+            votes_to_add = min(len(unused_signers), random.randint(0, max(1, self.max_extra // 3)))
+            weights = [max(1, self.max_extra - j * 2) for j in range(len(options))]
+
+            for signer in unused_signers[:votes_to_add]:
                 chosen = random.choices(options, weights=weights, k=1)[0]
+                synthetic_votes[signer] = chosen
+                changes.append(f"  {key}  signer={signer}  — → {chosen}")
 
-                if existing and existing.value == chosen:
+            for signer, current_value in list(synthetic_votes.items()):
+                if random.random() > self.flip_chance:
                     continue
-
-                new_vote = ThorMimirVote(key=key, value=chosen, singer=signer)
-                extra_votes.append(new_vote)
-
-                prev = existing.value if existing else '—'
-                changes.append(f"  {key}  signer={signer}  {prev} → {chosen}")
+                chosen = random.choices(options, weights=weights, k=1)[0]
+                if chosen == current_value:
+                    continue
+                synthetic_votes[signer] = chosen
+                changes.append(f"  {key}  signer={signer}  {current_value} → {chosen}")
 
         if changes:
             print(f"[FakeVoteInjector] {len(changes)} active-node synthetic vote change(s):")
@@ -98,16 +118,25 @@ class FakeVoteInjector(INotified, WithDelegates):
         else:
             print(f"[FakeVoteInjector] no changes this tick ({len(active_signers)} active signers, {len(target_keys)} key(s))")
 
-        if not extra_votes:
+        synthetic_vote_lookup = {
+            (key, signer): value
+            for key, synthetic_votes in self.synthetic_votes_by_key.items()
+            for signer, value in synthetic_votes.items()
+        }
+        if not synthetic_vote_lookup:
             return data
 
         untouched_votes = [
             vote for vote in data.votes
-            if (vote.key, vote.singer) not in {(vote.key, vote.singer) for vote in extra_votes}
+            if (vote.key, vote.singer) not in synthetic_vote_lookup
+        ]
+        synthetic_votes = [
+            ThorMimirVote(key=key, value=value, singer=signer)
+            for (key, signer), value in synthetic_vote_lookup.items()
         ]
 
         new_data = copy.copy(data)
-        object.__setattr__(new_data, 'votes', untouched_votes + extra_votes)
+        object.__setattr__(new_data, 'votes', untouched_votes + synthetic_votes)
         return new_data
 
     async def on_data(self, sender, data: MimirTuple):
