@@ -1,5 +1,6 @@
 import json
 import re
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
@@ -8,10 +9,11 @@ from api.aionode.types import thor_to_float
 from jobs.scanner.limit_detector import LimitSwapBlockUpdate, ClosedLimitSwap
 from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorTxMessage
 from lib.accumulator import DailyAccumulator
-from lib.date_utils import now_ts
+from lib.date_utils import now_ts, DAY
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
+from lib.utils import async_once_every
 from models.asset import Asset, is_rune
 from models.events import EventSwap
 from models.memo import THORMemo, ActionType
@@ -61,6 +63,8 @@ class OpenLimitSwapMeta:
 class LimitSwapStatsRecorder(WithLogger, INotified):
     ACCUM_NAME = 'LimitSwaps'
     OPEN_META_KEY = 'LimitSwap:open-meta:v1'
+    OPEN_META_RETENTION_SEC = 30 * DAY
+    OPEN_META_CLEAN_EVERY_N_UPDATES = 50
 
     def __init__(self, deps: DepContainer):
         super().__init__()
@@ -86,6 +90,130 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
     def _close_reason_key(cls, reason: str) -> str:
         slug = cls._slug(reason) or 'unknown'
         return f'closed_reason:{slug}'
+
+    @staticmethod
+    def _date_str(ts: int) -> str:
+        return datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+
+    @staticmethod
+    def _empty_metrics() -> dict:
+        return {
+            'opened_count': 0.0,
+            'opened_usd': 0.0,
+            'unique_traders': 0.0,
+            'partial_count': 0.0,
+            'partial_usd': 0.0,
+            'closed_count': 0.0,
+            'closed_duration_blocks_sum': 0.0,
+            'closed_duration_samples': 0.0,
+            'avg_duration_blocks': 0.0,
+        }
+
+    @classmethod
+    def _normalize_daily_snapshot(cls, ts: int, raw: dict | None):
+        raw = raw or {}
+        metrics = cls._empty_metrics()
+        pairs = defaultdict(lambda: {'opened_count': 0.0, 'opened_usd': 0.0})
+        close_reasons = {}
+
+        for key, value in raw.items():
+            value = float(value)
+            if key in metrics:
+                metrics[key] = value
+                continue
+
+            if key.startswith('pair:') and key.endswith(':opened_count'):
+                pair_name = key[len('pair:'):-len(':opened_count')]
+                pairs[pair_name]['opened_count'] = value
+                continue
+
+            if key.startswith('pair:') and key.endswith(':opened_usd'):
+                pair_name = key[len('pair:'):-len(':opened_usd')]
+                pairs[pair_name]['opened_usd'] = value
+                continue
+
+            if key.startswith('closed_reason:'):
+                close_reasons[key[len('closed_reason:'):]] = value
+
+        return {
+            'date': cls._date_str(ts),
+            'timestamp': int(ts),
+            **metrics,
+            'pairs': dict(pairs),
+            'close_reasons': close_reasons,
+        }
+
+    async def get_daily_data(self, days: int = 14, end_ts: int | None = None):
+        if days <= 0:
+            raise ValueError('days must be > 0')
+
+        end_ts = int(end_ts or now_ts())
+        items = []
+        for offset in range(days - 1, -1, -1):
+            ts = end_ts - offset * DAY
+            raw = await self.accumulator.get(ts)
+            items.append(self._normalize_daily_snapshot(ts, raw))
+        return items
+
+    @classmethod
+    def _trader_hll_keys_for_days(cls, days: int = 14, end_ts: int | None = None) -> list[str]:
+        if days <= 0:
+            raise ValueError('days must be > 0')
+
+        end_ts = int(end_ts or now_ts())
+        return [
+            cls._trader_hll_key(end_ts - offset * DAY)
+            for offset in range(days - 1, -1, -1)
+        ]
+
+    async def get_unique_traders(self, days: int = 14, end_ts: int | None = None) -> int:
+        await self.deps.db.get_redis()
+        keys = self._trader_hll_keys_for_days(days=days, end_ts=end_ts)
+        if not keys:
+            return 0
+        return int(await self.deps.db.redis.pfcount(*keys))
+
+    async def get_summary(self, days: int = 14, end_ts: int | None = None):
+        daily = await self.get_daily_data(days=days, end_ts=end_ts)
+
+        summary = self._empty_metrics()
+        pair_summary = defaultdict(lambda: {'opened_count': 0.0, 'opened_usd': 0.0})
+        close_reason_summary = defaultdict(float)
+
+        for day in daily:
+            for key in summary.keys():
+                if key == 'avg_duration_blocks':
+                    continue
+                summary[key] += float(day.get(key, 0.0))
+
+            for pair_name, pair_data in day.get('pairs', {}).items():
+                pair_summary[pair_name]['opened_count'] += float(pair_data.get('opened_count', 0.0))
+                pair_summary[pair_name]['opened_usd'] += float(pair_data.get('opened_usd', 0.0))
+
+            for reason, count in day.get('close_reasons', {}).items():
+                close_reason_summary[reason] += float(count)
+
+        duration_sum = summary['closed_duration_blocks_sum']
+        duration_samples = summary['closed_duration_samples']
+        summary['avg_duration_blocks'] = duration_sum / duration_samples if duration_samples else 0.0
+
+        unique_trader_values = [float(day.get('unique_traders', 0.0)) for day in daily]
+        total_unique_traders = await self.get_unique_traders(days=days, end_ts=end_ts)
+        total_unique_trader_days = sum(unique_trader_values)
+        summary['unique_traders'] = float(total_unique_traders)
+
+        return {
+            'days': days,
+            'start_date': daily[0]['date'] if daily else '',
+            'end_date': daily[-1]['date'] if daily else '',
+            **summary,
+            'avg_daily_unique_traders': sum(unique_trader_values) / len(unique_trader_values) if unique_trader_values else 0.0,
+            'max_daily_unique_traders': max(unique_trader_values) if unique_trader_values else 0.0,
+            'total_unique_traders': float(total_unique_traders),
+            'total_unique_trader_days': total_unique_trader_days,
+            'pairs': dict(pair_summary),
+            'close_reasons': dict(close_reason_summary),
+        }
 
     @staticmethod
     def _event_fingerprint(ev: ThorEvent) -> str:
@@ -121,6 +249,36 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             return
         r = await self.deps.db.get_redis()
         await r.hdel(self.OPEN_META_KEY, tx_hash)
+
+    async def clean_old_open_meta(self, older_than_ts: int | None = None) -> int:
+        """
+        Remove stale or malformed cached open-limit metadata.
+
+        Entries are considered stale when their saved timestamp is older than the
+        retention cutoff. Malformed payloads are deleted as well.
+        """
+        r = await self.deps.db.get_redis()
+        cutoff_ts = int(older_than_ts or (now_ts() - self.OPEN_META_RETENTION_SEC))
+        raw_items = await r.hgetall(self.OPEN_META_KEY)
+        to_delete = []
+
+        for tx_hash, raw in raw_items.items():
+            meta = OpenLimitSwapMeta.from_json(raw)
+            if not meta:
+                to_delete.append(tx_hash)
+                continue
+            if meta.timestamp <= 0 or meta.timestamp < cutoff_ts:
+                to_delete.append(tx_hash)
+
+        if to_delete:
+            await r.hdel(self.OPEN_META_KEY, *to_delete)
+        return len(to_delete)
+
+    @async_once_every(OPEN_META_CLEAN_EVERY_N_UPDATES)
+    async def _clean_open_meta_occasionally(self):
+        n_deleted = await self.clean_old_open_meta()
+        if n_deleted:
+            self.logger.info(f'Cleaned {n_deleted} stale limit swap open-meta entries')
 
     @staticmethod
     def _extract_close_tx_hash(item: ClosedLimitSwap) -> str:
@@ -312,3 +470,4 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         await self._process_opened(data, ph)
         await self._process_partials(data, ph)
         await self._process_closed(data)
+        await self._clean_open_meta_occasionally()

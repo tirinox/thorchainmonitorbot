@@ -1,10 +1,13 @@
 from collections import defaultdict
+from datetime import datetime
+from typing import cast
 
 import pytest
 
-from jobs.limit_recorder import LimitSwapStatsRecorder
+from jobs.limit_recorder import LimitSwapStatsRecorder, OpenLimitSwapMeta
 from jobs.scanner.limit_detector import LimitSwapBlockUpdate, ClosedLimitSwap
 from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorTxMessage
+from lib.db import DB
 from lib.depcont import DepContainer
 from models.pool_info import PoolInfo
 from models.price import PriceHolder
@@ -139,7 +142,7 @@ async def test_limit_recorder_daily_stats(monkeypatch):
     monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
 
     deps = DepContainer()
-    deps.db = FakeDB()
+    deps.db = cast(DB, cast(object, FakeDB()))
     deps.pool_cache = FakePoolCache(make_price_holder())
 
     recorder = LimitSwapStatsRecorder(deps)
@@ -223,4 +226,237 @@ async def test_limit_recorder_daily_stats(monkeypatch):
 
     meta_after_close = await recorder._load_open_meta('open-1')
     assert meta_after_close is None
+
+
+@pytest.mark.asyncio
+async def test_clean_old_open_meta_removes_stale_and_malformed(monkeypatch):
+    import jobs.limit_recorder as limit_recorder_module
+
+    monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
+
+    deps = DepContainer()
+    deps.db = cast(DB, cast(object, FakeDB()))
+    deps.pool_cache = FakePoolCache(make_price_holder())
+
+    recorder = LimitSwapStatsRecorder(deps)
+    await recorder._ensure_runtime_resources()
+
+    old_ts = 1_700_000_000
+    cutoff = old_ts + 10
+
+    await recorder._save_open_meta(OpenLimitSwapMeta(
+        tx_hash='old-open',
+        block_no=100,
+        timestamp=old_ts,
+        source_asset='BTC.BTC',
+        target_asset='ETH.ETH',
+        usd_amount=1.0,
+        trader='thor1old',
+    ))
+    await deps.db.redis.hset(recorder.OPEN_META_KEY, 'broken-open', '{not-json')
+    await recorder._save_open_meta(OpenLimitSwapMeta(
+        tx_hash='fresh-open',
+        block_no=101,
+        timestamp=cutoff,
+        source_asset='ETH.ETH',
+        target_asset='BTC.BTC',
+        usd_amount=2.0,
+        trader='thor1fresh',
+    ))
+
+    deleted = await recorder.clean_old_open_meta(older_than_ts=cutoff)
+    assert deleted == 2
+    assert await recorder._load_open_meta('old-open') is None
+    assert await recorder._load_open_meta('broken-open') is None
+
+    fresh = await recorder._load_open_meta('fresh-open')
+    assert fresh is not None
+    assert fresh.tx_hash == 'fresh-open'
+
+
+@pytest.mark.asyncio
+async def test_get_daily_data_and_summary(monkeypatch):
+    import jobs.limit_recorder as limit_recorder_module
+
+    monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
+
+    deps = DepContainer()
+    deps.db = cast(DB, cast(object, FakeDB()))
+    deps.pool_cache = FakePoolCache(make_price_holder())
+
+    recorder = LimitSwapStatsRecorder(deps)
+
+    day1 = 1_700_000_000
+    day2 = day1 + 86_400
+
+    tx1 = make_deposit_tx(
+        tx_hash='open-1',
+        memo='=<:ETH.ETH:thor1dest:2500000000/100800/0',
+        asset='BTC.BTC',
+        amount=100_000_000,
+        signer='thor1alice',
+        height=100,
+        timestamp=day1,
+    )
+    tx2 = make_deposit_tx(
+        tx_hash='open-2',
+        memo='=<:BTC.BTC:thor1dest:100000000/100800/0',
+        asset='ETH.ETH',
+        amount=100_000_000,
+        signer='thor1bob',
+        height=101,
+        timestamp=day1,
+    )
+
+    await recorder.on_data(None, LimitSwapBlockUpdate(
+        block_no=101,
+        timestamp=day1,
+        new_opened_limit_swaps=[tx1, tx2],
+        closed_limit_swaps=[],
+        partial_swaps=[],
+    ))
+
+    partial = make_event(
+        'swap',
+        memo='=<:ETH.ETH:thor1dest:2500000000/100800/0',
+        id='open-1',
+        asset='BTC.BTC',
+        amount='50000000',
+    )
+    close = make_event(
+        'limit_swap_close',
+        reason='limit swap expired',
+        id='open-1',
+    )
+
+    await recorder.on_data(None, LimitSwapBlockUpdate(
+        block_no=110,
+        timestamp=day2,
+        new_opened_limit_swaps=[],
+        closed_limit_swaps=[ClosedLimitSwap(close, 'limit swap expired')],
+        partial_swaps=[partial],
+    ))
+
+    daily = await recorder.get_daily_data(days=2, end_ts=day2)
+    assert len(daily) == 2
+
+    d1 = daily[0]
+    d2 = daily[1]
+    assert d1['date'] == datetime.fromtimestamp(day1).strftime('%Y-%m-%d')
+    assert d2['date'] == datetime.fromtimestamp(day2).strftime('%Y-%m-%d')
+
+    assert d1['opened_count'] == 2.0
+    assert d1['opened_usd'] == 32_000.0
+    assert d1['unique_traders'] == 2.0
+    assert d1['pairs']['BTC.BTC->ETH.ETH']['opened_count'] == 1.0
+    assert d1['pairs']['ETH.ETH->BTC.BTC']['opened_usd'] == 2_000.0
+    assert d1['close_reasons'] == {}
+
+    assert d2['partial_count'] == 1.0
+    assert d2['partial_usd'] == 15_000.0
+    assert d2['closed_count'] == 1.0
+    assert d2['avg_duration_blocks'] == 10.0
+    assert d2['close_reasons']['limit_swap_expired'] == 1.0
+
+    summary = await recorder.get_summary(days=2, end_ts=day2)
+    assert summary['days'] == 2
+    assert summary['start_date'] == d1['date']
+    assert summary['end_date'] == d2['date']
+    assert summary['opened_count'] == 2.0
+    assert summary['opened_usd'] == 32_000.0
+    assert summary['partial_count'] == 1.0
+    assert summary['partial_usd'] == 15_000.0
+    assert summary['closed_count'] == 1.0
+    assert summary['closed_duration_blocks_sum'] == 10.0
+    assert summary['closed_duration_samples'] == 1.0
+    assert summary['avg_duration_blocks'] == 10.0
+    assert summary['unique_traders'] == 2.0
+    assert summary['total_unique_traders'] == 2.0
+    assert summary['avg_daily_unique_traders'] == 1.0
+    assert summary['max_daily_unique_traders'] == 2.0
+    assert summary['total_unique_trader_days'] == 2.0
+    assert summary['pairs']['BTC.BTC->ETH.ETH']['opened_usd'] == 30_000.0
+    assert summary['pairs']['ETH.ETH->BTC.BTC']['opened_count'] == 1.0
+    assert summary['close_reasons']['limit_swap_expired'] == 1.0
+
+
+@pytest.mark.asyncio
+async def test_get_summary_uses_hll_for_cross_day_unique_traders(monkeypatch):
+    import jobs.limit_recorder as limit_recorder_module
+
+    monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
+
+    deps = DepContainer()
+    deps.db = cast(DB, cast(object, FakeDB()))
+    deps.pool_cache = FakePoolCache(make_price_holder())
+
+    recorder = LimitSwapStatsRecorder(deps)
+
+    day1 = 1_700_000_000
+    day2 = day1 + 86_400
+
+    tx1 = make_deposit_tx(
+        tx_hash='open-a',
+        memo='=<:ETH.ETH:thor1dest:2500000000/100800/0',
+        asset='BTC.BTC',
+        amount=100_000_000,
+        signer='thor1same',
+        height=100,
+        timestamp=day1,
+    )
+    tx2 = make_deposit_tx(
+        tx_hash='open-b',
+        memo='=<:BTC.BTC:thor1dest:100000000/100800/0',
+        asset='ETH.ETH',
+        amount=100_000_000,
+        signer='thor1same',
+        height=101,
+        timestamp=day2,
+    )
+
+    await recorder.on_data(None, LimitSwapBlockUpdate(
+        block_no=100,
+        timestamp=day1,
+        new_opened_limit_swaps=[tx1],
+        closed_limit_swaps=[],
+        partial_swaps=[],
+    ))
+    await recorder.on_data(None, LimitSwapBlockUpdate(
+        block_no=101,
+        timestamp=day2,
+        new_opened_limit_swaps=[tx2],
+        closed_limit_swaps=[],
+        partial_swaps=[],
+    ))
+
+    daily = await recorder.get_daily_data(days=2, end_ts=day2)
+    assert daily[0]['unique_traders'] == 1.0
+    assert daily[1]['unique_traders'] == 1.0
+
+    summary = await recorder.get_summary(days=2, end_ts=day2)
+    assert summary['total_unique_trader_days'] == 2.0
+    assert summary['unique_traders'] == 1.0
+    assert summary['total_unique_traders'] == 1.0
+
+
+@pytest.mark.asyncio
+async def test_get_daily_data_default_14_days(monkeypatch):
+    import jobs.limit_recorder as limit_recorder_module
+
+    monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
+
+    fixed_now = 1_700_000_000
+    monkeypatch.setattr(limit_recorder_module, 'now_ts', lambda: fixed_now)
+
+    deps = DepContainer()
+    deps.db = cast(DB, cast(object, FakeDB()))
+    deps.pool_cache = FakePoolCache(make_price_holder())
+
+    recorder = LimitSwapStatsRecorder(deps)
+    daily = await recorder.get_daily_data()
+
+    assert len(daily) == 14
+    assert daily[-1]['date'] == datetime.fromtimestamp(fixed_now).strftime('%Y-%m-%d')
+    assert all(day['opened_count'] == 0.0 for day in daily)
+
 
