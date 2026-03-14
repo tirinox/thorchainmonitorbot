@@ -42,8 +42,8 @@ class EventSwap(NamedTuple):
             from_address=attrs.get('from', ''),
             to_address=attrs.get('to', ''),
             coin=attrs.get('coin', ''),
-            amount=int(attrs.get('amount', 0)),
-            asset=attrs.get('asset', ''),
+            amount=event.amount or int(attrs.get('amount', 0)),
+            asset=event.asset or attrs.get('asset', ''),
             memo=attrs.get('memo', ''),
             original=event,
             height=event.height
