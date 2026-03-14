@@ -10,9 +10,9 @@ from tools.lib.lp_common import LpAppFramework
 async def dbg_limit_detector_continuous(app: LpAppFramework, last_block=0):
     d = app.deps
     if not last_block:
-        last_block = await d.last_block_cache.get_thor_block()
-        last_block -= 10000
-        # last_block = 24832335
+        # last_block = await d.last_block_cache.get_thor_block()
+        # last_block -= 10000
+        last_block = 24802335
     block_scanner = BlockScannerCached(d, last_block=last_block)
 
     limit_swap_detector = LimitSwapDetector(d)

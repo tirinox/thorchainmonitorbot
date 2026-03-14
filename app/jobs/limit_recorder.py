@@ -63,7 +63,7 @@ class OpenLimitSwapMeta:
 class LimitSwapStatsRecorder(WithLogger, INotified):
     ACCUM_NAME = 'LimitSwaps'
     OPEN_META_KEY = 'LimitSwap:open-meta:v1'
-    OPEN_META_RETENTION_SEC = 30 * DAY
+    OPEN_META_RETENTION_SEC = 90 * DAY
     OPEN_META_CLEAN_EVERY_N_UPDATES = 50
 
     def __init__(self, deps: DepContainer):
