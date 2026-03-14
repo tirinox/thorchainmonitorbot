@@ -3,6 +3,7 @@ from typing import NamedTuple, List, Optional
 from api.aionode.types import ThorCoinDec
 from jobs.scanner.util import thor_decode_amount_field, pubkey_to_thor_address
 from lib.utils import safe_get
+from models.memo import THORMemo
 
 
 class ThorEvent(NamedTuple):
@@ -10,6 +11,31 @@ class ThorEvent(NamedTuple):
 
     def get(self, key, default=None):
         return self.attrs.get(key, default)
+
+    @property
+    def memo(self) -> str:
+        """Convenience accessor for memo stored on the event attrs."""
+        try:
+            return self.attrs.get('memo', '') if isinstance(self.attrs, dict) else ''
+        except Exception:
+            return ''
+
+    @property
+    def parsed_memo(self) -> THORMemo | None:
+        """Return parsed THORMemo or None when parsing fails/absent."""
+        m = self.memo
+        if not m:
+            return None
+        try:
+            return THORMemo.parse_memo(m, no_raise=True)
+        except Exception:
+            return None
+
+    @property
+    def action(self):
+        """Return the ActionType detected by THORMemo (or None)."""
+        pm = self.parsed_memo
+        return pm.action if pm else None
 
     @staticmethod
     def _decode_combined_value_asset(d, v):

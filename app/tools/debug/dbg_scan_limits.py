@@ -7,12 +7,17 @@ from tools.lib.lp_common import LpAppFramework
 
 
 async def dbg_limit_detector_continuous(app: LpAppFramework, last_block=0):
-    block_scanner = BlockScannerCached(app.deps, last_block=last_block)
+    d = app.deps
+    if not last_block:
+        # last_block = await d.last_block_cache.get_thor_block()
+        # last_block -= 1000
+        last_block = 24832335
+    block_scanner = BlockScannerCached(d, last_block=last_block)
 
-    limit_swap_detector = LimitSwapDetector(app.deps)
+    limit_swap_detector = LimitSwapDetector(d)
     block_scanner.add_subscriber(limit_swap_detector)
 
-    limit_swap_recorder = LimitSwapStatsRecorder(app.deps)
+    limit_swap_recorder = LimitSwapStatsRecorder(d)
     limit_swap_detector.add_subscriber(limit_swap_recorder)
 
     await block_scanner.run()
