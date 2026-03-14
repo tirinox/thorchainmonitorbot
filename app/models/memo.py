@@ -68,6 +68,7 @@ class ActionType(Enum):
 
     # Prospective
     LIMIT_ORDER = 'limit_order'
+    LIMIT_ORDER_MODIFY = 'limit_order_modify'
 
     # RunePool
     RUNEPOOL_ADD = 'pool+'
@@ -121,6 +122,7 @@ MEMO_ACTION_TABLE = {
     "pool-": ActionType.RUNEPOOL_WITHDRAW,
     "switch": ActionType.SWITCH,
     "=<": ActionType.LIMIT_ORDER,  # new!
+    "m=<": ActionType.LIMIT_ORDER_MODIFY,
     # "migrate": TxMigrate,
     # "ragnarok": TxRagnarok,
     # "consolidate": TxConsolidate,
@@ -285,6 +287,18 @@ class THORMemo:
                 is_limit_order=(tx_type == ActionType.LIMIT_ORDER),
             )
 
+        elif tx_type == ActionType.LIMIT_ORDER_MODIFY:
+            # MODIFY format: m=<:SOURCE:TARGET:NEWAMOUNT
+            # Example: m=<:1234BTC.BTC:5678ETH.ETH:2500000000
+            source = ith(components, 1, '')
+            target = ith(components, 2, '')
+            new_amount = ith(components, 3, 0, is_number=True)
+            return cls(
+                ActionType.LIMIT_ORDER_MODIFY,
+                asset=source,
+                final_asset_address=target,
+                amount=new_amount,
+            )
 
         elif tx_type == ActionType.WITHDRAW:
             # WD:POOL:BASIS_POINTS:ASSET
@@ -676,7 +690,8 @@ class THORMemo:
         limit = ith(s_swap_components, 0, 0, is_number=True)
         s_swap_interval = ith(s_swap_components, 1, 0, is_number=True)
         # 0 = optimized, 1 = single, >1 = streaming, None = don't care
-        s_swap_quantity = ith(s_swap_components, 2, is_number=True)
+        # default to 1 (single) when quantity is omitted
+        s_swap_quantity = ith(s_swap_components, 2, 1, is_number=True)
         return limit, s_swap_interval, s_swap_quantity
 
     @classmethod
