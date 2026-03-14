@@ -6,15 +6,19 @@ from aiogram.dispatcher import FSMContext
 from redis import asyncio as aioredis
 
 from comm.telegram.custom_redis_storgate import RedisStorage3
+from lib.logs import WithLogger
 
 
-class DB:
+class DB(WithLogger):
     def __init__(self):
+        super().__init__()
         self.redis: typing.Optional[aioredis.Redis] = None
         self.storage: typing.Optional[RedisStorage3] = None
         self.host = os.environ.get('REDIS_HOST', 'localhost')
         self.port = os.environ.get('REDIS_PORT', 6379)
-        self.db_index = os.environ.get('REDIS_DB_INDEX', 0)
+        self.db_index = int(os.environ.get('REDIS_DB_INDEX', 0))
+        if self.db_index != 0:
+            self.logger.warning(f'Using non-default Redis DB index: {self.db_index}')
         self.password = os.environ.get('REDIS_PASSWORD', None)
 
     async def get_redis(self) -> aioredis.Redis:

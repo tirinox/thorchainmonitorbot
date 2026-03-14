@@ -37,8 +37,10 @@ from jobs.fetch.tx import TxFetcher
 from jobs.node_churn import NodeChurnDetector
 from jobs.pol_recorder import POLStateRecorder
 from jobs.price_recorder import PriceRecorder
+from jobs.limit_recorder import LimitSwapStatsRecorder
 from jobs.rune_burn_recorder import RuneBurnRecorder
 from jobs.scanner.native_scan import BlockScanner
+from jobs.scanner.limit_detector import LimitSwapDetector
 from jobs.scanner.runepool import RunePoolEventDecoder
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.scanner.swap_routes import SwapRouteRecorder
@@ -283,6 +285,10 @@ class App(WithLogger):
             d.block_scanner = BlockScanner(d, max_attempts=max_attempts, role='main')
             tasks.append(d.block_scanner)
             reserve_address = d.cfg.as_str('native_scanner.reserve_address')
+
+            limit_swap_detector = LimitSwapDetector(d)
+            d.block_scanner.add_subscriber(limit_swap_detector)
+            limit_swap_detector.add_subscriber(LimitSwapStatsRecorder(d))
 
             # Personal Rune transfer notifications
             transfer_decoder = RuneTransferDetector(reserve_address)

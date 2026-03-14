@@ -15,6 +15,7 @@ class ClosedLimitSwap(NamedTuple):
 
 class LimitSwapBlockUpdate(NamedTuple):
     block_no: int
+    timestamp: int
     new_opened_limit_swaps: List[NativeThorTx]
     closed_limit_swaps: List[ClosedLimitSwap]
     partial_swaps: List[ThorEvent]
@@ -157,6 +158,7 @@ class LimitSwapDetector(WithLogger, INotified, WithDelegates):
     async def on_data(self, sender, b: BlockResult):
         update = LimitSwapBlockUpdate(
             block_no=b.block_no,
+            timestamp=int(b.timestamp or 0),
             new_opened_limit_swaps=list(self.get_new_opened_limit_swap_txs(b)),
             closed_limit_swaps=[
                 ClosedLimitSwap(ev, self.get_limit_swap_close_reason(ev))
@@ -166,4 +168,7 @@ class LimitSwapDetector(WithLogger, INotified, WithDelegates):
         )
 
         if update:
+            self.logger.info(f'Block {update.block_no}: Detected {len(update.new_opened_limit_swaps)} new opened limit swaps, '
+                             f'{len(update.closed_limit_swaps)} closed limit swaps, '
+                             f'{len(update.partial_swaps)} partial swaps.')
             await self.pass_data_to_listeners(update)
