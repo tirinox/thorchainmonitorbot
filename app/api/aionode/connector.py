@@ -27,6 +27,14 @@ class ThorConnector:
         data = await self._request(self.env.path_queue)
         return ThorQueue.from_json(data)
 
+    async def query_limit_swaps_queue(self) -> ThorLimitSwapsQueue:
+        data = await self._request(self.env.path_queue_limit_swaps)
+        return ThorLimitSwapsQueue.from_json(data)
+
+    async def query_limit_swaps_summary(self) -> ThorLimitSwapsSummary:
+        data = await self._request(self.env.path_queue_limit_swaps_summary)
+        return ThorLimitSwapsSummary.from_json(data)
+
     async def query_pools(self, height=None) -> List[ThorPool]:
         if height:
             path = self.env.path_pools_height

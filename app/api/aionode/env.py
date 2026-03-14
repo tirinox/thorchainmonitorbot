@@ -15,6 +15,8 @@ class ThorEnvironment:
     retry_delay: float = 0.0
 
     path_queue: str = '/thorchain/queue'
+    path_queue_limit_swaps: str = '/thorchain/queue/limit_swaps'
+    path_queue_limit_swaps_summary: str = '/thorchain/queue/limit_swaps/summary'
     path_nodes: str = '/thorchain/nodes'
     path_pools: str = "/thorchain/pools"
     path_pools_height: str = "/thorchain/pools"

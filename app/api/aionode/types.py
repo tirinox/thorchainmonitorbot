@@ -1,4 +1,4 @@
-from typing import List, NamedTuple
+from typing import Any, Dict, List, NamedTuple
 
 THOR_BASE_MULT = 10 ** 8
 THOR_BASE_MULT_INV = 1.0 / THOR_BASE_MULT
@@ -45,6 +45,93 @@ class ThorQueue(NamedTuple):
     @property
     def total(self):
         return int(self.outbound) + int(self.swap) + int(self.internal)
+
+
+class ThorLimitSwapItem(NamedTuple):
+    swap: Dict[str, Any]
+    ratio: str = ''
+    blocks_since_created: str = ''
+    time_to_expiry_blocks: str = ''
+    created_timestamp: str = ''
+
+    @classmethod
+    def from_json(cls, j):
+        j = j or {}
+        return cls(
+            swap=j.get('swap', {}),
+            ratio=str(j.get('ratio', '')),
+            blocks_since_created=str(j.get('blocks_since_created', '')),
+            time_to_expiry_blocks=str(j.get('time_to_expiry_blocks', '')),
+            created_timestamp=str(j.get('created_timestamp', '')),
+        )
+
+
+class ThorLimitSwapsPagination(NamedTuple):
+    offset: str = '0'
+    limit: str = '0'
+    total: str = '0'
+    has_next: bool = False
+    has_prev: bool = False
+
+    @classmethod
+    def from_json(cls, j):
+        j = j or {}
+        return cls(
+            offset=str(j.get('offset', '0')),
+            limit=str(j.get('limit', '0')),
+            total=str(j.get('total', '0')),
+            has_next=bool(j.get('has_next', False)),
+            has_prev=bool(j.get('has_prev', False)),
+        )
+
+
+class ThorLimitSwapsQueue(NamedTuple):
+    limit_swaps: List[ThorLimitSwapItem]
+    pagination: ThorLimitSwapsPagination
+
+    @classmethod
+    def from_json(cls, j):
+        j = j or {}
+        items = [ThorLimitSwapItem.from_json(item) for item in j.get('limit_swaps', [])]
+        pagination = ThorLimitSwapsPagination.from_json(j.get('pagination', {}))
+        return cls(limit_swaps=items, pagination=pagination)
+
+
+class ThorLimitSwapsAssetPair(NamedTuple):
+    source_asset: str
+    target_asset: str
+    count: str
+    total_value_usd: str
+
+    @classmethod
+    def from_json(cls, j):
+        j = j or {}
+        return cls(
+            source_asset=str(j.get('source_asset', '')),
+            target_asset=str(j.get('target_asset', '')),
+            count=str(j.get('count', '0')),
+            total_value_usd=str(j.get('total_value_usd', '0')),
+        )
+
+
+class ThorLimitSwapsSummary(NamedTuple):
+    total_limit_swaps: str
+    total_value_usd: str
+    asset_pairs: List[ThorLimitSwapsAssetPair]
+    oldest_swap_blocks: str
+    average_age_blocks: str
+
+    @classmethod
+    def from_json(cls, j):
+        j = j or {}
+        pairs = [ThorLimitSwapsAssetPair.from_json(p) for p in j.get('asset_pairs', [])]
+        return cls(
+            total_limit_swaps=str(j.get('total_limit_swaps', '0')),
+            total_value_usd=str(j.get('total_value_usd', '0')),
+            asset_pairs=pairs,
+            oldest_swap_blocks=str(j.get('oldest_swap_blocks', '0')),
+            average_age_blocks=str(j.get('average_age_blocks', '0')),
+        )
 
 
 class ThorNodeAccount(NamedTuple):
