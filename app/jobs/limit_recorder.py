@@ -9,6 +9,7 @@ from api.aionode.types import thor_to_float
 from jobs.scanner.limit_detector import LimitSwapBlockUpdate, ClosedLimitSwap
 from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorTxMessage
 from lib.accumulator import DailyAccumulator
+from lib.active_users import DailyActiveUserCounter
 from lib.date_utils import now_ts, DAY
 from lib.delegates import INotified
 from lib.depcont import DepContainer
@@ -73,6 +74,7 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         self._opened_dedup = None
         self._partial_dedup = None
         self._closed_dedup = None
+        self._trader_counter: DailyActiveUserCounter | None = None
 
     @staticmethod
     def _slug(value: str) -> str:
@@ -155,23 +157,14 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             items.append(self._normalize_daily_snapshot(ts, raw))
         return items
 
-    @classmethod
-    def _trader_hll_keys_for_days(cls, days: int = 14, end_ts: int | None = None) -> list[str]:
-        if days <= 0:
-            raise ValueError('days must be > 0')
-
+    async def get_unique_traders(self, days: int = 14, end_ts: int | None = None) -> int:
+        await self._ensure_runtime_resources()
         end_ts = int(end_ts or now_ts())
-        return [
-            cls._trader_hll_key(end_ts - offset * DAY)
+        postfixes = [
+            self._trader_counter.key_postfix(end_ts - offset * DAY)
             for offset in range(days - 1, -1, -1)
         ]
-
-    async def get_unique_traders(self, days: int = 14, end_ts: int | None = None) -> int:
-        await self.deps.db.get_redis()
-        keys = self._trader_hll_keys_for_days(days=days, end_ts=end_ts)
-        if not keys:
-            return 0
-        return int(await self.deps.db.redis.pfcount(*keys))
+        return int(await self._trader_counter.get_count(postfixes))
 
     async def get_summary(self, days: int = 14, end_ts: int | None = None):
         daily = await self.get_daily_data(days=days, end_ts=end_ts)
@@ -219,11 +212,6 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
     def _event_fingerprint(ev: ThorEvent) -> str:
         return json.dumps(ev.attrs or {}, sort_keys=True, default=str)
 
-    @staticmethod
-    def _trader_hll_key(ts: int) -> str:
-        dt = datetime.fromtimestamp(ts or now_ts())
-        return f'LimitSwap:traders:{dt.strftime("%Y-%m-%d")}'
-
     async def _ensure_runtime_resources(self):
         await self.deps.db.get_redis()
         if self._opened_dedup is None:
@@ -232,6 +220,10 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             self._partial_dedup = TxDeduplicator(self.deps.db, 'LimitSwap:partial')
         if self._closed_dedup is None:
             self._closed_dedup = TxDeduplicator(self.deps.db, 'LimitSwap:closed')
+        if self._trader_counter is None:
+            self._trader_counter = DailyActiveUserCounter(self.deps.db.redis, 'LimitSwapTraders')
+        else:
+            self._trader_counter.r = self.deps.db.redis
 
     async def _save_open_meta(self, meta: OpenLimitSwapMeta):
         r = await self.deps.db.get_redis()
@@ -378,10 +370,8 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         traders = {t for t in traders if t}
         if not traders:
             return
-        r = await self.deps.db.get_redis()
-        hll_key = self._trader_hll_key(ts)
-        await r.pfadd(hll_key, *traders)
-        current_dau = await r.pfcount(hll_key)
+        await self._trader_counter.hit(users=traders, now=float(ts))
+        current_dau = await self._trader_counter.get_dau(float(ts))
         await self.accumulator.set(ts, unique_traders=current_dau)
 
     async def _process_opened(self, data: LimitSwapBlockUpdate, ph):
