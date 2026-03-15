@@ -216,14 +216,19 @@ class WasmCodeManager:
         code_id: int,
         pg_limit: int = 100,
         pg_key: Optional[str] = None,
+        count_total: bool = False,
     ) -> WasmContractInfoList:
         """
         Return a page of contract addresses instantiated from ``code_id``.
         Pass the returned ``next_key`` as ``pg_key`` to fetch subsequent pages.
+        Set ``count_total=True`` to ask the node to populate pagination.total
+        (note: many nodes return "0" when this flag is absent).
         """
         params: dict = {'pagination.limit': pg_limit}
         if pg_key is not None:
             params['pagination.key'] = pg_key
+        if count_total:
+            params['pagination.count_total'] = 'true'
         qs = urlencode(params)
         url = f'/cosmwasm/wasm/v1/code/{code_id}/contracts?{qs}'
         raw = await self._connector.query_raw(url)
