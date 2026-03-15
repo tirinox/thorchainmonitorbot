@@ -57,7 +57,8 @@ class CosmWasmRecorder(INotified, WithLogger):
     # ------------------------------------------------------------------
 
     async def on_data(self, sender, data: BlockResult):
-        now = now_ts()
+        # Use the block's own timestamp so historical replays land in the correct daily bucket.
+        now = float(data.timestamp) if data.timestamp else now_ts()
 
         for tx in data.txs:
             matched_contracts = [

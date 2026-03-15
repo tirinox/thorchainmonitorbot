@@ -5,7 +5,11 @@ from datetime import datetime
 
 from jobs.fetch.cached.wasm import WasmCache
 from jobs.fetch.wasm_stats import WasmStatsBuilder
+from jobs.scanner.block_result import BlockResult
+from jobs.scanner.scan_cache import BlockScannerCached
 from jobs.wasm_recorder import CosmWasmRecorder
+from lib.date_utils import now_ts
+from lib.delegates import INotified
 from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
@@ -123,11 +127,62 @@ async def dbg_wasm_period_stats(app: LpAppFramework, wasm_cache: WasmCache = Non
         print(f"  {day}  calls={pt.calls:>6}  users={pt.unique_users:>5}  {bar}")
 
 
+class WasmRecordProgressPrinter(INotified):
+    """Prints a one-line summary after every *print_every* blocks."""
+
+    def __init__(self, recorder: CosmWasmRecorder, print_every: int = 100):
+        self.recorder = recorder
+        self.print_every = print_every
+        self._count = 0
+
+    async def on_data(self, sender, data: BlockResult):
+        self._count += 1
+        if self._count % self.print_every == 0:
+            calls_today = await self.recorder.get_daily_calls()
+            users_today = await self.recorder.get_daily_unique_users()
+            calls_7d = await self.recorder.get_calls_range(now_ts() - 7 * 86400)
+            total_7d = sum(int(float(d.get(CosmWasmRecorder.KEY_CALLS, 0))) for d in calls_7d.values())
+            print(
+                f"  block #{data.block_no:>9}  "
+                f"calls today={calls_today:>6}  users today={users_today:>5}  "
+                f"calls 7d={total_7d:>7}  "
+                f"({datetime.now().strftime('%H:%M:%S')})"
+            )
+
+
+async def dbg_continuous_record(app: LpAppFramework, blocks_back: int = 10000):
+    """
+    Replay the last *blocks_back* blocks (using BlockScannerCached for caching)
+    and record every CosmWasm MsgExecuteContract into CosmWasmRecorder.
+    Runs indefinitely — press Ctrl+C to stop.
+    """
+    d = app.deps
+    last_block = await d.last_block_cache.get_thor_block()
+    start_block = last_block - blocks_back
+
+    sep()
+    print(f">>> Continuous WASM recorder starting at block {start_block} "
+          f"(last={last_block}, blocks_back={blocks_back})")
+    print("    Press Ctrl+C to stop.\n")
+
+    d.block_scanner = BlockScannerCached(d, last_block=start_block)
+
+    recorder = CosmWasmRecorder(d.db)
+    d.block_scanner.add_subscriber(recorder)
+
+    printer = WasmRecordProgressPrinter(recorder, print_every=100)
+    d.block_scanner.add_subscriber(printer)
+
+    await d.block_scanner.run()
+
+
 async def main():
-    app = LpAppFramework(log_level=logging.DEBUG)
+    app = LpAppFramework(log_level=logging.INFO)
     async with app:
-        wasm_cache = await dbg_wasm_cache(app)
-        await dbg_wasm_period_stats(app, wasm_cache)
+        # Choose which function to run:
+        await dbg_continuous_record(app, blocks_back=100000)
+        # wasm_cache = await dbg_wasm_cache(app)
+        # await dbg_wasm_period_stats(app, wasm_cache)
 
 
 if __name__ == '__main__':
