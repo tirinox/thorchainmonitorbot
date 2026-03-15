@@ -1,13 +1,14 @@
 import asyncio
 import time
 from contextlib import suppress
+from datetime import datetime
 from typing import Optional
 
 from jobs.fetch.base import BaseFetcher
 from jobs.scanner.block_result import BlockResult
 from jobs.scanner.scanner_state import ScannerStateDB
 from lib.constants import THOR_BLOCK_TIME
-from lib.date_utils import now_ts
+from lib.date_utils import now_ts, format_time_ago
 from lib.depcont import DepContainer
 from lib.utils import safe_get
 
@@ -212,10 +213,18 @@ class BlockScanner(BaseFetcher):
         if block_result.is_error:
             return block_result
 
+        date_suffix = ''
+        if block_result.timestamp:
+            date_str = datetime.fromtimestamp(block_result.timestamp).strftime('%Y-%m-%d %H:%M:%S')
+            age = now_ts() - block_result.timestamp
+            age_str = f', {format_time_ago(age)}' if age > 60 else ''
+            date_suffix = f' [{date_str}{age_str}]'
+
         self.logger.info(
             f'Block #{block_index} has {len(block_result.txs)} txs, '
             f'{len(block_result.end_block_events)} end block events, '
             f'{len(block_result.begin_block_events)} begin block events.'
+            f'{date_suffix}'
         )
 
         # So we match the logs with the txs
