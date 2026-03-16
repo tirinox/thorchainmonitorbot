@@ -341,7 +341,7 @@
 				<div class="card-title">Deployed codes</div>
 				<div class="card-value-row">
 					<div class="card-value">{{ total_codes }}</div>
-					<div class="delta delta-muted">+{{ new_codes }}</div>
+					{% if new_codes %}<div class="delta delta-muted">+{{ new_codes }}</div>{% endif %}
 				</div>
 			</div>
 
@@ -349,7 +349,7 @@
 				<div class="card-title">Live contracts</div>
 				<div class="card-value-row">
 					<div class="card-value">{{ total_contracts }}</div>
-					<div class="delta delta-muted">+{{ new_contracts }}</div>
+					{% if new_contracts %}<div class="delta delta-muted">+{{ new_contracts }}</div>{% endif %}
 				</div>
 			</div>
 
