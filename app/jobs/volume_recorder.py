@@ -142,7 +142,7 @@ class VolumeRecorder(INotified, WithLogger):
     async def _clean_accumulator_occasionally(self):
         n_deleted = await self.clean_accumulator()
         if n_deleted:
-            self.logger(f'Cleaned {n_deleted} old accumulator keys')
+            self.logger.info(f'Cleaned {n_deleted} old accumulator keys')
 
     async def clean_accumulator(self, dry_run=False):
         cutoff = now_ts() - self._retain_seconds

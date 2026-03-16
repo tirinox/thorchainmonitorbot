@@ -32,6 +32,7 @@ from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import RuneCEXFlow, NativeTokenTransfer
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
+from models.wasm import WasmPeriodStats
 from notify.channel import MESSAGE_SEPARATOR
 from .achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
 from .eng_base import BaseLocalization, URL_OUR_REF
@@ -139,7 +140,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
             rune_part = f"{short_money(tx.rune_amount)} {self.R} ({rune_side_usd_short}) ↔️ "
             asset_part = f"{short_money(tx.asset_amount)} {asset} ({asset_side_usd_short})"
-            pool_depth_part = f'Pool depth is {short_dollar(pool_depth_usd)} now.'
+            pool_depth_part = f'Pool depth is {short_dollar(pool_depth_usd) } now.'
             pool_percent_part = f" ({percent_of_pool:.2f}% of pool)" if percent_of_pool > 0.01 else ''
 
             content += (
@@ -892,3 +893,14 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'RUJIRA Merge stats $RUJI\n'
             f'https://rujira.network/merge/'
         )
+
+    @staticmethod
+    def notification_text_app_layer_stats(e: WasmPeriodStats):
+        calls_delta = up_down_arrow(e.prev_total_calls, e.total_calls, percent_delta=True, brackets=True)
+        users_delta = up_down_arrow(e.prev_unique_users, e.unique_users, int_delta=True, brackets=True)
+        return (
+            f'THORChain App Layer Stats ({int(e.days)}d)\n'
+            f'📲 {pretty_money(e.total_calls, integer=True)} calls {calls_delta}\n'
+            f'👥 {pretty_money(e.unique_users, integer=True)} users {users_delta}'
+        )
+

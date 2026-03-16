@@ -48,6 +48,7 @@ from models.secured import AlertSecuredAssetSummary
 from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, RuneCEXFlow
+from models.wasm import WasmPeriodStats
 from models.tx import ThorAction, ThorSubTx, EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from notify.channel import Messengers
@@ -2494,6 +2495,18 @@ class BaseLocalization(ABC):  # == English
         return 'TCY Summary'
 
     TEXT_TCY_INFO_NO_DATA = '😩 Sorry. We have not gotten any data for TCY yet.'
+
+    @staticmethod
+    def notification_text_app_layer_stats(e: WasmPeriodStats):
+        calls_delta = up_down_arrow(e.prev_total_calls, e.total_calls, percent_delta=True, brackets=True)
+        users_delta = up_down_arrow(e.prev_unique_users, e.unique_users, int_delta=True, brackets=True)
+        return (
+            f'🤖 <b>THORChain App Layer Stats</b> ({int(e.days)}d)\n'
+            f'📲 {bold(pretty_money(e.total_calls, integer=True))} calls {calls_delta}\n'
+            f'👥 {bold(pretty_money(e.unique_users, integer=True))} users {users_delta}'
+        )
+
+    TEXT_APP_LAYER_STATS_NO_DATA = '😩 Sorry. We have not gotten any app layer stats data yet.'
 
     # ------ Bond providers alerts ------
 

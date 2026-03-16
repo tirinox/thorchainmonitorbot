@@ -9,8 +9,12 @@ class BlockScannerCached(BlockScanner):
 
     def __init__(self, deps: DepContainer,
                  sleep_period=None, last_block=0,
-                 max_attempts=BlockScanner.MAX_ATTEMPTS_TO_SKIP_BLOCK):
+                 max_attempts=BlockScanner.MAX_ATTEMPTS_TO_SKIP_BLOCK,
+                 stride: int = 1,
+                 stop_block: int = 0):
         super().__init__(deps, sleep_period, last_block, max_attempts)
+        self.stride = stride
+        self.stop_block = stop_block
 
     async def _fetch_raw_block(self, block_no):
         cached_data = await self.deps.db.redis.hget(self.DB_KEY_BLOCK, str(block_no))

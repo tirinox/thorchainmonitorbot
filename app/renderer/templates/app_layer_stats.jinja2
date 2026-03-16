@@ -1,0 +1,556 @@
+{% set _width, _height = set_viewport_size(1440, 1020) %}
+{% extends "base.jinja2" %}
+
+{% block content %}
+	{% set chart_data = daily_chart or [] %}
+	{% set top_list = top_contracts or [] %}
+
+	<style>
+
+		.period-pill {
+			position: absolute;
+			top: 39px;
+			right: 34px;
+			padding: 14px 18px;
+			border-radius: 14px;
+			background: rgba(18, 34, 37, 0.85);
+			border: 1px solid rgba(55, 255, 173, 0.16);
+			color: #d9f6ee;
+			font-size: 18px;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+			text-align: right;
+			min-width: 300px;
+		}
+
+		.period-main {
+			font-size: 24px;
+			font-weight: 700;
+			color: #ffffff;
+			margin-bottom: 4px;
+		}
+
+		.period-sub {
+			font-size: 16px;
+			color: #97b8b0;
+		}
+
+		.layout {
+			position: absolute;
+			top: 140px;
+			left: 30px;
+			right: 30px;
+			bottom: 52px;
+			display: flex;
+			flex-direction: column;
+			gap: 18px;
+		}
+
+		.stats-grid {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 16px;
+		}
+
+		.card {
+			padding: 18px 20px;
+			border-radius: 18px;
+			background: linear-gradient(180deg, rgba(18, 29, 35, 0.94), rgba(10, 16, 21, 0.95));
+			border: 1px solid rgba(255, 255, 255, 0.05);
+			min-height: 142px;
+		}
+
+		.card-title {
+			color: #91a3a9;
+			font-size: 23px;
+			text-transform: uppercase;
+			letter-spacing: 0.2em;
+			margin-bottom: 14px;
+            font-weight: 400;
+		}
+
+		.card-value {
+			color: #fff;
+			font-size: 54px;
+			font-weight: 800;
+			line-height: 1;
+			text-shadow: rgba(35, 220, 200, 0.16) 0 0 14px;
+		}
+
+		.card-value-row {
+			display: flex;
+			align-items: flex-end;
+			gap: 14px;
+			margin-bottom: 10px;
+		}
+
+		.card-meta {
+			display: flex;
+			justify-content: space-between;
+			align-items: baseline;
+			gap: 10px;
+		}
+
+		.card-note {
+			color: #acb8bd;
+			font-size: 22px;
+		}
+
+		.delta {
+			font-size: 24px;
+			font-weight: 800;
+			letter-spacing: 0.03em;
+		}
+
+		.delta-muted {
+			color: #9ca7ad;
+		}
+
+		.metric-subtitle {
+			color: #7e9297;
+			font-size: 18px;
+			margin-top: 3px;
+		}
+
+		.content-row {
+			display: grid;
+			grid-template-columns: minmax(0, 1.5fr) minmax(390px, 1fr);
+			gap: 18px;
+			min-height: 0;
+			flex: 1;
+		}
+
+		.panel {
+			border-radius: 20px;
+			padding: 18px 20px 14px;
+			background: linear-gradient(180deg, rgba(15, 24, 30, 0.97), rgba(9, 14, 19, 0.98));
+			border: 1px solid rgba(255, 255, 255, 0.05);
+			min-height: 0;
+		}
+
+		.panel-title {
+			color: #fff;
+			font-size: 28px;
+			font-weight: 800;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+		}
+
+		.panel-subtitle {
+			color: #8da1a7;
+			font-size: 20px;
+			margin-top: 4px;
+			margin-bottom: 12px;
+		}
+
+		.chart-shell {
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.chart-wrap {
+			position: relative;
+			flex: 1;
+			min-height: 410px;
+			margin-top: 6px;
+		}
+
+		.chart-footer {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 10px;
+			margin-top: 14px;
+		}
+
+		.mini-stat {
+			border-radius: 14px;
+			padding: 12px 14px;
+			background: rgba(255, 255, 255, 0.03);
+		}
+
+		.mini-label {
+			font-size: 18px;
+			color: #9eb3ba;
+			text-transform: uppercase;
+			letter-spacing: 0.09em;
+			margin-bottom: 6px;
+		}
+
+		.mini-value {
+			font-size: 28px;
+			color: #fff;
+			font-weight: 800;
+		}
+
+		.legend-row {
+			display: flex;
+			gap: 18px;
+			align-items: center;
+			margin-top: 8px;
+			color: #b4c4c9;
+			font-size: 15px;
+			flex-wrap: wrap;
+		}
+
+		.legend-item {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.legend-dot {
+			width: 15px;
+			height: 15px;
+			border-radius: 50%;
+		}
+
+		.legend-line {
+			width: 24px;
+			height: 4px;
+			border-radius: 2px;
+		}
+
+		.leaderboard {
+			display: flex;
+			flex-direction: column;
+			height: 100%;
+			min-height: 0;
+		}
+
+		.leaderboard-list {
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			flex: 1;
+			min-height: 0;
+			overflow: hidden;
+		}
+
+		.contract-row {
+			display: grid;
+			grid-template-columns: 43px minmax(0, 1fr) 88px 88px;
+			gap: 12px;
+			align-items: center;
+			padding: 10px 5px 5px 0;
+			border-radius: 14px;
+			background: rgba(255, 255, 255, 0.03);
+		}
+
+		.rank {
+			width: 36px;
+			height: 36px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #05130f;
+			font-size: 18px;
+			font-weight: 800;
+			background: linear-gradient(180deg, #33FF99, #23DCC8);
+		}
+
+		.contract-name {
+			min-width: 0;
+		}
+
+		.contract-label {
+			color: #ffffff;
+			font-size: 20px;
+			font-weight: 800;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			margin-bottom: 4px;
+			letter-spacing: 0.02em;
+		}
+
+		.contract-address {
+			color: #9ab4bb;
+			font-size: 20px;
+			letter-spacing: 0.04em;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.contract-metric {
+			text-align: right;
+		}
+
+		.contract-metric-label {
+			font-size: 13px;
+			color: #9ab4bb;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			margin-bottom: 4px;
+		}
+
+		.contract-metric-value {
+			font-size: 26px;
+			font-weight: 800;
+			color: #fff;
+		}
+
+		.empty-state {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: 100%;
+			color: #7f949a;
+			font-size: 22px;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+		}
+	</style>
+
+	{% macro delta_style(value) -%}
+		{% if value is number %}
+			{% if value > 0 %}
+				color:#33FF99; text-shadow: rgba(51, 255, 153, 0.2) 0 0 12px;
+			{% elif value < 0 %}
+				color:#ff7f8a; text-shadow: rgba(255, 127, 138, 0.2) 0 0 12px;
+			{% else %}
+				color:#9ca7ad;
+			{% endif %}
+		{% else %}
+			color:#9ca7ad;
+		{% endif %}
+	{%- endmacro %}
+
+	{% macro delta_text(value) -%}
+		{% if value is number %}
+			{% if value > 0 %}+{% endif %}{{ '%.1f' | format(value) }}%
+		{% else %}
+			n/a
+		{% endif %}
+	{%- endmacro %}
+
+	{% with title="APP LAYER" %}
+		{% include "components/header.jinja2" %}
+	{% endwith %}
+
+	<div class="period-pill shadow-box">
+		<div class="period-main">Last {{ days | int }} days</div>
+		<div class="period-sub">Contracts, code growth and on-chain interactions</div>
+	</div>
+
+	<div class="layout">
+		<div class="stats-grid">
+			<div class="card shadow-box">
+				<div class="card-title">Deployed codes</div>
+				<div class="card-value-row">
+					<div class="card-value">{{ total_codes }}</div>
+					{% if new_codes %}<div class="delta delta-muted">+{{ new_codes }}</div>{% endif %}
+				</div>
+			</div>
+
+			<div class="card shadow-box">
+				<div class="card-title">Live contracts</div>
+				<div class="card-value-row">
+					<div class="card-value">{{ total_contracts }}</div>
+					{% if new_contracts %}<div class="delta delta-muted">+{{ new_contracts }}</div>{% endif %}
+				</div>
+			</div>
+
+			<div class="card shadow-box">
+				<div class="card-title">Unique users</div>
+				<div class="card-value-row">
+					<div class="card-value">{{ unique_users }}</div>
+					<div class="delta" style="{{ delta_style(users_change_pct) }}">{{ delta_text(users_change_pct) }}</div>
+				</div>
+			</div>
+
+			<div class="card shadow-box">
+				<div class="card-title">Contract calls</div>
+				<div class="card-value-row">
+					<div class="card-value">{{ total_calls }}</div>
+					<div class="delta" style="{{ delta_style(calls_change_pct) }}">{{ delta_text(calls_change_pct) }}</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="content-row">
+			<div class="panel chart-shell shadow-box">
+				<div class="panel-title">Activity chart</div>
+				<div class="panel-subtitle">Daily interactions and unique users across all contracts</div>
+
+				<div class="legend-row">
+					<div class="legend-item">
+						<div class="legend-dot" style="background:#23DCC8;"></div>
+						<div>Unique users</div>
+					</div>
+					<div class="legend-item">
+						<div class="legend-line" style="background:#33FF99;"></div>
+						<div>Contract calls</div>
+					</div>
+				</div>
+
+				<div class="chart-wrap">
+					<canvas id="appLayerChart"></canvas>
+				</div>
+
+				<div class="chart-footer">
+					<div class="mini-stat">
+						<div class="mini-label">Peak day calls</div>
+						<div class="mini-value">{{ (chart_data | map(attribute='calls') | max) if chart_data else 0 }}</div>
+					</div>
+					<div class="mini-stat">
+						<div class="mini-label">Peak day users</div>
+						<div class="mini-value">{{ (chart_data | map(attribute='unique_users') | max) if chart_data else 0 }}</div>
+					</div>
+					<div class="mini-stat">
+						<div class="mini-label">Average calls / day</div>
+						<div class="mini-value">{{ ((total_calls / (days or 1)) | round(0) | int) if total_calls else 0 }}</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="panel leaderboard shadow-box">
+				<div class="panel-title">Top contracts</div>
+				<div class="panel-subtitle">Ranked by interaction count in the current window</div>
+
+				{% if top_list %}
+					<div class="leaderboard-list">
+						{% for c in top_list[:7] %}
+							<div class="contract-row">
+								<div class="rank">{{ loop.index }}</div>
+								<div class="contract-name">
+									<div class="contract-label">{{ c.label or 'Unlabeled contract' }}</div>
+									<div class="contract-address">{% if c.address | length > 14 %}{{ c.address[:10] }}…{{ c.address[-4:] }}{% else %}{{ c.address }}{% endif %}</div>
+								</div>
+								<div class="contract-metric">
+									<div class="contract-metric-label">Calls</div>
+									<div class="contract-metric-value">{{ c.calls }}</div>
+								</div>
+								<div class="contract-metric">
+									<div class="contract-metric-label">Users</div>
+									<div class="contract-metric-value">{{ c.unique_users }}</div>
+								</div>
+							</div>
+						{% endfor %}
+					</div>
+				{% else %}
+					<div class="empty-state">No contract activity</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+
+	<script>
+		const dailyChartRaw = {{ chart_data | tojson }};
+
+		const labels = dailyChartRaw.map(item => {
+			const d = new Date(item.ts * 1000);
+			const pad = n => String(n).padStart(2, '0');
+			return `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}`;
+		});
+		const callsData = dailyChartRaw.map(item => item.calls || 0);
+		const usersData = dailyChartRaw.map(item => item.unique_users || 0);
+
+		Chart.defaults.font.family = 'ThorFontLight, sans-serif';
+		Chart.defaults.color = '#b7c8cc';
+
+		const ctx = document.getElementById('appLayerChart').getContext('2d');
+		const gradient = ctx.createLinearGradient(0, 0, 0, 420);
+		gradient.addColorStop(0, 'rgba(51, 255, 153, 0.45)');
+		gradient.addColorStop(1, 'rgba(51, 255, 153, 0.03)');
+
+		new Chart(ctx, {
+			data: {
+				labels,
+				datasets: [
+					{
+						type: 'bar',
+						label: 'Calls',
+						data: callsData,
+						backgroundColor: gradient,
+						borderColor: '#33FF99',
+						borderWidth: 1.5,
+						borderRadius: 10,
+						barPercentage: 0.68,
+						categoryPercentage: 0.74,
+						yAxisID: 'yCalls'
+					},
+					{
+						type: 'line',
+						label: 'Users',
+						data: usersData,
+						borderColor: '#23DCC8',
+						backgroundColor: '#23DCC8',
+						pointBackgroundColor: '#23DCC8',
+						pointBorderColor: '#0a1015',
+						pointRadius: 4,
+						pointHoverRadius: 5,
+						borderWidth: 3,
+						tension: 0.32,
+						fill: false,
+						yAxisID: 'yUsers'
+					}
+				]
+			},
+			options: {
+				maintainAspectRatio: false,
+				responsive: true,
+				animation: false,
+				interaction: {
+					mode: 'index',
+					intersect: false,
+				},
+				plugins: {
+					legend: {
+						display: false
+					},
+					tooltip: {
+						backgroundColor: 'rgba(10,16,21,0.95)',
+						borderColor: 'rgba(51,255,153,0.15)',
+						borderWidth: 1,
+						padding: 12,
+						titleColor: '#fff',
+						bodyColor: '#dbe6ea',
+					}
+				},
+				scales: {
+					x: {
+						grid: {
+							display: false
+						},
+						ticks: {
+							color: '#9db0b5',
+							font: {
+								size: 14
+							}
+						}
+					},
+					yCalls: {
+						position: 'left',
+						beginAtZero: true,
+						grid: {
+							color: 'rgba(255,255,255,0.07)'
+						},
+						ticks: {
+							color: '#8fe6bc',
+							font: {
+								size: 14
+							}
+						}
+					},
+					yUsers: {
+						position: 'right',
+						beginAtZero: true,
+						grid: {
+							drawOnChartArea: false
+						},
+						ticks: {
+							color: '#6ae9e0',
+							font: {
+								size: 14
+							}
+						}
+					}
+				}
+			}
+		});
+	</script>
+{% endblock %}
+

@@ -14,6 +14,7 @@ from comm.twitter.twitter_bot import TwitterBot
 from jobs.fetch.cached.last_block import LastBlockCached
 from jobs.fetch.cached.mimir import MimirCached
 from jobs.fetch.cached.swap_history import SwapHistoryFetcher
+from jobs.fetch.cached.wasm import WasmCache
 from lib.config import Config
 from lib.db import DB
 from lib.emergency import EmergencyReport
@@ -100,6 +101,7 @@ class DepContainer:
     pool_cache = None
     node_cache = None
     market_info_cache = None
+    wasm_cache: Optional[WasmCache] = None
 
     queue_holder: QueueInfo = field(default_factory=QueueInfo.error)
     mimir_const_holder: Optional[MimirHolder] = None

@@ -68,6 +68,8 @@ def test_arrow():
     assert up_down_arrow(1.0, 0.9, percent_delta=True, threshold_pct=11, same_result='nope!') == 'nope!'
     assert up_down_arrow(1.0, 0.9, percent_delta=True, threshold_pct=11, brackets=True) == ''
     assert up_down_arrow(1.0, 1.00001, percent_delta=True, threshold_pct=0, same_result='nope!') == '↑ +0.001%'
+    assert up_down_arrow(0.0, 1.0, percent_delta=True) == ''
+    assert up_down_arrow(0.0, 1.0, percent_delta=True, same_result='n/a') == 'n/a'
 
     assert up_down_arrow(1.0, 1.1926640162, percent_delta=True) == '↑ +19.3%'
     assert up_down_arrow(1.0, 1.1926640162, percent_delta=True, brackets=True) == '(↑ +19.3%)'

@@ -1,13 +1,14 @@
 import asyncio
 import time
 from contextlib import suppress
+from datetime import datetime
 from typing import Optional
 
 from jobs.fetch.base import BaseFetcher
 from jobs.scanner.block_result import BlockResult
 from jobs.scanner.scanner_state import ScannerStateDB
 from lib.constants import THOR_BLOCK_TIME
-from lib.date_utils import now_ts
+from lib.date_utils import now_ts, format_time_ago
 from lib.depcont import DepContainer
 from lib.utils import safe_get
 
@@ -29,6 +30,8 @@ class BlockScanner(BaseFetcher):
         self._block_cycle = 0
         self._last_block_ts = 0
         self.role = role
+        self.stride = 1
+        self.stop_block = 0  # 0 = run forever; set to a block number to stop there
         self.state_db = ScannerStateDB(deps.db, role)
 
         # if more time has passed since the last block, we should run aggressive scan
@@ -122,6 +125,12 @@ class BlockScanner(BaseFetcher):
         await self.state_db.on_iteration_start(aggressive)
 
         while True:
+            if self.stop_block and self._last_block >= self.stop_block:
+                self.logger.info(
+                    f'stop_block={self.stop_block} reached at #{self._last_block}. Scanner done.'
+                )
+                raise asyncio.CancelledError('stop_block reached')
+
             try:
                 asyncio.create_task(self._refresh_thor_block_for_state())
                 self.logger.info(f'Fetching block #{self._last_block}. Cycle: {self._block_cycle}.')
@@ -173,7 +182,7 @@ class BlockScanner(BaseFetcher):
                                                          message=str(e))
                 break
 
-            self._last_block += 1
+            self._last_block += self.stride
             self._this_block_attempts = 0
             self._block_cycle += 1
 
@@ -212,10 +221,18 @@ class BlockScanner(BaseFetcher):
         if block_result.is_error:
             return block_result
 
+        date_suffix = ''
+        if block_result.timestamp:
+            date_str = datetime.fromtimestamp(block_result.timestamp).strftime('%Y-%m-%d %H:%M:%S')
+            age = now_ts() - block_result.timestamp
+            age_str = f', {format_time_ago(age)}' if age > 60 else ''
+            date_suffix = f' [{date_str}{age_str}]'
+
         self.logger.info(
             f'Block #{block_index} has {len(block_result.txs)} txs, '
             f'{len(block_result.end_block_events)} end block events, '
             f'{len(block_result.begin_block_events)} begin block events.'
+            f'{date_suffix}'
         )
 
         # So we match the logs with the txs

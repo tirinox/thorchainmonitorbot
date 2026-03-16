@@ -4,15 +4,18 @@ from lib.logs import WithLogger
 
 
 class CosmwasmExecuteDecoder(WithLogger, INotified, WithDelegates):
-    def __init__(self, contract_whitelist):
+    def __init__(self, contract_whitelist=None):
         super().__init__()
         self.contract_whitelist = contract_whitelist
 
     def decode(self, data: BlockResult):
         for tx in data.txs:
             for message in tx.messages:
-                if message.is_contract and message.contract_address in self.contract_whitelist:
-                    yield tx
+                if not message.is_contract:
+                    continue
+                if self.contract_whitelist and message.contract_address not in self.contract_whitelist:
+                    continue
+                yield tx
 
     async def on_data(self, sender, data: BlockResult):
         for tx in self.decode(data):

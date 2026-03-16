@@ -88,10 +88,16 @@ async def render_full_pipeline(template_name, parameters):
 
 
 def _response_no_template_found(template_name: str):
-    return Response(status_code=404,
-                    content=f"Template '{template_name}' not found. Available templates:\n "
-                            f"{'\n'.join(available_demo_templates())}",
-                    media_type="text/text")
+    items = "".join(
+        f'<li><a href="/render/demo-html/{name}">{name}</a> '
+        f'| <a href="/render/demo/{name}">PNG</a></li>'
+        for name in sorted(available_demo_templates())
+    )
+    html = (
+        f"<h2>Template <code>{template_name}</code> not found.</h2>"
+        f"<h3>Available demos:</h3><ul>{items}</ul>"
+    )
+    return Response(status_code=404, content=html, media_type="text/html")
 
 
 @app.get("/render/demo-html/{name}")

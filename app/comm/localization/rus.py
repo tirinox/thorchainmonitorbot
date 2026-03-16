@@ -18,6 +18,7 @@ from lib.texts import bold, link, code, ital, pre, progressbar, bracketify, \
     up_down_arrow, plural, shorten_text, cut_long_text
 from lib.utils import grouper, translate, hit_every
 from models.asset import Asset
+from models.wasm import WasmPeriodStats
 from models.cap_info import ThorCapInfo
 from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
@@ -1771,8 +1772,7 @@ class RussianLocalization(BaseLocalization):
 
         str_value_delta_pct, str_value_delta_abs = '', ''
         if prev:
-            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True, brackets=True,
-                                                threshold_pct=0.5)
+            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True, brackets=True)
 
         pnl_pct = curr.pnl_percent
         text += (
@@ -1919,3 +1919,14 @@ class RussianLocalization(BaseLocalization):
             )
 
         return f'\n\n🔗Предоставление бонда:\n{message}' if message else ''
+
+    @staticmethod
+    def notification_text_app_layer_stats(e: WasmPeriodStats):
+        calls_delta = up_down_arrow(e.prev_total_calls, e.total_calls, percent_delta=True, brackets=True)
+        users_delta = up_down_arrow(e.prev_unique_users, e.unique_users, int_delta=True, brackets=True)
+        return (
+            f'🤖 <b>Статистика App Layer THORChain</b> ({int(e.days)}д)\n'
+            f'📲 {bold(pretty_money(e.total_calls, integer=True))} вызовов {calls_delta}\n'
+            f'👥 {bold(pretty_money(e.unique_users, integer=True))} пользователей {users_delta}'
+        )
+

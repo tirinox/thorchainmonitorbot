@@ -165,6 +165,9 @@ native_scanner:
 
   reserve_address: "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt"
 
+  wasm:
+    enabled: true  # record CosmWasm contract calls for app layer stats
+
   prohibited_addresses:
     - "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt"
     - "thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv"

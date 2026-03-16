@@ -126,6 +126,9 @@ def up_down_arrow(old_value, new_value, smiley=False, more_is_better=True, same_
     if ignore_on_no_old and old_value is None:
         return same_result
 
+    if percent_delta and old_value == 0:
+        return same_result
+
     delta = new_value - old_value
 
     max_val = max(new_value, old_value)

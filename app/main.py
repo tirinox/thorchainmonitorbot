@@ -39,6 +39,8 @@ from jobs.pol_recorder import POLStateRecorder
 from jobs.price_recorder import PriceRecorder
 from jobs.limit_recorder import LimitSwapStatsRecorder
 from jobs.rune_burn_recorder import RuneBurnRecorder
+from jobs.fetch.cached.wasm import WasmCache
+from jobs.wasm_recorder import CosmWasmRecorder
 from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.limit_detector import LimitSwapDetector
 from jobs.scanner.runepool import RunePoolEventDecoder
@@ -543,6 +545,11 @@ class App(WithLogger):
 
             if achievements:
                 runepool_decoder.add_subscriber(achievements)
+
+        if d.cfg.get('native_scanner.wasm.enabled', True):
+            d.wasm_cache = WasmCache(d.thor_connector, db=d.db)
+            wasm_recorder = CosmWasmRecorder(d.db)
+            d.block_scanner.add_subscriber(wasm_recorder)
 
         pol_fetcher = POLAndRunePoolFetcher(d)
         tasks.append(pol_fetcher)
