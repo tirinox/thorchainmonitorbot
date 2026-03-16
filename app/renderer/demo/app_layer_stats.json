@@ -1,0 +1,117 @@
+{
+  "template_name": "app_layer_stats.jinja2",
+  "parameters": {
+    "days": 7.0,
+    "period_start_ts": 1773038208.0,
+    "period_end_ts": 1773643008.0,
+    "total_codes": 8,
+    "total_contracts": 1099,
+    "new_codes": 1,
+    "new_contracts": 15,
+    "total_calls": 2179,
+    "unique_users": 74,
+    "prev_total_calls": 1920,
+    "prev_unique_users": 62,
+    "calls_change_pct": 13.49,
+    "users_change_pct": 19.35,
+    "top_contracts": [
+      {
+        "address": "thor1t2cnyn98xusxakgemsenn2p9n3ykd6accr2c0zg22nczh097ln7qeze20f",
+        "label": "CALC SCHEDULER v1.0.0",
+        "calls": 839,
+        "unique_users": 9
+      },
+      {
+        "address": "thor1tnd06uswj8033d0kzd5d7zre73u3uc44r2vvez26z5m4kr68vtusf2snva",
+        "label": "rujira-fin:eth-eth:eth-usdc-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "calls": 305,
+        "unique_users": 41
+      },
+      {
+        "address": "thor15xwa4y4wucma9gmcakjjg7mw36skpuhenhwlh9nkjn8vjguz6xzs8nc8np",
+        "label": "auto_v2_workflow_manager",
+        "calls": 284,
+        "unique_users": 19
+      },
+      {
+        "address": "thor1kyjky2yprmamj0gfkevyc6tunxev0054gpxjap8k9vkyutkkf5lqyr0xxv",
+        "label": "rujira-fin:tcy:eth-usdc-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "calls": 217,
+        "unique_users": 28
+      },
+      {
+        "address": "thor1dwsnlqw3lfhamc5dz3r57hlsppx3a2n2d7kppccxfdhfazjh06rs5077sz",
+        "label": "rujira-fin:btc-btc:eth-usdc-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "calls": 198,
+        "unique_users": 24
+      },
+      {
+        "address": "thor13g83nn5ef4qzqeafp0508dnvkvm0zqr3sj7eefcn5umu65gqluusrml5cr",
+        "label": "rujira-staking:x/ruji",
+        "calls": 143,
+        "unique_users": 17
+      },
+      {
+        "address": "thor1eu5u9adxzmsu0j20sqxc3jv4ly9lp09cc2t0ml3pmwj5374jg0hq44k7q0",
+        "label": "DAO Rewards Distributor (K5Dge0DE)",
+        "calls": 87,
+        "unique_users": 12
+      },
+      {
+        "address": "thor1fekmqh9crnzdaudrsqxk5gmwcch6xrfre288nqmx4hpk8sscw6hq9kkxn6",
+        "label": "rujira-fin:eth-eth:eth-usdt-0xdac17f958d2ee523a2206206994597c13d831ec7",
+        "calls": 62,
+        "unique_users": 9
+      },
+      {
+        "address": "thor1qqql3tugjuwnslfgf9a9zfqenywn2h8zy9v025vh3398xtzpaqcsx5axyl",
+        "label": "rujira-fin:rune:btc-btc",
+        "calls": 31,
+        "unique_users": 6
+      },
+      {
+        "address": "thor1ekkt8wfls055t7f7yznj07j0s4mtndkq546swutzv2de7sfcxptq27duyt",
+        "label": "rujira-ghost-credit",
+        "calls": 13,
+        "unique_users": 4
+      }
+    ],
+    "daily_chart": [
+      {
+        "ts": 1773038208.0,
+        "calls": 280,
+        "unique_users": 31
+      },
+      {
+        "ts": 1773124608.0,
+        "calls": 310,
+        "unique_users": 28
+      },
+      {
+        "ts": 1773211008.0,
+        "calls": 245,
+        "unique_users": 22
+      },
+      {
+        "ts": 1773297408.0,
+        "calls": 190,
+        "unique_users": 18
+      },
+      {
+        "ts": 1773383808.0,
+        "calls": 390,
+        "unique_users": 35
+      },
+      {
+        "ts": 1773470208.0,
+        "calls": 620,
+        "unique_users": 47
+      },
+      {
+        "ts": 1773556608.0,
+        "calls": 144,
+        "unique_users": 21
+      }
+    ]
+  }
+}
