@@ -30,6 +30,8 @@ class BlockScanner(BaseFetcher):
         self._block_cycle = 0
         self._last_block_ts = 0
         self.role = role
+        self.stride = 1
+        self.stop_block = 0  # 0 = run forever; set to a block number to stop there
         self.state_db = ScannerStateDB(deps.db, role)
 
         # if more time has passed since the last block, we should run aggressive scan
@@ -123,6 +125,12 @@ class BlockScanner(BaseFetcher):
         await self.state_db.on_iteration_start(aggressive)
 
         while True:
+            if self.stop_block and self._last_block >= self.stop_block:
+                self.logger.info(
+                    f'stop_block={self.stop_block} reached at #{self._last_block}. Scanner done.'
+                )
+                raise asyncio.CancelledError('stop_block reached')
+
             try:
                 asyncio.create_task(self._refresh_thor_block_for_state())
                 self.logger.info(f'Fetching block #{self._last_block}. Cycle: {self._block_cycle}.')
@@ -174,7 +182,7 @@ class BlockScanner(BaseFetcher):
                                                          message=str(e))
                 break
 
-            self._last_block += 1
+            self._last_block += self.stride
             self._this_block_attempts = 0
             self._block_cycle += 1
 

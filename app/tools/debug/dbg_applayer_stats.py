@@ -1,5 +1,7 @@
 import asyncio
+import json
 import logging
+import os
 import time
 from datetime import datetime
 
@@ -8,10 +10,14 @@ from jobs.fetch.wasm_stats import WasmStatsBuilder
 from jobs.scanner.block_result import BlockResult
 from jobs.scanner.scan_cache import BlockScannerCached
 from jobs.wasm_recorder import CosmWasmRecorder
-from lib.date_utils import now_ts
+from lib.date_utils import now_ts, DAY
 from lib.delegates import INotified
 from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
+
+DEMO_JSON_PATH = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), '../../renderer/demo/app_layer_stats.json')
+)
 
 
 async def dbg_wasm_cache(app: LpAppFramework) -> WasmCache:
@@ -138,9 +144,10 @@ class WasmRecordProgressPrinter(INotified):
     async def on_data(self, sender, data: BlockResult):
         self._count += 1
         if self._count % self.print_every == 0:
-            calls_today = await self.recorder.get_daily_calls()
-            users_today = await self.recorder.get_daily_unique_users()
-            calls_7d = await self.recorder.get_calls_range(now_ts() - 7 * 86400)
+            block_ts = float(data.timestamp) if data.timestamp else now_ts()
+            calls_today = await self.recorder.get_daily_calls(block_ts)
+            users_today = await self.recorder.get_daily_unique_users(block_ts)
+            calls_7d = await self.recorder.get_calls_range(block_ts - 7 * DAY, block_ts)
             total_7d = sum(int(float(d.get(CosmWasmRecorder.KEY_CALLS, 0))) for d in calls_7d.values())
             print(
                 f"  block #{data.block_no:>9}  "
@@ -154,18 +161,22 @@ async def dbg_continuous_record(app: LpAppFramework, blocks_back: int = 10000):
     """
     Replay the last *blocks_back* blocks (using BlockScannerCached for caching)
     and record every CosmWasm MsgExecuteContract into CosmWasmRecorder.
-    Runs indefinitely — press Ctrl+C to stop.
+    Stops automatically when it reaches the current tip block.
     """
     d = app.deps
-    last_block = await d.last_block_cache.get_thor_block()
-    start_block = last_block - blocks_back
+    current_block = await d.last_block_cache.get_thor_block()
+    start_block = current_block - blocks_back
 
     sep()
-    print(f">>> Continuous WASM recorder starting at block {start_block} "
-          f"(last={last_block}, blocks_back={blocks_back})")
-    print("    Press Ctrl+C to stop.\n")
+    print(f">>> Continuous WASM recorder")
+    print(f"    current block : {current_block:,}")
+    print(f"    start block   : {start_block:,}  ({blocks_back:,} blocks back)")
+    print(f"    stop block    : {current_block:,}")
+    print(f"    stride        : 20")
+    print(f"    ~blocks to scan: {blocks_back // 20:,}")
+    print()
 
-    d.block_scanner = BlockScannerCached(d, last_block=start_block)
+    d.block_scanner = BlockScannerCached(d, last_block=start_block, stride=20, stop_block=current_block)
 
     recorder = CosmWasmRecorder(d.db)
     d.block_scanner.add_subscriber(recorder)
@@ -173,16 +184,58 @@ async def dbg_continuous_record(app: LpAppFramework, blocks_back: int = 10000):
     printer = WasmRecordProgressPrinter(recorder, print_every=100)
     d.block_scanner.add_subscriber(printer)
 
-    await d.block_scanner.run()
+    try:
+        await d.block_scanner.run()
+    except asyncio.CancelledError:
+        pass
+
+    sep()
+    print(">>> Recording done.")
+
+
+async def dbg_save_demo_json(app: LpAppFramework, days: float = 7.0, top_n: int = 10):
+    """
+    Build a real WasmPeriodStats from live Redis data and write it to the renderer
+    demo file so the front-end developer can iterate on the template.
+    """
+    wasm_cache = WasmCache(app.deps.thor_connector, db=app.deps.db)
+    recorder = CosmWasmRecorder(app.deps.db)
+    builder = WasmStatsBuilder(
+        wasm_cache=wasm_cache,
+        recorder=recorder,
+        last_block_cache=app.deps.last_block_cache,
+    )
+
+    sep()
+    print(f">>> Building WasmPeriodStats ({days}d, top {top_n}) for demo JSON...")
+    t0 = time.perf_counter()
+    ps = await builder.build(days=days, top_n=top_n)
+    elapsed = time.perf_counter() - t0
+    print(f"    Built in {elapsed:.2f}s  |  {ps}")
+
+    payload = {
+        "template_name": "app_layer_stats.jinja2",
+        "parameters": ps.to_dict(),
+    }
+
+    with open(DEMO_JSON_PATH, 'w') as f:
+        json.dump(payload, f, indent=2)
+
+    sep()
+    print(f"Saved to {DEMO_JSON_PATH}")
+    print(f"  codes={ps.total_codes}  contracts={ps.total_contracts}")
+    print(f"  calls={ps.total_calls} ({ps.calls_change_pct:+.1f}%)" if ps.calls_change_pct is not None
+          else f"  calls={ps.total_calls} (no prev data)")
+    print(f"  users={ps.unique_users} ({ps.users_change_pct:+.1f}%)" if ps.users_change_pct is not None
+          else f"  users={ps.unique_users} (no prev data)")
+    print(f"  top contracts: {len(ps.top_contracts)}, chart points: {len(ps.daily_chart)}")
 
 
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app:
-        # Choose which function to run:
-        await dbg_continuous_record(app, blocks_back=100000)
-        # wasm_cache = await dbg_wasm_cache(app)
-        # await dbg_wasm_period_stats(app, wasm_cache)
+        # await dbg_save_demo_json(app)
+        await dbg_continuous_record(app, blocks_back=20_000)
 
 
 if __name__ == '__main__':
