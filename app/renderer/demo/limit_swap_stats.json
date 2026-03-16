@@ -1,0 +1,44 @@
+{
+  "template_name": "limit_swap_stats.jinja2",
+  "parameters": {
+    "period_days": 7,
+    "start_date": "2026-03-10",
+    "end_date": "2026-03-16",
+    "total": {
+      "opened_count": 1247,
+      "opened_usd": 1816710.0,
+      "unique_traders": 312
+    },
+    "previous": {
+      "opened_count": 1031,
+      "opened_usd": 1503840.0,
+      "unique_traders": 258
+    },
+    "delta": {
+      "opened_count":   { "absolute": 216.0,   "pct": 20.95 },
+      "opened_usd":     { "absolute": 312870.0, "pct": 20.81 },
+      "unique_traders": { "absolute": 54.0,     "pct": 20.93 }
+    },
+    "daily": [
+      { "date": "2026-03-10", "opened_count": 142, "opened_usd": 187420.00, "unique_traders":  67 },
+      { "date": "2026-03-11", "opened_count": 168, "opened_usd": 221830.00, "unique_traders":  78 },
+      { "date": "2026-03-12", "opened_count": 195, "opened_usd": 298540.00, "unique_traders":  91 },
+      { "date": "2026-03-13", "opened_count": 223, "opened_usd": 341200.00, "unique_traders": 104 },
+      { "date": "2026-03-14", "opened_count": 178, "opened_usd": 256780.00, "unique_traders":  83 },
+      { "date": "2026-03-15", "opened_count": 156, "opened_usd": 198340.00, "unique_traders":  72 },
+      { "date": "2026-03-16", "opened_count": 185, "opened_usd": 312600.00, "unique_traders":  96 }
+    ],
+    "top_pairs": [
+      { "pair": "BTC.BTC->THOR.RUNE",                                                        "opened_count": 358, "opened_usd": 589420.50, "unique_traders": 132 },
+      { "pair": "ETH.ETH->THOR.RUNE",                                                        "opened_count": 276, "opened_usd": 389240.25, "unique_traders": 109 },
+      { "pair": "BTC.BTC->ETH.ETH",                                                          "opened_count": 168, "opened_usd": 274180.00, "unique_traders":  82 },
+      { "pair": "AVAX.AVAX->THOR.RUNE",                                                      "opened_count": 124, "opened_usd":  81340.75, "unique_traders":  57 },
+      { "pair": "DOGE.DOGE->THOR.RUNE",                                                      "opened_count":  89, "opened_usd":  28460.50, "unique_traders":  43 },
+      { "pair": "ETH.ETH->ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",             "opened_count":  78, "opened_usd": 143920.00, "unique_traders":  48 },
+      { "pair": "BNB.BNB->THOR.RUNE",                                                        "opened_count":  57, "opened_usd":  38740.25, "unique_traders":  35 },
+      { "pair": "BCH.BCH->BTC.BTC",                                                          "opened_count":  38, "opened_usd":  62180.50, "unique_traders":  24 },
+      { "pair": "AVAX.AVAX->BTC.BTC",                                                        "opened_count":  25, "opened_usd":  41230.00, "unique_traders":  17 },
+      { "pair": "LTC.LTC->THOR.RUNE",                                                        "opened_count":  15, "opened_usd":  11680.75, "unique_traders":  11 }
+    ]
+  }
+}
