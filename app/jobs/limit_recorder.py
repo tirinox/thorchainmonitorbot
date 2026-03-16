@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 from collections import defaultdict
@@ -75,18 +76,34 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         self._partial_dedup = None
         self._closed_dedup = None
         self._trader_counter: DailyActiveUserCounter | None = None
+        self._pair_trader_counters: dict[str, DailyActiveUserCounter] = {}
 
     @staticmethod
     def _slug(value: str) -> str:
         return re.sub(r'[^a-z0-9]+', '_', value.lower()).strip('_')
 
+    @staticmethod
+    def _canonical_pair(asset_a: str, asset_b: str) -> tuple[str, str]:
+        """Return the two asset strings sorted alphabetically so pair order is canonical."""
+        a, b = sorted([asset_a, asset_b])
+        return a, b
+
+    @classmethod
+    def _pair_canonical_name(cls, asset_a: str, asset_b: str) -> str:
+        a, b = cls._canonical_pair(asset_a, asset_b)
+        return f'{a}->{b}'
+
     @classmethod
     def _pair_count_key(cls, source_asset: str, target_asset: str) -> str:
-        return f'pair:{source_asset}->{target_asset}:opened_count'
+        return f'pair:{cls._pair_canonical_name(source_asset, target_asset)}:opened_count'
 
     @classmethod
     def _pair_usd_key(cls, source_asset: str, target_asset: str) -> str:
-        return f'pair:{source_asset}->{target_asset}:opened_usd'
+        return f'pair:{cls._pair_canonical_name(source_asset, target_asset)}:opened_usd'
+
+    @classmethod
+    def _pair_traders_key(cls, source_asset: str, target_asset: str) -> str:
+        return f'pair:{cls._pair_canonical_name(source_asset, target_asset)}:unique_traders'
 
     @classmethod
     def _close_reason_key(cls, reason: str) -> str:
@@ -115,7 +132,7 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
     def _normalize_daily_snapshot(cls, ts: int, raw: dict | None):
         raw = raw or {}
         metrics = cls._empty_metrics()
-        pairs = defaultdict(lambda: {'opened_count': 0.0, 'opened_usd': 0.0})
+        pairs = defaultdict(lambda: {'opened_count': 0.0, 'opened_usd': 0.0, 'unique_traders': 0.0})
         close_reasons = {}
 
         for key, value in raw.items():
@@ -132,6 +149,11 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             if key.startswith('pair:') and key.endswith(':opened_usd'):
                 pair_name = key[len('pair:'):-len(':opened_usd')]
                 pairs[pair_name]['opened_usd'] = value
+                continue
+
+            if key.startswith('pair:') and key.endswith(':unique_traders'):
+                pair_name = key[len('pair:'):-len(':unique_traders')]
+                pairs[pair_name]['unique_traders'] = value
                 continue
 
             if key.startswith('closed_reason:'):
@@ -166,11 +188,29 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         ]
         return int(await self._trader_counter.get_count(postfixes))
 
+    async def get_pair_unique_traders(
+        self,
+        pair_canonical_name: str,
+        days: int = 14,
+        end_ts: int | None = None,
+    ) -> int:
+        """Return the true (HyperLogLog-based) unique trader count for a canonical pair over *days*."""
+        await self._ensure_runtime_resources()
+        end_ts = int(end_ts or now_ts())
+        counter = self._get_pair_trader_counter(pair_canonical_name)
+        postfixes = [
+            counter.key_postfix(end_ts - offset * DAY)
+            for offset in range(days - 1, -1, -1)
+        ]
+        return int(await counter.get_count(postfixes))
+
     async def get_summary(self, days: int = 14, end_ts: int | None = None):
+        await self._ensure_runtime_resources()
+        end_ts = int(end_ts or now_ts())
         daily = await self.get_daily_data(days=days, end_ts=end_ts)
 
         summary = self._empty_metrics()
-        pair_summary = defaultdict(lambda: {'opened_count': 0.0, 'opened_usd': 0.0})
+        pair_summary = defaultdict(lambda: {'opened_count': 0.0, 'opened_usd': 0.0, 'unique_traders': 0.0})
         close_reason_summary = defaultdict(float)
 
         for day in daily:
@@ -195,6 +235,15 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         total_unique_trader_days = sum(unique_trader_values)
         summary['unique_traders'] = float(total_unique_traders)
 
+        # Compute true multi-day unique traders per pair via HyperLogLog pfcount.
+        all_pair_names = set()
+        for day in daily:
+            all_pair_names.update(day.get('pairs', {}).keys())
+        for pair_name in all_pair_names:
+            pair_summary[pair_name]['unique_traders'] = await self.get_pair_unique_traders(
+                pair_name, days=days, end_ts=end_ts
+            )
+
         return {
             'days': days,
             'start_date': daily[0]['date'] if daily else '',
@@ -206,6 +255,122 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             'total_unique_trader_days': total_unique_trader_days,
             'pairs': dict(pair_summary),
             'close_reasons': dict(close_reason_summary),
+        }
+
+    async def get_infographic_data(
+        self,
+        days: int = 7,
+        end_ts: int | None = None,
+        top_pairs_count: int = 10,
+    ) -> dict:
+        """
+        Collect limit-swap statistics into a JSON-serializable dict for infographic rendering.
+
+        The returned object contains:
+        - ``period_days`` / ``start_date`` / ``end_date`` – window metadata
+        - ``total``    – aggregated metrics for the current *days* window
+        - ``previous`` – same metrics for the preceding equal-length window
+        - ``delta``    – per-metric absolute change and percentage change vs previous
+        - ``daily``    – per-day chart data (ordered oldest → newest)
+        - ``top_pairs``– top-*N* pairs by swap count with their own metrics
+        """
+        await self._ensure_runtime_resources()
+        end_ts = int(end_ts or now_ts())
+        prev_end_ts = end_ts - days * DAY
+
+        # ── daily snapshots ───────────────────────────────────────────────
+        current_daily, prev_daily = await asyncio.gather(
+            self.get_daily_data(days=days, end_ts=end_ts),
+            self.get_daily_data(days=days, end_ts=prev_end_ts),
+        )
+
+        # ── aggregate helper ──────────────────────────────────────────────
+        def _aggregate(daily_data):
+            totals = {'opened_count': 0.0, 'opened_usd': 0.0}
+            pair_totals = defaultdict(lambda: {'opened_count': 0.0, 'opened_usd': 0.0})
+            for day in daily_data:
+                totals['opened_count'] += day.get('opened_count', 0.0)
+                totals['opened_usd'] += day.get('opened_usd', 0.0)
+                for pair_name, pd in day.get('pairs', {}).items():
+                    pair_totals[pair_name]['opened_count'] += pd.get('opened_count', 0.0)
+                    pair_totals[pair_name]['opened_usd'] += pd.get('opened_usd', 0.0)
+            return totals, dict(pair_totals)
+
+        curr_totals, curr_pair_totals = _aggregate(current_daily)
+        prev_totals, _ = _aggregate(prev_daily)
+
+        # ── HyperLogLog unique traders (true cross-day uniqueness) ────────
+        curr_unique, prev_unique = await asyncio.gather(
+            self.get_unique_traders(days=days, end_ts=end_ts),
+            self.get_unique_traders(days=days, end_ts=prev_end_ts),
+        )
+        curr_totals['unique_traders'] = float(curr_unique)
+        prev_totals['unique_traders'] = float(prev_unique)
+
+        # ── delta calculation ─────────────────────────────────────────────
+        def _pct(c: float, p: float) -> float:
+            return round((c - p) / p * 100.0, 2) if p else 0.0
+
+        delta = {
+            k: {
+                'absolute': round(curr_totals[k] - prev_totals.get(k, 0.0), 4),
+                'pct': _pct(curr_totals[k], prev_totals.get(k, 0.0)),
+            }
+            for k in ('opened_count', 'opened_usd', 'unique_traders')
+        }
+
+        # ── per-day chart data ────────────────────────────────────────────
+        # unique_traders here is the *daily* snapshot (DAU), not cumulative.
+        daily_chart = [
+            {
+                'date': d['date'],
+                'opened_count': int(d.get('opened_count', 0.0)),
+                'opened_usd': round(float(d.get('opened_usd', 0.0)), 2),
+                'unique_traders': int(d.get('unique_traders', 0.0)),
+            }
+            for d in current_daily
+        ]
+
+        # ── top pairs ─────────────────────────────────────────────────────
+        # Fetch HyperLogLog unique traders per pair concurrently.
+        pair_names = list(curr_pair_totals.keys())
+        pair_unique_list = await asyncio.gather(
+            *[self.get_pair_unique_traders(p, days=days, end_ts=end_ts) for p in pair_names]
+        ) if pair_names else []
+        pair_unique = dict(zip(pair_names, pair_unique_list))
+
+        top_pairs = sorted(
+            [
+                {
+                    'pair': pair_name,
+                    'opened_count': int(curr_pair_totals[pair_name]['opened_count']),
+                    'opened_usd': round(curr_pair_totals[pair_name]['opened_usd'], 2),
+                    'unique_traders': pair_unique.get(pair_name, 0),
+                }
+                for pair_name in curr_pair_totals
+            ],
+            key=lambda x: x['opened_count'],
+            reverse=True,
+        )[:top_pairs_count]
+
+        # ── assemble result ───────────────────────────────────────────────
+        return {
+            'period_days': days,
+            'start_date': current_daily[0]['date'] if current_daily else '',
+            'end_date': current_daily[-1]['date'] if current_daily else '',
+            'total': {
+                'opened_count': int(curr_totals['opened_count']),
+                'opened_usd': round(curr_totals['opened_usd'], 2),
+                'unique_traders': int(curr_totals['unique_traders']),
+            },
+            'previous': {
+                'opened_count': int(prev_totals['opened_count']),
+                'opened_usd': round(prev_totals['opened_usd'], 2),
+                'unique_traders': int(prev_totals['unique_traders']),
+            },
+            'delta': delta,
+            'daily': daily_chart,
+            'top_pairs': top_pairs,
         }
 
     @staticmethod
@@ -374,10 +539,23 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         current_dau = await self._trader_counter.get_dau(float(ts))
         await self.accumulator.set(ts, unique_traders=current_dau)
 
+    def _get_pair_trader_counter(self, canonical_pair_name: str) -> DailyActiveUserCounter:
+        """Return (or lazily create) a per-pair DailyActiveUserCounter using HyperLogLog."""
+        slug = self._slug(canonical_pair_name)
+        if slug not in self._pair_trader_counters:
+            self._pair_trader_counters[slug] = DailyActiveUserCounter(
+                self.deps.db.redis, f'LimitSwapPairTraders:{slug}'
+            )
+        else:
+            # Keep the Redis connection reference current.
+            self._pair_trader_counters[slug].r = self.deps.db.redis
+        return self._pair_trader_counters[slug]
+
     async def _process_opened(self, data: LimitSwapBlockUpdate, ph):
         tx_map = {tx.tx_hash: tx for tx in data.new_opened_limit_swaps if tx and tx.tx_hash}
         new_hashes = await self._opened_dedup.only_new_hashes(list(tx_map.keys()))
         traders = set()
+        pair_traders: dict[str, set[str]] = defaultdict(set)
 
         for tx_hash in new_hashes:
             tx = tx_map.get(tx_hash)
@@ -388,6 +566,10 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
                 continue
 
             traders.add(meta.trader)
+            canonical_name = self._pair_canonical_name(meta.source_asset, meta.target_asset)
+            if meta.trader:
+                pair_traders[canonical_name].add(meta.trader)
+
             await self.accumulator.add(
                 meta.timestamp,
                 opened_count=1,
@@ -400,7 +582,16 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             await self._save_open_meta(meta)
             await self._opened_dedup.mark_as_seen(tx_hash)
 
-        await self._update_unique_traders_snapshot(traders, data.timestamp or now_ts())
+        ts = data.timestamp or now_ts()
+
+        # Update HyperLogLog and snapshot unique-trader count per pair.
+        for canonical_name, pair_trader_set in pair_traders.items():
+            counter = self._get_pair_trader_counter(canonical_name)
+            await counter.hit(users=pair_trader_set, now=float(ts))
+            dau = await counter.get_dau(float(ts))
+            await self.accumulator.set(ts, **{f'pair:{canonical_name}:unique_traders': dau})
+
+        await self._update_unique_traders_snapshot(traders, ts)
 
     async def _process_partials(self, data: LimitSwapBlockUpdate, ph):
         fp_map = {self._event_fingerprint(ev): ev for ev in data.partial_swaps}

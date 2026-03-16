@@ -1,18 +1,21 @@
 import asyncio
 import json
+from pathlib import Path
 
 from jobs.limit_recorder import LimitSwapStatsRecorder
 from jobs.scanner.limit_detector import LimitSwapDetector
 from jobs.scanner.scan_cache import BlockScannerCached
 from tools.lib.lp_common import LpAppFramework
 
+DEMO_DIR = Path(__file__).parents[2] / 'renderer' / 'demo'
+
 
 async def dbg_limit_detector_continuous(app: LpAppFramework, last_block=0):
     d = app.deps
     if not last_block:
-        # last_block = await d.last_block_cache.get_thor_block()
-        # last_block -= 10000
-        last_block = 24802335
+        last_block = await d.last_block_cache.get_thor_block()
+        last_block -= 10000
+        # last_block = 24802335
     block_scanner = BlockScannerCached(d, last_block=last_block)
 
     limit_swap_detector = LimitSwapDetector(d)
@@ -40,11 +43,28 @@ async def dbg_limit_last_data(app: LpAppFramework, days: int = 14):
     print(json.dumps(summary, indent=2, sort_keys=True))
 
 
+async def dbg_limit_infographic_data(app: LpAppFramework, days: int = 7, top_pairs: int = 10):
+    """Dump limit-swap infographic data to renderer/demo/limit_swap_stats.json."""
+    recorder = LimitSwapStatsRecorder(app.deps)
+    data = await recorder.get_infographic_data(days=days, top_pairs_count=top_pairs)
+
+    output = {
+        'template_name': 'limit_swap_stats.jinja2',
+        'parameters': data,
+    }
+
+    out_path = DEMO_DIR / 'limit_swap_stats.json'
+    out_path.write_text(json.dumps(output, indent=2, sort_keys=True))
+    print(f'Written to {out_path}')
+    print(json.dumps(output, indent=2, sort_keys=True))
+
+
 async def run():
     app = LpAppFramework()
     async with app:
-        await dbg_limit_detector_continuous(app)
+        # await dbg_limit_detector_continuous(app)
         # await dbg_limit_last_data(app)
+        await dbg_limit_infographic_data(app)
 
 
 if __name__ == '__main__':
