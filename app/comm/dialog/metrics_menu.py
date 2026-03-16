@@ -6,9 +6,12 @@ from comm.localization.manager import BaseLocalization
 from comm.picture.nodes_pictures import NodePictureGenerator
 from comm.picture.queue_picture import queue_graph
 from comm.picture.supply_picture import SupplyPictureGenerator
+from jobs.fetch.cached.wasm import WasmCache
 from jobs.fetch.top_pools import BestPoolsFetcher
+from jobs.fetch.wasm_stats import WasmStatsBuilder
 from jobs.ruji_merge import RujiMergeTracker
 from jobs.rune_burn_recorder import RuneBurnRecorder
+from jobs.wasm_recorder import CosmWasmRecorder
 from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from lib.draw_utils import img_to_bio
 from lib.texts import kbd
@@ -364,6 +367,26 @@ class MetricsDialog(BaseDialog):
 
         pic, pic_name = await self.deps.alert_presenter.render_tcy_infographic(self.loc, event)
         text = self.loc.notification_text_tcy_info_caption(event)
+        await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
+
+    async def show_app_layer_stats(self, message: Message):
+        await self.start_typing(message)
+
+        wasm_cache = self.deps.wasm_cache or WasmCache(self.deps.thor_connector, db=self.deps.db)
+        recorder = CosmWasmRecorder(self.deps.db)
+        builder = WasmStatsBuilder(
+            wasm_cache=wasm_cache,
+            recorder=recorder,
+            last_block_cache=self.deps.last_block_cache,
+        )
+        stats = await builder.build(days=7, top_n=10)
+
+        if not stats.total_calls:
+            await message.answer(self.loc.TEXT_APP_LAYER_STATS_NO_DATA, disable_notification=True)
+            return
+
+        pic, pic_name = await self.deps.alert_presenter.render_app_layer_stats(self.loc, stats)
+        text = self.loc.notification_text_app_layer_stats(stats)
         await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
 
     # ---- Ask for duration (universal)
