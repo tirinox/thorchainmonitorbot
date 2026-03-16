@@ -1,5 +1,6 @@
 from typing import Optional, List
 
+from jobs.fetch.cached.wasm import WasmCache
 from jobs.fetch.key_stats import KeyStatsFetcher
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from jobs.fetch.pol import POLAndRunePoolFetcher
@@ -7,7 +8,9 @@ from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
 from jobs.fetch.tcy import TCYInfoFetcher
 from jobs.fetch.top_pools import BestPoolsFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher
+from jobs.fetch.wasm_stats import WasmStatsBuilder
 from jobs.rune_burn_recorder import RuneBurnRecorder
+from jobs.wasm_recorder import CosmWasmRecorder
 from lib.date_utils import DAY
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -39,6 +42,7 @@ class PubAlertJobNames:
     PRICE_ALERT = "price_alert"
     RUNE_CEX_FLOW = "rune_cex_flow"
     NET_STATS_SUMMARY = "net_stats_summary"
+    APP_LAYER_STATS = "app_layer_stats"
 
 
 class PublicAlertJobExecutor(WithLogger):
@@ -179,6 +183,19 @@ class PublicAlertJobExecutor(WithLogger):
         )
         await self._send_alert(event, "network stats summary alert")
 
+    async def job_app_layer_stats(self):
+        wasm_cache = self.deps.wasm_cache or WasmCache(self.deps.thor_connector, db=self.deps.db)
+        recorder = CosmWasmRecorder(self.deps.db)
+        builder = WasmStatsBuilder(
+            wasm_cache=wasm_cache,
+            recorder=recorder,
+            last_block_cache=self.deps.last_block_cache,
+        )
+        stats = await builder.build(days=7, top_n=10)
+        if not stats.total_calls:
+            raise ValueError("No app layer stats data available.")
+        await self._send_alert(stats, "app layer stats infographic")
+
     # maps job names to methods of this class
     AVAILABLE_TYPES = {
         PubAlertJobNames.TCY_SUMMARY: job_tcy_summary,
@@ -193,6 +210,7 @@ class PublicAlertJobExecutor(WithLogger):
         PubAlertJobNames.PRICE_ALERT: job_price_alert,
         PubAlertJobNames.RUNE_CEX_FLOW: job_rune_cex_flow,
         PubAlertJobNames.NET_STATS_SUMMARY: job_net_stats_summary,
+        PubAlertJobNames.APP_LAYER_STATS: job_app_layer_stats,
     }
 
     async def configure_jobs(self):

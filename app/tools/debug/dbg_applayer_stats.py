@@ -13,6 +13,7 @@ from jobs.wasm_recorder import CosmWasmRecorder
 from lib.date_utils import now_ts, DAY
 from lib.delegates import INotified
 from lib.texts import sep
+from notify.pub_configure import PubAlertJobNames
 from tools.lib.lp_common import LpAppFramework
 
 DEMO_JSON_PATH = os.path.normpath(
@@ -231,11 +232,31 @@ async def dbg_save_demo_json(app: LpAppFramework, days: float = 7.0, top_n: int 
     print(f"  top contracts: {len(ps.top_contracts)}, chart points: {len(ps.daily_chart)}")
 
 
+async def dbg_broadcast_app_layer_stats(app: LpAppFramework):
+    """
+    Trigger the public app-layer job through PublicScheduler registration,
+    so the debug path matches the scheduler-executed production path.
+    """
+    sep()
+    print(f">>> Running public job via scheduler: {PubAlertJobNames.APP_LAYER_STATS!r}...")
+    t0 = time.perf_counter()
+    result = await app.deps.pub_scheduler.run_job_by_function(PubAlertJobNames.APP_LAYER_STATS)
+    elapsed = time.perf_counter() - t0
+
+    sep()
+    print(f"Scheduler result: {result}")
+    print(f"Elapsed: {elapsed:.2f}s")
+    return result
+
+
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app:
+        # comment/uncomment the desired debug function(s) below:
+
+        await dbg_broadcast_app_layer_stats(app)
         # await dbg_save_demo_json(app)
-        await dbg_continuous_record(app, blocks_back=20_000)
+        # await dbg_continuous_record(app, blocks_back=20_000)
 
 
 if __name__ == '__main__':

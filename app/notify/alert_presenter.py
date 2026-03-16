@@ -44,6 +44,7 @@ from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import RuneCEXFlow, NativeTokenTransfer
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
+from models.wasm import WasmPeriodStats
 from notify.broadcast import Broadcaster
 from notify.channel import BoardMessage
 from notify.public.chain_notify import AlertChainHalt
@@ -133,6 +134,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_tcy_report(data)
         elif isinstance(data, AlertNetworkStats):
             await self._handle_net_stats(data)
+        elif isinstance(data, WasmPeriodStats):
+            await self._handle_app_layer_stats(data)
         elif isinstance(data, EventLastBlock):
             pass  # currently no action
         else:
@@ -680,3 +683,21 @@ class AlertPresenter(INotified, WithLogger):
         await self.deps.broadcaster.broadcast_to_all(
             "public:network_stats",
             BaseLocalization.notification_text_network_summary, data)
+
+    async def render_app_layer_stats(self, loc: BaseLocalization, data: WasmPeriodStats):
+        photo = await self.renderer.render('app_layer_stats.jinja2', data.to_dict())
+        photo_name = 'app_layer_stats.png'
+        return photo, photo_name
+
+    async def _handle_app_layer_stats(self, data: WasmPeriodStats):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_app_layer_stats(data)
+            photo, photo_name = await self.render_app_layer_stats(loc, data)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:app_layer:stats",
+            message_gen)
