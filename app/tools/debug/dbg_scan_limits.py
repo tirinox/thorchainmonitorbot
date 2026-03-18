@@ -43,10 +43,10 @@ async def dbg_limit_last_data(app: LpAppFramework, days: int = 14):
     print(json.dumps(summary, indent=2, sort_keys=True))
 
 
-async def dbg_limit_infographic_data(app: LpAppFramework, days: int = 7, top_pairs: int = 10):
+async def dbg_limit_infographic_data(app: LpAppFramework, days: int = 7):
     """Dump limit-swap infographic data to renderer/demo/limit_swap_stats.json."""
     recorder = LimitSwapStatsRecorder(app.deps)
-    data = await recorder.get_infographic_data(days=days, top_pairs_count=top_pairs)
+    data = await recorder.get_infographic_data(days=days)
 
     output = {
         'template_name': 'limit_swap_stats.jinja2',

@@ -39,6 +39,21 @@
       { "pair": "BCH.BCH->BTC.BTC",                                                          "opened_count":  38, "opened_usd":  62180.50, "unique_traders":  24 },
       { "pair": "AVAX.AVAX->BTC.BTC",                                                        "opened_count":  25, "opened_usd":  41230.00, "unique_traders":  17 },
       { "pair": "LTC.LTC->THOR.RUNE",                                                        "opened_count":  15, "opened_usd":  11680.75, "unique_traders":  11 }
-    ]
+    ],
+    "open_orders": {
+      "total_count": 448,
+      "total_value_usd": 318640.0,
+      "oldest_swap_blocks": 2430,
+      "average_age_blocks": 820,
+      "queue_depth": 448,
+      "pairs": [
+        { "pair": "BTC.BTC->THOR.RUNE",   "opened_count": 174, "opened_usd": 124380.0, "unique_traders": 0 },
+        { "pair": "ETH.ETH->THOR.RUNE",   "opened_count": 131, "opened_usd":  87650.0, "unique_traders": 0 },
+        { "pair": "BTC.BTC->ETH.ETH",     "opened_count":  76, "opened_usd":  69840.0, "unique_traders": 0 },
+        { "pair": "AVAX.AVAX->THOR.RUNE", "opened_count":  44, "opened_usd":  18920.0, "unique_traders": 0 },
+        { "pair": "DOGE.DOGE->THOR.RUNE", "opened_count":  23, "opened_usd":   5780.0, "unique_traders": 0 }
+      ]
+    }
   }
 }
+

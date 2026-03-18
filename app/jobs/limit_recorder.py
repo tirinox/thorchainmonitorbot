@@ -20,7 +20,7 @@ from models.asset import Asset, is_rune
 from models.events import EventSwap
 from models.limit_swap import (
     LimitSwapDailyPoint, LimitSwapDelta, LimitSwapDeltas,
-    LimitSwapPairStats, LimitSwapPeriodStats, LimitSwapTotals,
+    LimitSwapOpenState, LimitSwapPairStats, LimitSwapPeriodStats, LimitSwapTotals,
 )
 from models.memo import THORMemo, ActionType
 from notify.dup_stop import TxDeduplicator
@@ -265,11 +265,12 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         self,
         days: int = 7,
         end_ts: int | None = None,
-        top_pairs_count: int = 10,
     ) -> LimitSwapPeriodStats:
         """
         Collect limit-swap statistics into a typed LimitSwapPeriodStats object
         ready for infographic rendering and Telegram notification.
+
+        returned `top_pairs` list now contains all pairs.
         """
         await self._ensure_runtime_resources()
         end_ts = int(end_ts or now_ts())
@@ -342,7 +343,36 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             ],
             key=lambda x: x.opened_count,
             reverse=True,
-        )[:top_pairs_count]
+        )
+
+        # ── live open-order snapshot from THORNode ────────────────────────
+        open_orders = LimitSwapOpenState()
+        try:
+            ls_summary, ls_queue = await asyncio.gather(
+                self.deps.thor_connector.query_limit_swaps_summary(),
+                self.deps.thor_connector.query_limit_swaps_queue(),
+            )
+            open_orders = LimitSwapOpenState(
+                total_count=int(ls_summary.total_limit_swaps or 0),
+                total_value_usd=round(float(ls_summary.total_value_usd or 0), 2),
+                oldest_swap_blocks=int(ls_summary.oldest_swap_blocks or 0),
+                average_age_blocks=int(ls_summary.average_age_blocks or 0),
+                queue_depth=int(ls_queue.pagination.total or 0),
+                pairs=sorted(
+                    [
+                        LimitSwapPairStats(
+                            pair=self._pair_canonical_name(p.source_asset, p.target_asset),
+                            opened_count=int(p.count or 0),
+                            opened_usd=round(float(p.total_value_usd or 0), 2),
+                        )
+                        for p in ls_summary.asset_pairs
+                    ],
+                    key=lambda x: x.opened_count,
+                    reverse=True,
+                ),
+            )
+        except Exception as e:
+            self.logger.warning(f'Failed to fetch live limit swap state: {e!r}')
 
         # ── assemble result ───────────────────────────────────────────────
         return LimitSwapPeriodStats(
@@ -366,6 +396,7 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             ),
             daily=daily_points,
             top_pairs=top_pairs,
+            open_orders=open_orders,
         )
 
     @staticmethod
