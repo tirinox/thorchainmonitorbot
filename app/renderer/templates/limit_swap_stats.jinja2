@@ -27,6 +27,16 @@
   {%- if p > 0 -%}+{%- endif -%}{{ '%.1f' | format(p) }}%
 {%- endmacro %}
 
+{% macro blocks_to_time(blocks) -%}
+  {%- set mins = ((blocks | int) * 6 / 60) | int -%}
+  {%- if mins >= 60 -%}
+    {%- set h = (mins / 60) | int -%}{%- set m = mins % 60 -%}
+    {{- h }}h{%- if m %} {{ m }}m{%- endif -%}
+  {%- else -%}
+    {{- mins }}m
+  {%- endif -%}
+{%- endmacro %}
+
 <style>
   /* ── period pill ─────────────────────────────────────── */
   .period-pill {
@@ -135,7 +145,7 @@
     display: grid;
     grid-template-columns: 44px 1fr 86px 110px;
     gap: 10px; align-items: center;
-    padding: 9px 12px 9px 4px;
+    padding: 8px 12px 8px 4px;
     border-radius: 13px;
     background: rgba(255,255,255,.03);
   }
@@ -146,16 +156,52 @@
     color: #041a12; font-size: 17px; font-weight: 800;
   }
   .pair-name {
-    color: #fff; font-size: 28px; font-weight: 800; letter-spacing: .03em;
+    color: #fff; font-size: 26px; font-weight: 800; letter-spacing: .03em;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .pair-count { text-align: right; color: #d6f0e8; font-size: 28px; font-weight: 800; }
   .pair-usd   { text-align: right; color: #6e8a91; font-size: 22px; font-weight: 600; }
+  .pair-row-others { background: rgba(255,255,255,.06); }
 
   /* ── empty state ─────────────────────────────────────── */
   .empty-state {
     color: #637870; font-size: 22px; margin-top: 24px;
     text-align: center; text-transform: uppercase; letter-spacing: .06em;
+  }
+
+  /* ── open orders strip ───────────────────────────────── */
+  .open-strip {
+    display: grid;
+    grid-template-columns: auto repeat(4, minmax(0, 1fr));
+    align-items: center;
+    padding: 14px 22px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(18,29,35,.94), rgba(10,16,21,.95));
+    border: 1px solid rgba(255,180,40,.18);
+  }
+  .open-badge {
+    display: flex; align-items: center; gap: 10px;
+    padding-right: 28px;
+    border-right: 1px solid rgba(255,255,255,.07);
+    color: rgba(255,185,45,.85); font-size: 17px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .16em; white-space: nowrap;
+  }
+  .open-badge-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: rgba(255,185,45,.9);
+    box-shadow: rgba(255,185,45,.5) 0 0 8px;
+  }
+  .open-cell {
+    padding: 0 24px;
+    border-right: 1px solid rgba(255,255,255,.06);
+  }
+  .open-cell:last-child { border-right: none; }
+  .open-cell-label {
+    font-size: 16px; color: #9eb3ba; text-transform: uppercase;
+    letter-spacing: .09em; margin-bottom: 4px;
+  }
+  .open-cell-value {
+    font-size: 34px; color: #fff; font-weight: 800; line-height: 1;
   }
 
   #tradersChart {
@@ -179,7 +225,7 @@
   <div class="stats-grid">
 
     <div class="card shadow-box">
-      <div class="card-title">Orders</div>
+      <div class="card-title">📋 Orders</div>
       <div class="card-value-row">
         <div class="card-value">{{ total.opened_count | int }}</div>
         <div class="delta {{ delta_class(delta.opened_count.pct) }}">{{ delta_text(delta.opened_count.pct) }}</div>
@@ -187,7 +233,7 @@
     </div>
 
     <div class="card shadow-box">
-      <div class="card-title">Volume</div>
+      <div class="card-title">💵 Volume</div>
       <div class="card-value-row">
         <div class="card-value">{{ short_dollar(total.opened_usd) }}</div>
         <div class="delta {{ delta_class(delta.opened_usd.pct) }}">{{ delta_text(delta.opened_usd.pct) }}</div>
@@ -195,7 +241,7 @@
     </div>
 
     <div class="card shadow-box">
-      <div class="card-title">Traders</div>
+      <div class="card-title">👤 Traders</div>
       <div class="card-value-row">
         <div class="card-value">{{ total.unique_traders | int }}</div>
         <div class="delta {{ delta_class(delta.unique_traders.pct) }}">{{ delta_text(delta.unique_traders.pct) }}</div>
@@ -209,7 +255,7 @@
 
     {# chart panel #}
     <div class="panel chart-shell shadow-box">
-      <div class="panel-title">Daily activity</div>
+      <div class="panel-title">📈 Daily activity</div>
 
       <div class="legend-row">
         <div class="legend-item">
@@ -233,15 +279,15 @@
 
       <div class="chart-footer">
         <div class="mini-stat">
-          <div class="mini-label">Peak day</div>
+          <div class="mini-label">🔺 Peak day</div>
           <div class="mini-value">{{ (daily | map(attribute='opened_count') | max) if daily else 0 }}</div>
         </div>
         <div class="mini-stat">
-          <div class="mini-label">Avg / day</div>
+          <div class="mini-label">∼ Avg / day</div>
           <div class="mini-value">{{ ((total.opened_count | float) / (days or 1)) | round | int }}</div>
         </div>
         <div class="mini-stat">
-          <div class="mini-label">Peak traders</div>
+          <div class="mini-label">👥 Peak traders</div>
           <div class="mini-value">{{ (daily | map(attribute='unique_traders') | max) if daily else 0 }}</div>
         </div>
       </div>
@@ -249,11 +295,12 @@
 
     {# top pairs panel #}
     <div class="panel pairs-shell shadow-box">
-      <div class="panel-title">Top pairs</div>
+      <div class="panel-title">🏆 Top pairs</div>
 
       {% if top_pairs %}
+        {% set other = namespace(opened_count=0, opened_usd=0.0) %}
         <div class="pairs-list">
-          {% for p in top_pairs[:8] %}
+          {% for p in top_pairs[:7] %}
             <div class="pair-row">
               <div class="pair-rank">{{ loop.index }}</div>
               <div class="pair-name">{{ pair_label(p.pair) }}</div>
@@ -261,6 +308,20 @@
               <div class="pair-usd">{{ short_dollar(p.opened_usd) }}</div>
             </div>
           {% endfor %}
+
+          {% for p in top_pairs[7:] %}
+            {% set other.opened_count = other.opened_count + (p.opened_count | int) %}
+            {% set other.opened_usd = other.opened_usd + (p.opened_usd | float) %}
+          {% endfor %}
+
+          {% if top_pairs|length > 7 %}
+            <div class="pair-row pair-row-others">
+              <div class="pair-rank">…</div>
+              <div class="pair-name">Others</div>
+              <div class="pair-count">{{ other.opened_count }}</div>
+              <div class="pair-usd">{{ short_dollar(other.opened_usd) }}</div>
+            </div>
+          {% endif %}
         </div>
       {% else %}
         <div class="empty-state">No data</div>
@@ -268,6 +329,33 @@
     </div>
 
   </div>
+
+  {# ── open orders strip ─────────────────────────────────── #}
+  {% set oo = open_orders %}
+  {% if oo and oo.total_count %}
+  <div class="open-strip shadow-box">
+    <div class="open-badge">
+      <div class="open-badge-dot"></div>⏳ Open now
+    </div>
+    <div class="open-cell">
+      <div class="open-cell-label">📦 Orders</div>
+      <div class="open-cell-value">{{ oo.total_count | int }}</div>
+    </div>
+    <div class="open-cell">
+      <div class="open-cell-label">💰 Value</div>
+      <div class="open-cell-value">{{ short_dollar(oo.total_value_usd) }}</div>
+    </div>
+    <div class="open-cell">
+      <div class="open-cell-label">⌛ Oldest</div>
+      <div class="open-cell-value">{{ blocks_to_time(oo.oldest_swap_blocks) }}</div>
+    </div>
+    <div class="open-cell">
+      <div class="open-cell-label">⏱ Avg age</div>
+      <div class="open-cell-value">{{ blocks_to_time(oo.average_age_blocks) }}</div>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
 
 <script>
