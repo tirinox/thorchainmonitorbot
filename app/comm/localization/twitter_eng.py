@@ -33,6 +33,7 @@ from models.transfer import RuneCEXFlow, NativeTokenTransfer
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from models.wasm import WasmPeriodStats
+from models.limit_swap import LimitSwapPeriodStats
 from notify.channel import MESSAGE_SEPARATOR
 from .achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
 from .eng_base import BaseLocalization, URL_OUR_REF
@@ -902,5 +903,20 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'THORChain App Layer Stats ({int(e.days)}d)\n'
             f'📲 {pretty_money(e.total_calls, integer=True)} calls {calls_delta}\n'
             f'👥 {pretty_money(e.unique_users, integer=True)} users {users_delta}'
+        )
+
+    @staticmethod
+    def notification_text_limit_swap_stats(e: LimitSwapPeriodStats):
+        orders_delta = up_down_arrow(e.previous.opened_count, e.total.opened_count,
+                                     percent_delta=True, brackets=True)
+        vol_delta = up_down_arrow(e.previous.opened_usd, e.total.opened_usd,
+                                  percent_delta=True, brackets=True)
+        traders_delta = up_down_arrow(e.previous.unique_traders, e.total.unique_traders,
+                                      int_delta=True, brackets=True)
+        return (
+            f'THORChain Limit Orders ({e.period_days}d)\n'
+            f'📋 {pretty_money(e.total.opened_count, integer=True)} orders {orders_delta}\n'
+            f'💵 {short_dollar(e.total.opened_usd)} volume {vol_delta}\n'
+            f'👤 {pretty_money(e.total.unique_traders, integer=True)} traders {traders_delta}'
         )
 

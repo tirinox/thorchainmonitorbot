@@ -186,6 +186,10 @@ class MainMenuDialog(BaseDialog):
     async def cmd_app_layer_stats(self, message: Message):
         await self.build_metrics_dialog().show_app_layer_stats(message)
 
+    @message_handler(commands='limitswaps,limitswap,limitorders,limit', state='*')
+    async def cmd_limit_swap_stats(self, message: Message):
+        await self.build_metrics_dialog().show_limit_swap_stats(message)
+
     @message_handler(filters.RegexpCommandsFilter(regexp_commands=[r'^/unsub_.*']), state='*')
     async def on_unsubscribe_command(self, message: Message):
         # Commands like /unsub_sMth1

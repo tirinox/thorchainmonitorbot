@@ -49,6 +49,7 @@ from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, RuneCEXFlow
 from models.wasm import WasmPeriodStats
+from models.limit_swap import LimitSwapPeriodStats
 from models.tx import ThorAction, ThorSubTx, EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from notify.channel import Messengers
@@ -2507,6 +2508,23 @@ class BaseLocalization(ABC):  # == English
         )
 
     TEXT_APP_LAYER_STATS_NO_DATA = '😩 Sorry. We have not gotten any app layer stats data yet.'
+
+    @staticmethod
+    def notification_text_limit_swap_stats(e: LimitSwapPeriodStats):
+        orders_delta = up_down_arrow(e.previous.opened_count, e.total.opened_count,
+                                     percent_delta=True, brackets=True)
+        vol_delta = up_down_arrow(e.previous.opened_usd, e.total.opened_usd,
+                                  percent_delta=True, brackets=True)
+        traders_delta = up_down_arrow(e.previous.unique_traders, e.total.unique_traders,
+                                      int_delta=True, brackets=True)
+        return (
+            f'📊 <b>Limit Orders</b> ({e.period_days}d)\n'
+            f'📋 {bold(pretty_money(e.total.opened_count, integer=True))} orders {orders_delta}\n'
+            f'💵 {bold(short_dollar(e.total.opened_usd))} volume {vol_delta}\n'
+            f'👤 {bold(pretty_money(e.total.unique_traders, integer=True))} traders {traders_delta}'
+        )
+
+    TEXT_LIMIT_SWAP_STATS_NO_DATA = '😩 No limit swap data available yet.'
 
     # ------ Bond providers alerts ------
 

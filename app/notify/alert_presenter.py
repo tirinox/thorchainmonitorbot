@@ -27,6 +27,7 @@ from models.cap_info import AlertLiquidityCap
 from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
 from models.last_block import EventBlockSpeed, BlockProduceState
+from models.limit_swap import LimitSwapPeriodStats
 from models.memo import THORMemo
 from models.mimir import AlertMimirChange, AlertMimirVoting
 from models.net_stats import AlertNetworkStats
@@ -688,6 +689,24 @@ class AlertPresenter(INotified, WithLogger):
         photo = await self.renderer.render('app_layer_stats.jinja2', data.to_dict())
         photo_name = 'app_layer_stats.png'
         return photo, photo_name
+
+    async def render_limit_swap_stats(self, loc: BaseLocalization, data: LimitSwapPeriodStats):
+        photo = await self.renderer.render('limit_swap_stats.jinja2', data.to_dict())
+        photo_name = 'limit_swap_stats.png'
+        return photo, photo_name
+
+    async def _handle_limit_swap_stats(self, data: LimitSwapPeriodStats):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_limit_swap_stats(data)
+            photo, photo_name = await self.render_limit_swap_stats(loc, data)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
+        await self.deps.broadcaster.broadcast_to_all(
+            'public:limit_swaps:stats',
+            message_gen)
 
     async def _handle_app_layer_stats(self, data: WasmPeriodStats):
         async def message_gen(loc: BaseLocalization):

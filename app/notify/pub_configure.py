@@ -9,6 +9,7 @@ from jobs.fetch.tcy import TCYInfoFetcher
 from jobs.fetch.top_pools import BestPoolsFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.wasm_stats import WasmStatsBuilder
+from jobs.limit_recorder import LimitSwapStatsRecorder
 from jobs.rune_burn_recorder import RuneBurnRecorder
 from jobs.wasm_recorder import CosmWasmRecorder
 from lib.date_utils import DAY
@@ -43,6 +44,7 @@ class PubAlertJobNames:
     RUNE_CEX_FLOW = "rune_cex_flow"
     NET_STATS_SUMMARY = "net_stats_summary"
     APP_LAYER_STATS = "app_layer_stats"
+    LIMIT_SWAP_STATS = "limit_swap_stats"
 
 
 class PublicAlertJobExecutor(WithLogger):
@@ -196,6 +198,13 @@ class PublicAlertJobExecutor(WithLogger):
             raise ValueError("No app layer stats data available.")
         await self._send_alert(stats, "app layer stats infographic")
 
+    async def job_limit_swap_stats(self):
+        recorder = LimitSwapStatsRecorder(self.deps)
+        stats = await recorder.get_infographic_data(days=7)
+        if not stats.total.opened_count:
+            raise ValueError("No limit swap stats data available.")
+        await self._send_alert(stats, "limit swap stats infographic")
+
     # maps job names to methods of this class
     AVAILABLE_TYPES = {
         PubAlertJobNames.TCY_SUMMARY: job_tcy_summary,
@@ -211,6 +220,7 @@ class PublicAlertJobExecutor(WithLogger):
         PubAlertJobNames.RUNE_CEX_FLOW: job_rune_cex_flow,
         PubAlertJobNames.NET_STATS_SUMMARY: job_net_stats_summary,
         PubAlertJobNames.APP_LAYER_STATS: job_app_layer_stats,
+        PubAlertJobNames.LIMIT_SWAP_STATS: job_limit_swap_stats,
     }
 
     async def configure_jobs(self):

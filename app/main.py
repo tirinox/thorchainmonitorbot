@@ -21,6 +21,7 @@ from jobs.fetch.cached.nodes import NodeCache
 from jobs.fetch.cached.pool import PoolCache
 from jobs.fetch.cached.rune_market import RuneMarketInfoCache
 from jobs.fetch.cached.swap_history import SwapHistoryFetcher
+from jobs.fetch.cached.wasm import WasmCache
 from jobs.fetch.cap import CapInfoFetcher
 from jobs.fetch.chain_id import ChainIdFetcher
 from jobs.fetch.chains import ChainStateFetcher
@@ -34,15 +35,13 @@ from jobs.fetch.rune_market import RuneMarketInfoFetcher
 from jobs.fetch.stream_watchlist import StreamingSwapWatchListFetcher, StreamingSwapStartDetectorFromList
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.tx import TxFetcher
+from jobs.limit_recorder import LimitSwapStatsRecorder
 from jobs.node_churn import NodeChurnDetector
 from jobs.pol_recorder import POLStateRecorder
 from jobs.price_recorder import PriceRecorder
-from jobs.limit_recorder import LimitSwapStatsRecorder
 from jobs.rune_burn_recorder import RuneBurnRecorder
-from jobs.fetch.cached.wasm import WasmCache
-from jobs.wasm_recorder import CosmWasmRecorder
-from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.limit_detector import LimitSwapDetector
+from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.runepool import RunePoolEventDecoder
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.scanner.swap_routes import SwapRouteRecorder
@@ -53,6 +52,7 @@ from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_filler import VolumeFillerUpdater
 from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from jobs.vote_recorder import VoteRecorder
+from jobs.wasm_recorder import CosmWasmRecorder
 from lib.config import Config, SubConfig
 from lib.constants import HTTP_CLIENT_ID
 from lib.date_utils import parse_timespan_to_seconds
@@ -288,9 +288,10 @@ class App(WithLogger):
             tasks.append(d.block_scanner)
             reserve_address = d.cfg.as_str('native_scanner.reserve_address')
 
-            limit_swap_detector = LimitSwapDetector(d)
-            d.block_scanner.add_subscriber(limit_swap_detector)
-            limit_swap_detector.add_subscriber(LimitSwapStatsRecorder(d))
+            if d.cfg.get('native_scanner.limit_swaps.enabled', True):
+                limit_swap_detector = LimitSwapDetector(d)
+                d.block_scanner.add_subscriber(limit_swap_detector)
+                limit_swap_detector.add_subscriber(LimitSwapStatsRecorder(d))
 
             # Personal Rune transfer notifications
             transfer_decoder = RuneTransferDetector(reserve_address)

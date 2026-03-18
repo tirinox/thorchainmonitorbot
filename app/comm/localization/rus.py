@@ -19,6 +19,7 @@ from lib.texts import bold, link, code, ital, pre, progressbar, bracketify, \
 from lib.utils import grouper, translate, hit_every
 from models.asset import Asset
 from models.wasm import WasmPeriodStats
+from models.limit_swap import LimitSwapPeriodStats
 from models.cap_info import ThorCapInfo
 from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
@@ -1929,4 +1930,21 @@ class RussianLocalization(BaseLocalization):
             f'📲 {bold(pretty_money(e.total_calls, integer=True))} вызовов {calls_delta}\n'
             f'👥 {bold(pretty_money(e.unique_users, integer=True))} пользователей {users_delta}'
         )
+
+    @staticmethod
+    def notification_text_limit_swap_stats(e: LimitSwapPeriodStats):
+        orders_delta = up_down_arrow(e.previous.opened_count, e.total.opened_count,
+                                     percent_delta=True, brackets=True)
+        vol_delta = up_down_arrow(e.previous.opened_usd, e.total.opened_usd,
+                                  percent_delta=True, brackets=True)
+        traders_delta = up_down_arrow(e.previous.unique_traders, e.total.unique_traders,
+                                      int_delta=True, brackets=True)
+        return (
+            f'📊 <b>Лимитные ордера</b> ({e.period_days}д)\n'
+            f'📋 {bold(pretty_money(e.total.opened_count, integer=True))} ордеров {orders_delta}\n'
+            f'💵 {bold(short_dollar(e.total.opened_usd))} объём {vol_delta}\n'
+            f'👤 {bold(pretty_money(e.total.unique_traders, integer=True))} трейдеров {traders_delta}'
+        )
+
+    TEXT_LIMIT_SWAP_STATS_NO_DATA = '😩 Данные по лимитным ордерам пока недоступны.'
 

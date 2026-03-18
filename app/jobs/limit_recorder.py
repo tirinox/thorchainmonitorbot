@@ -18,6 +18,10 @@ from lib.logs import WithLogger
 from lib.utils import async_once_every
 from models.asset import Asset, is_rune
 from models.events import EventSwap
+from models.limit_swap import (
+    LimitSwapDailyPoint, LimitSwapDelta, LimitSwapDeltas,
+    LimitSwapPairStats, LimitSwapPeriodStats, LimitSwapTotals,
+)
 from models.memo import THORMemo, ActionType
 from notify.dup_stop import TxDeduplicator
 
@@ -262,17 +266,10 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         days: int = 7,
         end_ts: int | None = None,
         top_pairs_count: int = 10,
-    ) -> dict:
+    ) -> LimitSwapPeriodStats:
         """
-        Collect limit-swap statistics into a JSON-serializable dict for infographic rendering.
-
-        The returned object contains:
-        - ``period_days`` / ``start_date`` / ``end_date`` – window metadata
-        - ``total``    – aggregated metrics for the current *days* window
-        - ``previous`` – same metrics for the preceding equal-length window
-        - ``delta``    – per-metric absolute change and percentage change vs previous
-        - ``daily``    – per-day chart data (ordered oldest → newest)
-        - ``top_pairs``– top-*N* pairs by swap count with their own metrics
+        Collect limit-swap statistics into a typed LimitSwapPeriodStats object
+        ready for infographic rendering and Telegram notification.
         """
         await self._ensure_runtime_resources()
         end_ts = int(end_ts or now_ts())
@@ -311,28 +308,22 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         def _pct(c: float, p: float) -> float:
             return round((c - p) / p * 100.0, 2) if p else 0.0
 
-        delta = {
-            k: {
-                'absolute': round(curr_totals[k] - prev_totals.get(k, 0.0), 4),
-                'pct': _pct(curr_totals[k], prev_totals.get(k, 0.0)),
-            }
-            for k in ('opened_count', 'opened_usd', 'unique_traders')
-        }
+        def _make_delta(key: str) -> LimitSwapDelta:
+            c, p = curr_totals[key], prev_totals.get(key, 0.0)
+            return LimitSwapDelta(absolute=round(c - p, 4), pct=_pct(c, p))
 
         # ── per-day chart data ────────────────────────────────────────────
-        # unique_traders here is the *daily* snapshot (DAU), not cumulative.
-        daily_chart = [
-            {
-                'date': d['date'],
-                'opened_count': int(d.get('opened_count', 0.0)),
-                'opened_usd': round(float(d.get('opened_usd', 0.0)), 2),
-                'unique_traders': int(d.get('unique_traders', 0.0)),
-            }
+        daily_points = [
+            LimitSwapDailyPoint(
+                date=d['date'],
+                opened_count=int(d.get('opened_count', 0.0)),
+                opened_usd=round(float(d.get('opened_usd', 0.0)), 2),
+                unique_traders=int(d.get('unique_traders', 0.0)),
+            )
             for d in current_daily
         ]
 
         # ── top pairs ─────────────────────────────────────────────────────
-        # Fetch HyperLogLog unique traders per pair concurrently.
         pair_names = list(curr_pair_totals.keys())
         pair_unique_list = await asyncio.gather(
             *[self.get_pair_unique_traders(p, days=days, end_ts=end_ts) for p in pair_names]
@@ -341,37 +332,41 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
 
         top_pairs = sorted(
             [
-                {
-                    'pair': pair_name,
-                    'opened_count': int(curr_pair_totals[pair_name]['opened_count']),
-                    'opened_usd': round(curr_pair_totals[pair_name]['opened_usd'], 2),
-                    'unique_traders': pair_unique.get(pair_name, 0),
-                }
+                LimitSwapPairStats(
+                    pair=pair_name,
+                    opened_count=int(curr_pair_totals[pair_name]['opened_count']),
+                    opened_usd=round(curr_pair_totals[pair_name]['opened_usd'], 2),
+                    unique_traders=pair_unique.get(pair_name, 0),
+                )
                 for pair_name in curr_pair_totals
             ],
-            key=lambda x: x['opened_count'],
+            key=lambda x: x.opened_count,
             reverse=True,
         )[:top_pairs_count]
 
         # ── assemble result ───────────────────────────────────────────────
-        return {
-            'period_days': days,
-            'start_date': current_daily[0]['date'] if current_daily else '',
-            'end_date': current_daily[-1]['date'] if current_daily else '',
-            'total': {
-                'opened_count': int(curr_totals['opened_count']),
-                'opened_usd': round(curr_totals['opened_usd'], 2),
-                'unique_traders': int(curr_totals['unique_traders']),
-            },
-            'previous': {
-                'opened_count': int(prev_totals['opened_count']),
-                'opened_usd': round(prev_totals['opened_usd'], 2),
-                'unique_traders': int(prev_totals['unique_traders']),
-            },
-            'delta': delta,
-            'daily': daily_chart,
-            'top_pairs': top_pairs,
-        }
+        return LimitSwapPeriodStats(
+            period_days=days,
+            start_date=current_daily[0]['date'] if current_daily else '',
+            end_date=current_daily[-1]['date'] if current_daily else '',
+            total=LimitSwapTotals(
+                opened_count=int(curr_totals['opened_count']),
+                opened_usd=round(curr_totals['opened_usd'], 2),
+                unique_traders=int(curr_totals['unique_traders']),
+            ),
+            previous=LimitSwapTotals(
+                opened_count=int(prev_totals['opened_count']),
+                opened_usd=round(prev_totals['opened_usd'], 2),
+                unique_traders=int(prev_totals['unique_traders']),
+            ),
+            delta=LimitSwapDeltas(
+                opened_count=_make_delta('opened_count'),
+                opened_usd=_make_delta('opened_usd'),
+                unique_traders=_make_delta('unique_traders'),
+            ),
+            daily=daily_points,
+            top_pairs=top_pairs,
+        )
 
     @staticmethod
     def _event_fingerprint(ev: ThorEvent) -> str:
