@@ -157,6 +157,10 @@
     color: #637870; font-size: 22px; margin-top: 24px;
     text-align: center; text-transform: uppercase; letter-spacing: .06em;
   }
+
+  #tradersChart {
+      padding-right: 22px;
+  }
 </style>
 
 {# ── header ───────────────────────────────────────────────── #}
@@ -377,10 +381,25 @@
       scales: {
         x: { grid: { display: false }, ticks: { color: '#9db0b5', font: { size: 18 } } },
         y: {
+          position: 'left',
           beginAtZero: true,
           grid: { color: 'rgba(255,255,255,.05)' },
           ticks: { color: '#6ae9e0', font: { size: 17 }, maxTicksLimit: 3 }
-        }
+        },
+        yRight: {
+          position: 'right',
+          beginAtZero: true,
+          grid: { drawOnChartArea: false },
+          ticks: {
+            color: 'transparent',
+            font: { size: 19 },
+            callback: v => {
+              if (v >= 1_000_000) return '$' + (v / 1_000_000).toFixed(1) + 'M';
+              if (v >= 1_000)     return '$' + (v / 1_000).toFixed(0) + 'K';
+              return '$' + v;
+            }
+          }
+        },
       }
     }
   });
