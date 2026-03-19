@@ -1546,7 +1546,7 @@ class BaseLocalization(ABC):  # == English
             counter = f"{int_to_letter(i)}. " if n_options > 1 else ''
 
             item_name = name
-            percent = format_percent(option.number_votes, voting.active_nodes)
+            percent = format_percent(option.number_votes, voting.active_nodes_count)
 
             if self.TEXT_DECORATION_ENABLED:
                 pretty_value = code(pretty_value)
@@ -1554,7 +1554,7 @@ class BaseLocalization(ABC):  # == English
                 item_name = bold(name) if i == 1 else name
 
             message += f"{counter}{item_name} ➔ {pretty_value}{curr_mark}: {percent}" \
-                       f" ({option.number_votes}/{voting.active_nodes}){mark}{extra}\n"
+                       f" ({option.number_votes}/{voting.active_nodes_count}){mark}{extra}\n"
 
         if entry and not met_current_value and current_value is not None:
             pretty_value = self.format_mimir_value(voting.key, str(current_value), thor_block=holder.last_thor_block)

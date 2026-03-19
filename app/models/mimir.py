@@ -33,17 +33,17 @@ class MimirVoteOption:
     def number_votes(self):
         return self.signer_count
 
-    def calculate_progress(self, active_nodes):
-        self.progress = self.signer_count / active_nodes if active_nodes else 0
-        self.need_votes_to_pass = abs(int(math.ceil(active_nodes * SUPER_MAJORITY)) - self.number_votes)
+    def calculate_progress(self, active_nodes_count):
+        self.progress = self.signer_count / active_nodes_count if active_nodes_count else 0
+        self.need_votes_to_pass = abs(int(math.ceil(active_nodes_count * SUPER_MAJORITY)) - self.number_votes)
         return self.progress
 
 
 class MimirVoting:
-    def __init__(self, key: str, options: Dict[int, 'MimirVoteOption'], active_nodes: int):
+    def __init__(self, key: str, options: Dict[int, 'MimirVoteOption'], active_nodes_count: int):
         self.key = key
         self.options = options
-        self.active_nodes = active_nodes or 1  # Avoid division by zero
+        self.active_nodes_count = active_nodes_count or 1  # Avoid division by zero
 
     @property
     def all_values(self):
@@ -51,7 +51,7 @@ class MimirVoting:
 
     @property
     def min_votes_to_pass(self):
-        return int(math.ceil(self.active_nodes * SUPER_MAJORITY))
+        return int(math.ceil(self.active_nodes_count * SUPER_MAJORITY))
 
     @property
     def total_voters(self):
@@ -62,7 +62,7 @@ class MimirVoting:
         options = list(self.options.values())
         options.sort(key=operator.attrgetter('number_votes'), reverse=True)
         for opt in options:
-            opt.calculate_progress(self.active_nodes)
+            opt.calculate_progress(self.active_nodes_count)
         return options
 
     @property
@@ -73,7 +73,7 @@ class MimirVoting:
 
     def __str__(self):
         opts = ', '.join(f'{opt.value}({opt.signer_count})' for opt in self.top_options)
-        return f'MimirVoting({self.key!r}: [{opts}] / {self.active_nodes} nodes)'
+        return f'MimirVoting({self.key!r}: [{opts}] / {self.active_nodes_count} nodes)'
 
     def __repr__(self):
         return self.__str__()
@@ -114,7 +114,7 @@ class MimirVoteManager:
     def recalculate_progress(self):
         for voting in self.all_voting.values():
             for opt in voting.options.values():
-                opt.calculate_progress(voting.active_nodes)
+                opt.calculate_progress(voting.active_nodes_count)
 
     @property
     def all_voting_list(self) -> List[MimirVoting]:
@@ -263,7 +263,7 @@ class MimirHolder(INotified, WithLogger, WithDelegates):
     def pretty_name(self, name):
         return self.hard_coded_pretty_names.get(name) or self.mimir_rules.name_to_human(name)
 
-    def update(self, data: MimirTuple, active_nodes: List[NodeInfo], with_voting=True) -> 'MimirHolder':
+    def update(self, data: MimirTuple, active_nodes: List[NodeInfo]) -> 'MimirHolder':
         if not data.mimir.constants:
             self.logger.error('Mimir data is empty!')
             return self
@@ -279,8 +279,8 @@ class MimirHolder(INotified, WithLogger, WithDelegates):
                          f'{len(data.votes)} Node votes '
                          f'@ block {data.thor_height} [{format_time_ago(now_ts() - data.ts)} ago]')
 
-        if with_voting:
-            active_node_addresses = [n.node_address for n in active_nodes if n.node_address and n.is_active]
+        active_node_addresses = [n.node_address for n in active_nodes if n.node_address and n.is_active]
+        if active_node_addresses:
             self.voting_manager = MimirVoteManager(
                 data.votes,
                 active_node_addresses,
@@ -396,7 +396,7 @@ class AlertMimirVoting(NamedTuple):
         return {
             'key': self.voting.key,
             'pretty_name': self.pretty_name,
-            'active_nodes': self.voting.active_nodes,
+            'active_nodes': self.voting.active_nodes_count,
             'history': history,
             'decoded_values': decoded_values
         }
