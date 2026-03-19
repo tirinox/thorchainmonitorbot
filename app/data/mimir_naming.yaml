@@ -103,6 +103,8 @@ translate:
   SYNTHSLIPMINBPS: Synth Slip Min BPS
   THORNAME: THOR Name
   THORNAMES: THOR Names
+  ADR023: Reserve Restructuring
+
 types:
   basis_points:
   - CLOUDPROVIDERLIMIT
