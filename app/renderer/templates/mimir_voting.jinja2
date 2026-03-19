@@ -5,57 +5,121 @@
     <style>
         .voting-wrapper {
             position: absolute;
-            top: 130px;
+            top: 140px;
             left: 3%;
             right: 3%;
             bottom: 5%;
             display: flex;
-            flex-direction: row;
-            gap: 20px;
+            flex-direction: column;
+            gap: 22px;
             align-items: stretch;
         }
 
+        .top-row,
+        .content-row {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            gap: 22px;
+            min-height: 0;
+            align-items: stretch;
+        }
+
+        .top-row {
+            flex: 0 0 auto;
+            min-height: 180px;
+        }
+
+        .top-row .key-box,
+        .top-row .side-meta-box {
+            height: 100%;
+        }
+
+        .top-row .key-box {
+            flex: 1 1 auto;
+        }
+
+        .top-row .side-meta-box {
+            flex: 1 1 auto;
+        }
+
         /* ── Left panel: chart ─────────────────── */
-        .chart-panel {
-            flex: 1 1 0;
+        .chart-panel,
+        .votes-panel {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            min-width: 0;
+            min-height: 0;
+            align-self: stretch;
+            overflow: hidden;
+        }
+
+        .chart-panel {
+            flex: 3 3 0;
+        }
+
+        .votes-panel {
+            flex: 2 2 0;
         }
 
         .chart-box {
-            flex: 1;
+            flex: 1 1 0;
+            height: 100%;
             position: relative;
-            padding: 16px 16px 8px 16px;
+            padding: 22px 22px 14px 22px;
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(15,24,30,.97), rgba(9,14,19,.98));
+            border: 1px solid rgba(255,255,255,.05);
+            overflow: hidden;
         }
 
         #votingChart {
             width: 100% !important;
-            height: 100% !important;
         }
 
         /* ── Right panel: current state + stats ── */
-        .side-panel {
-            width: 440px;
+        .meta-panel {
+            flex: 1 1 0;
             display: flex;
             flex-direction: column;
-            gap: 14px;
-            margin-bottom: 35px;
+            gap: 18px;
+            min-height: 0;
         }
 
         .key-box {
-            padding: 14px 18px;
+            padding: 18px 24px 16px;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 8px;
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(18,29,35,.94), rgba(10,16,21,.95));
+            border: 1px solid rgba(255,255,255,.05);
+        }
+
+        .top-key-box {
+            flex: 0 0 auto;
+        }
+
+        .key-hero {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            justify-content: center;
+            min-width: 0;
+        }
+
+        .meta-column {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
         }
 
         .key-label {
             font-size: 18px;
             text-transform: uppercase;
-            letter-spacing: 0.2em;
-            color: #888;
-            font-weight: 600;
+            letter-spacing: 0.18em;
+            color: #91a3a9;
+            font-weight: 400;
         }
 
         .key-name {
@@ -64,114 +128,207 @@
             color: #fff;
             letter-spacing: 0.05em;
             line-height: 1.1;
-            word-break: break-all;
+            word-break: break-word;
+            text-shadow: rgba(35,220,200,.12) 0 0 16px;
         }
 
         .key-pretty {
+            font-size: 46px;
+            color: #e4eef1;
+            letter-spacing: 0.03em;
+            margin-top: 1px;
+            line-height: 1.15;
+            font-weight: 300;
+        }
+
+        .side-meta-box {
+            flex: 0 0 auto;
+            padding: 16px 18px;
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(18,29,35,.94), rgba(10,16,21,.95));
+            border: 1px solid rgba(255,255,255,.05);
+        }
+
+        .key-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 0;
+        }
+
+        .meta-card {
+            flex: 0 0 auto;
+            min-width: 0;
+            padding: 14px 18px;
+            border-radius: 16px;
+            background: rgba(255,255,255,.035);
+            border: 1px solid rgba(255,255,255,.06);
+        }
+
+        .meta-card-title {
+            font-size: 18px;
+            color: #9eb3ba;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            line-height: 1.15;
+            margin-bottom: 6px;
+        }
+
+        .meta-card-value {
             font-size: 22px;
-            color: #aaa;
-            letter-spacing: 0.08em;
-            margin-top: 2px;
+            color: #eef6f8;
+            line-height: 1.2;
+            letter-spacing: 0.02em;
+            font-weight: 700;
+            overflow-wrap: anywhere;
         }
 
-        .active-nodes-row {
+        /* voted / not-voted participation bar */
+        .voted-bar-wrap {
+            margin-top: 10px;
             display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 8px;
-            margin-top: 6px;
         }
 
-        .active-dot {
-            width: 12px;
+        .voted-bar-track {
+            position: relative;
+            width: 100%;
             height: 12px;
-            border-radius: 50%;
-            background: #23DCC8;
-            box-shadow: 0 0 8px #23DCC8;
+            background: rgba(255,255,255,.08);
+            border-radius: 6px;
+            overflow: hidden;
         }
 
-        .active-nodes-text {
-            font-size: 20px;
+        .voted-bar-fill {
+            height: 100%;
+            border-radius: 6px;
+            background: linear-gradient(90deg, #23DCC8, #00CCFF);
+            transition: width 0.4s ease;
+        }
+
+        .voted-bar-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 17px;
+            color: #9fb1b7;
+            letter-spacing: 0.03em;
+        }
+
+        .voted-label strong {
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .voted-label-no strong {
+            color: #888;
+        }
+
+        .meta-card-accent {
+            background: linear-gradient(180deg, rgba(35,220,200,.10), rgba(35,220,200,.04));
+            border-color: rgba(35,220,200,.14);
+        }
+
+        .meta-card-accent .meta-card-title {
+            color: #8ed5cd;
+        }
+
+        .meta-card-accent .meta-card-value {
             color: #23DCC8;
-            letter-spacing: 0.05em;
+            text-shadow: rgba(35,220,200,.15) 0 0 12px;
         }
 
         /* current votes breakdown */
         .votes-box {
-            flex: 1;
-            padding: 14px 18px;
+            padding: 22px 24px 20px;
             display: flex;
             flex-direction: column;
             gap: 0;
             overflow: hidden;
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(15,24,30,.97), rgba(9,14,19,.98));
+            border: 1px solid rgba(255,255,255,.05);
         }
 
         .votes-title {
-            font-size: 18px;
+            font-size: 26px;
             text-transform: uppercase;
-            letter-spacing: 0.18em;
-            color: #888;
-            font-weight: 600;
-            margin-bottom: 12px;
+            letter-spacing: 0.12em;
+            color: #fff;
+            font-weight: 800;
+            margin-bottom: 16px;
+            line-height: 1.1;
         }
 
         .vote-row {
             display: flex;
             flex-direction: column;
-            gap: 5px;
-            margin-bottom: 14px;
+            gap: 8px;
+            margin-bottom: 18px;
         }
 
         .vote-row-header {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
+            gap: 16px;
         }
 
         .vote-value-label {
-            font-size: 22px;
+            font-size: 28px;
             font-weight: bold;
             color: #fff;
+            line-height: 1.15;
         }
 
         .vote-count-label {
-            font-size: 17px;
-            color: #aaa;
+            font-size: 22px;
+            color: #b9c6ca;
+            white-space: nowrap;
         }
 
         .vote-bar-bg {
+            position: relative;
             width: 100%;
-            height: 10px;
+            height: 14px;
             background: rgba(255, 255, 255, 0.08);
-            border-radius: 5px;
+            border-radius: 7px;
             overflow: hidden;
         }
 
+        .vote-bar-consensus {
+            position: absolute;
+            top: -3px;
+            bottom: -3px;
+            width: 2px;
+            margin-left: -1px;
+            background: rgba(255, 220, 90, 0.95);
+            box-shadow: 0 0 10px rgba(255, 220, 90, 0.45);
+            border-radius: 2px;
+            pointer-events: none;
+            z-index: 2;
+        }
+
         .vote-bar-fill {
+            position: relative;
+            z-index: 1;
             height: 100%;
-            border-radius: 5px;
+            border-radius: 7px;
             transition: width 0.4s ease;
         }
 
         /* consensus threshold line */
         .threshold-note {
             margin-top: auto;
-            font-size: 16px;
-            color: #555;
+            font-size: 21px;
+            color: #6f8389;
             text-align: center;
             letter-spacing: 0.05em;
-            padding-top: 10px;
+            line-height: 1.35;
+            padding-top: 14px;
             border-top: 1px solid rgba(255, 255, 255, 0.06);
         }
 
-        /* chart panel sub-title */
-        .chart-subtitle {
-            font-size: 17px;
-            color: #666;
-            text-align: center;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            margin-bottom: 4px;
-        }
     </style>
 
     {% with title="MIMIR VOTE" %}
@@ -180,35 +337,65 @@
 
     <div class="voting-wrapper">
 
-        <!-- LEFT: stacked area chart -->
-        <div class="chart-panel">
-            <div class="chart-box shadow-box">
-                <canvas id="votingChart"></canvas>
-            </div>
-            <div class="chart-subtitle">Vote distribution over time</div>
-        </div>
-
-        <!-- RIGHT: key info + current breakdown -->
-        <div class="side-panel">
-
-            <div class="key-box shadow-box">
-                <div class="key-label">Mimir Key</div>
-                <div class="key-name">{{ key }}</div>
-                {% if pretty_name and pretty_name != key %}
-                    <div class="key-pretty">{{ pretty_name }}</div>
-                {% endif %}
-                <div class="active-nodes-row">
-                    <div class="active-dot"></div>
-                    <div class="active-nodes-text">{{ active_nodes }} active nodes</div>
+        <div class="top-row">
+            <div class="key-box top-key-box shadow-box">
+                <div class="key-hero">
+                    <div class="key-label">Mimir Key</div>
+                    <div class="key-name">{{ key }}</div>
+                    {% if pretty_name and pretty_name != key %}
+                        <div class="key-pretty">{{ pretty_name }}</div>
+                    {% endif %}
                 </div>
             </div>
 
-            <div class="votes-box shadow-box" id="votes-breakdown">
+            <div class="side-meta-box shadow-box meta-panel">
+                <div class="meta-column">
+                    <div class="key-meta-grid">
+                        <!-- row 1 -->
+                        <div class="meta-card meta-card-accent">
+                            <div class="meta-card-title">Active Nodes</div>
+                            <div class="meta-card-value">{{ active_nodes }}</div>
+                        </div>
+                        <div class="meta-card">
+                            <div class="meta-card-title">First vote</div>
+                            <div class="meta-card-value" id="first-seen-val">—</div>
+                        </div>
+                        <!-- row 2 -->
+                        <div class="meta-card">
+                            <div class="meta-card-title">Participation</div>
+                            <div class="voted-bar-wrap">
+                                <div class="voted-bar-track">
+                                    <div class="voted-bar-fill" id="voted-bar-fill" style="width:0%"></div>
+                                </div>
+                                <div class="voted-bar-labels">
+                                    <span class="voted-label voted-label-yes"><strong id="voted-pct-val">—</strong> voted</span>
+                                    <span class="voted-label voted-label-no"><strong id="not-voted-pct-val">—</strong> not yet</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="meta-card">
+                            <div class="meta-card-title">Latest vote</div>
+                            <div class="meta-card-value" id="last-seen-val">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-row">
+            <!-- LEFT: stacked area chart -->
+            <div class="chart-panel">
+                <div class="chart-box shadow-box">
+                    <canvas id="votingChart"></canvas>
+                </div>
+            </div>
+
+            <!-- RIGHT: current breakdown -->
+            <div class="votes-box shadow-box votes-panel" id="votes-breakdown">
                 <div class="votes-title">Current vote snapshot</div>
                 <!-- populated by JS -->
                 <div class="threshold-note" id="threshold-note"></div>
             </div>
-
         </div>
     </div>
 
@@ -216,8 +403,52 @@
         // ── data from Jinja ─────────────────────────────────────────────────────
         const historyRaw = {{ history | tojson }};
         const activeNodes = {{ active_nodes }};
+        const abstainedNodes = {{ abstained_nodes | default(0) }};
         const decodedValues = {{ (decoded_values or {}) | tojson }};
+        const firstSeenTs = {{ first_seen_ts | default(0) }};
+        const lastSeenTs  = {{ last_seen_ts  | default(0) }};
         const CONSENSUS = 0.667; // 2/3 threshold
+
+        // ── format a unix timestamp to "DD.MM.YYYY HH:MM UTC" ───────────────────
+        function fmtTs(ts) {
+            if (!ts) return '—';
+            const d = new Date(ts * 1000);
+            const pad = n => String(n).padStart(2, '0');
+            return `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}.${d.getUTCFullYear()} `
+                 + `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`;
+        }
+
+        function fmtAgo(ts) {
+            if (!ts) return '';
+            const diffSec = Math.max(0, Math.floor(Date.now() / 1000 - ts));
+            const units = [
+                ['y', 365 * 24 * 3600],
+                ['mo', 30 * 24 * 3600],
+                ['d', 24 * 3600],
+                ['h', 3600],
+                ['m', 60],
+            ];
+            for (const [suffix, size] of units) {
+                if (diffSec >= size) {
+                    return `${Math.floor(diffSec / size)}${suffix} ago`;
+                }
+            }
+            return `${diffSec}s ago`;
+        }
+
+        function fmtTsWithAgo(ts) {
+            const formatted = fmtTs(ts);
+            const ago = fmtAgo(ts);
+            return ago ? `${formatted} (${ago})` : formatted;
+        }
+
+        document.getElementById('first-seen-val').textContent = fmtTsWithAgo(firstSeenTs);
+        document.getElementById('last-seen-val').textContent  = fmtTsWithAgo(lastSeenTs);
+        const votedPct = activeNodes > 0 ? ((Math.max(0, activeNodes - abstainedNodes) / activeNodes) * 100) : 0;
+        const notVotedPct = activeNodes > 0 ? ((Math.max(0, abstainedNodes) / activeNodes) * 100) : 0;
+        document.getElementById('voted-pct-val').textContent = `${votedPct.toFixed(1)}%`;
+        document.getElementById('not-voted-pct-val').textContent = `${notVotedPct.toFixed(1)}%`;
+        document.getElementById('voted-bar-fill').style.width = `${votedPct.toFixed(1)}%`;
 
         // helper: return human-readable label for a raw option key
         const label = k => decodedValues[k] || `Value ${k}`;
@@ -258,7 +489,7 @@
         const labels = historyRaw.map(snap => {
             const d = new Date(snap.ts * 1000);
             const pad = n => String(n).padStart(2, '0');
-            return `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+            return `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}`;
         });
 
         const datasets = allKeys.map(optKey => {
@@ -276,8 +507,26 @@
             };
         });
 
+        // ── "Not Voted" dataset — nodes that cast no vote at each snapshot ───
+        datasets.push({
+            label: 'Not Voted',
+            data: historyRaw.map(snap => {
+                const voted = Object.values(snap.options).reduce((s, v) => s + Number(v), 0);
+                return Math.max(0, activeNodes - voted);
+            }),
+            backgroundColor: 'rgba(80,80,80,0.15)',
+            borderColor: 'rgba(120,120,120,0.5)',
+            borderWidth: 1.5,
+            borderDash: [5, 4],
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            fill: true,
+            tension: 0.35,
+            hidden: false,
+        });
+
         // ── render chart ─────────────────────────────────────────────────────────
-        Chart.defaults.font.family = 'ThorFont, monospace';
+        Chart.defaults.font.family = 'ThorFontLight, sans-serif';
         Chart.defaults.color = 'rgb(180,180,180)';
 
         const ctx = document.getElementById('votingChart').getContext('2d');
@@ -295,7 +544,7 @@
                         ticks: {
                             maxTicksLimit: 10,
                             maxRotation: 30,
-                            font: {size: 18},
+                            font: {size: 22},
                             color: '#888',
                             autoSkip: true,
                         },
@@ -303,11 +552,12 @@
                     },
                     y: {
                         beginAtZero: true,
+                        min: 0,
                         max: activeNodes,
                         ticks: {
-                            font: {size: 16},
+                            font: {size: 20},
                             color: '#666',
-                            stepSize: Math.ceil(activeNodes / 5),
+                            stepSize: Math.max(1, Math.ceil(activeNodes / 5)),
                         },
                         grid: {color: 'rgba(255,255,255,0.06)'},
                     }
@@ -321,9 +571,10 @@
                             boxHeight: 10,
                             borderRadius: 5,
                             useBorderRadius: true,
-                            font: {size: 25},
+                            font: {size: 28},
                             color: '#bbb',
                             padding: 20,
+                            filter: item => item.text !== 'Not Voted',
                         }
                     },
                     tooltip: {
@@ -357,7 +608,7 @@
                     ctx.stroke();
                     // label
                     ctx.setLineDash([]);
-                    ctx.font = '22px monospace';
+                    ctx.font = '24px ThorFontLight, sans-serif';
                     ctx.fillStyle = 'rgba(255,200,50,0.7)';
                     ctx.fillText(`Consensus (${yVal})`, chart.chartArea.left + 6, yPx - 12);
                     ctx.restore();
@@ -373,6 +624,7 @@
         allKeys.forEach(optKey => {
             const count = latestOptions[optKey] || 0;
             const pct = activeNodes > 0 ? (count / activeNodes * 100) : 0;
+            const consensusPct = CONSENSUS * 100;
             const col = colorMap[optKey];
             const isWinning = count >= consensusCount;
 
@@ -384,11 +636,33 @@
                 <span class="vote-count-label">${count} / ${activeNodes} &nbsp; <strong>${pct.toFixed(1)}%</strong></span>
             </div>
             <div class="vote-bar-bg">
+                <div class="vote-bar-consensus" style="left:${consensusPct}%;"></div>
                 <div class="vote-bar-fill" style="width:${pct}%; background:${col};"></div>
             </div>
         `;
             breakdownEl.insertBefore(row, thresholdEl);
         });
+
+        // ── "Not Voted" row ───────────────────────────────────────────────────────
+        const abstained = Math.max(0, Number(abstainedNodes) || 0);
+        if (abstained > 0) {
+            const abstPct = activeNodes > 0 ? (abstained / activeNodes * 100) : 0;
+            const consensusPct = CONSENSUS * 100;
+            const row = document.createElement('div');
+            row.className = 'vote-row';
+            row.style.opacity = '0.55';
+            row.innerHTML = `
+            <div class="vote-row-header">
+                <span class="vote-value-label" style="color:#777">Not Voted</span>
+                <span class="vote-count-label">${abstained} / ${activeNodes} &nbsp; <strong>${abstPct.toFixed(1)}%</strong></span>
+            </div>
+            <div class="vote-bar-bg">
+                <div class="vote-bar-consensus" style="left:${consensusPct}%;"></div>
+                <div class="vote-bar-fill" style="width:${abstPct}%; background:#555; border: 1px dashed #888;"></div>
+            </div>
+        `;
+            breakdownEl.insertBefore(row, thresholdEl);
+        }
 
         const leadCount = latestOptions[allKeys[0]] || 0;
         const leadPct = activeNodes > 0 ? (leadCount / activeNodes * 100).toFixed(1) : 0;
