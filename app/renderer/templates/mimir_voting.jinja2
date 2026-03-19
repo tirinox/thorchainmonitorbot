@@ -491,6 +491,8 @@
         const firstSeenTs = {{ first_seen_ts | default(0) }};
         const lastSeenTs  = {{ last_seen_ts  | default(0) }};
         const CONSENSUS = 0.667; // 2/3 threshold
+        const MAX_VISIBLE_OPTIONS = 5;
+        const OTHERS_KEY = '__others__';
 
         // ── format a unix timestamp to "DD.MM.YYYY" ─────────────────────────────
         function fmtTs(ts) {
@@ -535,7 +537,7 @@
         document.getElementById('voted-bar-fill').style.width = `${votedPct.toFixed(1)}%`;
 
         // helper: return human-readable label for a raw option key
-        const label = k => decodedValues[k] || `Value ${k}`;
+        const label = k => k === OTHERS_KEY ? 'Others' : (decodedValues[k] || `Value ${k}`);
 
         // ── colour palette (vibrant, dark-background friendly) ──────────────────
         const PALETTE = [
@@ -554,19 +556,40 @@
         // ── collect all unique option keys, sorted by latest vote count desc ────
         const latestSnapshot = historyRaw[historyRaw.length - 1];
         const latestOptions = latestSnapshot ? latestSnapshot.options : {};
-        const allKeys = Object.keys(latestOptions)
+        const rawAllKeys = Object.keys(latestOptions)
             .sort((a, b) => (latestOptions[b] || 0) - (latestOptions[a] || 0));
 
         // also make sure any key that appeared earlier is included
         historyRaw.forEach(snap => {
             Object.keys(snap.options).forEach(k => {
-                if (!allKeys.includes(k)) allKeys.push(k);
+                if (!rawAllKeys.includes(k)) rawAllKeys.push(k);
             });
         });
 
+        const hiddenKeys = rawAllKeys.length > MAX_VISIBLE_OPTIONS
+            ? rawAllKeys.slice(MAX_VISIBLE_OPTIONS)
+            : [];
+        const allKeys = hiddenKeys.length > 0
+            ? [...rawAllKeys.slice(0, MAX_VISIBLE_OPTIONS), OTHERS_KEY]
+            : rawAllKeys;
+
+        function valueForKeyAtSnapshot(snap, optKey) {
+            if (optKey === OTHERS_KEY) {
+                return hiddenKeys.reduce((sum, key) => sum + Number(snap.options[key] || 0), 0);
+            }
+            return Number(snap.options[optKey] || 0);
+        }
+
+        function latestValueForKey(optKey) {
+            if (optKey === OTHERS_KEY) {
+                return hiddenKeys.reduce((sum, key) => sum + Number(latestOptions[key] || 0), 0);
+            }
+            return Number(latestOptions[optKey] || 0);
+        }
+
         const colorMap = {};
         allKeys.forEach((k, i) => {
-            colorMap[k] = PALETTE[i % PALETTE.length];
+            colorMap[k] = k === OTHERS_KEY ? '#8B97A3' : PALETTE[i % PALETTE.length];
         });
 
         // ── build chart datasets (one per option key) ────────────────────────────
@@ -580,7 +603,7 @@
             const col = colorMap[optKey];
             return {
                 label: label(optKey),
-                data: historyRaw.map(snap => snap.options[optKey] || 0),
+                data: historyRaw.map(snap => valueForKeyAtSnapshot(snap, optKey)),
                 backgroundColor: col + '55',  // semi-transparent fill
                 borderColor: col,
                 borderWidth: 2,
@@ -706,7 +729,7 @@
         const consensusCount = Math.ceil(activeNodes * CONSENSUS);
 
         allKeys.forEach(optKey => {
-            const count = latestOptions[optKey] || 0;
+            const count = latestValueForKey(optKey);
             const pct = activeNodes > 0 ? (count / activeNodes * 100) : 0;
             const consensusPct = CONSENSUS * 100;
             const col = colorMap[optKey];
