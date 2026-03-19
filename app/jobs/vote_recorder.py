@@ -2,14 +2,13 @@ import json
 from collections import defaultdict
 from typing import List, Dict
 
-from api.aionode.types import ThorMimirVote
 from jobs.runeyield.date2block import DateToBlockMapper
 from lib.accumulator import Accumulator
 from lib.date_utils import HOUR, format_time_ago, now_ts, YEAR
 from lib.delegates import WithDelegates, INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from models.mimir import MimirTuple, MimirVoting, MimirVoteOption
+from models.mimir import MimirVoting, MimirVoteOption, MimirHolder
 
 
 class VoteRecorder(WithLogger, WithDelegates, INotified):
@@ -19,36 +18,32 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
         - voting progress daily snapshots, to be able to show progress charts
     """
 
+    BLOCK_SPECIAL_KEY = '__block_height__'
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
         self.accumulator = Accumulator("MimirVotes", deps.db, HOUR * 4)
         self.block_mapper = DateToBlockMapper(deps)
 
-    @staticmethod
-    def group_votes_by_option(votes: List[ThorMimirVote]) -> Dict[str, int]:
-        vote_dict = defaultdict(int)
-        for vote in votes:
-            vote_dict[vote.value] += 1
-        return vote_dict
-
-    async def on_data(self, sender, data: MimirTuple):
-        if not data.ts:
-            self.logger.warning(f"No timestamp in MimirTuple, trying to get it from block height {data.thor_height}")
-            date = await self.block_mapper.get_datetime_by_block_height(data.thor_height)
-            data.ts = date.timestamp() if date else None
-            if not data.ts:
-                self.logger.error(f"Failed to get timestamp for block {data.thor_height}, using current time")
-                return
+    async def on_data(self, sender, data: MimirHolder):
+        if not data.last_timestamp:
+            self.logger.error(f"MimirHolder @ block = {data.last_timestamp} has no timestamp, skipping")
+            return
 
         self.logger.info(
-            f"Recording votes for mimir {format_time_ago(now_ts() - data.ts, max_time=YEAR)}: {len(data.votes)} votes")
+            f"Recording votes for mimir {format_time_ago(now_ts() - data.ts, max_time=YEAR)}: "
+            f"{data.voting_manager.active_vote_count} votes")
 
-        votes_grouped = data.votes_grouped_by_key
+        votes_grouped = defaultdict(list)
+        for vote in data.voting_manager.votes:
+            votes_grouped[vote.key].append(vote)
+
         packed = {}
-        for key, votes in votes_grouped.items():
-            vote_dict_count = self.group_votes_by_option(votes)
-            packed[key] = json.dumps(vote_dict_count)
+        for voting in data.voting_manager.all_voting_list:
+            packed[voting.key] = json.dumps(voting.short_dict)
+
+        packed[self.BLOCK_SPECIAL_KEY] = data.last_thor_block
 
         await self.accumulator.set(data.ts, **packed)
 
@@ -56,10 +51,14 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
         return await self.accumulator.get(ts, conv_to_float=False)
 
     @staticmethod
-    def snapshot_to_voting_list(snapshot: Dict[str, str], active_nodes: int,
-                                key_filter: str = None) -> List[MimirVoting]:
+    def snapshot_to_voting_list(snapshot: Dict[str, str], key_filter: str = None) -> List[MimirVoting]:
         result = []
+
+        active_nodes = int(snapshot.get(VoteRecorder.BLOCK_SPECIAL_KEY, 1))
+
         for key, raw in snapshot.items():
+            if key == VoteRecorder.BLOCK_SPECIAL_KEY:
+                continue
             if key_filter and key != key_filter:
                 continue
             if not raw:
@@ -79,17 +78,16 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
 
         return result
 
-    async def get_key_progress(self, key: str, duration_sec: float, active_nodes: int) \
+    async def get_key_progress(self, key: str, duration_sec: float) \
             -> Dict[float, MimirVoting]:
-        all_progress = await self.get_recent_progress(duration_sec, active_nodes, key_filter=key)
+        all_progress = await self.get_recent_progress(duration_sec, key_filter=key)
         return {
-            ts: votings[0] if votings else None
-            for ts, votings in all_progress.items()
-            if votings
+            ts: voting_list[0] if voting_list else None
+            for ts, voting_list in all_progress.items()
+            if voting_list
         }
 
-    async def get_recent_progress(self, duration_sec: float, active_nodes: int,
-                                  key_filter: str = None) -> Dict[float, List[MimirVoting]]:
+    async def get_recent_progress(self, duration_sec: float, key_filter: str = None) -> Dict[float, List[MimirVoting]]:
         if duration_sec < self.accumulator.tolerance:
             raise ValueError(f"Duration must be at least {self.accumulator.tolerance} seconds")
 
@@ -97,6 +95,6 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
         start_ts = end_ts - duration_sec
         points = await self.accumulator.get_range(start_ts, end_ts, conv_to_float=False)
         return {
-            ts: self.snapshot_to_voting_list(snapshot, active_nodes, key_filter)
+            ts: self.snapshot_to_voting_list(snapshot, key_filter)
             for ts, snapshot in points.items()
         }

@@ -60,7 +60,10 @@ class MimirCached(CachedDataSource[MimirTuple]):
         return await self._load(height=height)
 
     async def get_mimir_holder(self, height=None) -> MimirHolder:
-        mimir_tuple = await self.get(height=height)
+        if height:
+            mimir_tuple = await self.get_for_height_no_cache(height)
+        else:
+            mimir_tuple = await self.get()
         holder = MimirHolder()
         holder.mimir_rules = self.rules
         return holder.update(mimir_tuple, [], with_voting=False)

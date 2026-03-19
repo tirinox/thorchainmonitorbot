@@ -495,18 +495,20 @@ class App(WithLogger):
 
         if d.cfg.get('constants.mimir_change.enabled', True):
             notifier_mimir_change = MimirChangedNotifier(d)
-            d.mimir_const_fetcher.add_subscriber(notifier_mimir_change)
+            d.mimir_const_holder.add_subscriber(notifier_mimir_change)
             notifier_mimir_change.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('constants.voting.enabled', True):
             vote_recorder = VoteRecorder(d)
-            d.mimir_const_fetcher.add_subscriber(vote_recorder)
+            d.mimir_const_holder.add_subscriber(vote_recorder)
 
+            # todo: adapt VotingNotifier to recieve MimirHolder updates
             voting_notifier = VotingNotifier(d)
-            d.mimir_const_fetcher.add_subscriber(voting_notifier)
+            d.mimir_const_holder.add_subscriber(voting_notifier)
 
             voting_notifier.add_subscriber(d.alert_presenter)
             if achievements_enabled:
+                # todo: switch to "mimir_const_holder"
                 d.mimir_const_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('supply.rune_burn.recorder.enabled', True):

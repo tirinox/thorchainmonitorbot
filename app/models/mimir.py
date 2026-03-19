@@ -39,7 +39,6 @@ class MimirVoteOption:
 
 
 class MimirVoting:
-
     def __init__(self, key: str, options: Dict[int, 'MimirVoteOption'], active_nodes: int):
         self.key = key
         self.options = options
@@ -77,6 +76,12 @@ class MimirVoting:
 
     def __repr__(self):
         return self.__str__()
+
+    @property
+    def short_dict(self):
+        return {
+            opt.value: opt.signer_count for opt in self.options.values()
+        }
 
 
 class MimirVoteManager:
@@ -116,6 +121,10 @@ class MimirVoteManager:
 
     def find_voting(self, const_name):
         return next((v for v in self.all_voting.values() if v.key == const_name), None)
+
+    @property
+    def active_vote_count(self):
+        return len(self.votes)
 
 
 @dataclass
@@ -202,11 +211,6 @@ class MimirTuple:
     thor_height: int
     ts: float
 
-    @property
-    def votes_grouped_by_key(self) -> Dict[str, List[ThorMimirVote]]:
-        gr = groupby(self.votes, key=operator.attrgetter('key'))
-        return {k: list(g) for k, g in gr}
-
 
 class MimirHolder(INotified, WithLogger, WithDelegates):
     async def on_data(self, sender, data: MimirTuple):
@@ -228,6 +232,7 @@ class MimirHolder(INotified, WithLogger, WithDelegates):
         self.hard_coded_pretty_names = {}
         self.mimir_rules = MimirNameRules()
         self.last_thor_block = 0
+        self.last_timestamp = 0.0
 
     @property
     def is_loaded(self):

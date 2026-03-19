@@ -52,7 +52,7 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
     async def _on_progress_changed(self, key, prev_progress, voting: MimirVoting, vote_option: MimirVoteOption):
         cd = Cooldown(self.deps.db, f'VotingNotification:{key}:{vote_option.value}', self.notification_cd_time)
         if await cd.can_do():
-            voting_history = await self.vote_recorder.get_key_progress(key, 7 * DAY, voting.active_nodes)
+            voting_history = await self.vote_recorder.get_key_progress(key, 7 * DAY)
             await self.pass_data_to_listeners(
                 AlertMimirVoting(
                     holder=self.deps.mimir_const_holder,
