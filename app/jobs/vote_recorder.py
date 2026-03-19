@@ -18,7 +18,8 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
         - voting progress daily snapshots, to be able to show progress charts
     """
 
-    BLOCK_SPECIAL_KEY = '__block_height__'
+    META_KEY_BLOCK_HEIGHT = '__block_height__'
+    META_KEY_ACTIVE_NODES = '__active_nodes__'
 
     def __init__(self, deps: DepContainer):
         super().__init__()
@@ -43,7 +44,8 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
         for voting in data.voting_manager.all_voting_list:
             packed[voting.key] = json.dumps(voting.short_dict)
 
-        packed[self.BLOCK_SPECIAL_KEY] = data.last_thor_block
+        packed[self.META_KEY_BLOCK_HEIGHT] = data.last_thor_block
+        packed[self.META_KEY_ACTIVE_NODES] = data.voting_manager.active_node_count
 
         await self.accumulator.set(data.last_timestamp, **packed)
 
@@ -54,10 +56,10 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
     def snapshot_to_voting_list(snapshot: Dict[str, str], key_filter: str = None) -> List[MimirVoting]:
         result = []
 
-        active_nodes = int(snapshot.get(VoteRecorder.BLOCK_SPECIAL_KEY, 1))
+        active_nodes = int(snapshot.get(VoteRecorder.META_KEY_ACTIVE_NODES, 1))
 
         for key, raw in snapshot.items():
-            if key == VoteRecorder.BLOCK_SPECIAL_KEY:
+            if key == VoteRecorder.META_KEY_BLOCK_HEIGHT:
                 continue
             if key_filter and key != key_filter:
                 continue
@@ -71,9 +73,9 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
                 int(value): MimirVoteOption(value=int(value), signer_count=count)
                 for value, count in counts.items()
             }
-            voting = MimirVoting(key=key, options=options, active_nodes=active_nodes)
+            voting = MimirVoting(key=key, options=options, active_nodes_count=active_nodes)
             for opt in voting.options.values():
-                opt.calculate_progress(voting.active_nodes)
+                opt.calculate_progress(voting.active_nodes_count)
             result.append(voting)
 
         return result
