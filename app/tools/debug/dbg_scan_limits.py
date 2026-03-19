@@ -50,7 +50,7 @@ async def dbg_limit_infographic_data(app: LpAppFramework, days: int = 7):
 
     output = {
         'template_name': 'limit_swap_stats.jinja2',
-        'parameters': data,
+        'parameters': data.to_dict(),
     }
 
     out_path = DEMO_DIR / 'limit_swap_stats.json'
@@ -59,12 +59,27 @@ async def dbg_limit_infographic_data(app: LpAppFramework, days: int = 7):
     print(json.dumps(output, indent=2, sort_keys=True))
 
 
+async def dbg_limit_infographic_send(app: LpAppFramework, days: int = 7):
+    """Build the latest limit-swap infographic and send it via the alert presenter."""
+    recorder = LimitSwapStatsRecorder(app.deps)
+    data = await recorder.get_infographic_data(days=days)
+
+    if not data.total.opened_count and not data.open_orders.total_count:
+        print('No limit swap data available.')
+        return
+
+    print(f'Sending limit-swap infographic: {data}')
+    await app.deps.alert_presenter.handle_data(data)
+    print('Limit-swap infographic sent.')
+    await asyncio.sleep(5)  # Give some time for the alert to be processed before exiting
+
+
 async def run():
     app = LpAppFramework()
     async with app:
         # await dbg_limit_detector_continuous(app)
         # await dbg_limit_last_data(app)
-        await dbg_limit_infographic_data(app)
+        await dbg_limit_infographic_send(app)
 
 
 if __name__ == '__main__':

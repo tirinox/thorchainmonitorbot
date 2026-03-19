@@ -27,16 +27,6 @@
   {%- if p > 0 -%}+{%- endif -%}{{ '%.1f' | format(p) }}%
 {%- endmacro %}
 
-{% macro blocks_to_time(blocks) -%}
-  {%- set mins = ((blocks | int) * 6 / 60) | int -%}
-  {%- if mins >= 60 -%}
-    {%- set h = (mins / 60) | int -%}{%- set m = mins % 60 -%}
-    {{- h }}h{%- if m %} {{ m }}m{%- endif -%}
-  {%- else -%}
-    {{- mins }}m
-  {%- endif -%}
-{%- endmacro %}
-
 <style>
   /* ── period pill ─────────────────────────────────────── */
   .period-pill {
@@ -347,11 +337,11 @@
     </div>
     <div class="open-cell">
       <div class="open-cell-label">⌛ Oldest</div>
-      <div class="open-cell-value">{{ blocks_to_time(oo.oldest_swap_blocks) }}</div>
+      <div class="open-cell-value">{{ oo.oldest_swap_duration }}</div>
     </div>
     <div class="open-cell">
       <div class="open-cell-label">⏱ Avg age</div>
-      <div class="open-cell-value">{{ blocks_to_time(oo.average_age_blocks) }}</div>
+      <div class="open-cell-value">{{ oo.average_age_duration }}</div>
     </div>
   </div>
   {% endif %}

@@ -11,7 +11,7 @@ from jobs.scanner.limit_detector import LimitSwapBlockUpdate, ClosedLimitSwap
 from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorTxMessage
 from lib.accumulator import DailyAccumulator
 from lib.active_users import DailyActiveUserCounter
-from lib.date_utils import now_ts, DAY
+from lib.date_utils import now_ts, DAY, format_thor_blocks_duration
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -354,9 +354,11 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             )
             open_orders = LimitSwapOpenState(
                 total_count=int(ls_summary.total_limit_swaps or 0),
-                total_value_usd=round(float(ls_summary.total_value_usd or 0), 2),
+                total_value_usd=round(thor_to_float(ls_summary.total_value_usd or 0), 2),
                 oldest_swap_blocks=int(ls_summary.oldest_swap_blocks or 0),
                 average_age_blocks=int(ls_summary.average_age_blocks or 0),
+                oldest_swap_duration=format_thor_blocks_duration(int(ls_summary.oldest_swap_blocks or 0)),
+                average_age_duration=format_thor_blocks_duration(int(ls_summary.average_age_blocks or 0)),
                 queue_depth=int(ls_queue.pagination.total or 0),
                 pairs=sorted(
                     [

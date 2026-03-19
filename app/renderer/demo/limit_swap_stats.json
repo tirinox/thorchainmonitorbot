@@ -45,6 +45,8 @@
       "total_value_usd": 318640.0,
       "oldest_swap_blocks": 2430,
       "average_age_blocks": 820,
+      "oldest_swap_duration": "4h 3m",
+      "average_age_duration": "1h 22m",
       "queue_depth": 448,
       "pairs": [
         { "pair": "BTC.BTC->THOR.RUNE",   "opened_count": 174, "opened_usd": 124380.0, "unique_traders": 0 },

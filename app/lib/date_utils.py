@@ -16,6 +16,22 @@ def now_ts() -> float:
     return datetime.now().timestamp()
 
 
+def format_thor_blocks_duration(blocks: int) -> str:
+    """Convert a THORChain block count to a compact human-readable duration."""
+    from lib.constants import THOR_BLOCK_TIME
+
+    seconds = max(0, int(blocks)) * float(THOR_BLOCK_TIME)
+    minutes = int(seconds // 60)
+    if minutes >= 24 * 60:
+        days, rem_minutes = divmod(minutes, 24 * 60)
+        hours = rem_minutes // 60
+        return f'{days}d {hours}h'
+    if minutes >= 60:
+        hours, mins = divmod(minutes, 60)
+        return f'{hours}h {mins}m' if mins else f'{hours}h'
+    return f'{minutes}m'
+
+
 def full_years_old_ts(birth_ts, today_ts=None) -> int:
     today_ts = today_ts or now_ts()
     today = datetime.fromtimestamp(today_ts)
@@ -120,7 +136,7 @@ def parse_timespan_to_seconds(span: str, do_float=True):
         return result
 
 
-def format_time_ago(duration_sec, max_time=30 * DAY, translate=None):
+def format_time_ago(duration_sec, max_time=365 * DAY, translate=None):
     def tr(key):
         return translate.get(key, key) if translate else key
 

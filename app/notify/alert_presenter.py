@@ -137,6 +137,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_net_stats(data)
         elif isinstance(data, WasmPeriodStats):
             await self._handle_app_layer_stats(data)
+        elif isinstance(data, LimitSwapPeriodStats):
+            await self._handle_limit_swap_stats(data)
         elif isinstance(data, EventLastBlock):
             pass  # currently no action
         else:
