@@ -495,7 +495,7 @@ class App(WithLogger):
 
         if d.cfg.get('constants.mimir_change.enabled', True):
             notifier_mimir_change = MimirChangedNotifier(d)
-            d.mimir_const_holder.add_subscriber(notifier_mimir_change)
+            d.mimir_const_fetcher.add_subscriber(notifier_mimir_change)
             notifier_mimir_change.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('constants.voting.enabled', True):

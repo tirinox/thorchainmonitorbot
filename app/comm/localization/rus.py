@@ -1173,6 +1173,7 @@ class RussianLocalization(BaseLocalization):
 
     TEXT_NODE_MIMIR_VOTING_TITLE = '🏛️ <b>Голосование нод за Мимир</b>\n\n'
     TEXT_NODE_MIMIR_VOTING_NOTHING_YET = 'Пока нет активных голосований.'
+    TEXT_VOTING_MENU_TITLE = '🏛️ <b>Голосование нод за Мимир</b>\nВыберите ключ для просмотра инфографики:'
     TEXT_NODE_MIMIR_ALREADY_CONSENSUS = '✅'
 
     TEXT_MIMIR_CURR_VAL = 'Текущее значение'

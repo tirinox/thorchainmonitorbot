@@ -6,16 +6,19 @@ from comm.localization.manager import BaseLocalization
 from comm.picture.nodes_pictures import NodePictureGenerator
 from comm.picture.queue_picture import queue_graph
 from comm.picture.supply_picture import SupplyPictureGenerator
+from comm.telegram.inline_list import TelegramInlineList
 from jobs.fetch.cached.wasm import WasmCache
 from jobs.fetch.top_pools import BestPoolsFetcher
 from jobs.fetch.wasm_stats import WasmStatsBuilder
 from jobs.limit_recorder import LimitSwapStatsRecorder
 from jobs.ruji_merge import RujiMergeTracker
 from jobs.rune_burn_recorder import RuneBurnRecorder
+from jobs.vote_recorder import VoteRecorder
 from jobs.wasm_recorder import CosmWasmRecorder
 from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from lib.draw_utils import img_to_bio
 from lib.texts import kbd
+from models.mimir import AlertMimirVoting
 from models.net_stats import AlertNetworkStats
 from models.node_info import NodeInfo, NetworkNodes
 from models.ruji import AlertRujiraMergeStats
@@ -24,7 +27,7 @@ from notify.public.cex_flow import CEXFlowRecorder
 from notify.public.node_churn_notify import NodeChurnNotifier
 from notify.public.price_notify import PriceChangeNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
-from .base import BaseDialog, message_handler
+from .base import BaseDialog, message_handler, query_handler
 from ..picture.pools_picture import PoolPictureGenerator
 
 
@@ -37,6 +40,8 @@ class MetricsStates(StatesGroup):
     MAIN_METRICS_MENU = State()
 
     GENERIC_DURATION = State()
+
+    VOTING_MENU = State()
 
 
 class MetricsDialog(BaseDialog):
@@ -129,7 +134,8 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_METR_MIMIR:
             await self.show_mimir_info(message)
         elif message.text == self.loc.BUTTON_METR_VOTING:
-            await self.show_voting_info(message)
+            await self.show_voting_menu(message)
+            return
         await self.show_menu_net_op(message)
 
     async def show_cap(self, message: Message):
@@ -231,14 +237,79 @@ class MetricsDialog(BaseDialog):
                                  disable_web_page_preview=True,
                                  disable_notification=True)
 
-    async def show_voting_info(self, message: Message):
-        await self.start_typing(message)
+    # ---- Voting inline menu ----
 
-        texts = self.loc.text_node_mimir_voting(self.deps.mimir_const_holder)
-        for text in texts:
-            await message.answer(text,
-                                 disable_web_page_preview=True,
-                                 disable_notification=True)
+    DATA_PREFIX_VOTING = 'voting_menu'
+    VOTING_HISTORY_DAYS = 14
+
+    def _make_voting_list(self) -> TelegramInlineList:
+        holder = self.deps.mimir_const_holder
+        votings = holder.voting_manager.all_voting_list
+        items = []
+        for v in votings:
+            pretty = holder.pretty_name(v.key)
+            passed_mark = ' ✅' if v.passed else ''
+            display = f'{pretty}{passed_mark}  ({v.total_voters}/{v.active_nodes_count})'
+            items.append((display, v.key))
+        return TelegramInlineList(
+            items,
+            data_proxy=self.data,
+            max_rows=4,
+            max_columns=1,
+            back_text=self.loc.BUTTON_BACK,
+            data_prefix=self.DATA_PREFIX_VOTING,
+            loc=self.loc,
+        )
+
+    async def show_voting_menu(self, message: Message):
+        holder = self.deps.mimir_const_holder
+        if not holder or not holder.voting_manager or not holder.voting_manager.all_voting:
+            await message.answer(self.loc.TEXT_NODE_MIMIR_VOTING_NOTHING_YET, disable_notification=True)
+            return
+
+        await MetricsStates.VOTING_MENU.set()
+        tg_list = self._make_voting_list().reset_page()
+        await message.answer(
+            self.loc.TEXT_VOTING_MENU_TITLE,
+            reply_markup=tg_list.keyboard(),
+            disable_notification=True,
+            disable_web_page_preview=True,
+        )
+
+    @query_handler(state=MetricsStates.VOTING_MENU)
+    async def on_voting_menu_query(self, query: CallbackQuery):
+        tg_list = self._make_voting_list()
+        result = await tg_list.handle_query(query)
+
+        if result.result == result.BACK:
+            await self.show_menu_net_op(query.message)
+        elif result.result == result.SELECTED:
+            await self.show_voting_infographic_for_key(query.message, result.selected_data_tag)
+
+    async def show_voting_infographic_for_key(self, message: Message, voting_key: str):
+        await self.start_typing(message)
+        holder = self.deps.mimir_const_holder
+        voting = holder.voting_manager.find_voting(voting_key)
+        if not voting:
+            await message.answer(self.loc.TEXT_NODE_MIMIR_VOTING_NOTHING_YET, disable_notification=True)
+            return
+
+        vote_recorder = VoteRecorder(self.deps)
+        voting_history = await vote_recorder.get_key_progress(voting_key, self.VOTING_HISTORY_DAYS * DAY)
+
+        alert = AlertMimirVoting(
+            holder=holder,
+            voting=voting,
+            triggered_option=None,
+            voting_history=voting_history,
+        )
+
+        text = self.loc.notification_text_mimir_voting_progress(alert)
+        photo, photo_name = await self.deps.alert_presenter.render_voting_chart(self.loc, alert)
+        if photo is not None:
+            await message.answer_photo(photo, caption=text, disable_notification=True)
+        else:
+            await message.answer(text, disable_web_page_preview=True, disable_notification=True)
 
     async def show_top_pools(self, message: Message):
         await self.start_typing(message)

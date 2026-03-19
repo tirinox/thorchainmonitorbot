@@ -8,7 +8,7 @@ from lib.date_utils import now_ts
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from models.mimir import MimirChange, AlertMimirChange
+from models.mimir import MimirChange, AlertMimirChange, MimirHolder
 from models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY
 
 TOO_MANY_CHANGES = 10

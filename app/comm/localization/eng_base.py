@@ -1514,6 +1514,8 @@ class BaseLocalization(ABC):  # == English
     TEXT_NODE_MIMIR_VOTING_TITLE = '🏛️ <b>Node-Mimir voting</b>\n\n'
     TEXT_NODE_MIMIR_VOTING_NOTHING_YET = 'No active voting yet.'
 
+    TEXT_VOTING_MENU_TITLE = '🏛️ <b>Node-Mimir Voting</b>\nSelect a key to view its infographic:'
+
     TEXT_NODE_MIMIR_ALREADY_CONSENSUS = ' ✅'
 
     TEXT_MIMIR_CURR_VAL = 'Current value'
@@ -2285,8 +2287,7 @@ class BaseLocalization(ABC):  # == English
 
         str_value_delta_pct, str_value_delta_abs = '', ''
         if prev:
-            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True, brackets=True,
-                                                threshold_pct=0.5)
+            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True, brackets=True)
             # str_value_delta_abs = up_down_arrow(
             # prev.rune_value, curr.rune_value, money_delta=True, postfix=RAIDO_GLYPH)
 
