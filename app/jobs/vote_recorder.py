@@ -32,7 +32,7 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
             return
 
         self.logger.info(
-            f"Recording votes for mimir {format_time_ago(now_ts() - data.ts, max_time=YEAR)}: "
+            f"Recording votes for mimir {format_time_ago(now_ts() - data.last_timestamp, max_time=YEAR)}: "
             f"{data.voting_manager.active_vote_count} votes")
 
         votes_grouped = defaultdict(list)
@@ -45,7 +45,7 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
 
         packed[self.BLOCK_SPECIAL_KEY] = data.last_thor_block
 
-        await self.accumulator.set(data.ts, **packed)
+        await self.accumulator.set(data.last_timestamp, **packed)
 
     async def get_point(self, ts):
         return await self.accumulator.get(ts, conv_to_float=False)

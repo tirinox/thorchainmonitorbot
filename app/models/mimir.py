@@ -3,11 +3,12 @@ import math
 import operator
 from dataclasses import dataclass
 from functools import cached_property
-from itertools import chain, groupby
+from itertools import chain
 from typing import Dict, List, Optional, NamedTuple
 
 from api.aionode.types import ThorConstants, ThorMimir, ThorMimirVote
 from lib.constants import bp_to_float
+from lib.date_utils import format_time_ago, now_ts
 from lib.delegates import INotified, WithDelegates
 from lib.logs import WithLogger
 from lib.texts import split_by_camel_case
@@ -270,10 +271,13 @@ class MimirHolder(INotified, WithLogger, WithDelegates):
             self.logger.error('Constants data is empty!')
             return self
 
-        self.logger.info(f'Got {len(data.constants.constants)} CONST entries'
-                         f' and {len(data.mimir.constants)} MIMIR entries.')
-
         self.last_thor_block = data.thor_height
+        self.last_timestamp = data.ts
+
+        self.logger.info(f'Got {len(data.constants.constants)} CONST entries, '
+                         f'{len(data.mimir.constants)} MIMIR entries, '
+                         f'{len(data.votes)} Node votes '
+                         f'@ block {data.thor_height} [{format_time_ago(now_ts() - data.ts)} ago]')
 
         if with_voting:
             active_node_addresses = [n.node_address for n in active_nodes if n.node_address and n.is_active]

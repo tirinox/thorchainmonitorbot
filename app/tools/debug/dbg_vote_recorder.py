@@ -321,6 +321,7 @@ async def dbg_vote_continuous_monitor(app: LpAppFramework, enable_fake_injector:
         fake_injector.add_subscriber(voting_notifier.vote_recorder)
         fake_injector.add_subscriber(voting_notifier)
     else:
+        mimir_fetcher.add_subscriber(holder)
         holder.add_subscriber(voting_notifier.vote_recorder)
         holder.add_subscriber(voting_notifier)
 
