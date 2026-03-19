@@ -1,3 +1,4 @@
+import re
 import yaml
 
 from lib.path import get_data_path
@@ -202,6 +203,8 @@ class MimirNameRules:
             return ''
 
         name = name.upper()
+        if re.fullmatch(r'ADR0\d+', name):
+            return MimirUnits.UNITS_BOOL
         if name in self.rules['types']['rune']:
             return MimirUnits.UNITS_RUNES
         elif name in self.rules['types']['blocks']:
