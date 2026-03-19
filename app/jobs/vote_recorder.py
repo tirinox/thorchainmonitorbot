@@ -21,11 +21,57 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
     META_KEY_BLOCK_HEIGHT = '__block_height__'
     META_KEY_ACTIVE_NODES = '__active_nodes__'
 
+    REDIS_KEY_VOTE_TIMESTAMPS = 'MimirVoteTimestamps'  # hash: voting_key -> json {"first": ts, "last": ts}
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
         self.accumulator = Accumulator("MimirVotes", deps.db, HOUR * 4)
         self.block_mapper = DateToBlockMapper(deps)
+
+    # ------------------------------------------------------------------
+    # Timestamp persistence helpers
+    # ------------------------------------------------------------------
+
+    async def _update_vote_timestamps(self, keys: List[str], ts: float):
+        """For each key set last_seen=ts; set first_seen=ts only on first encounter."""
+        redis = self.deps.db.redis
+        for key in keys:
+            raw = await redis.hget(self.REDIS_KEY_VOTE_TIMESTAMPS, key)
+            if raw:
+                data = json.loads(raw)
+                data['last'] = ts
+            else:
+                data = {'first': ts, 'last': ts}
+            await redis.hset(self.REDIS_KEY_VOTE_TIMESTAMPS, key, json.dumps(data))
+
+    async def get_vote_timestamps(self, key: str) -> tuple:
+        """Return (first_seen_ts, last_seen_ts) for the given voting key, or (0, 0) if unknown."""
+        raw = await self.deps.db.redis.hget(self.REDIS_KEY_VOTE_TIMESTAMPS, key)
+        if raw:
+            data = json.loads(raw)
+            return float(data.get('first', 0)), float(data.get('last', 0))
+        return 0.0, 0.0
+
+    async def get_all_vote_timestamps(self) -> Dict[str, tuple]:
+        """Return {key: (first_seen_ts, last_seen_ts)} for all tracked voting keys."""
+        all_raw = await self.deps.db.redis.hgetall(self.REDIS_KEY_VOTE_TIMESTAMPS)
+        result = {}
+        for k, v in all_raw.items():
+            data = json.loads(v)
+            result[k] = (float(data.get('first', 0)), float(data.get('last', 0)))
+        return result
+
+    async def enrich_with_timestamps(self, votings: List) -> List:
+        """Populate first_seen_ts / last_seen_ts on a list of MimirVoting objects in-place."""
+        all_ts = await self.get_all_vote_timestamps()
+        for voting in votings:
+            first, last = all_ts.get(voting.key, (0.0, 0.0))
+            voting.first_seen_ts = first
+            voting.last_seen_ts = last
+        return votings
+
+    # ------------------------------------------------------------------
 
     async def on_data(self, sender, data: MimirHolder):
         if not data.last_timestamp:
@@ -48,6 +94,11 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
         packed[self.META_KEY_ACTIVE_NODES] = data.voting_manager.active_node_count
 
         await self.accumulator.set(data.last_timestamp, **packed)
+
+        # Track first/last seen timestamps for every active voting key
+        active_keys = [v.key for v in data.voting_manager.all_voting_list]
+        if active_keys:
+            await self._update_vote_timestamps(active_keys, data.last_timestamp)
 
     async def get_point(self, ts):
         return await self.accumulator.get(ts, conv_to_float=False)
@@ -83,11 +134,18 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
     async def get_key_progress(self, key: str, duration_sec: float) \
             -> Dict[float, MimirVoting]:
         all_progress = await self.get_recent_progress(duration_sec, key_filter=key)
-        return {
+        result = {
             ts: voting_list[0] if voting_list else None
             for ts, voting_list in all_progress.items()
             if voting_list
         }
+        # Enrich with persisted timestamps
+        first_seen, last_seen = await self.get_vote_timestamps(key)
+        for voting in result.values():
+            if voting is not None:
+                voting.first_seen_ts = first_seen
+                voting.last_seen_ts = last_seen
+        return result
 
     async def get_recent_progress(self, duration_sec: float, key_filter: str = None) -> Dict[float, List[MimirVoting]]:
         if duration_sec < self.accumulator.tolerance:
@@ -96,7 +154,15 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
         end_ts = now_ts()
         start_ts = end_ts - duration_sec
         points = await self.accumulator.get_range(start_ts, end_ts, conv_to_float=False)
-        return {
+        result = {
             ts: self.snapshot_to_voting_list(snapshot, key_filter)
             for ts, snapshot in points.items()
         }
+        # Enrich all unique voting keys with persisted timestamps
+        all_ts = await self.get_all_vote_timestamps()
+        for voting_list in result.values():
+            for voting in voting_list:
+                first, last = all_ts.get(voting.key, (0.0, 0.0))
+                voting.first_seen_ts = first
+                voting.last_seen_ts = last
+        return result

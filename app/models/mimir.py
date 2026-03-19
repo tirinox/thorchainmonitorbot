@@ -40,10 +40,13 @@ class MimirVoteOption:
 
 
 class MimirVoting:
-    def __init__(self, key: str, options: Dict[int, 'MimirVoteOption'], active_nodes_count: int):
+    def __init__(self, key: str, options: Dict[int, 'MimirVoteOption'], active_nodes_count: int,
+                 first_seen_ts: float = 0.0, last_seen_ts: float = 0.0):
         self.key = key
         self.options = options
         self.active_nodes_count = active_nodes_count or 1  # Avoid division by zero
+        self.first_seen_ts = first_seen_ts  # timestamp when this key's first vote was recorded
+        self.last_seen_ts = last_seen_ts    # timestamp when this key's latest vote was recorded
 
     @property
     def all_values(self):
@@ -402,8 +405,11 @@ class AlertMimirVoting(NamedTuple):
             'key': self.voting.key,
             'pretty_name': self.pretty_name,
             'active_nodes': self.voting.active_nodes_count,
+            'abstained_nodes': self.voting.active_nodes_count - self.voting.total_voters,
             'history': history,
-            'decoded_values': decoded_values
+            'decoded_values': decoded_values,
+            'first_seen_ts': self.voting.first_seen_ts,
+            'last_seen_ts': self.voting.last_seen_ts,
         }
 
     @property
