@@ -10,16 +10,15 @@ async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app:
 
-        mimir = await lp_app.deps.mimir_cache.get_mimir_holder()
-
-        mimir.mimir_rules.load(MIMIR_DICT_FILENAME)
+        mimir_holder = await lp_app.deps.mimir_cache.get_mimir_holder()
+        mimir_holder.mimir_rules.load(MIMIR_DICT_FILENAME)
 
         # pools = await lp_app.deps.pool_cache.get_pools()
         # mimir.mimir_rules.update_asset_names(pools)
 
-        converter = mimir.mimir_rules.name_to_human
+        converter = mimir_holder.mimir_rules.name_to_human
 
-        current_names = set([k.upper() for k in mimir.all_names_including_voting])
+        current_names = set([k.upper() for k in mimir_holder.all_names_including_voting])
 
         sep()
         code_gen = ''

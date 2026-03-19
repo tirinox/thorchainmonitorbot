@@ -24,16 +24,16 @@ class TCYInfoFetcher(BaseFetcher):
             return VNXTcyData(**data)
 
     async def get_tcy_status_from_mimir(self) -> TcyStatus:
-        mimir = await self.deps.mimir_cache.get_mimir_holder()
+        mimir_holder = await self.deps.mimir_cache.get_mimir_holder()
 
         return TcyStatus(
-            halt_claiming=mimir.get_constant(TcyMimirs.HALT_CLAIMING),
-            halt_staking=mimir.get_constant(TcyMimirs.HALT_STAKING),
-            halt_trading=mimir.get_constant(TcyMimirs.HALT_TRADING),
-            halt_unstaking=mimir.get_constant(TcyMimirs.HALT_UNSTAKING),
-            halt_claiming_swap=mimir.get_constant(TcyMimirs.HALT_CLAIMING_SWAP),
-            halt_stake_distribution=mimir.get_constant(TcyMimirs.HALT_STAKE_DISTRIBUTION),
-            system_income_bps_to_tcy=mimir.get_constant(TcyMimirs.TCY_STAKE_SYSTEM_INCOME_BPS),
+            halt_claiming=mimir_holder.get_constant(TcyMimirs.HALT_CLAIMING),
+            halt_staking=mimir_holder.get_constant(TcyMimirs.HALT_STAKING),
+            halt_trading=mimir_holder.get_constant(TcyMimirs.HALT_TRADING),
+            halt_unstaking=mimir_holder.get_constant(TcyMimirs.HALT_UNSTAKING),
+            halt_claiming_swap=mimir_holder.get_constant(TcyMimirs.HALT_CLAIMING_SWAP),
+            halt_stake_distribution=mimir_holder.get_constant(TcyMimirs.HALT_STAKE_DISTRIBUTION),
+            system_income_bps_to_tcy=mimir_holder.get_constant(TcyMimirs.TCY_STAKE_SYSTEM_INCOME_BPS),
         )
 
     async def get_tcy_total_supply(self) -> float:
