@@ -1,13 +1,12 @@
 import json
 
-from jobs.fetch.mimir import ConstMimirFetcher
 from jobs.vote_recorder import VoteRecorder
 from lib.cooldown import Cooldown
 from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from models.mimir import MimirVoteManager, MimirVoteOption, MimirVoting, AlertMimirVoting, MimirTuple
+from models.mimir import MimirVoteManager, MimirVoteOption, MimirVoting, AlertMimirVoting, MimirHolder
 
 
 class VotingNotifier(INotified, WithDelegates, WithLogger):
@@ -63,14 +62,11 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
             )
             await cd.do()
 
-    async def on_data(self, sender: ConstMimirFetcher, data: MimirTuple):
-        # todo: subscribe directly to mimir_const_holder, which passes itself as data
-        holder = self.deps.mimir_const_holder
-
+    async def on_data(self, sender, data: MimirHolder):
         prev_state = await self.read_prev_state()
 
         events = []
-        for voting in holder.voting_manager.all_voting_list:
+        for voting in data.voting_manager.all_voting_list:
             prev_voting = prev_state.get(voting.key)
             if not prev_voting:  # ignore for the first time to avoid spamming
                 continue
@@ -91,4 +87,4 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
             for ev in events:
                 await self._on_progress_changed(*ev)
 
-        await self._save_prev_state(holder.voting_manager)
+        await self._save_prev_state(data.voting_manager)
