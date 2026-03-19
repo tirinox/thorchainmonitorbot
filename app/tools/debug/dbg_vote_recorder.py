@@ -17,6 +17,7 @@ from lib.texts import sep
 from lib.utils import parallel_run_in_groups
 from models.mimir import MimirHolder, AlertMimirVoting, MimirTuple
 from models.mimir_naming import MIMIR_DICT_FILENAME
+from models.node_info import NetworkNodes
 from notify.public.voting_notify import VotingNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -141,7 +142,7 @@ class FakeVoteInjector(INotified, WithDelegates):
 
     async def on_data(self, sender, data: MimirTuple):
         nodes = await sender.deps.node_cache.get()
-        active_signers = [node.node_address for node in nodes.active_nodes if node.node_address]
+        active_signers = [node.node_address for node in nodes.active_nodes_count if node.node_address]
         patched = self._inject(data, active_signers)
         await self.pass_data_to_listeners(patched, sender=sender)
 
@@ -156,7 +157,7 @@ async def dbg_vote_recorder_continuous(app: LpAppFramework):
     await mimir_fetcher.run()
 
 
-async def dbg_vote_record_from_past(app: LpAppFramework, overwrite=False):
+async def dbg_vote_record_from_past(app: LpAppFramework):
     d = app.deps
 
     vote_recorder = VoteRecorder(d)
@@ -166,13 +167,30 @@ async def dbg_vote_record_from_past(app: LpAppFramework, overwrite=False):
     past_block = last_block - int(10 * DAY / THOR_BLOCK_TIME)
     # interval = (last_block - past_block) // 10
     interval = 100
+    concurency = 1
+
+    holder = MimirHolder()
+    holder.mimir_rules.load(MIMIR_DICT_FILENAME)
+
+    # let's pretend that active nodes haven't changed for the past blocks
+    nodes: NetworkNodes = await app.deps.node_cache.get()
+
+    block_mapper = DateToBlockMapper(app.deps)
 
     async def process_one_block(block):
-        mimir_tuple = await app.deps.mimir_cache.get(height=block, forced=True)
-        await vote_recorder.on_data(sender=None, data=mimir_tuple)
+        try:
+            mimir_tuple = await app.deps.mimir_cache.get_for_height_no_cache(block, only_votes=True)
+            block_date = await block_mapper.get_datetime_by_block_height(block)
+            mimir_tuple.ts = block_date.timestamp() if block_date else 0
+            holder.update_voting(mimir_tuple, nodes.active_nodes)
+            holder.last_timestamp = mimir_tuple.ts
+            holder.last_thor_block = block
+            await vote_recorder.on_data(sender=None, data=holder)
+        except Exception as e:
+            print(f'[Error] Failed to process block {block}: {e}')
 
     tasks = [process_one_block(block) for block in reversed(range(past_block, last_block, interval))]
-    await parallel_run_in_groups(tasks, 10, use_tqdm=True)
+    await parallel_run_in_groups(tasks, concurency, use_tqdm=True)
 
 
 async def dbg_print_recent_changes(app: LpAppFramework):
@@ -284,7 +302,7 @@ async def dbg_vote_continuous_monitor(app: LpAppFramework, enable_fake_injector:
             key = alert.voting.key
             pretty = alert.pretty_name or key
             opt = alert.triggered_option
-            active = alert.voting.active_nodes
+            active = alert.voting.active_nodes_count
             units = holder.mimir_rules.get_mimir_units(key)
             loc = d.loc_man.default
             decoded_val = loc.format_mimir_value(key, opt.value, units=units) if opt else '?'
@@ -329,6 +347,48 @@ async def dbg_vote_continuous_monitor(app: LpAppFramework, enable_fake_injector:
     await mimir_fetcher.run()
 
 
+async def dbg_send_demo_alert(app: LpAppFramework, key: str = "NEXTCHAIN", duration: float = 7 * DAY):
+    """
+    Fetch recent recorded voting history for *key* and immediately send the
+    voting infographic to the notification channel via the alert presenter.
+
+    Parameters
+    ----------
+    key      : mimir key to look up (e.g. "NEXTCHAIN", "HALTSIGNINGSOL")
+    duration : how far back to pull history, in seconds (default 7 days)
+    """
+    d = app.deps
+
+    vote_recorder = VoteRecorder(d)
+    history = await vote_recorder.get_key_progress(key, duration)
+
+    if not history:
+        print(f'[dbg_send_demo_alert] No recorded history found for key={key!r} in the last {duration / DAY:.1f} days.')
+        return
+
+    mimir = await d.mimir_cache.get_mimir_holder()
+
+    last_ts = max(history)
+    latest_voting = history[last_ts]
+
+    alert = AlertMimirVoting(
+        holder=mimir,
+        voting=latest_voting,
+        triggered_option=latest_voting.top_options[0] if latest_voting.top_options else None,
+        voting_history=history,
+    )
+
+    sep()
+    print(f'[dbg_send_demo_alert] Sending voting infographic for key={key!r}')
+    print(f'         history points : {len(history)}')
+    print(f'         latest snapshot: {latest_voting}')
+    sep()
+
+    await d.alert_presenter.handle_data(alert)
+    print('[dbg_send_demo_alert] Alert sent. Waiting for delivery…')
+    await asyncio.sleep(5)
+
+
 async def dbg_mimir_at_block(app: LpAppFramework):
     last_block = await app.deps.last_block_cache.get_thor_block()
     print('last_block', last_block)
@@ -351,7 +411,8 @@ async def main():
         # await dbg_vote_record_from_past(app)
         # await dbg_vote_retrieve(app, "NEXTCHAIN")
         # await dbg_print_recent_changes(app)
-        await dbg_vote_continuous_monitor(app)
+        # await dbg_vote_continuous_monitor(app)
+        await dbg_send_demo_alert(app, key="ADR024")
 
 
 if __name__ == '__main__':

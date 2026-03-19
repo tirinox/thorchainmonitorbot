@@ -263,22 +263,7 @@ class MimirHolder(INotified, WithLogger, WithDelegates):
     def pretty_name(self, name):
         return self.hard_coded_pretty_names.get(name) or self.mimir_rules.name_to_human(name)
 
-    def update(self, data: MimirTuple, active_nodes: List[NodeInfo]) -> 'MimirHolder':
-        if not data.mimir.constants:
-            self.logger.error('Mimir data is empty!')
-            return self
-        if not data.constants.constants:
-            self.logger.error('Constants data is empty!')
-            return self
-
-        self.last_thor_block = data.thor_height
-        self.last_timestamp = data.ts
-
-        self.logger.info(f'Got {len(data.constants.constants)} CONST entries, '
-                         f'{len(data.mimir.constants)} MIMIR entries, '
-                         f'{len(data.votes)} Node votes '
-                         f'@ block {data.thor_height} [{format_time_ago(now_ts() - data.ts)} ago]')
-
+    def update_voting(self, data: MimirTuple, active_nodes: List[NodeInfo]):
         active_node_addresses = [n.node_address for n in active_nodes if n.node_address and n.is_active]
         if active_node_addresses:
             self.voting_manager = MimirVoteManager(
@@ -286,6 +271,25 @@ class MimirHolder(INotified, WithLogger, WithDelegates):
                 active_node_addresses,
                 self.mimir_rules.excluded_from_voting
             )
+
+    def update(self, data: MimirTuple, active_nodes: List[NodeInfo]) -> 'MimirHolder':
+        self.update_voting(data, active_nodes)
+        if data.thor_height:
+            self.last_thor_block = data.thor_height
+        if data.ts:
+            self.last_timestamp = data.ts
+
+        if not data.mimir.constants:
+            self.logger.error('Mimir data is empty!')
+            return self
+        if not data.constants.constants:
+            self.logger.error('Constants data is empty!')
+            return self
+
+        self.logger.info(f'Got {len(data.constants.constants)} CONST entries, '
+                         f'{len(data.mimir.constants)} MIMIR entries, '
+                         f'{len(data.votes)} Node votes '
+                         f'@ block {data.thor_height} [{format_time_ago(now_ts() - data.ts)} ago]')
 
         hard_coded_constants = {n.upper(): v for n, v in data.constants.constants.items()}
         self.hard_coded_pretty_names = {
@@ -337,6 +341,7 @@ class MimirHolder(INotified, WithLogger, WithDelegates):
                 units=units,
                 source=source
             )
+
         return self
 
     @property
