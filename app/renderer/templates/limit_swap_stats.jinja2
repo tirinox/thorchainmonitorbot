@@ -5,6 +5,7 @@
 {% set daily     = daily     or [] %}
 {% set top_pairs = top_pairs or [] %}
 {% set days      = period_days | int %}
+{% set max_pairs = max_pairs | default(6) | int %}
 
 {# ── helpers ─────────────────────────────────────────────── #}
 {% macro short_asset(full) -%}
@@ -173,7 +174,7 @@
     display: flex; align-items: center; gap: 10px;
     padding-right: 28px;
     border-right: 1px solid rgba(255,255,255,.07);
-    color: rgba(255,185,45,.85); font-size: 17px; font-weight: 800;
+    color: rgba(255,185,45,.85); font-size: 26px; font-weight: 800;
     text-transform: uppercase; letter-spacing: .16em; white-space: nowrap;
   }
   .open-badge-dot {
@@ -187,7 +188,7 @@
   }
   .open-cell:last-child { border-right: none; }
   .open-cell-label {
-    font-size: 16px; color: #9eb3ba; text-transform: uppercase;
+    font-size: 19px; color: #9eb3ba; text-transform: uppercase;
     letter-spacing: .09em; margin-bottom: 4px;
   }
   .open-cell-value {
@@ -195,7 +196,7 @@
   }
 
   #tradersChart {
-      padding-right: 22px;
+      padding-right: 2px;
   }
 </style>
 
@@ -290,7 +291,7 @@
       {% if top_pairs %}
         {% set other = namespace(opened_count=0, opened_usd=0.0) %}
         <div class="pairs-list">
-          {% for p in top_pairs[:7] %}
+          {% for p in top_pairs[:max_pairs] %}
             <div class="pair-row">
               <div class="pair-rank">{{ loop.index }}</div>
               <div class="pair-name">{{ pair_label(p.pair) }}</div>
@@ -299,12 +300,12 @@
             </div>
           {% endfor %}
 
-          {% for p in top_pairs[7:] %}
+          {% for p in top_pairs[max_pairs:] %}
             {% set other.opened_count = other.opened_count + (p.opened_count | int) %}
             {% set other.opened_usd = other.opened_usd + (p.opened_usd | float) %}
           {% endfor %}
 
-          {% if top_pairs|length > 7 %}
+          {% if top_pairs|length > max_pairs %}
             <div class="pair-row pair-row-others">
               <div class="pair-rank">…</div>
               <div class="pair-name">Others</div>
