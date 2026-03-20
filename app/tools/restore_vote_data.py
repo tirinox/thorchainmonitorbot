@@ -8,13 +8,12 @@ from lib.constants import THOR_BLOCK_TIME
 from lib.date_utils import DAY
 from lib.utils import parallel_run_in_groups
 from models.mimir import MimirHolder
-from models.mimir_naming import MIMIR_DICT_FILENAME
 from models.node_info import NetworkNodes, NodeInfo
 from tools.lib.lp_common import LpAppFramework
 
 
 async def restore_vote_records_from_past(app: LpAppFramework, days: int = 30, interval: int = 1000,
-                                         concurrency: int = 10):
+                                         concurrency: int = 10, clear_first: bool = False):
     d = app.deps
 
     vote_recorder = VoteRecorder(d)
@@ -23,9 +22,7 @@ async def restore_vote_records_from_past(app: LpAppFramework, days: int = 30, in
     last_block = await app.deps.last_block_cache.get_thor_block()
     past_block = last_block - int(days * DAY / THOR_BLOCK_TIME)
 
-    holder = MimirHolder()
-    holder.mimir_rules.load(MIMIR_DICT_FILENAME)
-
+    mimir_rules = app.deps.mimir_cache.rules
 
     block_mapper = DateToBlockMapper(app.deps)
 
@@ -38,15 +35,28 @@ async def restore_vote_records_from_past(app: LpAppFramework, days: int = 30, in
             node_list: List[NodeInfo] = await app.deps.node_cache.fetch_node_list(height=block)
             nodes = NetworkNodes(node_list, {})
 
+            holder = MimirHolder()
+            holder.mimir_rules = mimir_rules
             holder.update_voting(mimir_tuple, nodes.active_nodes)
             holder.last_timestamp = mimir_tuple.ts
             holder.last_thor_block = block
-            await vote_recorder.on_data(sender=None, data=holder)
+            return holder
         except Exception as e:
             print(f'[Error] Failed to process block {block}: {e}')
+            return None
 
-    tasks = [process_one_block(block) for block in reversed(range(past_block, last_block, interval))]
-    await parallel_run_in_groups(tasks, concurrency, use_tqdm=True)
+    blocks = list(range(past_block, last_block, interval))
+    tasks = [process_one_block(block) for block in blocks]
+    holders = await parallel_run_in_groups(tasks, concurrency, use_tqdm=True)
+
+    if clear_first:
+        n = await vote_recorder.clear_all()
+        print(f'Cleared {n} Redis keys before replaying restored vote data.')
+
+    for holder in holders:
+        if holder is None:
+            continue
+        await vote_recorder.on_data(sender=None, data=holder)
 
 
 async def main():
@@ -57,11 +67,13 @@ async def main():
 
     app = LpAppFramework(log_level=logging.DEBUG)
     async with app:
-        if clear_first:
-            vote_recorder = VoteRecorder(app.deps)
-            n = await vote_recorder.clear_all()
-            print(f'Cleared {n} Redis keys.')
-        await restore_vote_records_from_past(app, days=days, interval=interval, concurrency=concurrency)
+        await restore_vote_records_from_past(
+            app,
+            days=days,
+            interval=interval,
+            concurrency=concurrency,
+            clear_first=clear_first,
+        )
 
 
 if __name__ == '__main__':
