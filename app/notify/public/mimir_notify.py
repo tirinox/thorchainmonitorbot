@@ -27,7 +27,7 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
 
     @staticmethod
     def mimir_last_modification_key(name):
-        return f'MimirLastChangeTS:{name}'
+        return f'Mimir:LastChangeTS:{name}'
 
     async def last_mimir_change_date(self, name: str) -> float:
         if not name:
