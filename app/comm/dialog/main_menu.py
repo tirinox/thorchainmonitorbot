@@ -135,7 +135,7 @@ class MainMenuDialog(BaseDialog):
     @message_handler(commands='voting', state='*')
     async def cmd_voting(self, message: Message):
         message.text = ''
-        await self.build_metrics_dialog().show_voting_info(message)
+        await self.build_metrics_dialog().show_voting_menu(message)
 
     @message_handler(commands='pools', state='*')
     async def cmd_top_pools(self, message: Message):
