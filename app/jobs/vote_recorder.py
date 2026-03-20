@@ -1,6 +1,6 @@
 import json
 from collections import defaultdict
-from typing import List, Dict
+from typing import List, Dict, Iterable, Set
 
 from jobs.runeyield.date2block import DateToBlockMapper
 from lib.accumulator import Accumulator
@@ -21,7 +21,7 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
     META_KEY_BLOCK_HEIGHT = '__block_height__'
     META_KEY_ACTIVE_NODES = '__active_nodes__'
 
-    REDIS_KEY_VOTE_TIMESTAMPS = 'Mimir:Vote:Timestamps'  # hash: voting_key -> json {"first": ts, "last": ts}
+    REDIS_KEY_VOTE_TIMESTAMPS = 'Mimir:Vote:Timestamps'  # hash: voting_key -> json {"first": ts, "last": ts, "signers": []}
 
     def __init__(self, deps: DepContainer):
         super().__init__()
@@ -41,17 +41,49 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
     # Timestamp persistence helpers
     # ------------------------------------------------------------------
 
-    async def _update_vote_timestamps(self, keys: List[str], ts: float):
-        """For each key: first_seen = min(stored, ts), last_seen = max(stored, ts)."""
+    @staticmethod
+    def _normalize_signers(signers: Iterable[str]) -> Set[str]:
+        return {signer for signer in signers if signer}
+
+    def _merge_vote_timestamp_data(self, raw: str, signers: Iterable[str], ts: float) -> dict:
+        current_signers = self._normalize_signers(signers)
+
+        if not raw:
+            return {
+                'first': ts,
+                'last': ts,
+                'signers': sorted(current_signers),
+            }
+
+        data = json.loads(raw)
+        first_seen = min(float(data.get('first', ts)), ts)
+        last_seen = float(data.get('last', first_seen))
+
+        if 'signers' not in data:
+            # Backward compatibility: existing records had only timestamps.
+            # Seed the signer baseline without treating all current signers as newly added.
+            return {
+                'first': first_seen,
+                'last': last_seen,
+                'signers': sorted(current_signers),
+            }
+
+        stored_signers = self._normalize_signers(data.get('signers', []))
+        if current_signers - stored_signers:
+            last_seen = max(last_seen, ts)
+
+        return {
+            'first': first_seen,
+            'last': last_seen,
+            'signers': sorted(stored_signers | current_signers),
+        }
+
+    async def _update_vote_timestamps(self, signers_by_key: Dict[str, Iterable[str]], ts: float):
+        """For each key: keep the earliest first_seen; update last_seen only when a new signer appears."""
         redis = self.deps.db.redis
-        for key in keys:
+        for key, signers in signers_by_key.items():
             raw = await redis.hget(self.REDIS_KEY_VOTE_TIMESTAMPS, key)
-            if raw:
-                data = json.loads(raw)
-                data['first'] = min(float(data.get('first', ts)), ts)
-                data['last'] = max(float(data.get('last', ts)), ts)
-            else:
-                data = {'first': ts, 'last': ts}
+            data = self._merge_vote_timestamp_data(raw, signers, ts)
             await redis.hset(self.REDIS_KEY_VOTE_TIMESTAMPS, key, json.dumps(data))
 
     async def get_vote_timestamps(self, key: str) -> tuple:
@@ -91,9 +123,10 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
             f"Recording votes for mimir {format_time_ago(now_ts() - data.last_timestamp, max_time=YEAR)}: "
             f"{data.voting_manager.active_vote_count} votes, {data.voting_manager.active_node_count} nodes active")
 
-        votes_grouped = defaultdict(list)
+        signers_by_key = defaultdict(set)
         for vote in data.voting_manager.votes:
-            votes_grouped[vote.key].append(vote)
+            if vote.singer:
+                signers_by_key[vote.key].add(vote.singer)
 
         packed = {}
         for voting in data.voting_manager.all_voting_list:
@@ -104,10 +137,9 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
 
         await self.accumulator.set(data.last_timestamp, **packed)
 
-        # Track first/last seen timestamps for every active voting key
-        active_keys = [v.key for v in data.voting_manager.all_voting_list]
-        if active_keys:
-            await self._update_vote_timestamps(active_keys, data.last_timestamp)
+        # Track first seen timestamps for every active voting key, and bump last seen only when a new signer appears.
+        if signers_by_key:
+            await self._update_vote_timestamps(signers_by_key, data.last_timestamp)
 
     async def get_point(self, ts):
         return await self.accumulator.get(ts, conv_to_float=False)
