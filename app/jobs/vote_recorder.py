@@ -21,7 +21,7 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
     META_KEY_BLOCK_HEIGHT = '__block_height__'
     META_KEY_ACTIVE_NODES = '__active_nodes__'
 
-    REDIS_KEY_VOTE_TIMESTAMPS = 'MimirVoteTimestamps'  # hash: voting_key -> json {"first": ts, "last": ts}
+    REDIS_KEY_VOTE_TIMESTAMPS = 'Mimir:Vote:Timestamps'  # hash: voting_key -> json {"first": ts, "last": ts}
 
     def __init__(self, deps: DepContainer):
         super().__init__()
@@ -29,18 +29,27 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
         self.accumulator = Accumulator("MimirVotes", deps.db, HOUR * 4)
         self.block_mapper = DateToBlockMapper(deps)
 
+    async def clear_all(self) -> int:
+        """Delete all recorded vote data: time-series accumulator entries and first/last-seen timestamps.
+        Returns the total number of Redis keys removed."""
+        n_accum = await self.accumulator.clear()
+        await self.deps.db.redis.delete(self.REDIS_KEY_VOTE_TIMESTAMPS)
+        self.logger.warning(f"Cleared all vote data: {n_accum} accumulator keys + timestamps hash deleted")
+        return n_accum + 1
+
     # ------------------------------------------------------------------
     # Timestamp persistence helpers
     # ------------------------------------------------------------------
 
     async def _update_vote_timestamps(self, keys: List[str], ts: float):
-        """For each key set last_seen=ts; set first_seen=ts only on first encounter."""
+        """For each key: first_seen = min(stored, ts), last_seen = max(stored, ts)."""
         redis = self.deps.db.redis
         for key in keys:
             raw = await redis.hget(self.REDIS_KEY_VOTE_TIMESTAMPS, key)
             if raw:
                 data = json.loads(raw)
-                data['last'] = ts
+                data['first'] = min(float(data.get('first', ts)), ts)
+                data['last'] = max(float(data.get('last', ts)), ts)
             else:
                 data = {'first': ts, 'last': ts}
             await redis.hset(self.REDIS_KEY_VOTE_TIMESTAMPS, key, json.dumps(data))

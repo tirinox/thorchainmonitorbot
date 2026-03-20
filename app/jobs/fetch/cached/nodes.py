@@ -1,5 +1,5 @@
 from time import perf_counter
-from typing import List
+from typing import List, Optional
 
 from jobs.fetch.cached.base import CachedDataSource
 from jobs.fetch.circulating import RuneCirculatingSupplyFetcher
@@ -11,6 +11,7 @@ from models.node_info import NodeInfo, NetworkNodes
 
 class NodeCache(CachedDataSource[NetworkNodes]):
     ATTEMPTS = 5
+    NOW = None
 
     def __init__(self, deps: DepContainer):
         super().__init__(cache_period=THOR_BLOCK_TIME, retry_times=self.ATTEMPTS)
@@ -18,7 +19,7 @@ class NodeCache(CachedDataSource[NetworkNodes]):
         self._geo_ip = GeoIPManager(self.deps)
 
     async def _load(self) -> NetworkNodes:
-        nodes = await self.fetch_current_node_list()
+        nodes = await self.fetch_node_list()
         return await self.load_geo_info_for_nodes(nodes)
 
     async def load_geo_info_for_nodes(self, nodes: List[NodeInfo]) -> NetworkNodes:
@@ -41,9 +42,12 @@ class NodeCache(CachedDataSource[NetworkNodes]):
             total_rune_supply=total_rune_supply
         )
 
-    async def fetch_current_node_list(self) -> List[NodeInfo]:
+    async def fetch_node_list(self, height: Optional[int] = NOW) -> List[NodeInfo]:
         thor = self.deps.thor_connector
-        raw_nodes = await thor.query_raw(thor.env.path_nodes)
+        path = thor.env.path_nodes
+        if height is not self.NOW:
+            path = f'{path}?height={height}'
+        raw_nodes = await thor.query_raw(path)
 
         nodes = []
         for j in raw_nodes:

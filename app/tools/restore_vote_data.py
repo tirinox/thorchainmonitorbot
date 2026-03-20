@@ -1,6 +1,6 @@
-import argparse
 import asyncio
 import logging
+from typing import List
 
 from jobs.runeyield.date2block import DateToBlockMapper
 from jobs.vote_recorder import VoteRecorder
@@ -9,11 +9,11 @@ from lib.date_utils import DAY
 from lib.utils import parallel_run_in_groups
 from models.mimir import MimirHolder
 from models.mimir_naming import MIMIR_DICT_FILENAME
-from models.node_info import NetworkNodes
+from models.node_info import NetworkNodes, NodeInfo
 from tools.lib.lp_common import LpAppFramework
 
 
-async def restore_vote_records_from_past(app: LpAppFramework, days: int = 30, interval: int = 100,
+async def restore_vote_records_from_past(app: LpAppFramework, days: int = 30, interval: int = 1000,
                                          concurrency: int = 10):
     d = app.deps
 
@@ -26,8 +26,6 @@ async def restore_vote_records_from_past(app: LpAppFramework, days: int = 30, in
     holder = MimirHolder()
     holder.mimir_rules.load(MIMIR_DICT_FILENAME)
 
-    # let's pretend that active nodes haven't changed for the past blocks
-    nodes: NetworkNodes = await app.deps.node_cache.get()
 
     block_mapper = DateToBlockMapper(app.deps)
 
@@ -36,6 +34,10 @@ async def restore_vote_records_from_past(app: LpAppFramework, days: int = 30, in
             mimir_tuple = await app.deps.mimir_cache.get_for_height_no_cache(block, only_votes=True)
             block_date = await block_mapper.get_datetime_by_block_height(block)
             mimir_tuple.ts = block_date.timestamp() if block_date else 0
+
+            node_list: List[NodeInfo] = await app.deps.node_cache.fetch_node_list(height=block)
+            nodes = NetworkNodes(node_list, {})
+
             holder.update_voting(mimir_tuple, nodes.active_nodes)
             holder.last_timestamp = mimir_tuple.ts
             holder.last_thor_block = block
@@ -48,16 +50,18 @@ async def restore_vote_records_from_past(app: LpAppFramework, days: int = 30, in
 
 
 async def main():
-    parser = argparse.ArgumentParser(description='Restore vote records from past blocks.')
-    parser.add_argument('--days', type=int, default=30, help='How many days to restore (default: 30)')
-    parser.add_argument('--interval', type=int, default=100, help='Interval in blocks (default: 100)')
-    parser.add_argument('--concurency', type=int, default=10, help='Concurrency level (default: 10)')
-    args = parser.parse_args()
+    days = int(input('How many days to restore [30]: ').strip() or 30)
+    interval = int(input('Interval in blocks [1200]: ').strip() or 1200)
+    concurrency = int(input('Concurrency [10]: ').strip() or 10)
+    clear_first = (input('Clear existing vote data before restoring? [y/N]: ').strip().lower() == 'y')
 
     app = LpAppFramework(log_level=logging.DEBUG)
     async with app:
-        await restore_vote_records_from_past(app, days=args.days, interval=args.interval,
-                                             concurrency=args.concurency)
+        if clear_first:
+            vote_recorder = VoteRecorder(app.deps)
+            n = await vote_recorder.clear_all()
+            print(f'Cleared {n} Redis keys.')
+        await restore_vote_records_from_past(app, days=days, interval=interval, concurrency=concurrency)
 
 
 if __name__ == '__main__':

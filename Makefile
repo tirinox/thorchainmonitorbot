@@ -174,13 +174,9 @@ auth_twitter_docker: # Authenticate your Twitter handle to be managed by the bot
 	docker run -it -v ./app:/app -v ./config.yaml:/config/config.yaml thor_bot_twitter_auth
 
 
-RESTORE_DAYS ?= 30
-RESTORE_INTERVAL ?= 100
-RESTORE_CONCURENCY ?= 10
-
 .PHONY: restore-vote-data
-restore-vote-data: # Restore vote records from past blocks (override: RESTORE_DAYS=30 RESTORE_INTERVAL=100 RESTORE_CONCURENCY=10)
-	docker compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/restore_vote_data.py --days $(RESTORE_DAYS) --interval $(RESTORE_INTERVAL) --concurency $(RESTORE_CONCURENCY)'
+restore-vote-data: # Restore vote records from past blocks (interactive prompts for days/interval/concurrency)
+	docker compose exec -it $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/restore_vote_data.py'
 
 
 .PHONY: thin-out-pool-cache  # Thin out the pool cache

@@ -167,7 +167,7 @@ async def dbg_vote_record_from_past(app: LpAppFramework):
     past_block = last_block - int(10 * DAY / THOR_BLOCK_TIME)
     # interval = (last_block - past_block) // 10
     interval = 100
-    concurency = 1
+    concurrency = 1
 
     holder = MimirHolder()
     holder.mimir_rules.load(MIMIR_DICT_FILENAME)
@@ -190,7 +190,7 @@ async def dbg_vote_record_from_past(app: LpAppFramework):
             print(f'[Error] Failed to process block {block}: {e}')
 
     tasks = [process_one_block(block) for block in reversed(range(past_block, last_block, interval))]
-    await parallel_run_in_groups(tasks, concurency, use_tqdm=True)
+    await parallel_run_in_groups(tasks, concurrency, use_tqdm=True)
 
 
 async def dbg_print_recent_changes(app: LpAppFramework):
