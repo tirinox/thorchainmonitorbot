@@ -1392,6 +1392,8 @@ class BaseLocalization(ABC):  # == English
     MIMIR_DISABLED = 'DISABLED'
     MIMIR_YES = 'YES'
     MIMIR_NO = 'NO'
+    MIMIR_VOTE_FOR = 'For'
+    MIMIR_VOTE_AGAINST = 'Against'
     MIMIR_UNDEFINED = 'undefined'
     MIMIR_LAST_CHANGE = 'Last change'
     MIMIR_CHEAT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1mc1mBBExGxtI5a85niijHhle5EtXoTR_S5Ihx808_tM/edit' \
@@ -1427,6 +1429,12 @@ class BaseLocalization(ABC):  # == English
         elif units == MimirUnits.UNITS_BOOL:
             if (isinstance(v, str) and v == '1') or (not isinstance(v, bool) and v == 1):
                 return self.MIMIR_YES
+            return str(v)
+        elif units == MimirUnits.UNITS_VOTE_FOR_AGAINST:
+            if (isinstance(v, str) and v == '1') or (not isinstance(v, bool) and v == 1):
+                return self.MIMIR_VOTE_FOR
+            if (isinstance(v, str) and v == '0') or (not isinstance(v, bool) and v == 0):
+                return self.MIMIR_VOTE_AGAINST
             return str(v)
 
         elif units == MimirUnits.UNITS_SPECIAL_MAP:

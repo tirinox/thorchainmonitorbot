@@ -1160,6 +1160,8 @@ class RussianLocalization(BaseLocalization):
     MIMIR_DISABLED = 'ВЫКЛЮЧЕНО'
     MIMIR_YES = 'ДА'
     MIMIR_NO = 'НЕТ'
+    MIMIR_VOTE_FOR = 'За'
+    MIMIR_VOTE_AGAINST = 'Против'
     MIMIR_UNDEFINED = 'не определено'
     MIMIR_LAST_CHANGE = 'Последнее изменение'
     MIMIR_UNKNOWN_CHAIN = 'Неизв. сеть'

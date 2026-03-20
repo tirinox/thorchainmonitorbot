@@ -405,7 +405,7 @@ async def main():
         # await dbg_vote_retrieve(app, "NEXTCHAIN")
         # await dbg_print_recent_changes(app)
         # await dbg_vote_continuous_monitor(app)
-        await dbg_send_demo_alert(app, key="ADR024")
+        await dbg_send_demo_alert(app, key="ADR23")
 
 
 if __name__ == '__main__':

@@ -58,6 +58,7 @@ class MimirUnits:
     UNITS_BLOCKS = 'blocks'
     UNITS_UNTIL_BLOCK = 'until_block'
     UNITS_BOOL = 'bool'
+    UNITS_VOTE_FOR_AGAINST = 'vote_for_against'
     UNITS_USD = 'usd'
     UNITS_BASIS_POINTS = 'basis_points'
     UNITS_INT = 'int'
@@ -203,8 +204,8 @@ class MimirNameRules:
             return ''
 
         name = name.upper()
-        if re.fullmatch(r'ADR0\d+', name):
-            return MimirUnits.UNITS_BOOL
+        if re.fullmatch(r'ADR\d+', name):
+            return MimirUnits.UNITS_VOTE_FOR_AGAINST
         if name in self.rules['types']['rune']:
             return MimirUnits.UNITS_RUNES
         elif name in self.rules['types']['blocks']:
