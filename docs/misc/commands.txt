@@ -18,3 +18,5 @@ tradeacc - Trade account info
 burnedrune - Burned Rune info
 rujimerge - Rujira merge info
 secured - Secured asset info
+limitswaps - Swap limits info
+applayer - App layer info
