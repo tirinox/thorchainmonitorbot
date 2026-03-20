@@ -6,7 +6,7 @@ from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from models.mimir import MimirVoteManager, MimirVoteOption, MimirVoting, AlertMimirVoting, MimirHolder
+from models.mimir import MimirVoteManager, MimirVoteOption, MimirVoting, MimirHolder
 
 
 class VotingNotifier(INotified, WithDelegates, WithLogger):
@@ -51,15 +51,14 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
     async def _on_progress_changed(self, key, prev_progress, voting: MimirVoting, vote_option: MimirVoteOption):
         cd = Cooldown(self.deps.db, f'VotingNotification:{key}:{vote_option.value}', self.notification_cd_time)
         if await cd.can_do():
-            voting_history = await self.vote_recorder.get_key_progress(key, 7 * DAY)
-            await self.pass_data_to_listeners(
-                AlertMimirVoting(
-                    holder=self.deps.mimir_const_holder,
-                    voting=voting,
-                    triggered_option=vote_option,
-                    voting_history=voting_history,
-                )
+            alert = await self.vote_recorder.get_alert_for_key(
+                key,
+                7 * DAY,
+                holder=self.deps.mimir_const_holder,
+                triggered_option=vote_option,
             )
+            if alert is not None:
+                await self.pass_data_to_listeners(alert)
             await cd.do()
 
     async def on_data(self, sender, data: MimirHolder):

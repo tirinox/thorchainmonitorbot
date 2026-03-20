@@ -1,6 +1,6 @@
 import json
 from collections import defaultdict
-from typing import List, Dict, Iterable, Set
+from typing import List, Dict, Iterable, Set, Optional
 
 from jobs.runeyield.date2block import DateToBlockMapper
 from lib.accumulator import Accumulator
@@ -8,7 +8,7 @@ from lib.date_utils import HOUR, format_time_ago, now_ts, YEAR
 from lib.delegates import WithDelegates, INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from models.mimir import MimirVoting, MimirVoteOption, MimirHolder
+from models.mimir import MimirVoting, MimirVoteOption, MimirHolder, AlertMimirVoting
 
 
 class VoteRecorder(WithLogger, WithDelegates, INotified):
@@ -187,6 +187,33 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
                 voting.first_seen_ts = first_seen
                 voting.last_seen_ts = last_seen
         return result
+
+    async def get_alert_for_key(self, key: str, duration_sec: float,
+                                holder: Optional[MimirHolder] = None,
+                                triggered_option: Optional[MimirVoteOption] = None) -> Optional[AlertMimirVoting]:
+        holder = holder or self.deps.mimir_const_holder
+        if holder is None:
+            return None
+
+        voting_history = await self.get_key_progress(key, duration_sec)
+        voting = holder.voting_manager.find_voting(key)
+
+        if voting is None and voting_history:
+            voting = voting_history[max(voting_history)]
+
+        if voting is None:
+            return None
+
+        first_seen, last_seen = await self.get_vote_timestamps(key)
+        voting.first_seen_ts = first_seen
+        voting.last_seen_ts = last_seen
+
+        return AlertMimirVoting(
+            holder=holder,
+            voting=voting,
+            triggered_option=triggered_option,
+            voting_history=voting_history,
+        )
 
     async def get_recent_progress(self, duration_sec: float, key_filter: str = None) -> Dict[float, List[MimirVoting]]:
         if duration_sec < self.accumulator.tolerance:

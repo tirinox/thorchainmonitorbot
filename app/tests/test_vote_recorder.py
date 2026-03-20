@@ -9,7 +9,8 @@ from jobs.vote_recorder import VoteRecorder
 from lib.config import Config
 from lib.db import DB
 from lib.depcont import DepContainer
-from models.mimir import MimirHolder, MimirVoteManager
+from lib.date_utils import DAY, now_ts
+from models.mimir import MimirHolder, MimirVoteManager, MimirEntry
 from types import SimpleNamespace
 
 
@@ -149,4 +150,76 @@ async def test_vote_recorder_migrates_old_timestamp_entries_without_bumping_last
         ),
     )
     assert await recorder.get_vote_timestamps('LEGACY_MIMIR') == (10.0, 200.0)
+
+
+@pytest.mark.asyncio
+async def test_vote_recorder_constructs_alert_for_key():
+    recorder = make_recorder()
+    ts = now_ts() - 60
+    active_signers = ['node-a', 'node-b', 'node-c']
+
+    holder = make_holder(
+        ts,
+        [
+            ThorMimirVote(key='ALERT_MIMIR', value=1, singer='node-a'),
+            ThorMimirVote(key='ALERT_MIMIR', value=1, singer='node-b'),
+        ],
+        active_signers,
+    )
+
+    await recorder.on_data(sender=None, data=holder)
+
+    triggered_option = holder.voting_manager.find_voting('ALERT_MIMIR').options[1]
+    alert = await recorder.get_alert_for_key(
+        'ALERT_MIMIR',
+        DAY,
+        holder=holder,
+        triggered_option=triggered_option,
+    )
+
+    assert alert is not None
+    assert alert.holder is holder
+    assert alert.voting.key == 'ALERT_MIMIR'
+    assert alert.triggered_option is triggered_option
+    assert alert.voting_history
+    assert max(alert.voting_history) in alert.voting_history
+    assert alert.voting.first_seen_ts == ts
+    assert alert.voting.last_seen_ts == ts
+
+
+@pytest.mark.asyncio
+async def test_alert_mimir_voting_serializes_current_constant_value():
+    recorder = make_recorder()
+    ts = now_ts() - 60
+    holder = make_holder(
+        ts,
+        [
+            ThorMimirVote(key='CURRENT_MIMIR', value=5, singer='node-a'),
+            ThorMimirVote(key='CURRENT_MIMIR', value=5, singer='node-b'),
+        ],
+        ['node-a', 'node-b', 'node-c'],
+    )
+    holder._const_map['CURRENT_MIMIR'] = MimirEntry(
+        name='CURRENT_MIMIR',
+        pretty_name='Current Mimir',
+        real_value='7',
+        hard_coded_value='1',
+        changed_ts=int(ts),
+        units='',
+        source=MimirEntry.SOURCE_ADMIN,
+    )
+
+    await recorder.on_data(sender=None, data=holder)
+    alert = await recorder.get_alert_for_key('CURRENT_MIMIR', DAY, holder=holder)
+
+    class FakeLoc:
+        @staticmethod
+        def format_mimir_value(key, value, units=None):
+            return f'{key}:{value}'
+
+    assert alert is not None
+    assert alert.current_constant_value == '7'
+    assert alert.current_value == '7'
+    assert alert.to_dict(FakeLoc())['current_value'] == '7'
+
 

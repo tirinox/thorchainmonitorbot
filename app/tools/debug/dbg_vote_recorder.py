@@ -15,7 +15,7 @@ from lib.date_utils import DAY
 from lib.delegates import INotified, WithDelegates
 from lib.texts import sep
 from lib.utils import parallel_run_in_groups
-from models.mimir import MimirHolder, AlertMimirVoting, MimirTuple
+from models.mimir import MimirHolder, AlertMimirVoting, MimirTuple, MimirVoting
 from models.mimir_naming import MIMIR_DICT_FILENAME
 from models.node_info import NetworkNodes
 from notify.public.voting_notify import VotingNotifier
@@ -210,7 +210,7 @@ async def dbg_print_recent_changes(app: LpAppFramework):
 
         voting_items = history[ts]
         for voting in voting_items:
-            prev_voting = next((v for v in prev_state if v.key == voting.key), None)
+            prev_voting: MimirVoting | None = next((v for v in prev_state if v.key == voting.key), None)
             if not prev_voting:
                 print(f'New voting: {voting.key} at {datetime.fromtimestamp(ts)}')
             else:
@@ -229,11 +229,10 @@ async def dbg_vote_retrieve(app: LpAppFramework, key="HALTSIGNINGSOL"):
     vote_recorder = VoteRecorder(d)
 
     mimir = await app.deps.mimir_cache.get_mimir_holder()
-
-    history = await vote_recorder.get_key_progress(key, 14 * DAY)
-
-    last_ts = max(history)
-    alert = AlertMimirVoting(mimir, history[last_ts], None, history)
+    alert = await vote_recorder.get_alert_for_key(key, 14 * DAY, holder=mimir)
+    if alert is None:
+        print(f'No voting alert data found for key={key!r}')
+        return
 
     sep()
     r = alert.to_dict(app.deps.loc_man.default)
@@ -360,27 +359,21 @@ async def dbg_send_demo_alert(app: LpAppFramework, key: str = "NEXTCHAIN", durat
     d = app.deps
 
     vote_recorder = VoteRecorder(d)
-    history = await vote_recorder.get_key_progress(key, duration)
 
-    if not history:
+    mimir = await d.mimir_cache.get_mimir_holder()
+    alert = await vote_recorder.get_alert_for_key(key, duration, holder=mimir)
+    if alert is None:
         print(f'[dbg_send_demo_alert] No recorded history found for key={key!r} in the last {duration / DAY:.1f} days.')
         return
 
-    mimir = await d.mimir_cache.get_mimir_holder()
-
-    last_ts = max(history)
-    latest_voting = history[last_ts]
-
-    alert = AlertMimirVoting(
-        holder=mimir,
-        voting=latest_voting,
-        triggered_option=latest_voting.top_options[0] if latest_voting.top_options else None,
-        voting_history=history,
-    )
+    latest_voting = alert.voting
+    triggered_option = latest_voting.top_options[0] if latest_voting.top_options else None
+    if triggered_option is not None:
+        alert = alert._replace(triggered_option=triggered_option)
 
     sep()
     print(f'[dbg_send_demo_alert] Sending voting infographic for key={key!r}')
-    print(f'         history points : {len(history)}')
+    print(f'         history points : {len(alert.voting_history or {})}')
     print(f'         latest snapshot: {latest_voting}')
     sep()
 

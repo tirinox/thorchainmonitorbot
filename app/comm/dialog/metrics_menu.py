@@ -18,7 +18,6 @@ from jobs.wasm_recorder import CosmWasmRecorder
 from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from lib.draw_utils import img_to_bio
 from lib.texts import kbd
-from models.mimir import AlertMimirVoting
 from models.net_stats import AlertNetworkStats
 from models.node_info import NodeInfo, NetworkNodes
 from models.ruji import AlertRujiraMergeStats
@@ -295,14 +294,14 @@ class MetricsDialog(BaseDialog):
             return
 
         vote_recorder = VoteRecorder(self.deps)
-        voting_history = await vote_recorder.get_key_progress(voting_key, self.VOTING_HISTORY_DAYS * DAY)
-
-        alert = AlertMimirVoting(
+        alert = await vote_recorder.get_alert_for_key(
+            voting_key,
+            self.VOTING_HISTORY_DAYS * DAY,
             holder=holder,
-            voting=voting,
-            triggered_option=None,
-            voting_history=voting_history,
         )
+        if alert is None:
+            await message.answer(self.loc.TEXT_NODE_MIMIR_VOTING_NOTHING_YET, disable_notification=True)
+            return
 
         text = self.loc.notification_text_mimir_voting_progress(alert)
         photo, photo_name = await self.deps.alert_presenter.render_voting_chart(self.loc, alert)
