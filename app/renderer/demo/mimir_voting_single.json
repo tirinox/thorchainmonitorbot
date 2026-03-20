@@ -3,6 +3,7 @@
   "parameters": {
     "key": "ADR023",
     "pretty_name": "ADR 023",
+    "current_value": 5,
     "active_nodes": 100,
     "abstained_nodes": 80,
     "first_seen_ts": 1772500000.0,

@@ -3,6 +3,7 @@
   "parameters": {
     "key": "NEXTCHAIN",
     "pretty_name": "Next Chain",
+    "current_value": null,
     "active_nodes": 100,
     "abstained_nodes": 3,
     "first_seen_ts": 1772219000.696964,

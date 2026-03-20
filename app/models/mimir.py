@@ -377,9 +377,13 @@ class AlertMimirVoting(NamedTuple):
     voting_history: Dict[float, MimirVoting] = None  # timestamp -> voting snapshot
 
     @property
-    def current_value(self):
+    def current_constant_value(self):
         e = self.holder.get_entry(self.voting.key)
         return e.real_value if e else None
+
+    @property
+    def current_value(self):
+        return self.current_constant_value
 
     @property
     def pretty_name(self):
@@ -404,6 +408,7 @@ class AlertMimirVoting(NamedTuple):
         return {
             'key': self.voting.key,
             'pretty_name': self.pretty_name,
+            'current_value': self.current_constant_value,
             'active_nodes': self.voting.active_nodes_count,
             'abstained_nodes': self.voting.active_nodes_count - self.voting.total_voters,
             'history': history,

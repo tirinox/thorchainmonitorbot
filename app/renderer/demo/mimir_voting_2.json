@@ -3,6 +3,7 @@
   "parameters": {
     "key": "HALTSIGNINGSOL",
     "pretty_name": "Halt Signing SOL",
+    "current_value": 0,
     "active_nodes": 100,
     "abstained_nodes": 17,
     "first_seen_ts": 1772111717.870385,

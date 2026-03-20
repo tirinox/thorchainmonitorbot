@@ -141,6 +141,25 @@
             font-weight: 300;
         }
 
+        .key-current-value {
+            display: none;
+            margin-top: 12px;
+            padding: 14px 18px;
+            border-radius: 16px;
+            background: rgba(255,255,255,.035);
+            border: 1px solid rgba(255,255,255,.06);
+            max-width: 100%;
+        }
+
+        .key-current-value .current-value-box {
+            align-items: flex-start;
+        }
+
+        .key-current-value .current-value-display {
+            text-align: left;
+            margin-left: 0;
+        }
+
         .side-meta-box {
             flex: 0 0 auto;
             padding: 16px 18px;
@@ -307,6 +326,31 @@
             text-shadow: rgba(35,220,200,.15) 0 0 12px;
         }
 
+        .current-value-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+        }
+
+        .current-value-label {
+            font-size: 26px;
+            color: #9eb3ba;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            line-height: 1.15;
+        }
+
+        .current-value-display {
+            font-size: 28px;
+            line-height: 1.2;
+            font-weight: 800;
+            color: #eef6f8;
+            text-align: right;
+            overflow-wrap: anywhere;
+            margin-left: auto;
+        }
+
         /* current votes breakdown */
         .votes-box {
             padding: 22px 24px 20px;
@@ -414,6 +458,12 @@
                     {% if pretty_name and pretty_name != key %}
                         <div class="key-pretty">{{ pretty_name }}</div>
                     {% endif %}
+                    <div class="key-current-value" id="current-value-card">
+                        <div class="current-value-box">
+                            <div class="current-value-label">Current Value</div>
+                            <div class="current-value-display" id="current-value-val">—</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -488,6 +538,7 @@
         const activeNodes = {{ active_nodes }};
         const abstainedNodes = {{ abstained_nodes | default(0) }};
         const decodedValues = {{ (decoded_values or {}) | tojson }};
+        const currentValue = {{ current_value | default(none) | tojson }};
         const firstSeenTs = {{ first_seen_ts | default(0) }};
         const lastSeenTs  = {{ last_seen_ts  | default(0) }};
         const CONSENSUS = 0.667; // 2/3 threshold
@@ -535,6 +586,15 @@
         document.getElementById('voted-pct-val').textContent = `${votedPct.toFixed(1)}%`;
         document.getElementById('not-voted-pct-val').textContent = `${notVotedPct.toFixed(1)}%`;
         document.getElementById('voted-bar-fill').style.width = `${votedPct.toFixed(1)}%`;
+
+        const hasCurrentValue = currentValue !== null && currentValue !== undefined && currentValue !== '';
+        if (hasCurrentValue) {
+            const currentValueCard = document.getElementById('current-value-card');
+            const currentValueKey = String(currentValue);
+            const currentValueText = decodedValues[currentValueKey] || `Value ${currentValue}`;
+            currentValueCard.style.display = 'block';
+            document.getElementById('current-value-val').textContent = currentValueText;
+        }
 
         // helper: return human-readable label for a raw option key
         const label = k => k === OTHERS_KEY ? 'Others' : (decodedValues[k] || `Value ${k}`);
