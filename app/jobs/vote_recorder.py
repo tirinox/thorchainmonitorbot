@@ -89,7 +89,7 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
 
         self.logger.info(
             f"Recording votes for mimir {format_time_ago(now_ts() - data.last_timestamp, max_time=YEAR)}: "
-            f"{data.voting_manager.active_vote_count} votes")
+            f"{data.voting_manager.active_vote_count} votes, {data.voting_manager.active_node_count} nodes active")
 
         votes_grouped = defaultdict(list)
         for vote in data.voting_manager.votes:
