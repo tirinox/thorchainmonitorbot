@@ -23,7 +23,7 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
         self.ignore_more_thant = cfg.as_int('ignore_if_more_than_event', self.IGNORE_IF_THERE_ARE_MORE_UPDATES_THAN)
         self.progress_tolerance = cfg.as_float('progress_tolerance_pct', 1.0)
 
-    KEY_PREV_STATE = 'NodeMimir:Voting:PrevState'
+    KEY_PREV_STATE = 'Mimir:Voting:PrevState'
 
     async def read_prev_state(self):
         prev_state = await self.deps.db.redis.get(self.KEY_PREV_STATE)
