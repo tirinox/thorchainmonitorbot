@@ -1425,8 +1425,9 @@ class BaseLocalization(ABC):  # == English
                 time_str = ''
             return f'{self.MIMIR_UNTIL_BLOCK} #{until_block}{time_str}'
         elif units == MimirUnits.UNITS_BOOL:
-            s = self.MIMIR_YES if bool(int(v)) else self.MIMIR_NO
-            return f'{s}'
+            if (isinstance(v, str) and v == '1') or (not isinstance(v, bool) and v == 1):
+                return self.MIMIR_YES
+            return str(v)
 
         elif units == MimirUnits.UNITS_SPECIAL_MAP:
             try:
