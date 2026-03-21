@@ -103,7 +103,7 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
             result[k] = (float(data.get('first', 0)), float(data.get('last', 0)))
         return result
 
-    async def enrich_with_timestamps(self, votings: List) -> List:
+    async def enrich_with_timestamps(self, votings: List[MimirVoting]) -> List[MimirVoting]:
         """Populate first_seen_ts / last_seen_ts on a list of MimirVoting objects in-place."""
         all_ts = await self.get_all_vote_timestamps()
         for voting in votings:
@@ -111,6 +111,12 @@ class VoteRecorder(WithLogger, WithDelegates, INotified):
             voting.first_seen_ts = first
             voting.last_seen_ts = last
         return votings
+
+    async def sorted_by_recent_activity(self, votings: List[MimirVoting]) -> List[MimirVoting]:
+        """Return votings sorted by most recent vote activity (latest last_seen_ts first).
+        Also enriches each voting with persisted first/last-seen timestamps in one Redis round-trip."""
+        await self.enrich_with_timestamps(votings)
+        return sorted(votings, key=lambda v: v.last_seen_ts, reverse=True)
 
     # ------------------------------------------------------------------
 

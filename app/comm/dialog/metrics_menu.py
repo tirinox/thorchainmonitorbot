@@ -241,9 +241,11 @@ class MetricsDialog(BaseDialog):
     DATA_PREFIX_VOTING = 'voting_menu'
     VOTING_HISTORY_DAYS = 14
 
-    def _make_voting_list(self) -> TelegramInlineList:
+    async def _make_voting_list(self) -> TelegramInlineList:
         holder = self.deps.mimir_const_holder
-        votings = holder.voting_manager.all_voting_list
+        votings = await VoteRecorder(self.deps).sorted_by_recent_activity(
+            holder.voting_manager.all_voting_list
+        )
         items = []
         for v in votings:
             pretty = holder.pretty_name(v.key)
@@ -267,7 +269,7 @@ class MetricsDialog(BaseDialog):
             return
 
         await MetricsStates.VOTING_MENU.set()
-        tg_list = self._make_voting_list().reset_page()
+        tg_list = (await self._make_voting_list()).reset_page()
         await message.answer(
             self.loc.TEXT_VOTING_MENU_TITLE,
             reply_markup=tg_list.keyboard(),
@@ -277,7 +279,7 @@ class MetricsDialog(BaseDialog):
 
     @query_handler(state=MetricsStates.VOTING_MENU)
     async def on_voting_menu_query(self, query: CallbackQuery):
-        tg_list = self._make_voting_list()
+        tg_list = await self._make_voting_list()
         result = await tg_list.handle_query(query)
 
         if result.result == result.BACK:
