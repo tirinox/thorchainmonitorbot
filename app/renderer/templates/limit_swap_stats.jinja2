@@ -28,6 +28,13 @@
   {%- if p > 0 -%}+{%- endif -%}{{ '%.1f' | format(p) }}%
 {%- endmacro %}
 
+{% macro render_delta(pct) -%}
+  {%- set p = pct | float -%}
+  {%- if p > 0.05 or p < -0.05 -%}
+    <div class="delta {{ delta_class(p) }}">{{ delta_text(p) }}</div>
+  {%- endif -%}
+{%- endmacro %}
+
 <style>
   /* ── period pill ─────────────────────────────────────── */
   .period-pill {
@@ -219,7 +226,7 @@
       <div class="card-title">📋 Orders</div>
       <div class="card-value-row">
         <div class="card-value">{{ total.opened_count | int }}</div>
-        <div class="delta {{ delta_class(delta.opened_count.pct) }}">{{ delta_text(delta.opened_count.pct) }}</div>
+        {{ render_delta(delta.opened_count.pct) }}
       </div>
     </div>
 
@@ -227,7 +234,7 @@
       <div class="card-title">💵 Volume</div>
       <div class="card-value-row">
         <div class="card-value">{{ short_dollar(total.opened_usd) }}</div>
-        <div class="delta {{ delta_class(delta.opened_usd.pct) }}">{{ delta_text(delta.opened_usd.pct) }}</div>
+        {{ render_delta(delta.opened_usd.pct) }}
       </div>
     </div>
 
@@ -235,7 +242,7 @@
       <div class="card-title">👤 Traders</div>
       <div class="card-value-row">
         <div class="card-value">{{ total.unique_traders | int }}</div>
-        <div class="delta {{ delta_class(delta.unique_traders.pct) }}">{{ delta_text(delta.unique_traders.pct) }}</div>
+        {{ render_delta(delta.unique_traders.pct) }}
       </div>
     </div>
 
