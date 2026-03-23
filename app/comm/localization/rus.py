@@ -648,6 +648,8 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_SUPPLY = f'🪙 Rune предложение'
     BUTTON_METR_DEX_STATS = f'🤹 DEX Агр. статы'
     BUTTON_METR_SECURED = f'🔐 Секьюред активы'
+    BUTTON_METR_LIMIT_SWAP = '🔁 Лимитные свопы'
+    BUTTON_METR_APP_LAYER = '🧩 Статы App Layer'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 

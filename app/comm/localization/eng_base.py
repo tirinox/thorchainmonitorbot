@@ -891,6 +891,8 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_SUPPLY = f'🪙 Rune supply'
     BUTTON_METR_DEX_STATS = f'🤹 DEX Aggr. Stats'
     BUTTON_METR_SECURED = f'🔐 Secured assets'
+    BUTTON_METR_LIMIT_SWAP = '🔁 Limit Swaps'
+    BUTTON_METR_APP_LAYER = '🧩 App Layer Stats'
 
     TEXT_METRICS_INTRO = 'What metrics would you like to know?'
 

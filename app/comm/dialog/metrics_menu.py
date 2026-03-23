@@ -84,6 +84,7 @@ class MetricsDialog(BaseDialog):
         reply_markup = kbd([
             [self.loc.BUTTON_METR_NODES, self.loc.BUTTON_METR_VOTING, self.loc.BUTTON_METR_MIMIR],
             [self.loc.BUTTON_METR_QUEUE, self.loc.BUTTON_METR_CHAINS],
+            [self.loc.BUTTON_METR_LIMIT_SWAP, self.loc.BUTTON_METR_APP_LAYER],
             [self.loc.BUTTON_BACK],
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
@@ -135,6 +136,10 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_METR_VOTING:
             await self.show_voting_menu(message)
             return
+        elif message.text == self.loc.BUTTON_METR_LIMIT_SWAP:
+            await self.show_limit_swap_stats(message)
+        elif message.text == self.loc.BUTTON_METR_APP_LAYER:
+            await self.show_app_layer_stats(message)
         await self.show_menu_net_op(message)
 
     async def show_cap(self, message: Message):
