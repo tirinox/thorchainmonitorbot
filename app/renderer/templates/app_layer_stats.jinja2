@@ -356,7 +356,7 @@
 			<div class="card shadow-box">
 				<div class="card-title">Unique users</div>
 				<div class="card-value-row">
-					<div class="card-value">{{ unique_users }}</div>
+					<div class="card-value">{{ short_money(unique_users, integer=True) }}</div>
 					<div class="delta" style="{{ delta_style(users_change_pct) }}">{{ delta_text(users_change_pct) }}</div>
 				</div>
 			</div>
@@ -364,7 +364,7 @@
 			<div class="card shadow-box">
 				<div class="card-title">Contract calls</div>
 				<div class="card-value-row">
-					<div class="card-value">{{ total_calls }}</div>
+					<div class="card-value">{{ short_money(total_calls, integer=True) }}</div>
 					<div class="delta" style="{{ delta_style(calls_change_pct) }}">{{ delta_text(calls_change_pct) }}</div>
 				</div>
 			</div>
@@ -393,15 +393,15 @@
 				<div class="chart-footer">
 					<div class="mini-stat">
 						<div class="mini-label">Peak day calls</div>
-						<div class="mini-value">{{ (chart_data | map(attribute='calls') | max) if chart_data else 0 }}</div>
+						<div class="mini-value">{{ short_money((chart_data | map(attribute='calls') | max) if chart_data else 0, integer=True) }}</div>
 					</div>
 					<div class="mini-stat">
 						<div class="mini-label">Peak day users</div>
-						<div class="mini-value">{{ (chart_data | map(attribute='unique_users') | max) if chart_data else 0 }}</div>
+						<div class="mini-value">{{ short_money((chart_data | map(attribute='unique_users') | max) if chart_data else 0, integer=True) }}</div>
 					</div>
 					<div class="mini-stat">
 						<div class="mini-label">Average calls / day</div>
-						<div class="mini-value">{{ ((total_calls / (days or 1)) | round(0) | int) if total_calls else 0 }}</div>
+						<div class="mini-value">{{ short_money(((total_calls / (days or 1)) | round(0) | int) if total_calls else 0, integer=True) }}</div>
 					</div>
 				</div>
 			</div>
@@ -421,11 +421,11 @@
 								</div>
 								<div class="contract-metric">
 									<div class="contract-metric-label">Calls</div>
-									<div class="contract-metric-value">{{ c.calls }}</div>
+									<div class="contract-metric-value">{{ short_money(c.calls, integer=True) }}</div>
 								</div>
 								<div class="contract-metric">
 									<div class="contract-metric-label">Users</div>
-									<div class="contract-metric-value">{{ c.unique_users }}</div>
+									<div class="contract-metric-value">{{ short_money(c.unique_users, integer=True) }}</div>
 								</div>
 							</div>
 						{% endfor %}
