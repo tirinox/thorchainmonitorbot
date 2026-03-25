@@ -59,6 +59,19 @@
             margin-left: -8px;
         }
 
+        .rapid-saved-blocks {
+            font-size: 22px;
+            color: #f5c518;
+            margin-top: 4px;
+            font-weight: bolder;
+        }
+
+        .rapid-saved-time {
+            font-size: 17px;
+            color: rgba(245, 197, 24, 0.72);
+            font-weight: normal;
+        }
+
     </style>
 
     <div class="route-box">
@@ -129,9 +142,17 @@
 
         <div class="line-box">
             <img src="renderer/static/img/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
-            {% if streaming_count and streaming_count > 1 %}
+            {% if (streaming_count and streaming_count > 1) or (rapid_swap_stats and rapid_swap_stats.blocks_saved > 0) %}
                 <div class="above-arrow streaming-count midgard-turqoise">
-                    {{ streaming_count }} subswaps
+                    {% if streaming_count and streaming_count > 1 %}
+                        {{ streaming_count }} subswaps
+                    {% endif %}
+                    {% if rapid_swap_stats and rapid_swap_stats.blocks_saved > 0 %}
+                        <div class="rapid-saved-blocks">
+                            ⚡ {{ rapid_swap_stats.blocks_saved }} / {{ rapid_swap_stats.streaming_swap_quantity or rapid_swap_stats.total_swaps }} blocks saved
+                        </div>
+                        <div class="rapid-saved-time" id="rapid-saved-time"></div>
+                    {% endif %}
                 </div>
             {% endif %}
         </div>
@@ -173,20 +194,28 @@
     <script>
         const waitTimeSec = {{ total_time_sec }};
 
+        const formatTime = (time) => {
+            const pad = (num) => String(num).padStart(2, '0');
+            const hours = Math.floor(time / 3600);
+            const minutes = Math.floor((time % 3600) / 60);
+            const seconds = time % 60;
+            return hours > 0 ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
+        };
+
         if (waitTimeSec !== 0) {
-            // format HH:MM:SS or MM:SS if less than 1 hour
-            const formatTime = (time) => {
-                const pad = (num) => String(num).padStart(2, '0');
-                const hours = Math.floor(time / 3600);
-                const minutes = Math.floor((time % 3600) / 60);
-                const seconds = time % 60;
-                return hours > 0 ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}` : `${pad(minutes)}:${pad(seconds)}`;
-            };
             document.querySelector('#wait-time').textContent = formatTime(waitTimeSec);
         } else {
             // hide #time-block
             document.querySelector('#time-block').style.display = 'none';
         }
+
+        {% if rapid_swap_stats and rapid_swap_stats.blocks_saved > 0 %}
+        const rapidSavedTime = Math.round({{ rapid_swap_stats.saved_time }});
+        const rapidEl = document.querySelector('#rapid-saved-time');
+        if (rapidEl && rapidSavedTime > 0) {
+            rapidEl.textContent = formatTime(rapidSavedTime) + ' saved';
+        }
+        {% endif %}
     </script>
 
 {% endblock %}
