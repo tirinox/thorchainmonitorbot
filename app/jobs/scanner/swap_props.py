@@ -3,13 +3,15 @@ from collections import defaultdict
 from typing import NamedTuple, List, Optional
 
 from jobs.scanner.block_result import ThorEvent
+from lib.constants import THOR_BLOCK_TIME
 from models.asset import is_rune, is_trade_asset, Asset
 from models.events import EventSwap, EventStreamingSwap, EventOutbound, parse_swap_and_out_event, TypeEventSwapAndOut, \
     EventTradeAccountDeposit
 from models.memo import ActionType
 from models.memo import THORMemo
-from models.s_swap import StreamingSwap
+from models.s_swap import StreamingSwap, RapidSwapStats
 from models.tx import ThorAction, SUCCESS, ThorMetaSwap, ThorCoin, ThorSubTx
+
 
 
 class SwapProps(NamedTuple):
@@ -28,7 +30,7 @@ class SwapProps(NamedTuple):
             foo_ev = self.restore_events_from_tx_status(foo)
         """
         if not attrs:
-            return
+            return None
 
         results = []
         key: str
@@ -179,6 +181,45 @@ class SwapProps(NamedTuple):
     @property
     def has_swaps(self):
         return any(isinstance(ev, EventSwap) for ev in self.events)
+
+    @property
+    def rapid_swap_stats(self) -> RapidSwapStats:
+        """
+        Analyse ev_swap_xxx events to measure rapid-swap (block-batching) efficiency.
+
+        Returns a RapidSwapStats with:
+          - total_swaps:       how many ev_swap events exist
+          - distinct_blocks:   how many unique block heights those swaps span
+          - blocks_with_multi: how many of those blocks contain >1 swap
+          - blocks_saved:      total_swaps - distinct_blocks
+                               (without batching, each swap would need its own block)
+
+        Example – heights [100,100,100, 102,102,102, 104,104]:
+          total_swaps=8, distinct_blocks=3, blocks_with_multi=3, blocks_saved=5
+        """
+        swap_events: List[EventSwap] = [ev for ev in self.events if isinstance(ev, EventSwap)]
+
+        swaps_per_block: dict = defaultdict(int)
+        for ev in swap_events:
+            swaps_per_block[ev.height] += 1
+
+        total_swaps = len(swap_events)
+        distinct_blocks = len(swaps_per_block)
+        blocks_with_multi = sum(1 for count in swaps_per_block.values() if count > 1)
+        blocks_saved = total_swaps - distinct_blocks
+
+        streaming_swap_quantity = next(
+            (ev.streaming_swap_quantity for ev in swap_events if ev.streaming_swap_quantity),
+            0
+        )
+
+        return RapidSwapStats(
+            total_swaps=total_swaps,
+            distinct_blocks=distinct_blocks,
+            blocks_with_multi=blocks_with_multi,
+            blocks_saved=blocks_saved,
+            streaming_swap_quantity=streaming_swap_quantity,
+        )
 
     @property
     def is_output_trade(self):

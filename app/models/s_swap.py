@@ -137,3 +137,26 @@ class EventChangedStreamingSwapList(NamedTuple):
     @classmethod
     def empty(cls):
         return cls(new_swaps=[], completed_swaps=[])
+
+
+class RapidSwapStats(NamedTuple):
+    """
+    Statistics about rapid (batched) swap execution within a single streaming swap.
+
+    Example – ev_swap heights: [100, 100, 100, 102, 102, 102, 104, 104]
+      total_swaps          = 8
+      distinct_blocks      = 3  (100, 102, 104)
+      blocks_with_multi    = 3  (all three have >1 swap)
+      blocks_saved         = 8 - 3 = 5
+    """
+    total_swaps: int           # total number of ev_swap events
+    distinct_blocks: int       # number of unique block heights containing a swap
+    blocks_with_multi: int     # blocks that hold more than one swap (rapid swap active)
+    blocks_saved: int          # total_swaps - distinct_blocks  (execution blocks saved)
+    streaming_swap_quantity: int = 0  # first non-zero streaming_swap_quantity across all ev_swap events
+
+    @property
+    def saved_time(self) -> float:
+        """Wall-clock seconds saved by rapid swap batching (blocks_saved × THOR_BLOCK_TIME)."""
+        return self.blocks_saved * THOR_BLOCK_TIME
+

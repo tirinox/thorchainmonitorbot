@@ -12,7 +12,7 @@ from .memo import ActionType, is_action
 from .memo import THORMemo
 from .pool_info import PoolInfo
 from .price import PriceHolder
-from .s_swap import StreamingSwap
+from .s_swap import StreamingSwap, RapidSwapStats
 
 logger = logging.getLogger('ThorTx')
 
@@ -602,6 +602,9 @@ class EventLargeTransaction:
     # For swaps
     usd_volume_input: float = 0.0
     usd_volume_output: float = 0.0
+
+    # Rapid swap (block-batching) statistics; populated for streaming swaps
+    rapid_swap_stats: Optional[RapidSwapStats] = None
 
     @property
     def is_swap(self):

@@ -268,6 +268,15 @@ class SwapTxNotifier(GenericTxNotifier):
         # await self.load_extra_tx_details(event)
         await self._load_tx_volumes(event)
         await self.adjust_liquidity_fee_through_midgard(event)
+
+        # attach rapid-swap stats from the event DB
+        try:
+            swap_props = await self._ev_db.read_tx_status(event.transaction.tx_hash)
+            if swap_props is not None:
+                event.rapid_swap_stats = swap_props.rapid_swap_stats
+        except Exception as e:
+            self.logger.warning(f'Could not load rapid_swap_stats for {event.transaction.tx_hash}: {e}')
+
         return event
 
     async def is_tx_suitable(self, tx: ThorAction, min_rune_volume, ph: PriceHolder, curve_mult=None):

@@ -418,6 +418,8 @@ class AlertPresenter(INotified, WithLogger):
 
             "streaming_count": tx.meta_swap.streaming.quantity if tx.meta_swap.streaming else 0,
 
+            "rapid_swap_stats": recursive_asdict(data.rapid_swap_stats, add_properties=True) if data.rapid_swap_stats else None,
+
             "total_time_sec": duration,
 
             "refund": refund_rate > 0 or tx.has_refund_output,

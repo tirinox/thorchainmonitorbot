@@ -136,6 +136,11 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             if swap_ev:
                 yield swap_ev
 
+    @staticmethod
+    def get_swap_events_from_props(swap_props: SwapProps) -> List[EventSwap]:
+        """Return all ev_swap_xxx events (EventSwap instances) stored in the given swap props."""
+        return [ev for ev in swap_props.events if isinstance(ev, EventSwap)]
+
     def make_events_from_observed_tx(self, tx: ThorObservedTx):
         if not tx.is_outbound:
             self.logger.error("Cannot create EventOutbound from inbound transaction")
