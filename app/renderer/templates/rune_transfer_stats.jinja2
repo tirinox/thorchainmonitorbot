@@ -1,0 +1,422 @@
+{% set _width, _height = set_viewport_size(1440, 960) %}
+{% extends "base.jinja2" %}
+
+{% block content %}
+{% set total = total or {} %}
+{% set daily = daily or [] %}
+{% set days  = period_days | int %}
+{% set upr   = usd_per_rune | default(0) | float %}
+
+{# ── helper macros ───────────────────────────────────────── #}
+{% macro netflow_dir(val) -%}
+  {%- set v = val | float -%}
+  {%- if v > 0 -%}↑{%- elif v < 0 -%}↓{%- else -%}—{%- endif -%}
+{%- endmacro %}
+
+{% macro netflow_class(val) -%}
+  {%- set v = val | float -%}
+  {%- if v > 0 -%}nf-bearish{%- elif v < 0 -%}nf-bullish{%- else -%}nf-zero{%- endif -%}
+{%- endmacro %}
+
+<style>
+  /* ── period pill ─────────────────────────────────────── */
+  .period-pill {
+    position: absolute;
+    top: 39px; right: 34px;
+    padding: 13px 22px;
+    border-radius: 14px;
+    background: rgba(18,34,37,.85);
+    border: 1px solid rgba(55,255,173,.16);
+    text-align: right;
+    min-width: 280px;
+  }
+  .period-main {
+    font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 3px;
+    text-transform: uppercase; letter-spacing: .1em;
+  }
+  .period-sub { font-size: 17px; color: #97b8b0; letter-spacing: .08em; }
+
+  /* ── main layout ─────────────────────────────────────── */
+  .layout {
+    position: absolute;
+    top: 140px; left: 30px; right: 30px; bottom: 52px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  /* ── stat cards ──────────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .card {
+    padding: 18px 22px 16px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(18,29,35,.94), rgba(10,16,21,.95));
+    border: 1px solid rgba(255,255,255,.05);
+  }
+  .card-title {
+    color: #91a3a9; font-size: 20px; text-transform: uppercase;
+    letter-spacing: .18em; font-weight: 400; margin-bottom: 8px;
+  }
+  .card-value {
+    color: #fff; font-size: 50px; font-weight: 800; line-height: 1.05;
+    text-shadow: rgba(35,220,200,.14) 0 0 16px;
+  }
+  .card-sub { font-size: 19px; color: #637870; margin-top: 6px; }
+
+  /* ── net-flow colour states ──────────────────────────── */
+  .nf-bearish { color: #FF7B54 !important; text-shadow: rgba(255,123,84,.26) 0 0 14px; }
+  .nf-bullish { color: #33FF99 !important; text-shadow: rgba(51,255,153,.26) 0 0 14px; }
+  .nf-zero    { color: #9ca7ad !important; }
+
+  /* ── content row ─────────────────────────────────────── */
+  .content-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(360px, 1fr);
+    gap: 16px; flex: 1; min-height: 0;
+  }
+  .panel {
+    border-radius: 20px; padding: 20px 22px 16px;
+    background: linear-gradient(180deg, rgba(15,24,30,.97), rgba(9,14,19,.98));
+    border: 1px solid rgba(255,255,255,.05);
+    min-height: 0;
+  }
+  .panel-title {
+    color: #fff; font-size: 28px; font-weight: 800;
+    letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px;
+  }
+
+  /* ── legend ──────────────────────────────────────────── */
+  .legend-row  { display: flex; gap: 20px; align-items: center; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; color: #b4c4c9; font-size: 18px; }
+  .legend-dot  { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; }
+  .legend-line { width: 22px; height: 4px;  border-radius: 2px;  flex-shrink: 0; }
+
+  .ld-volume  { background: rgba(255,195,60,.85); }
+  .ld-inflow  { background: #FF7B54; }
+  .ld-outflow { background: #33FF99; }
+
+  /* ── chart shells ────────────────────────────────────── */
+  .chart-shell { display: flex; flex-direction: column; height: 100%; }
+  .chart-wrap  { flex: 1; position: relative; min-height: 0; }
+  .cex-shell   { display: flex; flex-direction: column; height: 100%; }
+  .cex-wrap    { flex: 1; position: relative; min-height: 0; }
+
+  /* ── footer mini-stats ───────────────────────────────── */
+  .chart-footer {
+    display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 10px; margin-top: 12px;
+  }
+  .mini-stat  { border-radius: 13px; padding: 10px 14px; background: rgba(255,255,255,.03); }
+  .mini-label { font-size: 17px; color: #9eb3ba; text-transform: uppercase;
+                letter-spacing: .09em; margin-bottom: 4px; }
+  .mini-value { font-size: 26px; color: #fff; font-weight: 800; }
+
+  /* ── CEX summary grid ────────────────────────────────── */
+  .cex-summary {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-top: 12px;
+  }
+  .cex-summary .span2 { grid-column: span 2; }
+  .lbl-inflow  { color: #FF7B54; }
+  .lbl-outflow { color: #33FF99; }
+</style>
+
+{# ── header ───────────────────────────────────────────────── #}
+{% with title="RUNE TRANSFERS" %}
+  {% include "components/header.jinja2" %}
+{% endwith %}
+
+<div class="period-pill shadow-box">
+  <div class="period-main">Last {{ days }} Days</div>
+  <div class="period-sub">{{ total.start_date }} — {{ total.end_date }}</div>
+</div>
+
+<div class="layout">
+
+  {# ── stat cards ─────────────────────────────────────────── #}
+  <div class="stats-grid">
+
+    {# total volume #}
+    <div class="card shadow-box">
+      <div class="card-title">📊 Total Volume</div>
+      <div class="card-value">{{ short_rune(total.volume_rune | default(0) | float) }}</div>
+      {% if upr > 0 %}
+        <div class="card-sub">≈ {{ short_dollar((total.volume_rune | default(0) | float) * upr) }}</div>
+      {% else %}
+        <div class="card-sub">{{ (total.transfer_count | default(0) | int) }} transfers</div>
+      {% endif %}
+    </div>
+
+    {# CEX inflow (deposits TO CEX = sell pressure) #}
+    <div class="card shadow-box">
+      <div class="card-title">⬆ CEX Inflow</div>
+      <div class="card-value lbl-inflow">{{ short_rune(total.cex_inflow_rune | default(0) | float) }}</div>
+      <div class="card-sub">{{ (total.cex_inflow_count | default(0) | int) }} deposits to CEX</div>
+    </div>
+
+    {# CEX outflow (withdrawals FROM CEX = buy pressure) #}
+    <div class="card shadow-box">
+      <div class="card-title">⬇ CEX Outflow</div>
+      <div class="card-value lbl-outflow">{{ short_rune(total.cex_outflow_rune | default(0) | float) }}</div>
+      <div class="card-sub">{{ (total.cex_outflow_count | default(0) | int) }} withdrawals</div>
+    </div>
+
+    {# net flow #}
+    {% set nf = total.cex_netflow_rune | default(0) | float %}
+    <div class="card shadow-box">
+      <div class="card-title">↔ Net Flow</div>
+      <div class="card-value {{ netflow_class(nf) }}">
+        {{ netflow_dir(nf) }} {{ short_rune(nf | abs) }}
+      </div>
+      <div class="card-sub {{ netflow_class(nf) }}">
+        {%- if nf > 0 -%}Net deposits · sell pressure
+        {%- elif nf < 0 -%}Net withdrawals · buy pressure
+        {%- else -%}Balanced flow{%- endif -%}
+      </div>
+    </div>
+
+  </div>
+
+  {# ── content row ─────────────────────────────────────────── #}
+  <div class="content-row">
+
+    {# ── left: daily transfer volume chart ───────────────── #}
+    <div class="panel chart-shell shadow-box">
+      <div class="panel-title">📈 Daily Transfer Volume</div>
+
+      <div class="legend-row">
+        <div class="legend-item">
+          <div class="legend-line ld-volume"></div>Total Volume
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot ld-inflow"></div>CEX Inflow
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot ld-outflow"></div>CEX Outflow
+        </div>
+      </div>
+
+      <div class="chart-wrap">
+        <canvas id="mainChart"></canvas>
+      </div>
+
+      <div class="chart-footer">
+        <div class="mini-stat">
+          <div class="mini-label">🔺 Peak day</div>
+          <div class="mini-value">
+            {{ short_rune((daily | map(attribute='volume_rune') | list | max) if daily else 0) }}
+          </div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-label">∼ Avg / day</div>
+          <div class="mini-value">
+            {{ short_rune(((total.volume_rune | default(0) | float) / (days if days > 0 else 1))) }}
+          </div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-label">📦 Transfers</div>
+          <div class="mini-value">{{ (total.transfer_count | default(0) | int) }}</div>
+        </div>
+      </div>
+    </div>
+
+    {# ── right: CEX net-flow diverging chart ─────────────── #}
+    <div class="panel cex-shell shadow-box">
+      <div class="panel-title">🏦 CEX Net Flow / Day</div>
+
+      <div class="legend-row">
+        <div class="legend-item lbl-inflow">
+          <div class="legend-dot ld-inflow"></div>Net Deposits
+        </div>
+        <div class="legend-item lbl-outflow">
+          <div class="legend-dot ld-outflow"></div>Net Withdrawals
+        </div>
+      </div>
+
+      <div class="cex-wrap">
+        <canvas id="cexChart"></canvas>
+      </div>
+
+      <div class="cex-summary">
+        <div class="mini-stat">
+          <div class="mini-label lbl-inflow">⬆ Inflow</div>
+          <div class="mini-value">{{ short_rune(total.cex_inflow_rune | default(0) | float) }}</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-label lbl-outflow">⬇ Outflow</div>
+          <div class="mini-value">{{ short_rune(total.cex_outflow_rune | default(0) | float) }}</div>
+        </div>
+        {% set nf2 = total.cex_netflow_rune | default(0) | float %}
+        <div class="mini-stat span2">
+          <div class="mini-label">↔ Net</div>
+          <div class="mini-value {{ netflow_class(nf2) }}">
+            {{ netflow_dir(nf2) }} {{ short_rune(nf2 | abs) }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const dailyRaw    = {{ daily | tojson }};
+  const labels      = dailyRaw.map(d => {
+    const [, mo, day] = d.date.split('-');
+    return `${day}.${mo}`;
+  });
+
+  const volData     = dailyRaw.map(d => d.volume_rune      || 0);
+  const inflowData  = dailyRaw.map(d => d.cex_inflow_rune  || 0);
+  const outflowData = dailyRaw.map(d => d.cex_outflow_rune || 0);
+  const netflowData = dailyRaw.map(d => (d.cex_inflow_rune || 0) - (d.cex_outflow_rune || 0));
+
+  Chart.defaults.font.family = 'ThorFontLight, sans-serif';
+  Chart.defaults.color = '#b7c8cc';
+
+  function runeLabel(v) {
+    const av = Math.abs(v);
+    if (av >= 1_000_000) return (v / 1_000_000).toFixed(1) + 'M ᚱ';
+    if (av >= 1_000)     return (v / 1_000).toFixed(0)     + 'K ᚱ';
+    return v.toFixed(0) + ' ᚱ';
+  }
+
+  /* ── main chart: volume bars + inflow/outflow lines ─────── */
+  const mainCtx = document.getElementById('mainChart').getContext('2d');
+
+  const gradVol = mainCtx.createLinearGradient(0, 0, 0, 440);
+  gradVol.addColorStop(0, 'rgba(255,195,60,.32)');
+  gradVol.addColorStop(1, 'rgba(255,195,60,.02)');
+
+  new Chart(mainCtx, {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',   label: 'Total Volume',
+          data: volData,
+          backgroundColor: gradVol,
+          borderColor: 'rgba(255,195,60,.75)',
+          borderWidth: 1.5, borderRadius: 8,
+          barPercentage: 0.72, categoryPercentage: 0.80,
+          yAxisID: 'yVol', order: 3,
+        },
+        {
+          type: 'line',  label: 'CEX Inflow',
+          data: inflowData,
+          borderColor: '#FF7B54', backgroundColor: 'rgba(255,123,84,.08)',
+          pointRadius: 3, pointBackgroundColor: '#FF7B54', pointBorderColor: '#FF7B54',
+          borderWidth: 2.5, tension: 0.35, fill: false,
+          yAxisID: 'yVol', order: 1,
+        },
+        {
+          type: 'line',  label: 'CEX Outflow',
+          data: outflowData,
+          borderColor: '#33FF99', backgroundColor: 'rgba(51,255,153,.08)',
+          pointRadius: 3, pointBackgroundColor: '#33FF99', pointBorderColor: '#33FF99',
+          borderWidth: 2.5, tension: 0.35, fill: false,
+          yAxisID: 'yVol', order: 2,
+        },
+      ]
+    },
+    options: {
+      maintainAspectRatio: false, responsive: true, animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(10,16,21,.95)',
+          borderColor: 'rgba(255,195,60,.18)', borderWidth: 1,
+          padding: 12, titleColor: '#fff', bodyColor: '#dbe6ea',
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: ${runeLabel(ctx.parsed.y)}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#9db0b5', font: { size: 19 } }
+        },
+        yVol: {
+          position: 'left', beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,.07)' },
+          ticks: { color: 'rgba(255,195,60,.85)', font: { size: 18 }, callback: runeLabel }
+        },
+      }
+    }
+  });
+
+  /* ── CEX chart: diverging net-flow bars (per day) ─────────
+       positive = net deposit to CEX  → orange/bearish
+       negative = net withdrawal       → green/bullish              */
+  const cexCtx    = document.getElementById('cexChart').getContext('2d');
+  const barColors = netflowData.map(v =>
+    v >= 0 ? 'rgba(255,123,84,.72)' : 'rgba(51,255,153,.62)'
+  );
+  const borderColors = netflowData.map(v =>
+    v >= 0 ? '#FF7B54' : '#33FF99'
+  );
+
+  new Chart(cexCtx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'CEX Net Flow',
+          data: netflowData,
+          backgroundColor: barColors,
+          borderColor: borderColors,
+          borderWidth: 1.5,
+          borderRadius: 7,
+          barPercentage: 0.72,
+          categoryPercentage: 0.82,
+        },
+      ]
+    },
+    options: {
+      maintainAspectRatio: false, responsive: true, animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(10,16,21,.95)',
+          borderColor: 'rgba(255,255,255,.10)', borderWidth: 1,
+          padding: 10, titleColor: '#fff', bodyColor: '#dbe6ea',
+          callbacks: {
+            label: ctx => {
+              const v = ctx.parsed.y;
+              const sign = v >= 0 ? '↑ Deposits' : '↓ Withdrawals';
+              return ` ${sign}: ${runeLabel(Math.abs(v))}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#9db0b5', font: { size: 18 } }
+        },
+        y: {
+          beginAtZero: false,
+          grid: {
+            color: ctx => ctx.tick.value === 0
+              ? 'rgba(255,255,255,.25)'
+              : 'rgba(255,255,255,.05)'
+          },
+          ticks: {
+            color: ctx => ctx.tick.value >= 0 ? '#FF7B54' : '#33FF99',
+            font: { size: 17 },
+            callback: runeLabel
+          }
+        },
+      }
+    }
+  });
+</script>
+
+{% endblock %}
+

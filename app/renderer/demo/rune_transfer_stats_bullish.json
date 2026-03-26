@@ -1,0 +1,35 @@
+{
+  "template_name": "rune_transfer_stats.jinja2",
+  "parameters": {
+    "period_days": 14,
+    "usd_per_rune": 5.67,
+    "total": {
+      "start_date": "2026-03-12",
+      "end_date":   "2026-03-25",
+      "volume_rune":       222960000.0,
+      "transfer_count":        25372,
+      "cex_inflow_rune":    15330000.0,
+      "cex_outflow_rune":   92410000.0,
+      "cex_inflow_count":        587,
+      "cex_outflow_count":      3431,
+      "cex_netflow_rune":  -77080000.0
+    },
+    "daily": [
+      { "date": "2026-03-12", "timestamp": 1741737600, "volume_rune": 13450000.0, "transfer_count": 1534.0, "cex_inflow_rune":   890000.0, "cex_outflow_rune":  5230000.0, "cex_inflow_count":  34.0, "cex_outflow_count": 198.0, "cex_netflow_rune": -4340000.0 },
+      { "date": "2026-03-13", "timestamp": 1741824000, "volume_rune": 11230000.0, "transfer_count": 1312.0, "cex_inflow_rune":   720000.0, "cex_outflow_rune":  4180000.0, "cex_inflow_count":  28.0, "cex_outflow_count": 167.0, "cex_netflow_rune": -3460000.0 },
+      { "date": "2026-03-14", "timestamp": 1741910400, "volume_rune": 15780000.0, "transfer_count": 1789.0, "cex_inflow_rune":  1100000.0, "cex_outflow_rune":  6430000.0, "cex_inflow_count":  42.0, "cex_outflow_count": 238.0, "cex_netflow_rune": -5330000.0 },
+      { "date": "2026-03-15", "timestamp": 1741996800, "volume_rune": 18340000.0, "transfer_count": 2078.0, "cex_inflow_rune":  1280000.0, "cex_outflow_rune":  7890000.0, "cex_inflow_count":  49.0, "cex_outflow_count": 289.0, "cex_netflow_rune": -6610000.0 },
+      { "date": "2026-03-16", "timestamp": 1742083200, "volume_rune": 12670000.0, "transfer_count": 1445.0, "cex_inflow_rune":   870000.0, "cex_outflow_rune":  5120000.0, "cex_inflow_count":  34.0, "cex_outflow_count": 194.0, "cex_netflow_rune": -4250000.0 },
+      { "date": "2026-03-17", "timestamp": 1742169600, "volume_rune": 20120000.0, "transfer_count": 2278.0, "cex_inflow_rune":  1450000.0, "cex_outflow_rune":  8740000.0, "cex_inflow_count":  55.0, "cex_outflow_count": 321.0, "cex_netflow_rune": -7290000.0 },
+      { "date": "2026-03-18", "timestamp": 1742256000, "volume_rune": 16890000.0, "transfer_count": 1934.0, "cex_inflow_rune":  1140000.0, "cex_outflow_rune":  7120000.0, "cex_inflow_count":  44.0, "cex_outflow_count": 263.0, "cex_netflow_rune": -5980000.0 },
+      { "date": "2026-03-19", "timestamp": 1742342400, "volume_rune": 14230000.0, "transfer_count": 1623.0, "cex_inflow_rune":   960000.0, "cex_outflow_rune":  5780000.0, "cex_inflow_count":  37.0, "cex_outflow_count": 214.0, "cex_netflow_rune": -4820000.0 },
+      { "date": "2026-03-20", "timestamp": 1742428800, "volume_rune": 19450000.0, "transfer_count": 2189.0, "cex_inflow_rune":  1380000.0, "cex_outflow_rune":  8230000.0, "cex_inflow_count":  52.0, "cex_outflow_count": 301.0, "cex_netflow_rune": -6850000.0 },
+      { "date": "2026-03-21", "timestamp": 1742515200, "volume_rune": 11780000.0, "transfer_count": 1389.0, "cex_inflow_rune":   780000.0, "cex_outflow_rune":  4560000.0, "cex_inflow_count":  30.0, "cex_outflow_count": 174.0, "cex_netflow_rune": -3780000.0 },
+      { "date": "2026-03-22", "timestamp": 1742601600, "volume_rune": 17560000.0, "transfer_count": 1978.0, "cex_inflow_rune":  1210000.0, "cex_outflow_rune":  7450000.0, "cex_inflow_count":  46.0, "cex_outflow_count": 274.0, "cex_netflow_rune": -6240000.0 },
+      { "date": "2026-03-23", "timestamp": 1742688000, "volume_rune": 13890000.0, "transfer_count": 1589.0, "cex_inflow_rune":   920000.0, "cex_outflow_rune":  5670000.0, "cex_inflow_count":  36.0, "cex_outflow_count": 210.0, "cex_netflow_rune": -4750000.0 },
+      { "date": "2026-03-24", "timestamp": 1742774400, "volume_rune": 16230000.0, "transfer_count": 1845.0, "cex_inflow_rune":  1090000.0, "cex_outflow_rune":  6890000.0, "cex_inflow_count":  42.0, "cex_outflow_count": 254.0, "cex_netflow_rune": -5800000.0 },
+      { "date": "2026-03-25", "timestamp": 1742860800, "volume_rune": 21340000.0, "transfer_count": 2389.0, "cex_inflow_rune":  1540000.0, "cex_outflow_rune":  9120000.0, "cex_inflow_count":  58.0, "cex_outflow_count": 334.0, "cex_netflow_rune": -7580000.0 }
+    ]
+  }
+}
+

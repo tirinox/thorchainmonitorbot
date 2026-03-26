@@ -1,11 +1,19 @@
 import asyncio
+import json
 import logging
+from pathlib import Path
 
 from jobs.scanner.scan_cache import BlockScannerCached
 from jobs.scanner.transfer_detector import RuneTransferDetector
+from jobs.transfer_recorder import RuneTransferRecorder
+from lib.constants import THOR_BLOCK_TIME
+from lib.date_utils import DAY
+from models.transfer import AlertRuneTransferStats
 from notify.public.cex_flow import CEXFlowRecorder
 from notify.public.transfer_notify import RuneMoveNotifier
 from tools.lib.lp_common import LpAppFramework
+
+DEMO_DIR = Path(__file__).parents[2] / 'renderer' / 'demo'
 
 
 async def main():
@@ -34,5 +42,134 @@ async def main():
         await d.block_scanner.run()
 
 
+# ── RuneTransfer stats debug helpers ──────────────────────────────────────────
+
+async def dbg_transfer_record_from_past(app: LpAppFramework, days: int = 14, start_block: int = 0):
+    """
+    Replay historical blocks through RuneTransferDetector → RuneTransferRecorder
+    to backfill the Redis DailyAccumulator for the given number of days.
+
+    Analogous to dbg_vote_record_from_past in dbg_vote_recorder.py:
+    instead of fetching mimir snapshots at arbitrary heights, this runs
+    BlockScannerCached forward from a past block, which is the natural
+    way to backfill transfer events.
+
+    Parameters
+    ----------
+    days        : how many days back to start scanning (ignored if start_block > 0)
+    start_block : explicit starting block; 0 → auto-compute from `days`
+    """
+    d = app.deps
+
+    if not start_block:
+        last_block = await d.last_block_cache.get_thor_block()
+        start_block = last_block - int(days * DAY / THOR_BLOCK_TIME)
+        print(
+            f'Back-filling RUNE transfer stats:\n'
+            f'  days to replay : {days}\n'
+            f'  start block    : {start_block}\n'
+            f'  current block  : {last_block}\n'
+            f'  blocks to scan : ~{last_block - start_block:,}'
+        )
+    else:
+        print(f'Back-filling RUNE transfer stats from explicit start_block={start_block}')
+
+    block_scanner = BlockScannerCached(d, last_block=start_block)
+
+    reserve_address = d.cfg.as_str('native_scanner.reserve_address')
+    transfer_detector = RuneTransferDetector(reserve_address)
+    block_scanner.add_subscriber(transfer_detector)
+
+    recorder = RuneTransferRecorder(d)
+    transfer_detector.add_subscriber(recorder)
+
+    await block_scanner.run()
+
+    # print a brief summary once scanning is done
+    summary = await recorder.get_summary(days=days)
+    brief = {k: v for k, v in summary.items() if k != 'daily'}
+    print('\nBack-fill complete. Accumulated summary:')
+    print(json.dumps(brief, indent=2))
+
+async def dbg_transfer_stats_last_data(app: LpAppFramework, days: int = 14):
+    """Print the raw accumulated transfer stats from Redis."""
+    recorder = RuneTransferRecorder(app.deps)
+
+    daily = await recorder.get_daily_data(days=days)
+    summary = await recorder.get_summary(days=days)
+
+    latest = daily[-1] if daily else {}
+    print('Latest daily RUNE transfer data:')
+    print(json.dumps(latest, indent=2, sort_keys=True))
+    print()
+    print(f'Summary for last {days} days:')
+    # exclude the big daily list for readability
+    brief = {k: v for k, v in summary.items() if k != 'daily'}
+    print(json.dumps(brief, indent=2, sort_keys=True))
+
+
+async def dbg_transfer_stats_dump_demo(app: LpAppFramework, days: int = 14):
+    """
+    Pull live data from Redis and dump it to
+    renderer/demo/rune_transfer_stats_live.json so the renderer dev-server
+    can display it without a running bot.
+    """
+    recorder = RuneTransferRecorder(app.deps)
+    summary = await recorder.get_summary(days=days)
+    usd_per_rune = await app.deps.pool_cache.get_usd_per_rune()
+    data = AlertRuneTransferStats.from_summary(summary, usd_per_rune=usd_per_rune)
+
+    output = {
+        'template_name': 'rune_transfer_stats.jinja2',
+        'parameters': data.to_dict(),
+    }
+
+    out_path = DEMO_DIR / 'rune_transfer_stats_live.json'
+    out_path.write_text(json.dumps(output, indent=2))
+    print(f'Written to {out_path}')
+    print(json.dumps(output, indent=2))
+
+
+async def dbg_transfer_stats_send(app: LpAppFramework, days: int = 14):
+    """
+    Build the RUNE transfer stats infographic from live Redis data and post it
+    to the public channels via alert_presenter (same path as the scheduled job).
+    """
+    d = app.deps
+    recorder = RuneTransferRecorder(d)
+    summary = await recorder.get_summary(days=days)
+
+    if not summary.get('transfer_count'):
+        print('No RUNE transfer data in Redis yet — run the scanner first.')
+        return
+
+    usd_per_rune = await d.pool_cache.get_usd_per_rune()
+    data = AlertRuneTransferStats.from_summary(summary, usd_per_rune=usd_per_rune)
+
+    print(
+        f'Sending RUNE transfer stats infographic\n'
+        f'  period   : {data.period_days}d  ({data.start_date} – {data.end_date})\n'
+        f'  volume   : {data.volume_rune:,.0f} RUNE\n'
+        f'  cex in   : {data.cex_inflow_rune:,.0f} RUNE  ({data.cex_inflow_count} deposits)\n'
+        f'  cex out  : {data.cex_outflow_rune:,.0f} RUNE  ({data.cex_outflow_count} withdrawals)\n'
+        f'  net flow : {data.cex_netflow_rune:+,.0f} RUNE\n'
+        f'  usd/rune : ${usd_per_rune:.4f}'
+    )
+
+    await d.alert_presenter.handle_data(data)
+    print('Infographic sent — waiting for delivery…')
+    await asyncio.sleep(5)
+
+
+async def run():
+    app = LpAppFramework(log_level=logging.INFO)
+    async with app:
+        await dbg_transfer_record_from_past(app, days=14)
+        # await dbg_transfer_stats_last_data(app)
+        # await dbg_transfer_stats_dump_demo(app)
+        # await dbg_transfer_stats_send(app)
+
+
 if __name__ == '__main__':
-    asyncio.run(main())
+    asyncio.run(run())
+

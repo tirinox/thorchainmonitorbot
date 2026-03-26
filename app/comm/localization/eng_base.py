@@ -47,7 +47,7 @@ from models.s_swap import AlertSwapStart
 from models.secured import AlertSecuredAssetSummary
 from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
-from models.transfer import NativeTokenTransfer, RuneCEXFlow
+from models.transfer import NativeTokenTransfer, RuneCEXFlow, AlertRuneTransferStats
 from models.wasm import WasmPeriodStats
 from models.limit_swap import LimitSwapPeriodStats
 from models.tx import ThorAction, ThorSubTx, EventLargeTransaction
@@ -2064,13 +2064,13 @@ class BaseLocalization(ABC):  # == English
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
         emoji = self.cex_flow_emoji(cex_flow)
         period_string = self.format_period(cex_flow.period_sec)
-        return (f'🌬️ <b>Rune CEX flow last {period_string}</b>\n'
-                f'➡️ Inflow: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(cex_flow.in_usd)})\n'
-                f'⬅️ Outflow: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(cex_flow.out_usd)})\n'
-                f'{emoji} Netflow: {pre(short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH, signed=True))} '
-                f'({short_dollar(cex_flow.netflow_usd)})')
+        return (
+            f'🌬️ <b>RUNE CEX flow last {period_string}</b>\n'
+            f'⬆ Inflow: {bold(short_rune(cex_flow.rune_cex_inflow))} ({short_dollar(cex_flow.in_usd)})\n'
+            f'⬇ Outflow: {bold(short_rune(cex_flow.rune_cex_outflow))} ({short_dollar(cex_flow.out_usd)})\n'
+            f'{emoji} Net flow: {bold(short_rune(cex_flow.rune_cex_netflow, signed=True))} '
+            f'({short_dollar(cex_flow.netflow_usd)})'
+        )
 
     # ----- SUPPLY ------
 
@@ -2537,6 +2537,29 @@ class BaseLocalization(ABC):  # == English
         )
 
     TEXT_LIMIT_SWAP_STATS_NO_DATA = '😩 No limit swap data available yet.'
+
+    @staticmethod
+    def notification_text_rune_transfer_stats(e: AlertRuneTransferStats) -> str:
+        nf = e.cex_netflow_rune
+        if nf > 0:
+            net_emoji, net_label = '🔴', 'net deposits'
+        elif nf < 0:
+            net_emoji, net_label = '🟢', 'net withdrawals'
+        else:
+            net_emoji, net_label = '⚪', 'balanced'
+
+        return (
+            f'📊 <b>RUNE Transfers</b> ({e.period_days}d)\n'
+            f'📦 Volume: {bold(short_rune(e.volume_rune))} '
+            f'({bold(pretty_money(e.transfer_count, integer=True))} txs)\n'
+            f'⬆ CEX inflow: {bold(short_rune(e.cex_inflow_rune))} '
+            f'({e.cex_inflow_count} deposits)\n'
+            f'⬇ CEX outflow: {bold(short_rune(e.cex_outflow_rune))} '
+            f'({e.cex_outflow_count} withdrawals)\n'
+            f'{net_emoji} Net flow: {bold(short_rune(abs(nf)))} — {net_label}'
+        )
+
+    TEXT_RUNE_TRANSFER_STATS_NO_DATA = '😩 No RUNE transfer data available yet.'
 
     # ------ Bond providers alerts ------
 

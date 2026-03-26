@@ -10,6 +10,7 @@ from jobs.fetch.top_pools import BestPoolsFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.wasm_stats import WasmStatsBuilder
 from jobs.limit_recorder import LimitSwapStatsRecorder
+from jobs.transfer_recorder import RuneTransferRecorder
 from jobs.rune_burn_recorder import RuneBurnRecorder
 from jobs.wasm_recorder import CosmWasmRecorder
 from lib.date_utils import DAY
@@ -23,6 +24,7 @@ from models.node_info import NetworkNodes
 from models.price import RuneMarketInfo
 from models.runepool import AlertRunepoolStats, POLState, AlertPOLState, RunepoolState
 from models.trade_acc import AlertTradeAccountStats
+from models.transfer import AlertRuneTransferStats
 from notify.pub_scheduler import PublicScheduler
 from notify.public.cex_flow import CEXFlowRecorder
 from notify.public.price_notify import PriceChangeNotifier
@@ -45,6 +47,7 @@ class PubAlertJobNames:
     NET_STATS_SUMMARY = "net_stats_summary"
     APP_LAYER_STATS = "app_layer_stats"
     LIMIT_SWAP_STATS = "limit_swap_stats"
+    RUNE_TRANSFER_STATS = "rune_transfer_stats"
 
 
 class PublicAlertJobExecutor(WithLogger):
@@ -205,6 +208,15 @@ class PublicAlertJobExecutor(WithLogger):
             raise ValueError("No limit swap stats data available.")
         await self._send_alert(stats, "limit swap stats infographic")
 
+    async def job_rune_transfer_stats(self):
+        recorder = RuneTransferRecorder(self.deps)
+        summary = await recorder.get_summary(days=14)
+        if not summary.get('transfer_count'):
+            raise ValueError("No RUNE transfer stats data available yet.")
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+        data = AlertRuneTransferStats.from_summary(summary, usd_per_rune=usd_per_rune)
+        await self._send_alert(data, "rune transfer stats infographic")
+
     # maps job names to methods of this class
     AVAILABLE_TYPES = {
         PubAlertJobNames.TCY_SUMMARY: job_tcy_summary,
@@ -221,6 +233,7 @@ class PublicAlertJobExecutor(WithLogger):
         PubAlertJobNames.NET_STATS_SUMMARY: job_net_stats_summary,
         PubAlertJobNames.APP_LAYER_STATS: job_app_layer_stats,
         PubAlertJobNames.LIMIT_SWAP_STATS: job_limit_swap_stats,
+        PubAlertJobNames.RUNE_TRANSFER_STATS: job_rune_transfer_stats,
     }
 
     async def configure_jobs(self):

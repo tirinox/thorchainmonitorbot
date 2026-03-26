@@ -42,7 +42,7 @@ from models.s_swap import AlertSwapStart
 from models.secured import AlertSecuredAssetSummary
 from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
-from models.transfer import RuneCEXFlow, NativeTokenTransfer
+from models.transfer import RuneCEXFlow, NativeTokenTransfer, AlertRuneTransferStats
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from models.wasm import WasmPeriodStats
@@ -139,6 +139,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_app_layer_stats(data)
         elif isinstance(data, LimitSwapPeriodStats):
             await self._handle_limit_swap_stats(data)
+        elif isinstance(data, AlertRuneTransferStats):
+            await self._handle_rune_transfer_stats(data)
         elif isinstance(data, EventLastBlock):
             pass  # currently no action
         else:
@@ -710,6 +712,24 @@ class AlertPresenter(INotified, WithLogger):
 
         await self.deps.broadcaster.broadcast_to_all(
             'public:limit_swaps:stats',
+            message_gen)
+
+    async def render_rune_transfer_stats(self, loc: BaseLocalization, data: AlertRuneTransferStats):
+        photo = await self.renderer.render('rune_transfer_stats.jinja2', data.to_dict())
+        photo_name = 'rune_transfer_stats.png'
+        return photo, photo_name
+
+    async def _handle_rune_transfer_stats(self, data: AlertRuneTransferStats):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_rune_transfer_stats(data)
+            photo, photo_name = await self.render_rune_transfer_stats(loc, data)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
+        await self.deps.broadcaster.broadcast_to_all(
+            'public:rune_transfers:stats',
             message_gen)
 
     async def _handle_app_layer_stats(self, data: WasmPeriodStats):

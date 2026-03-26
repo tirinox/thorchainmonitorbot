@@ -36,6 +36,7 @@ from jobs.fetch.stream_watchlist import StreamingSwapWatchListFetcher, Streaming
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.tx import TxFetcher
 from jobs.limit_recorder import LimitSwapStatsRecorder
+from jobs.transfer_recorder import RuneTransferRecorder
 from jobs.node_churn import NodeChurnDetector
 from jobs.pol_recorder import POLStateRecorder
 from jobs.price_recorder import PriceRecorder
@@ -311,6 +312,10 @@ class App(WithLogger):
             # always record cex flow events
             cex_flow_notifier = CEXFlowRecorder(d)
             transfer_decoder.add_subscriber(cex_flow_notifier)
+
+            # always record rune transfer volume / CEX deposit+withdrawal stats
+            d.rune_transfer_recorder = RuneTransferRecorder(d)
+            transfer_decoder.add_subscriber(d.rune_transfer_recorder)
 
             if achievements_enabled:
                 ev_gen = LastBlockEventGenerator(d.last_block_cache)
