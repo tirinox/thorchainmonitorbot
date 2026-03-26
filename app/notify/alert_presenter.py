@@ -13,6 +13,7 @@ from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.achievement.ach_list import Achievement
 from jobs.fetch.cached.last_block import EventLastBlock
 from jobs.fetch.chain_id import AlertChainIdChange
+from jobs.transfer_recorder import RuneTransferRecorder
 from lib.constants import THOR_BLOCKS_PER_MINUTE, thor_to_float, THOR_BASIS_POINT_MAX, Chains
 from lib.date_utils import DAY
 from lib.delegates import INotified
@@ -165,10 +166,14 @@ class AlertPresenter(INotified, WithLogger):
             transfer, name_map)
 
     async def _handle_rune_cex_flow(self, flow: RuneCEXFlow):
+        recorder = RuneTransferRecorder(self.deps)
+        period_days = max(1, round(flow.period_sec / DAY))
+        summary = await recorder.get_summary(days=period_days)
+        data = AlertRuneTransferStats.from_summary(summary, usd_per_rune=flow.usd_per_rune)
         await self.broadcaster.broadcast_to_all(
             "public:rune_cex_flow",
-            BaseLocalization.notification_text_cex_flow,
-            flow)
+            BaseLocalization.notification_text_rune_transfer_stats,
+            data)
 
     async def _handle_block_speed(self, event: EventBlockSpeed):
         async def _block_speed_picture_generator(loc: BaseLocalization, points, event):

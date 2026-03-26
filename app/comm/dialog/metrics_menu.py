@@ -13,6 +13,7 @@ from jobs.fetch.wasm_stats import WasmStatsBuilder
 from jobs.limit_recorder import LimitSwapStatsRecorder
 from jobs.ruji_merge import RujiMergeTracker
 from jobs.rune_burn_recorder import RuneBurnRecorder
+from jobs.transfer_recorder import RuneTransferRecorder
 from jobs.vote_recorder import VoteRecorder
 from jobs.wasm_recorder import CosmWasmRecorder
 from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
@@ -21,8 +22,8 @@ from lib.texts import kbd
 from models.net_stats import AlertNetworkStats
 from models.node_info import NodeInfo, NetworkNodes
 from models.ruji import AlertRujiraMergeStats
+from models.transfer import AlertRuneTransferStats
 from notify.public.cap_notify import LiquidityCapNotifier
-from notify.public.cex_flow import CEXFlowRecorder
 from notify.public.node_churn_notify import NodeChurnNotifier
 from notify.public.price_notify import PriceChangeNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
@@ -338,9 +339,12 @@ class MetricsDialog(BaseDialog):
             await message.answer(self.loc.notification_text_pol_stats(event), disable_notification=True)
 
     async def show_cex_flow(self, message: Message, period=DAY):
-        cex_flow_notifier = CEXFlowRecorder(self.deps)
-        flow = await cex_flow_notifier.get_event(period)
-        text = self.loc.notification_text_cex_flow(flow)
+        recorder = RuneTransferRecorder(self.deps)
+        period_days = max(1, round(period / DAY))
+        summary = await recorder.get_summary(days=period_days)
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+        data = AlertRuneTransferStats.from_summary(summary, usd_per_rune=usd_per_rune)
+        text = self.loc.notification_text_rune_transfer_stats(data)
         await message.answer(text, disable_notification=True)
 
     async def show_rune_supply(self, message: Message):

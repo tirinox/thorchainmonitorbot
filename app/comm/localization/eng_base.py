@@ -2061,16 +2061,6 @@ class BaseLocalization(ABC):  # == English
         limit = 1000.0
         return '🟢' if cex_flow.netflow_usd < -limit else ('🔴' if cex_flow.netflow_usd > limit else '⚪️')
 
-    def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
-        emoji = self.cex_flow_emoji(cex_flow)
-        period_string = self.format_period(cex_flow.period_sec)
-        return (
-            f'🌬️ <b>RUNE CEX flow last {period_string}</b>\n'
-            f'⬆ Inflow: {bold(short_rune(cex_flow.rune_cex_inflow))} ({short_dollar(cex_flow.in_usd)})\n'
-            f'⬇ Outflow: {bold(short_rune(cex_flow.rune_cex_outflow))} ({short_dollar(cex_flow.out_usd)})\n'
-            f'{emoji} Net flow: {bold(short_rune(cex_flow.rune_cex_netflow, signed=True))} '
-            f'({short_dollar(cex_flow.netflow_usd)})'
-        )
 
     # ----- SUPPLY ------
 

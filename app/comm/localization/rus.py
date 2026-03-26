@@ -39,7 +39,7 @@ from models.s_swap import AlertSwapStart
 from models.secured import AlertSecuredAssetSummary
 from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
-from models.transfer import NativeTokenTransfer, RuneCEXFlow
+from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from .achievements.ach_rus import AchievementsRussianLocalization
@@ -1581,18 +1581,25 @@ class RussianLocalization(BaseLocalization):
 
     # ----- RUNE FLOW ------
 
-    def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
-        emoji = self.cex_flow_emoji(cex_flow)
-        period_string = self.format_period(cex_flow.period_sec)
+    @staticmethod
+    def notification_text_rune_transfer_stats(e: AlertRuneTransferStats) -> str:
+        nf = e.cex_netflow_rune
+        if nf > 0:
+            net_emoji, net_label = '🔴', 'завод на биржи'
+        elif nf < 0:
+            net_emoji, net_label = '🟢', 'вывод с бирж'
+        else:
+            net_emoji, net_label = '⚪', 'баланс'
+
         return (
-            f'🌬️ <b>Rune потоки с централизованных бирж последние {period_string}</b>\n'
-            f'➡️ Завели: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
-            f'({short_dollar(cex_flow.in_usd)})\n'
-            f'⬅️ Вывели: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
-            f'({short_dollar(cex_flow.out_usd)})\n'
-            f'{emoji} Поток на биржи: '
-            f'{pre(short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH, signed=True))} '
-            f'({short_dollar(cex_flow.netflow_usd)})'
+            f'📊 <b>Переводы RUNE</b> ({e.period_days}д)\n'
+            f'📦 Объём: {bold(short_rune(e.volume_rune))} '
+            f'({bold(pretty_money(e.transfer_count, integer=True))} тx)\n'
+            f'⬆ CEX завод: {bold(short_rune(e.cex_inflow_rune))} '
+            f'({e.cex_inflow_count} переводов)\n'
+            f'⬇ CEX вывод: {bold(short_rune(e.cex_outflow_rune))} '
+            f'({e.cex_outflow_count} выводов)\n'
+            f'{net_emoji} Поток на биржи: {bold(short_rune(abs(nf)))} — {net_label}'
         )
 
     # ----- SUPPLY ------

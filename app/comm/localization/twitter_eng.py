@@ -29,7 +29,7 @@ from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
-from models.transfer import RuneCEXFlow, NativeTokenTransfer
+from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from models.wasm import WasmPeriodStats
@@ -623,17 +623,25 @@ class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_best_pools(self, pd: EventPools):
         return 'THORChain top liquidity pools'
 
-    def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
-        emoji = self.cex_flow_emoji(cex_flow)
-        period_string = self.format_period(cex_flow.period_sec)
+    @staticmethod
+    def notification_text_rune_transfer_stats(e: AlertRuneTransferStats) -> str:
+        nf = e.cex_netflow_rune
+        if nf > 0:
+            net_emoji, net_label = '🔴', 'net deposits'
+        elif nf < 0:
+            net_emoji, net_label = '🟢', 'net withdrawals'
+        else:
+            net_emoji, net_label = '⚪', 'balanced'
+
         return (
-            f'🌬️ $Rune CEX flow last {period_string}\n'
-            f'➡️ Inflow: {short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH)} '
-            f'({short_dollar(cex_flow.in_usd)})\n'
-            f'⬅️ Outflow: {short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH)} '
-            f'({short_dollar(cex_flow.out_usd)})\n'
-            f'{emoji} Netflow: {short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH, signed=True)} '
-            f'({short_dollar(cex_flow.netflow_usd)})'
+            f'📊 $RUNE Transfers ({e.period_days}d)\n'
+            f'📦 Volume: {short_rune(e.volume_rune)} '
+            f'({pretty_money(e.transfer_count, integer=True)} txs)\n'
+            f'⬆ CEX inflow: {short_rune(e.cex_inflow_rune)} '
+            f'({e.cex_inflow_count} deposits)\n'
+            f'⬇ CEX outflow: {short_rune(e.cex_outflow_rune)} '
+            f'({e.cex_outflow_count} withdrawals)\n'
+            f'{net_emoji} Net flow: {short_rune(abs(nf))} — {net_label}'
         )
 
     def notification_text_rune_transfer_public(self, t: NativeTokenTransfer, name_map: NameMap):

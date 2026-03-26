@@ -8,6 +8,7 @@ from jobs.scanner.transfer_detector import RuneTransferDetector
 from jobs.transfer_recorder import RuneTransferRecorder
 from lib.constants import THOR_BLOCK_TIME
 from lib.date_utils import DAY
+from lib.utils import parallel_run_in_groups
 from models.transfer import AlertRuneTransferStats
 from notify.public.cex_flow import CEXFlowRecorder
 from notify.public.transfer_notify import RuneMoveNotifier
@@ -44,48 +45,65 @@ async def main():
 
 # ── RuneTransfer stats debug helpers ──────────────────────────────────────────
 
-async def dbg_transfer_record_from_past(app: LpAppFramework, days: int = 14, start_block: int = 0):
+async def dbg_transfer_record_from_past(app: LpAppFramework, days: int = 14, start_block: int = 0,
+                                        stride: int = 10, concurrency: int = 8):
     """
     Replay historical blocks through RuneTransferDetector → RuneTransferRecorder
     to backfill the Redis DailyAccumulator for the given number of days.
 
-    Analogous to dbg_vote_record_from_past in dbg_vote_recorder.py:
-    instead of fetching mimir snapshots at arbitrary heights, this runs
-    BlockScannerCached forward from a past block, which is the natural
-    way to backfill transfer events.
+    Mirrors dbg_vote_record_from_past: blocks are fetched independently at
+    specific heights and processed in parallel groups, so backfilling is much
+    faster than running BlockScannerCached sequentially.
 
     Parameters
     ----------
-    days        : how many days back to start scanning (ignored if start_block > 0)
+    days        : how many days back to start (ignored when start_block > 0)
     start_block : explicit starting block; 0 → auto-compute from `days`
+    stride      : process every N-th block (default 10 — good balance between
+                  speed and completeness; large transfers appear every few blocks)
+    concurrency : max coroutines running simultaneously (default 8)
     """
     d = app.deps
 
-    if not start_block:
-        last_block = await d.last_block_cache.get_thor_block()
-        start_block = last_block - int(days * DAY / THOR_BLOCK_TIME)
-        print(
-            f'Back-filling RUNE transfer stats:\n'
-            f'  days to replay : {days}\n'
-            f'  start block    : {start_block}\n'
-            f'  current block  : {last_block}\n'
-            f'  blocks to scan : ~{last_block - start_block:,}'
-        )
-    else:
-        print(f'Back-filling RUNE transfer stats from explicit start_block={start_block}')
+    last_block = await d.last_block_cache.get_thor_block()
 
-    block_scanner = BlockScannerCached(d, last_block=start_block)
+    if not start_block:
+        start_block = last_block - int(days * DAY / THOR_BLOCK_TIME)
+
+    total_blocks = last_block - start_block
+    effective = total_blocks // stride
+
+    print(
+        f'Back-filling RUNE transfer stats:\n'
+        f'  days to replay   : {days}\n'
+        f'  start block      : {start_block}\n'
+        f'  current block    : {last_block}\n'
+        f'  stride           : every {stride} blocks\n'
+        f'  blocks to process: ~{effective:,} (of {total_blocks:,} total)\n'
+        f'  concurrency      : {concurrency}'
+    )
+
+    # Scanner is used only for fetch_one_block() + its built-in Redis caching.
+    # We never call .run() on it.
+    scanner = BlockScannerCached(d, last_block=start_block, stride=stride)
 
     reserve_address = d.cfg.as_str('native_scanner.reserve_address')
     transfer_detector = RuneTransferDetector(reserve_address)
-    block_scanner.add_subscriber(transfer_detector)
 
     recorder = RuneTransferRecorder(d)
     transfer_detector.add_subscriber(recorder)
 
-    await block_scanner.run()
+    async def process_one_block(block_no: int):
+        try:
+            block_result = await scanner.fetch_one_block(block_no)
+            if block_result and not block_result.is_error:
+                await transfer_detector.on_data(sender=None, data=block_result)
+        except Exception as e:
+            print(f'[Error] block {block_no}: {e}')
 
-    # print a brief summary once scanning is done
+    tasks = [process_one_block(b) for b in range(start_block, last_block, stride)]
+    await parallel_run_in_groups(tasks, concurrency, use_tqdm=True)
+
     summary = await recorder.get_summary(days=days)
     brief = {k: v for k, v in summary.items() if k != 'daily'}
     print('\nBack-fill complete. Accumulated summary:')
