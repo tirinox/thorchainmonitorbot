@@ -149,18 +149,22 @@
       {% endif %}
     </div>
 
-    {# CEX inflow (deposits TO CEX = sell pressure) #}
+    {# CEX inflow (deposits TO CEX) #}
     <div class="card shadow-box">
       <div class="card-title">⬆ CEX Inflow</div>
       <div class="card-value lbl-inflow">{{ short_rune(total.cex_inflow_rune | default(0) | float) }}</div>
-      <div class="card-sub">{{ (total.cex_inflow_count | default(0) | int) }} deposits to CEX</div>
+      <div class="card-sub">
+        {%- if upr > 0 -%}≈ {{ short_dollar((total.cex_inflow_rune | default(0) | float) * upr) }}{%- endif -%}
+      </div>
     </div>
 
-    {# CEX outflow (withdrawals FROM CEX = buy pressure) #}
+    {# CEX outflow (withdrawals FROM CEX) #}
     <div class="card shadow-box">
       <div class="card-title">⬇ CEX Outflow</div>
       <div class="card-value lbl-outflow">{{ short_rune(total.cex_outflow_rune | default(0) | float) }}</div>
-      <div class="card-sub">{{ (total.cex_outflow_count | default(0) | int) }} withdrawals</div>
+      <div class="card-sub">
+        {%- if upr > 0 -%}≈ {{ short_dollar((total.cex_outflow_rune | default(0) | float) * upr) }}{%- endif -%}
+      </div>
     </div>
 
     {# net flow #}
@@ -171,9 +175,11 @@
         {{ netflow_dir(nf) }} {{ short_rune(nf | abs) }}
       </div>
       <div class="card-sub {{ netflow_class(nf) }}">
-        {%- if nf > 0 -%}Net deposits
-        {%- elif nf < 0 -%}Net withdrawals
-        {%- else -%}Balanced flow{%- endif -%}
+        {%- if upr > 0 and nf != 0 -%}
+          ≈ {{ short_dollar((nf | abs) * upr) }}
+        {%- elif nf == 0 -%}
+          Balanced flow
+        {%- endif -%}
       </div>
     </div>
 
@@ -241,18 +247,17 @@
 
       <div class="cex-summary">
         <div class="mini-stat">
-          <div class="mini-label lbl-inflow">⬆ Inflow</div>
-          <div class="mini-value">{{ short_rune(total.cex_inflow_rune | default(0) | float) }}</div>
+          <div class="mini-label lbl-inflow">⬆ Deposits</div>
+          <div class="mini-value">{{ (total.cex_inflow_count | default(0) | int) }}</div>
         </div>
         <div class="mini-stat">
-          <div class="mini-label lbl-outflow">⬇ Outflow</div>
-          <div class="mini-value">{{ short_rune(total.cex_outflow_rune | default(0) | float) }}</div>
+          <div class="mini-label lbl-outflow">⬇ Withdrawals</div>
+          <div class="mini-value">{{ (total.cex_outflow_count | default(0) | int) }}</div>
         </div>
-        {% set nf2 = total.cex_netflow_rune | default(0) | float %}
         <div class="mini-stat span2">
-          <div class="mini-label">↔ Net</div>
-          <div class="mini-value {{ netflow_class(nf2) }}">
-            {{ netflow_dir(nf2) }} {{ short_rune(nf2 | abs) }}
+          <div class="mini-label">🏦 Total CEX transfers</div>
+          <div class="mini-value">
+            {{ ((total.cex_inflow_count | default(0) | int) + (total.cex_outflow_count | default(0) | int)) }}
           </div>
         </div>
       </div>
