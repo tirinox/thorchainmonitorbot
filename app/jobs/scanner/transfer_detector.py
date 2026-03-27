@@ -183,6 +183,13 @@ class RuneTransferDetector(WithDelegates, INotified, WithLogger):
         transfers_logs = self.log_proc.process_events(data)
 
         transfers = transfers_tx + transfers_logs
+
+        # Stamp the real block timestamp so downstream recorders store data
+        # under the correct calendar day instead of today's date.
+        if data.timestamp:
+            for t in transfers:
+                t.block_ts = data.timestamp
+
         if transfers:
             self.logger.info(f'Detected total {len(transfers)} transfers at block #{data.block_no} '
                              f'({len(transfers_tx)} from TXs, {len(transfers_logs)} from logs).')

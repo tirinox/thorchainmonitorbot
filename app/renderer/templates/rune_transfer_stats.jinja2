@@ -171,8 +171,8 @@
         {{ netflow_dir(nf) }} {{ short_rune(nf | abs) }}
       </div>
       <div class="card-sub {{ netflow_class(nf) }}">
-        {%- if nf > 0 -%}Net deposits · sell pressure
-        {%- elif nf < 0 -%}Net withdrawals · buy pressure
+        {%- if nf > 0 -%}Net deposits
+        {%- elif nf < 0 -%}Net withdrawals
         {%- else -%}Balanced flow{%- endif -%}
       </div>
     </div>

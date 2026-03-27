@@ -18,6 +18,7 @@ class NativeTokenTransfer:
     asset: str = ''
     comment: str = ''
     memo: str = ''
+    block_ts: float = 0.0  # actual block timestamp (Unix); 0 means unknown → fall back to now
 
     @property
     def is_synth(self):

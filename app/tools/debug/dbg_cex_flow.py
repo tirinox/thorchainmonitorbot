@@ -182,10 +182,10 @@ async def dbg_transfer_stats_send(app: LpAppFramework, days: int = 14):
 async def run():
     app = LpAppFramework(log_level=logging.INFO)
     async with app:
-        await dbg_transfer_record_from_past(app, days=14)
+        # await dbg_transfer_record_from_past(app, days=6, stride=50, concurrency=16)
         # await dbg_transfer_stats_last_data(app)
         # await dbg_transfer_stats_dump_demo(app)
-        # await dbg_transfer_stats_send(app)
+        await dbg_transfer_stats_send(app)
 
 
 if __name__ == '__main__':

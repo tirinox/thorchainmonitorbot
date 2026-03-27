@@ -85,9 +85,9 @@ class RuneTransferRecorder(INotified, WithLogger):
     # ── INotified ─────────────────────────────────────────────────────────
 
     async def on_data(self, sender, transfers: List[NativeTokenTransfer]):
-        ts = now_ts()
         for transfer in transfers:
             if not self._should_skip(transfer):
+                ts = transfer.block_ts if transfer.block_ts else now_ts()
                 await self._record_transfer(transfer, ts)
 
     # ── read-back helpers ─────────────────────────────────────────────────
