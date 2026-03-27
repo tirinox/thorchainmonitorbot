@@ -4,208 +4,50 @@
 {% block content %}
     <style>
 
-        .block-outer {
-            display: flex;
-            flex: 1;
-
-            flex-direction: column;
-        }
-
-        .block-inner {
-            display: flex;
-            flex: 1;
-            padding: 12px;
-            flex-direction: column;
-        }
-
+        /* ── main layout ─────────────────────────────────────────── */
         .main-container {
             display: flex;
             flex-direction: row;
-            gap: 24px;
+            gap: 18px;
             align-items: stretch;
         }
 
-        .gapped {
-            gap: 16px;
-        }
-
-        .column {
-            padding-top: 20px;
+        .block-outer {
             display: flex;
+            flex: 1;
             flex-direction: column;
-            gap: 24px;
-            align-items: center;
-        }
-
-        .date-range {
-            font-weight: bolder;
-            font-size: 20px;
-            letter-spacing: 0.2rem;
-            color: #aaa;
-            right: 8.9%;
-            top: 98px;
-            display: block;
-            position: absolute;
-        }
-
-        .title {
-            letter-spacing: 1.2rem;
-            color: white;
-        }
-
-        .block-title {
-            display: block;
-            color: #999;
-            font-size: 24px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.1rem;
-            text-align: center;
-            width: 100%;
-            margin-bottom: 6px;
-        }
-
-        .vault-asset-box {
-            display: flex;
-            width: 100%;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
             gap: 10px;
+            min-height: 0;
         }
 
-        .vault-delta {
-            font-weight: bolder;
-            font-size: 20px;
-            padding-top: 17px;
-        }
-
-        .vault-amount {
+        /* ── panel card ──────────────────────────────────────────── */
+        .block-inner {
             display: flex;
-            font-size: 40px;
-            font-weight: bold;
-        }
-
-        .route-table {
-            display: flex;
+            flex: 1;
+            padding: 18px 20px;
             flex-direction: column;
-        }
-
-        .route-row {
-            display: flex;
-            flex-direction: row;
-            gap: 8px;
-            font-size: 19px;
-            font-weight: bolder;
-            padding-top: 4px;
-        }
-
-        .route-arrow {
-            color: #999;
-        }
-
-        .route-volume {
-            font-weight: 500;
-        }
-
-        .affiliate-table {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-            justify-content: space-between;
-            width: 100%;
-            padding-top: 8px;
-        }
-
-        .affiliate-row {
-            display: flex;
-            flex-direction: row;
-
-            align-content: center;
-            gap: 6px;
-            padding-bottom: 2px;
-        }
-
-        .affiliate-logo {
-            height: 32px;
-            width: 32px;
-            vertical-align: middle;
-            margin-right: 4px;
-        }
-
-        .affiliate-name {
-            font-size: 20px;
-            font-weight: bolder;
-        }
-
-        .affiliate-volume {
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .affiliate-delta {
-            padding-top: 4px;
-        }
-
-        .bar-block {
-
-        }
-
-        .bar-container {
-            width: 100%;
-            height: 10px;
-            display: flex;
-            border-radius: 6px;
+            gap: 12px;
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(15,24,30,.97), rgba(9,14,19,.98));
+            border: 1px solid rgba(255,255,255,.06);
+            min-height: 0;
             overflow: hidden;
         }
 
-        .bar-segment {
-            height: 100%;
+        /* ── column / section titles ─────────────────────────────── */
+        .block-title {
+            display: block;
+            color: #fff;
+            font-size: 24px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            text-align: left;
+            width: 100%;
+            margin-bottom: 2px;
         }
 
-        .single-amount {
-        }
-
-        .bar-labels {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 6px;
-            font-weight: bold;
-        }
-
-        .coins-stack {
-            position: relative;
-            display: inline-block;
-        }
-
-        .coin {
-            width: 64px;
-            height: 64px;
-        }
-
-        .coins-stack .coin {
-            border-radius: 50%; /* make round */
-            position: absolute;
-            top: 0;
-        }
-
-        .coins-stack {
-            width: 100px;
-            height: 64px;
-        }
-
-        .coins-stack .coin:nth-child(1) {
-            transform: translate(0%);
-        }
-
-        .coins-stack .coin:nth-child(2) {
-            transform: translate(50%);
-        }
-
-        .lefter {
-            padding-left: 20px;
-        }
-
+        /* ── metric blocks ───────────────────────────────────────── */
         .metric-block {
             display: flex;
             flex-direction: column;
@@ -215,37 +57,200 @@
         .metric-value-block {
             display: flex;
             flex-direction: row;
-            align-items: center;
-            gap: 16px;
+            align-items: baseline;
+            gap: 14px;
         }
 
         .metric-title {
-            color: #999;
-            font-size: 24px;
-            font-weight: 600;
+            color: #91a3a9;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: .14em;
+            font-weight: 400;
+            margin-bottom: 4px;
         }
 
         .metric-value {
-            font-size: 36px;
-            font-weight: bold;
+            font-size: 42px;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+            text-shadow: rgba(35,220,200,.12) 0 0 14px;
         }
 
-        .metric-delta {
-            font-weight: bolder;
-            font-size: 20px;
-            padding-top: 14px;
+        .metric-delta { font-weight: 800; font-size: 20px; }
+
+        /* ── first-column inner wrapper ──────────────────────────── */
+        .column {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: space-between;
+            width: 100%;
         }
+
+        /* ── delta arrow colours (override common.css) ───────────── */
+        .up-arrow   { color: #33FF99 !important; }
+        .down-arrow { color: #ff7f8a !important; }
+
+        /* ── vault rows ──────────────────────────────────────────── */
+        .vault-asset-box {
+            display: flex;
+            width: 100%;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,.05);
+        }
+
+        .coin { width: 52px; height: 52px; flex-shrink: 0; }
+
+        .vault-amount {
+            display: flex;
+            font-size: 36px;
+            font-weight: 800;
+            color: #fff;
+            flex: 1;
+        }
+
+        .vault-delta { font-weight: 800; font-size: 19px; }
+
+        .coins-stack {
+            position: relative;
+            display: inline-block;
+            width: 80px;
+            height: 52px;
+            flex-shrink: 0;
+        }
+
+        .coins-stack .coin { position: absolute; top: 0; border-radius: 50%; }
+        .coins-stack .coin:nth-child(1) { transform: translate(0%); }
+        .coins-stack .coin:nth-child(2) { transform: translate(50%); }
+
+        .lefter {
+            padding: 10px 0 10px 4px;
+            border-bottom: 1px solid rgba(255,255,255,.05);
+        }
+
+        /* ── affiliate table ─────────────────────────────────────── */
+        .affiliate-table {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .affiliate-row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 7px;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+        }
+
+        .affiliate-logo {
+            height: 26px;
+            width: 26px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .affiliate-name  { font-size: 18px; font-weight: 700; color: #d8e8ec; flex: 1; }
+        .affiliate-volume { font-size: 18px; font-weight: 700; color: #fff; }
+        .affiliate-delta  { font-size: 17px; }
+
+        /* ── route table ─────────────────────────────────────────── */
+        .route-table { display: flex; flex-direction: column; gap: 2px; }
+
+        .route-row {
+            display: flex;
+            flex-direction: row;
+            gap: 6px;
+            font-size: 17px;
+            font-weight: 700;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255,255,255,.04);
+            align-items: center;
+        }
+
+        .route-from, .route-to { color: #fff; }
+        .route-arrow  { color: #23DCC8; font-size: 13px; }
+        .route-volume { margin-left: auto; color: #b4c4c9; font-weight: 600; font-size: 16px; }
+
+        /* ── swap-type bar ───────────────────────────────────────── */
+        .bar-block { width: 100%; }
+
+        .bar-wrap {
+            position: relative;
+            width: 100%;
+        }
+
+        .bar-container {
+            width: 100%;
+            height: 14px;
+            display: flex;
+            border-radius: 6px;
+            overflow: hidden;
+            background: rgba(255,255,255,.07);
+        }
+
+        .bar-segment { height: 100%; }
+
+        /* tick = thin dark line that straddles the bar top/bottom */
+        .bar-tick {
+            position: absolute;
+            bottom: 0;
+            width: 2px;
+            height: 22px;           /* 14px bar + 8px above */
+            background: rgba(0,0,0,.70);
+            transform: translateX(-50%);
+            z-index: 2;
+            border-radius: 1px;
+        }
+
+
+        .bar-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        /* ── period pill ─────────────────────────────────────────── */
+        .period-pill {
+            position: absolute;
+            top: 38px; right: 32px;
+            padding: 9px 16px;
+            border-radius: 12px;
+            background: rgba(18,34,37,.85);
+            border: 1px solid rgba(55,255,173,.16);
+            text-align: right;
+        }
+
+        .period-main {
+            font-size: 20px; font-weight: 700; color: #fff;
+            text-transform: uppercase; letter-spacing: .08em;
+        }
+
+        .period-sub { font-size: 14px; color: #97b8b0; margin-top: 2px; }
 
     </style>
 
-
     {% with title="WEEKLY STATS" %}
         {% include "components/header.jinja2" %}
-
-        {#        <div class="date-range">#}
-        {#            {{ datetimeformat(start_date_ts, "%d.%m.%Y") }} – {{ datetimeformat(end_date_ts, "%d.%m.%Y") }}#}
-        {#        </div>#}
     {% endwith %}
+
+    {% if start_date_ts and end_date_ts %}
+    <div class="period-pill shadow-box">
+        <div class="period-main">
+            {{ datetimeformat(start_date_ts, "%d.%m.%Y") }} – {{ datetimeformat(end_date_ts, "%d.%m.%Y") }}
+        </div>
+    </div>
+    {% endif %}
 
     <div class="main-container">
         <!-- COLUMN1 -->
@@ -451,22 +456,39 @@
                 </div>
 
                 <div class="bar-block">
-                    <div class="bar-container">
-                        <div class="bar-segment highlight-blue-bg"
-                             style="width: {{ swap_type_distribution.get('swap', 0) * 100 }}%">
+                    {% set pct_swap  = swap_type_distribution.get('swap', 0) * 100 %}
+                    {% set pct_trade = swap_type_distribution.get('trade_swap', 0) * 100 %}
+                    {% set pct_sec   = swap_type_distribution.get('secured_swap', 0) * 100 %}
+                    {% set tick1 = pct_swap %}
+                    {% set tick2 = pct_swap + pct_trade %}
+
+                    <div class="bar-wrap">
+                        <div class="bar-container">
+                            <div class="bar-segment highlight-blue-bg"
+                                 style="width: {{ pct_swap }}%"></div>
+                            <div class="bar-segment midgard-turqoise-bg"
+                                 style="width: {{ pct_trade }}%"></div>
+                            <div class="bar-segment yggdrasil-green-bg"
+                                 style="width: {{ pct_sec }}%"></div>
                         </div>
-                        <div class="bar-segment midgard-turqoise-bg"
-                             style="width: {{ swap_type_distribution.get('trade_swap', 0) * 100 }}%">
+
+                        {% if tick1 > 1 and tick1 < 99 %}
+                        <div class="bar-tick" style="left: {{ tick1 }}%">
+
                         </div>
-                        <div class="bar-segment yggdrasil-green-bg"
-                             style="width: {{ swap_type_distribution.get('secured_swap', 0) * 100 }}%">
+                        {% endif %}
+
+                        {% if tick2 > 1 and tick2 < 99 and (tick2 - tick1) > 2 %}
+                        <div class="bar-tick" style="left: {{ tick2 }}%">
+                            
                         </div>
+                        {% endif %}
                     </div>
 
                     <div class="bar-labels">
-                        <span class="highlight-blue">Ordinary</span>
-                        <span class="midgard-turqoise">Trade</span>
-                        <span class="yggdrasil-green">Secured</span>
+                        <span class="highlight-blue">Ordinary {{ pct_swap | round(1) }}%</span>
+                        <span class="midgard-turqoise">Trade {{ pct_trade | round(1) }}%</span>
+                        <span class="yggdrasil-green">Secured {{ pct_sec | round(1) }}%</span>
                     </div>
                 </div>
             </div>
