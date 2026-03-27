@@ -399,10 +399,7 @@
                         {% endfor %}
                     </div>
                 </div>
-
-
             </div>
-
         </div>
 
         <!-- COLUMN3 -->
@@ -473,15 +470,11 @@
                         </div>
 
                         {% if tick1 > 1 and tick1 < 99 %}
-                        <div class="bar-tick" style="left: {{ tick1 }}%">
-
-                        </div>
+                        <div class="bar-tick" style="left: {{ tick1 }}%"></div>
                         {% endif %}
 
                         {% if tick2 > 1 and tick2 < 99 and (tick2 - tick1) > 2 %}
-                        <div class="bar-tick" style="left: {{ tick2 }}%">
-                            
-                        </div>
+                        <div class="bar-tick" style="left: {{ tick2 }}%"></div>
                         {% endif %}
                     </div>
 
