@@ -430,9 +430,10 @@ class App(WithLogger):
             fetcher_stats = NetworkStatisticsFetcher(d)
             tasks.append(fetcher_stats)
 
-            notifier_stats = NetworkStatsNotifier(d)
-            notifier_stats.add_subscriber(d.alert_presenter)
-            fetcher_stats.add_subscriber(notifier_stats)
+            # forgot to remove it. now it is controlled via pub_configure.py (PublicAlertJobExecutor)
+            # notifier_stats = NetworkStatsNotifier(d)
+            # notifier_stats.add_subscriber(d.alert_presenter)
+            # fetcher_stats.add_subscriber(notifier_stats)
 
             if achievements_enabled:
                 fetcher_stats.add_subscriber(achievements)
