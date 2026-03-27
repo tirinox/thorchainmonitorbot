@@ -339,13 +339,21 @@ class MetricsDialog(BaseDialog):
             await message.answer(self.loc.notification_text_pol_stats(event), disable_notification=True)
 
     async def show_cex_flow(self, message: Message, period=DAY):
+        await self.start_typing(message)
+
         recorder = RuneTransferRecorder(self.deps)
         period_days = max(1, round(period / DAY))
         summary = await recorder.get_summary(days=period_days)
         usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
         data = AlertRuneTransferStats.from_summary(summary, usd_per_rune=usd_per_rune)
+
+        if not data.transfer_count:
+            await message.answer(self.loc.TEXT_RUNE_TRANSFER_STATS_NO_DATA, disable_notification=True)
+            return
+
+        pic, pic_name = await self.deps.alert_presenter.render_rune_transfer_stats(self.loc, data)
         text = self.loc.notification_text_rune_transfer_stats(data)
-        await message.answer(text, disable_notification=True)
+        await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
 
     async def show_rune_supply(self, message: Message):
         await self.start_typing(message)

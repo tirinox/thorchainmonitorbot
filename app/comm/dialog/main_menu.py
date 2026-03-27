@@ -115,7 +115,7 @@ class MainMenuDialog(BaseDialog):
     @message_handler(commands='cexflow', state='*')
     async def cmd_cex_flow(self, message: Message):
         message.text = ''
-        await self.build_metrics_dialog().show_cex_flow(message)
+        await self.build_metrics_dialog().show_cex_flow(message, period=7 * DAY)
 
     @message_handler(commands='lp', state='*')
     async def cmd_lp(self, message: Message):
