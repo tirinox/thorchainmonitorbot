@@ -316,16 +316,3 @@ class SwapTxNotifier(GenericTxNotifier):
 
         # f) Regular rules are applied
         return await super().is_tx_suitable(tx, min_rune_volume, ph, curve_mult)
-
-
-class RefundTxNotifier(GenericTxNotifier):
-    def __init__(self, deps: DepContainer, params: SubConfig, curve: DepthCurve):
-        super().__init__(deps, params, (ActionType.REFUND,), curve)
-        self.cd_period = params.as_interval('cooldown', 5 * MINUTE)
-
-        # Deduplicator with cooldown for each tx sender
-        self.deduplicator = TxDeduplicatorSenderCooldown(
-            deps.db, DB_KEY_TX_ANNOUNCED_HASHES,
-            'Refund',
-            self.cd_period
-        )

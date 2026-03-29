@@ -18,7 +18,7 @@ from models.memo import ActionType
 from models.pool_info import PoolInfo
 from models.tx import ThorAction, EventLargeTransaction
 from notify.dup_stop import TxDeduplicator
-from notify.public.tx_notify import SwapTxNotifier, LiquidityTxNotifier, RefundTxNotifier
+from notify.public.tx_notify import SwapTxNotifier, LiquidityTxNotifier
 from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver
 
 
@@ -318,34 +318,6 @@ def get_curve(d):
     curve_pts = d.cfg.get_pure('tx.curve', default=DepthCurve.DEFAULT_TX_VS_DEPTH_CURVE)
     curve = DepthCurve(curve_pts)
     return curve
-
-
-async def dbg_refund_spam(app):
-    # block_start = 13813213
-
-    d = app.deps
-
-    q_path = free_url_gen.url_for_tx(0, 20, address='thor1wx5av89rghsmgh2vh40aknx7csvs7xj2cr474n',
-                                     tx_type=ActionType.REFUND)
-
-    j = await d.midgard_connector.request(q_path)
-    tx_parser = get_parser_by_network_id(app.deps.cfg.network_id)
-    txs = tx_parser.parse_tx_response(j).txs
-
-    d.cfg.contents['tx']['refund']['cooldown'] = 3.5
-
-    refund_notifier = RefundTxNotifier(d, d.cfg.tx.refund, curve=get_curve(d))
-    refund_notifier.add_subscriber(d.alert_presenter)
-
-    volume_filler = VolumeFillerUpdater(d)
-    volume_filler.add_subscriber(refund_notifier)
-
-    for i, tx in enumerate(txs, start=1):
-        sep(i)
-
-        await refund_notifier.deduplicator.forget(tx.tx_hash)
-        await volume_filler.on_data(None, [tx])
-        await asyncio.sleep(1)
 
 
 async def dbg_tron_logo(app):

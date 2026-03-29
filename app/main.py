@@ -95,7 +95,7 @@ from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
 from notify.public.trade_acc_notify import TradeAccTransactionNotifier
 from notify.public.transfer_notify import RuneMoveNotifier
-from notify.public.tx_notify import GenericTxNotifier, LiquidityTxNotifier, SwapTxNotifier, RefundTxNotifier
+from notify.public.tx_notify import GenericTxNotifier, LiquidityTxNotifier, SwapTxNotifier
 from notify.public.version_notify import VersionNotifier
 from notify.public.voting_notify import VotingNotifier
 
@@ -406,11 +406,12 @@ class App(WithLogger):
                     start_detector_from_list.add_subscriber(stream_swap_notifier)
                     stream_swap_notifier.add_subscriber(d.alert_presenter)
 
-            if d.cfg.tx.refund.get('enabled', True):
-                d.refund_notifier_tx = RefundTxNotifier(d, d.cfg.tx.refund, curve=curve)
-
-                volume_filler.add_subscriber(d.refund_notifier_tx)
-                d.refund_notifier_tx.add_subscriber(d.alert_presenter)
+            # Depracted
+            # if d.cfg.tx.refund.get('enabled', True):
+            #     d.refund_notifier_tx = RefundTxNotifier(d, d.cfg.tx.refund, curve=curve)
+            #
+            #     volume_filler.add_subscriber(d.refund_notifier_tx)
+            #     d.refund_notifier_tx.add_subscriber(d.alert_presenter)
 
             tasks.append(fetcher_tx)
 
