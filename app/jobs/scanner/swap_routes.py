@@ -6,15 +6,17 @@ from lib.db import DB
 from lib.delegates import INotified
 from lib.logs import WithLogger
 from lib.money import pretty_dollar
+from jobs.scanner.event_db import EventDbTxDeduplicator
 from models.asset import normalize_asset
 from models.key_stats_model import SwapRouteEntry
 from models.tx import ThorAction
-from notify.dup_stop import TxDeduplicator
 
 ROUTE_SEP = '=='
 
 
 class SwapRouteRecorder(WithLogger, INotified):
+    DEDUP_COMPONENT = 'swap_route_recorded'
+
     def __init__(self, db: DB, key_prefix="tx"):
         super().__init__()
         self.redis = db.redis
@@ -22,7 +24,7 @@ class SwapRouteRecorder(WithLogger, INotified):
         self.days_to_keep = 60
         self.clear_every_ticks = 10
         self._clear_counter = 0
-        self._dedup = TxDeduplicator(db, 'route:seen_tx')
+        self._dedup = EventDbTxDeduplicator(db, self.DEDUP_COMPONENT)
 
     @staticmethod
     def _date_format(date):

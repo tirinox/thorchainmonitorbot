@@ -8,13 +8,13 @@ from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.utils import async_once_every
+from jobs.scanner.event_db import EventDbTxDeduplicator
 from models.memo import ActionType
 from models.price import PriceHolder
 from models.runepool import AlertRunePoolAction
 from models.trade_acc import AlertTradeAccountAction
 from models.tx import ThorAction
 from models.vol_n import TxCountStats, TxMetricType
-from notify.dup_stop import TxDeduplicator
 
 
 def convert_trade_actions_to_txs(txs, last_thor_block: int, ph: PriceHolder) -> List[ThorAction]:
@@ -36,6 +36,8 @@ def convert_trade_actions_to_txs(txs, last_thor_block: int, ph: PriceHolder) -> 
 
 
 class TxCountRecorder(INotified, WithLogger):
+    DEDUP_COMPONENT = 'tx_count_recorded'
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -53,7 +55,7 @@ class TxCountRecorder(INotified, WithLogger):
             TxMetricType.RUNEPOOL_WITHDRAW: DailyActiveUserCounter(r, 'RunePoolWithdraw'),
             TxMetricType.SECURED_SWAP: DailyActiveUserCounter(r, 'SecuredSwaps'),
         }
-        self._deduplicator = TxDeduplicator(deps.db, 'TxCount')
+        self._deduplicator = EventDbTxDeduplicator(deps.db, self.DEDUP_COMPONENT)
 
     async def _write_tx_count(self, txs: List[ThorAction]):
         unique_tx_hashes = defaultdict(set)
@@ -123,6 +125,8 @@ class TxCountRecorder(INotified, WithLogger):
 
 
 class VolumeRecorder(INotified, WithLogger):
+    DEDUP_COMPONENT = 'volume_recorded'
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -135,7 +139,7 @@ class VolumeRecorder(INotified, WithLogger):
 
         self._accumulator = Accumulator('Volume', deps.db, tolerance=t)
 
-        self._deduplicator = TxDeduplicator(deps.db, 'VolumeRecorder')
+        self._deduplicator = EventDbTxDeduplicator(deps.db, self.DEDUP_COMPONENT)
         self.use_deduplication = deps.cfg.as_bool('price.volume.record_deduplication', True)
 
     @async_once_every(5)

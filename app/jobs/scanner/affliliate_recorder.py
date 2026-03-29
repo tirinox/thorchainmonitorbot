@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from jobs.scanner.block_result import BlockResult
+from jobs.scanner.event_db import EventDbTxDeduplicator
 from jobs.scanner.tx import NativeThorTx
 from lib.delegates import INotified
 from lib.depcont import DepContainer
@@ -11,6 +12,8 @@ from notify.dup_stop import TxDeduplicator
 
 
 class AffiliateRecorder(WithLogger, INotified):
+    DEDUP_COMPONENT = 'affiliate_recorder'
+
     def __init__(self, deps: DepContainer, key_prefix="tx"):
         super().__init__()
         self.deps = deps
@@ -18,7 +21,7 @@ class AffiliateRecorder(WithLogger, INotified):
         self.days_to_keep = 60
         self.clear_every_ticks = 10
         self._clear_counter = 0
-        self._dedup = TxDeduplicator(deps.db, 'AffiliateRecorder')
+        self._dedup = EventDbTxDeduplicator(deps.db, self.DEDUP_COMPONENT)
 
     @staticmethod
     def _date_format(date):

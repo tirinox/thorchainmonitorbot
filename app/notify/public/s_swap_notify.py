@@ -1,17 +1,18 @@
 from jobs.scanner.arb_detector import ArbBotDetector, ArbStatus
-from jobs.scanner.event_db import EventDatabase
+from jobs.scanner.event_db import EventDatabase, EventDbTxDeduplicator
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.money import pretty_dollar
 from models.asset import Asset
 from models.s_swap import AlertSwapStart
-from notify.dup_stop import TxDeduplicator
 
-DB_KEY_ANNOUNCED_SS_START = 'ss-started:announced-hashes'
+DB_KEY_ANNOUNCED_SS_START = 'streaming_swap_start_announced'
 
 
 class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
+    DEDUP_COMPONENT = 'ss_start_announced'
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -23,7 +24,7 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         self.hide_arb_bots = self.deps.cfg.as_bool('tx.swap.hide_arbitrage_bots', True)
         self.arb_detector = ArbBotDetector(deps)
 
-        self.deduplicator = TxDeduplicator(deps.db, DB_KEY_ANNOUNCED_SS_START)
+        self.deduplicator = EventDbTxDeduplicator(deps.db, self.DEDUP_COMPONENT)
 
     async def on_data(self, sender, event: AlertSwapStart):
         if not await self.is_swap_eligible(event):

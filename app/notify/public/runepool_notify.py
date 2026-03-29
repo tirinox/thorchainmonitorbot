@@ -1,15 +1,17 @@
 import json
 from typing import Optional
 
+from jobs.scanner.event_db import EventDbTxDeduplicator
 from lib.cooldown import Cooldown
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.runepool import AlertRunePoolAction, AlertPOLState, AlertRunepoolStats, RunepoolState
-from notify.dup_stop import TxDeduplicator
 
 
 class RunePoolTransactionNotifier(INotified, WithDelegates, WithLogger):
+    DEDUP_COMPONENT = 'runepool_announced'
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -18,7 +20,7 @@ class RunePoolTransactionNotifier(INotified, WithDelegates, WithLogger):
         self.cooldown_sec = cfg.as_interval('cooldown', '1h')
         self.cooldown_capacity = cfg.get('cooldown_capacity', 5)
         self.cd = Cooldown(self.deps.db, "RunePoolTxNotification", self.cooldown_sec, self.cooldown_capacity)
-        self.deduplicator = TxDeduplicator(deps.db, 'RunePool:announced-hashes')
+        self.deduplicator = EventDbTxDeduplicator(deps.db, self.DEDUP_COMPONENT)
 
     async def on_data(self, sender, e: AlertRunePoolAction):
         if e.usd_amount >= self.min_usd_amount:

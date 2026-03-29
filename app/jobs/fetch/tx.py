@@ -6,14 +6,16 @@ from tqdm import tqdm
 from api.midgard.parser import get_parser_by_network_id, TxParseResult
 from api.midgard.urlgen import free_url_gen
 from jobs.fetch.base import BaseFetcher
+from jobs.scanner.event_db import EventDbTxDeduplicator
 from lib.date_utils import parse_timespan_to_seconds, now_ts
 from lib.depcont import DepContainer
 from models.tx import ThorAction
-from notify.dup_stop import TxDeduplicator
 
 
 class TxFetcher(BaseFetcher):
     RETRY_COUNT = 3
+
+    DEDUP_COMPONENT = 'tx_fetcher'
 
     def __init__(self, deps: DepContainer, tx_types=None, only_asset=None):
         s_cfg = deps.cfg.tx
@@ -35,7 +37,7 @@ class TxFetcher(BaseFetcher):
 
         self.pending_hash_to_height = {}
 
-        self.deduplicator = TxDeduplicator(deps.db, "scanner:last_seen")
+        self.deduplicator = EventDbTxDeduplicator(deps.db, self.DEDUP_COMPONENT)
 
         self.logger.info(f'New TX fetcher is created for {self.tx_types}')
 
@@ -113,7 +115,6 @@ class TxFetcher(BaseFetcher):
         txs.sort(key=lambda tx: tx.height)
         self.logger.info(f'User {address = } has {len(txs)} tx ({liquidity_change_only = }).')
         return txs
-
 
     # -------
 
@@ -232,7 +233,7 @@ class TxFetcher(BaseFetcher):
             # filter out TXs from "selected_txs" that have been seen already
             unseen_new_txs = []
             for tx in selected_txs:
-                if not await self.deduplicator.have_ever_seen(tx):
+                if not await self.deduplicator.have_ever_seen_hash(tx.tx_hash):
                     unseen_new_txs.append(tx)
 
                     # It was previously pending, but now it's successful

@@ -1,5 +1,6 @@
 from typing import Optional
 
+from jobs.scanner.event_db import EventDbTxDeduplicator
 from lib.cooldown import Cooldown
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
@@ -9,6 +10,8 @@ from notify.dup_stop import TxDeduplicator
 
 
 class TradeAccTransactionNotifier(INotified, WithDelegates, WithLogger):
+    DEDUP_COMPONENT = 'trade_acc_announced'
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -17,7 +20,7 @@ class TradeAccTransactionNotifier(INotified, WithDelegates, WithLogger):
         self.cooldown_sec = cfg.as_interval('cooldown', '1h')
         self.cooldown_capacity = cfg.get('cooldown_capacity', 5)
         self.cd = Cooldown(self.deps.db, "TradeAccTxNotification", self.cooldown_sec, self.cooldown_capacity)
-        self.deduplicator = TxDeduplicator(deps.db, 'TradeAcc:announced-hashes')
+        self.deduplicator = EventDbTxDeduplicator(deps.db, self.DEDUP_COMPONENT)
 
     async def on_data(self, sender, e: AlertTradeAccountAction):
         if e.usd_amount >= self.min_usd_amount:

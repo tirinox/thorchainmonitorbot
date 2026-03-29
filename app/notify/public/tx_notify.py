@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from api.aionode.types import ThorSwapperClout, thor_to_float
 from jobs.scanner.arb_detector import ArbBotDetector, ArbStatus
-from jobs.scanner.event_db import EventDatabase
+from jobs.scanner.event_db import EventDatabase, EventDbTxDeduplicator
 from lib.config import SubConfig
 from lib.date_utils import parse_timespan_to_seconds, MINUTE
 from lib.delegates import INotified, WithDelegates
@@ -13,13 +13,13 @@ from models.asset import Asset
 from models.memo import ActionType
 from models.price import PriceHolder
 from models.tx import ThorAction, EventLargeTransaction
-from notify.dup_stop import TxDeduplicator, TxDeduplicatorSenderCooldown
-from notify.public.s_swap_notify import DB_KEY_ANNOUNCED_SS_START
-
-DB_KEY_TX_ANNOUNCED_HASHES = 'large-tx:announced-hashes'
+from notify.dup_stop import TxDeduplicatorSenderCooldown
+from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
 
 
 class GenericTxNotifier(INotified, WithDelegates, WithLogger):
+    DEDUP_COMPONENT = 'large_tx_announced'
+
     def __init__(self, deps: DepContainer, params: SubConfig, tx_types, curve: DepthCurve):
         super().__init__()
         self.deps = deps
@@ -35,7 +35,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         self.logger.info(f"Min USD total is {short_dollar(self.min_usd_total)}.")
         self.no_repeat_protection = True
 
-        self.deduplicator = TxDeduplicator(deps.db, DB_KEY_TX_ANNOUNCED_HASHES)
+        self.deduplicator = EventDbTxDeduplicator(deps.db, self.DEDUP_COMPONENT)
 
         self.dbg_just_pass_only_tx_id = ''
 
@@ -198,7 +198,7 @@ class SwapTxNotifier(GenericTxNotifier):
         self.hide_arb_bots = params.as_bool('hide_arbitrage_bots', True)
         self._ss_txs_started = []  # Fill it every tick before is_tx_suitable is called.
         self._ev_db = EventDatabase(deps.db)
-        self.swap_start_deduplicator = TxDeduplicator(deps.db, DB_KEY_ANNOUNCED_SS_START)
+        self.swap_start_deduplicator = EventDbTxDeduplicator(deps.db, StreamingSwapStartTxNotifier.DEDUP_COMPONENT)
         self.dbg_ignore_traders = False
         self.arb_detector = ArbBotDetector(deps)
 
@@ -237,8 +237,8 @@ class SwapTxNotifier(GenericTxNotifier):
                 event.transaction.meta_swap.trade_slip = swap_slip
         except Exception as e:
             self.logger.error(f'Failed to verify liquidity fee: {e}')
-        finally:
-            return event
+
+        return event
 
     async def _load_tx_volumes(self, event: EventLargeTransaction):
         event.usd_volume_input = 0.0
