@@ -1,6 +1,7 @@
 from typing import Optional, Dict
 
 from jobs.scanner.block_result import BlockResult
+from jobs.scanner.event_db import EventDbTxDeduplicator
 from jobs.scanner.wasm_execute import CosmwasmExecuteDecoder
 from lib.accumulator import DailyAccumulator
 from lib.active_users import DailyActiveUserCounter
@@ -34,6 +35,7 @@ class CosmWasmRecorder(INotified, WithLogger):
         super().__init__()
         self._db = db
         self._decoder = CosmwasmExecuteDecoder()
+        self._dedup = EventDbTxDeduplicator(db, 'wasm_recorder')
         self._call_accum = DailyAccumulator(self.ACCUM_NAME_CALLS, db)
         self._contract_accum = DailyAccumulator(self.ACCUM_NAME_CONTRACTS, db)
         self._user_counter = DailyActiveUserCounter(db.redis, self.USER_COUNTER_NAME)
@@ -60,7 +62,13 @@ class CosmWasmRecorder(INotified, WithLogger):
         # Use the block's own timestamp so historical replays land in the correct daily bucket.
         now = float(data.timestamp) if data.timestamp else now_ts()
 
+        all_hashes = [tx.tx_hash for tx in data.txs if tx.tx_hash]
+        new_hashes = set(await self._dedup.only_new_hashes(all_hashes))
+
         for tx in data.txs:
+            if tx.tx_hash not in new_hashes:
+                continue
+
             matched_contracts = [
                 message.contract_address
                 for message in tx.messages
@@ -72,7 +80,7 @@ class CosmWasmRecorder(INotified, WithLogger):
 
             await self._call_accum.add(now, **{self.KEY_CALLS: 1})
 
-            user = tx.first_signer_address
+            user = tx.first_message.get('sender') or tx.first_signer_address
             if user:
                 await self._user_counter.hit(user=user, now=now)
 
@@ -80,6 +88,8 @@ class CosmWasmRecorder(INotified, WithLogger):
                 await self._contract_accum.add(now, **{contract_addr: 1})
                 if user:
                     await self._get_contract_user_counter(contract_addr).hit(user=user, now=now)
+
+            await self._dedup.mark_as_seen(tx.tx_hash)
 
             self.logger.debug(
                 f'Block #{data.block_no}: tx={tx.tx_hash[:8]}... '

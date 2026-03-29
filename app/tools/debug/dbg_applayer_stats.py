@@ -158,20 +158,38 @@ class WasmRecordProgressPrinter(INotified):
             )
 
 
-async def dbg_continuous_record(app: LpAppFramework, blocks_back: int = 10000):
+async def dbg_continuous_record(app: LpAppFramework, blocks_back: int = 10000, start_block: int | None = None):
     """
-    Replay the last *blocks_back* blocks (using BlockScannerCached for caching)
+    Replay historical blocks (using BlockScannerCached for caching)
     and record every CosmWasm MsgExecuteContract into CosmWasmRecorder.
+
+    By default, replays the last *blocks_back* blocks. If *start_block* is
+    provided, it takes precedence and scanning begins from that explicit block.
     Stops automatically when it reaches the current tip block.
     """
     d = app.deps
     current_block = await d.last_block_cache.get_thor_block()
-    start_block = current_block - blocks_back
+
+    if start_block is None:
+        if blocks_back <= 0:
+            raise ValueError(f'blocks_back must be positive, got {blocks_back!r}')
+        start_block = current_block - blocks_back
+        start_desc = f'{blocks_back:,} blocks back'
+    else:
+        start_block = int(start_block)
+        if start_block < 0:
+            raise ValueError(f'start_block must be non-negative, got {start_block!r}')
+        if start_block >= current_block:
+            raise ValueError(
+                f'start_block must be below current block {current_block:,}, got {start_block:,}'
+            )
+        blocks_back = current_block - start_block
+        start_desc = 'explicit start block'
 
     sep()
     print(f">>> Continuous WASM recorder")
     print(f"    current block : {current_block:,}")
-    print(f"    start block   : {start_block:,}  ({blocks_back:,} blocks back)")
+    print(f"    start block   : {start_block:,}  ({start_desc})")
     print(f"    stop block    : {current_block:,}")
     print(f"    stride        : 20")
     print(f"    ~blocks to scan: {blocks_back // 20:,}")
@@ -254,8 +272,9 @@ async def main():
     async with app:
         # comment/uncomment the desired debug function(s) below:
 
-        await dbg_broadcast_app_layer_stats(app)
+        # await dbg_broadcast_app_layer_stats(app)
         # await dbg_save_demo_json(app)
+        await dbg_continuous_record(app, start_block=24_812_774)
         # await dbg_continuous_record(app, blocks_back=20_000)
 
 
