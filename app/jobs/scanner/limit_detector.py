@@ -12,6 +12,11 @@ class ClosedLimitSwap(NamedTuple):
     event: ThorEvent
     reason: str = ''
 
+    @property
+    def txid(self) -> str:
+        attrs = self.event.attrs if isinstance(self.event.attrs, dict) else {}
+        return str(attrs.get('txid') or '')
+
 
 class LimitSwapBlockUpdate(NamedTuple):
     block_no: int

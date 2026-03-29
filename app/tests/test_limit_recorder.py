@@ -185,10 +185,8 @@ async def test_limit_recorder_daily_stats(monkeypatch):
     assert day1_stats['opened_count'] == 2.0
     assert day1_stats['opened_usd'] == 32_000.0
     assert day1_stats['unique_traders'] == 2.0
-    assert day1_stats['pair:BTC.BTC->ETH.ETH:opened_count'] == 1.0
-    assert day1_stats['pair:BTC.BTC->ETH.ETH:opened_usd'] == 30_000.0
-    assert day1_stats['pair:ETH.ETH->BTC.BTC:opened_count'] == 1.0
-    assert day1_stats['pair:ETH.ETH->BTC.BTC:opened_usd'] == 2_000.0
+    assert day1_stats['pair:BTC.BTC->ETH.ETH:opened_count'] == 2.0
+    assert day1_stats['pair:BTC.BTC->ETH.ETH:opened_usd'] == 32_000.0
 
     partial = make_event(
         'swap',
@@ -239,7 +237,6 @@ async def test_clean_old_open_meta_removes_stale_and_malformed(monkeypatch):
     deps.pool_cache = FakePoolCache(make_price_holder())
 
     recorder = LimitSwapStatsRecorder(deps)
-    await recorder._ensure_runtime_resources()
 
     old_ts = 1_700_000_000
     cutoff = old_ts + 10
@@ -348,8 +345,8 @@ async def test_get_daily_data_and_summary(monkeypatch):
     assert d1['opened_count'] == 2.0
     assert d1['opened_usd'] == 32_000.0
     assert d1['unique_traders'] == 2.0
-    assert d1['pairs']['BTC.BTC->ETH.ETH']['opened_count'] == 1.0
-    assert d1['pairs']['ETH.ETH->BTC.BTC']['opened_usd'] == 2_000.0
+    assert d1['pairs']['BTC.BTC->ETH.ETH']['opened_count'] == 2.0
+    assert d1['pairs']['BTC.BTC->ETH.ETH']['opened_usd'] == 32_000.0
     assert d1['close_reasons'] == {}
 
     assert d2['partial_count'] == 1.0
@@ -375,8 +372,8 @@ async def test_get_daily_data_and_summary(monkeypatch):
     assert summary['avg_daily_unique_traders'] == 1.0
     assert summary['max_daily_unique_traders'] == 2.0
     assert summary['total_unique_trader_days'] == 2.0
-    assert summary['pairs']['BTC.BTC->ETH.ETH']['opened_usd'] == 30_000.0
-    assert summary['pairs']['ETH.ETH->BTC.BTC']['opened_count'] == 1.0
+    assert summary['pairs']['BTC.BTC->ETH.ETH']['opened_usd'] == 32_000.0
+    assert summary['pairs']['BTC.BTC->ETH.ETH']['opened_count'] == 2.0
     assert summary['close_reasons']['limit_swap_expired'] == 1.0
 
 
@@ -458,5 +455,67 @@ async def test_get_daily_data_default_14_days(monkeypatch):
     assert len(daily) == 14
     assert daily[-1]['date'] == datetime.fromtimestamp(fixed_now).strftime('%Y-%m-%d')
     assert all(day['opened_count'] == 0.0 for day in daily)
+
+
+@pytest.mark.asyncio
+async def test_closed_limit_dedup_uses_tx_id(monkeypatch):
+    import jobs.limit_recorder as limit_recorder_module
+
+    monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
+
+    deps = DepContainer()
+    deps.db = cast(DB, cast(object, FakeDB()))
+    deps.pool_cache = FakePoolCache(make_price_holder())
+
+    recorder = LimitSwapStatsRecorder(deps)
+
+    day1 = 1_700_000_000
+    day2 = day1 + 86_400
+
+    tx1 = make_deposit_tx(
+        tx_hash='open-1',
+        memo='=<:ETH.ETH:thor1dest:2500000000/100800/0',
+        asset='BTC.BTC',
+        amount=100_000_000,
+        signer='thor1alice',
+        height=100,
+        timestamp=day1,
+    )
+
+    await recorder.on_data(None, LimitSwapBlockUpdate(
+        block_no=101,
+        timestamp=day1,
+        new_opened_limit_swaps=[tx1],
+        closed_limit_swaps=[],
+        partial_swaps=[],
+    ))
+
+    close1 = make_event(
+        'limit_swap_close',
+        reason='limit swap expired',
+        id='open-1',
+    )
+    close2 = make_event(
+        'limit_swap_close',
+        reason='limit swap cancelled',
+        id='open-1',
+        extra_field='same-close-different-payload',
+    )
+
+    await recorder.on_data(None, LimitSwapBlockUpdate(
+        block_no=110,
+        timestamp=day2,
+        new_opened_limit_swaps=[],
+        closed_limit_swaps=[
+            ClosedLimitSwap(close1, 'limit swap expired'),
+            ClosedLimitSwap(close2, 'limit swap cancelled'),
+        ],
+        partial_swaps=[],
+    ))
+
+    day2_stats = await recorder.accumulator.get(day2)
+    assert day2_stats['closed_count'] == 1.0
+    assert day2_stats['closed_duration_blocks_sum'] == 10.0
+    assert day2_stats['closed_duration_samples'] == 1.0
 
 

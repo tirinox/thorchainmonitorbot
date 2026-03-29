@@ -77,9 +77,9 @@ async def dbg_limit_infographic_send(app: LpAppFramework, days: int = 7):
 async def run():
     app = LpAppFramework()
     async with app:
-        # await dbg_limit_detector_continuous(app)
+        await dbg_limit_detector_continuous(app)
         # await dbg_limit_last_data(app)
-        await dbg_limit_infographic_send(app)
+        # await dbg_limit_infographic_send(app)
 
 
 if __name__ == '__main__':

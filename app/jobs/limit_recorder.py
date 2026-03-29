@@ -7,7 +7,8 @@ from datetime import datetime
 from typing import Optional
 
 from api.aionode.types import thor_to_float
-from jobs.scanner.limit_detector import LimitSwapBlockUpdate, ClosedLimitSwap
+from jobs.scanner.event_db import EventDbTxDeduplicator
+from jobs.scanner.limit_detector import LimitSwapBlockUpdate
 from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorTxMessage
 from lib.accumulator import DailyAccumulator
 from lib.active_users import DailyActiveUserCounter
@@ -23,7 +24,6 @@ from models.limit_swap import (
     LimitSwapOpenState, LimitSwapPairStats, LimitSwapPeriodStats, LimitSwapTotals,
 )
 from models.memo import THORMemo, ActionType
-from notify.dup_stop import TxDeduplicator
 
 
 @dataclass
@@ -71,15 +71,16 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
     OPEN_META_KEY = 'LimitSwap:open-meta:v1'
     OPEN_META_RETENTION_SEC = 90 * DAY
     OPEN_META_CLEAN_EVERY_N_UPDATES = 50
+    DEDUP_OPENED_COMPONENT = 'limit_swap_opened'
+    DEDUP_CLOSED_COMPONENT = 'limit_swap_closed'
 
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
         self.accumulator = DailyAccumulator(self.ACCUM_NAME, deps.db)
-        self._opened_dedup = None
-        self._partial_dedup = None
-        self._closed_dedup = None
-        self._trader_counter: DailyActiveUserCounter | None = None
+        self._opened_dedup = EventDbTxDeduplicator(self.deps.db, self.DEDUP_OPENED_COMPONENT)
+        self._closed_dedup = EventDbTxDeduplicator(self.deps.db, self.DEDUP_CLOSED_COMPONENT)
+        self._trader_counter = DailyActiveUserCounter(self.deps.db.redis, 'LimitSwapTraders')
         self._pair_trader_counters: dict[str, DailyActiveUserCounter] = {}
 
     @staticmethod
@@ -184,7 +185,6 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         return items
 
     async def get_unique_traders(self, days: int = 14, end_ts: int | None = None) -> int:
-        await self._ensure_runtime_resources()
         end_ts = int(end_ts or now_ts())
         postfixes = [
             self._trader_counter.key_postfix(end_ts - offset * DAY)
@@ -199,7 +199,6 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         end_ts: int | None = None,
     ) -> int:
         """Return the true (HyperLogLog-based) unique trader count for a canonical pair over *days*."""
-        await self._ensure_runtime_resources()
         end_ts = int(end_ts or now_ts())
         counter = self._get_pair_trader_counter(pair_canonical_name)
         postfixes = [
@@ -209,7 +208,6 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         return int(await counter.get_count(postfixes))
 
     async def get_summary(self, days: int = 14, end_ts: int | None = None):
-        await self._ensure_runtime_resources()
         end_ts = int(end_ts or now_ts())
         daily = await self.get_daily_data(days=days, end_ts=end_ts)
 
@@ -272,7 +270,6 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
 
         returned `top_pairs` list now contains all pairs.
         """
-        await self._ensure_runtime_resources()
         end_ts = int(end_ts or now_ts())
         prev_end_ts = end_ts - days * DAY
 
@@ -401,22 +398,6 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             open_orders=open_orders,
         )
 
-    @staticmethod
-    def _event_fingerprint(ev: ThorEvent) -> str:
-        return json.dumps(ev.attrs or {}, sort_keys=True, default=str)
-
-    async def _ensure_runtime_resources(self):
-        await self.deps.db.get_redis()
-        if self._opened_dedup is None:
-            self._opened_dedup = TxDeduplicator(self.deps.db, 'LimitSwap:opened')
-        if self._partial_dedup is None:
-            self._partial_dedup = TxDeduplicator(self.deps.db, 'LimitSwap:partial')
-        if self._closed_dedup is None:
-            self._closed_dedup = TxDeduplicator(self.deps.db, 'LimitSwap:closed')
-        if self._trader_counter is None:
-            self._trader_counter = DailyActiveUserCounter(self.deps.db.redis, 'LimitSwapTraders')
-        else:
-            self._trader_counter.r = self.deps.db.redis
 
     async def _save_open_meta(self, meta: OpenLimitSwapMeta):
         r = await self.deps.db.get_redis()
@@ -465,14 +446,9 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         if n_deleted:
             self.logger.info(f'Cleaned {n_deleted} stale limit swap open-meta entries')
 
-    @staticmethod
-    def _extract_close_tx_hash(item: ClosedLimitSwap) -> str:
-        ev = item.event
-        attrs = ev.attrs if isinstance(ev.attrs, dict) else {}
-        return str(attrs.get('id') or attrs.get('tx_id') or attrs.get('in_tx_id') or attrs.get('hash') or '')
 
     @staticmethod
-    def _extract_tx_signer(tx: NativeThorTx) -> str:
+    def _extract_tx_signer_extract_tx_signer(tx: NativeThorTx) -> str:
         for message in tx.messages:
             if signer := message.get('signer', ''):
                 return str(signer)
@@ -548,7 +524,7 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             source_asset=source_asset,
             target_asset=target_asset,
             usd_amount=self._price_coin_usd(ph, source_asset, source_amount),
-            trader=self._extract_tx_signer(tx),
+            trader=self._extract_tx_signer_extract_tx_signer(tx),  # fixme
         )
 
     def _build_partial_usd(self, ev: ThorEvent, ph) -> float:
@@ -622,30 +598,22 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         await self._update_unique_traders_snapshot(traders, ts)
 
     async def _process_partials(self, data: LimitSwapBlockUpdate, ph):
-        fp_map = {self._event_fingerprint(ev): ev for ev in data.partial_swaps}
-        new_fingerprints = await self._partial_dedup.only_new_hashes(list(fp_map.keys()))
-
-        for fp in new_fingerprints:
-            ev = fp_map.get(fp)
-            if not ev:
-                continue
+        for ev in data.partial_swaps:
             usd_amount = self._build_partial_usd(ev, ph)
             await self.accumulator.add(
                 data.timestamp or now_ts(),
                 partial_count=1,
                 partial_usd=usd_amount,
             )
-            await self._partial_dedup.mark_as_seen(fp)
 
     async def _process_closed(self, data: LimitSwapBlockUpdate):
-        fp_map = {self._event_fingerprint(item.event): item for item in data.closed_limit_swaps}
-        new_fingerprints = await self._closed_dedup.only_new_hashes(list(fp_map.keys()))
+        all_tx_ids = [item.txid for item in data.closed_limit_swaps]
+        new_tx_ids = set(await self._closed_dedup.only_new_hashes(all_tx_ids))
         ts = data.timestamp or now_ts()
         touched_duration = False
 
-        for fp in new_fingerprints:
-            item = fp_map.get(fp)
-            if not item:
+        for item in data.closed_limit_swaps:
+            if item.txid not in new_tx_ids:
                 continue
 
             fields = {
@@ -653,17 +621,16 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
                 self._close_reason_key(item.reason): 1,
             }
 
-            tx_hash = self._extract_close_tx_hash(item)
-            meta = await self._load_open_meta(tx_hash)
+            meta = await self._load_open_meta(item.txid)
             if meta and data.block_no and meta.block_no:
                 duration_blocks = max(0, int(data.block_no) - int(meta.block_no))
                 fields['closed_duration_blocks_sum'] = duration_blocks
                 fields['closed_duration_samples'] = 1
                 touched_duration = True
-                await self._delete_open_meta(tx_hash)
+                await self._delete_open_meta(item.txid)
 
             await self.accumulator.add(ts, **fields)
-            await self._closed_dedup.mark_as_seen(fp)
+            await self._closed_dedup.mark_as_seen(item.txid)
 
         if touched_duration:
             current = await self.accumulator.get(ts)
@@ -673,7 +640,6 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             await self.accumulator.set(ts, avg_duration_blocks=avg_duration)
 
     async def on_data(self, sender, data: LimitSwapBlockUpdate):
-        await self._ensure_runtime_resources()
         ph = await self.deps.pool_cache.get()
 
         await self._process_opened(data, ph)
