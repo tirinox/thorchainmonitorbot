@@ -1,11 +1,13 @@
 from collections import defaultdict
 from fnmatch import fnmatch
+from types import SimpleNamespace
 from typing import cast
 
 import pytest
 
 from jobs.scanner.event_db import EventDatabase, EventDbTxDeduplicator
 from lib.db import DB
+from models.tx import ThorAction
 
 
 class FakeRedis:
@@ -102,7 +104,7 @@ async def test_event_db_component_helpers_prefix_seen_and_coexist_with_status_fi
 async def test_event_db_tx_deduplicator_uses_component_flag():
     db = cast(DB, cast(object, FakeDB()))
     ev_db = EventDatabase(db)
-    dedup = EventDbTxDeduplicator(ev_db, 'rapid')
+    dedup = EventDbTxDeduplicator(db, 'rapid')
 
     assert dedup.flag_name == 'seen_rapid'
     assert await dedup.have_ever_seen_hash('tx-3') is False
@@ -111,4 +113,34 @@ async def test_event_db_tx_deduplicator_uses_component_flag():
 
     assert await dedup.have_ever_seen_hash('tx-3') is True
     assert await ev_db.has_tx_flag('tx-3', 'seen_rapid') is True
+
+
+@pytest.mark.asyncio
+async def test_event_db_tx_deduplicator_supports_batch_hash_filtering():
+    db = cast(DB, cast(object, FakeDB()))
+    dedup = EventDbTxDeduplicator(db, 'volume_recorded')
+
+    await dedup.mark_as_seen('tx-seen')
+
+    assert await dedup.only_new_hashes(['tx-new', 'tx-seen']) == ['tx-new']
+    assert await dedup.only_seen_hashes(['tx-new', 'tx-seen']) == ['tx-seen']
+
+
+@pytest.mark.asyncio
+async def test_event_db_tx_deduplicator_supports_tx_batch_helpers():
+    db = cast(DB, cast(object, FakeDB()))
+    dedup = EventDbTxDeduplicator(db, 'large_tx_announced')
+
+    tx_new = SimpleNamespace(tx_hash='tx-new')
+    tx_seen = SimpleNamespace(tx_hash='tx-seen')
+    txs = cast(list[ThorAction], cast(object, [tx_new, tx_seen]))
+
+    await dedup.mark_as_seen_txs(cast(list[ThorAction], cast(object, [tx_seen])))
+
+    only_new = await dedup.only_new_txs(txs)
+    only_seen = await dedup.only_seen_txs(txs)
+
+    assert [tx.tx_hash for tx in only_new] == ['tx-new']
+    assert [tx.tx_hash for tx in only_seen] == ['tx-seen']
+
 

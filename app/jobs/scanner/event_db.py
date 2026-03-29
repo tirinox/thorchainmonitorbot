@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 from typing import Optional
@@ -8,6 +9,7 @@ from jobs.scanner.swap_props import SwapProps
 from lib.date_utils import DAY
 from lib.db import DB
 from lib.logs import WithLogger
+from models.tx import ThorAction
 
 
 class EventDatabase(WithLogger):
@@ -139,13 +141,60 @@ class EventDbTxDeduplicator:
     seen-flag directly inside the existing `tx:tracker:{tx_id}` hash.
     """
 
-    def __init__(self, event_db: EventDatabase, component_name: str):
-        self.event_db = event_db
+    def __init__(self, db: DB, component_name: str, *args, **kwargs):
+        self.event_db = EventDatabase(db)
         self.component_name = component_name
-        self.flag_name = event_db.component_flag_name(component_name)
+        self.flag_name = self.event_db.component_flag_name(component_name)
+
+    @property
+    def key(self):
+        return self.flag_name
+
+    def __repr__(self):
+        return f'<EventDbTxDeduplicator flag={self.flag_name}>'
+
+    async def have_ever_seen(self, tx: ThorAction):
+        if not tx or not tx.tx_hash:
+            return True
+        return await self.have_ever_seen_hash(tx.tx_hash)
 
     async def have_ever_seen_hash(self, tx_id) -> bool:
         return await self.event_db.has_tx_flag(tx_id, self.flag_name)
 
     async def mark_as_seen(self, tx_id):
         await self.event_db.set_tx_flag(tx_id, self.flag_name, True)
+
+    async def mark_as_seen_txs(self, txs: list[ThorAction]):
+        for tx in txs:
+            if tx and tx.tx_hash:
+                await self.mark_as_seen(tx.tx_hash)
+
+    async def batch_ever_seen_hashes(self, txs: list[str]):
+        return await asyncio.gather(*[self.have_ever_seen_hash(tx_hash) for tx_hash in txs])
+
+    async def only_hashes_having_certain_flag(self, txs: list[str], desired_flag) -> list[str]:
+        flags = await self.batch_ever_seen_hashes(txs)
+        desired_flag = bool(desired_flag)
+        return [tx_id for flag, tx_id in zip(flags, txs) if bool(flag) == desired_flag]
+
+    async def only_txs_having_certain_flag(self, txs: list[ThorAction], desired_flag) -> list[ThorAction]:
+        tx_dict = {tx.tx_hash: tx for tx in txs if tx and tx.tx_hash}
+        filtered_tx_hashes = set(await self.only_hashes_having_certain_flag(list(tx_dict.keys()), desired_flag))
+        return [tx for tx in tx_dict.values() if tx.tx_hash in filtered_tx_hashes]
+
+    async def only_new_hashes(self, txs: list[str]) -> list[str]:
+        return await self.only_hashes_having_certain_flag(txs, False)
+
+    async def only_seen_hashes(self, txs: list[str]) -> list[str]:
+        return await self.only_hashes_having_certain_flag(txs, True)
+
+    async def only_new_txs(self, txs: list[ThorAction], logs=False) -> list[ThorAction]:
+        len_in = len(txs)
+        results = await self.only_txs_having_certain_flag(txs, False)
+        if logs and len(results) != len_in:
+            self.event_db.logger.info(f'(flag={self.flag_name}) Filtered {len_in} txs to {len(results)} new txs.')
+        return results
+
+    async def only_seen_txs(self, txs: list[ThorAction]) -> list[ThorAction]:
+        return await self.only_txs_having_certain_flag(txs, True)
+
