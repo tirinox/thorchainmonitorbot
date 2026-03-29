@@ -144,3 +144,48 @@ async def test_event_db_tx_deduplicator_supports_tx_batch_helpers():
     assert [tx.tx_hash for tx in only_seen] == ['tx-seen']
 
 
+@pytest.mark.asyncio
+async def test_event_db_tx_deduplicator_have_ever_seen_treats_missing_tx_or_hash_as_seen():
+    db = cast(DB, cast(object, FakeDB()))
+    dedup = EventDbTxDeduplicator(db, 'wasm_recorder')
+
+    empty_tx = cast(ThorAction, cast(object, SimpleNamespace(tx_hash='')))
+    unseen_tx = cast(ThorAction, cast(object, SimpleNamespace(tx_hash='tx-4')))
+
+    assert await dedup.have_ever_seen(cast(ThorAction, cast(object, None))) is True
+    assert await dedup.have_ever_seen(empty_tx) is True
+    assert await dedup.have_ever_seen(unseen_tx) is False
+
+    await dedup.mark_as_seen('tx-4')
+
+    assert await dedup.have_ever_seen(unseen_tx) is True
+
+
+@pytest.mark.asyncio
+async def test_event_db_tx_deduplicator_mark_as_seen_txs_ignores_empty_entries():
+    db = cast(DB, cast(object, FakeDB()))
+    dedup = EventDbTxDeduplicator(db, 'limit_closed')
+
+    tx_seen = cast(ThorAction, cast(object, SimpleNamespace(tx_hash='tx-seen')))
+    tx_empty = cast(ThorAction, cast(object, SimpleNamespace(tx_hash='')))
+    txs = cast(list[ThorAction], cast(object, [None, tx_empty, tx_seen]))
+
+    await dedup.mark_as_seen_txs(txs)
+
+    assert await dedup.have_ever_seen_hash('tx-seen') is True
+    assert await dedup.have_ever_seen_hash('tx-other') is False
+
+
+@pytest.mark.asyncio
+async def test_event_db_tx_deduplicator_only_new_hashes_preserves_order_and_duplicates():
+    db = cast(DB, cast(object, FakeDB()))
+    dedup = EventDbTxDeduplicator(db, 'volume_recorded')
+
+    await dedup.mark_as_seen('tx-seen')
+
+    tx_hashes = ['tx-b', 'tx-seen', 'tx-a', 'tx-b']
+
+    assert await dedup.only_new_hashes(tx_hashes) == ['tx-b', 'tx-a', 'tx-b']
+    assert await dedup.only_seen_hashes(tx_hashes) == ['tx-seen']
+
+
