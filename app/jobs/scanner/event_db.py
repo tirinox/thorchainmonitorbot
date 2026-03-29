@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Optional
 
 from redis.asyncio import Redis
@@ -19,10 +20,58 @@ class EventDatabase(WithLogger):
     def key_to_tx(tx_id):
         return f'tx:tracker:{tx_id}'
 
+    @staticmethod
+    def normalize_flag_name(flag_name: str) -> str:
+        flag_name = re.sub(r'[^a-z0-9_]+', '_', str(flag_name or '').strip().lower()).strip('_')
+        if not flag_name:
+            raise ValueError('flag_name must not be empty')
+        return flag_name
+
+    @classmethod
+    def component_flag_name(cls, component_name: str) -> str:
+        component_name = cls.normalize_flag_name(component_name)
+        if component_name.startswith('seen_'):
+            return component_name
+        return f'seen_{component_name}'
+
+    @staticmethod
+    def _as_bool(value) -> bool:
+        if value is None:
+            return False
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return value != 0
+
+        value = str(value).strip().lower()
+        return value not in ('', '0', 'false', 'none', 'null', 'no')
+
     async def read_tx_status(self, tx_id) -> Optional[SwapProps]:
         r: Redis = await self.db.get_redis()
         props = await r.hgetall(self.key_to_tx(tx_id))
         return SwapProps.restore_events_from_tx_status(props)
+
+    async def has_tx_flag(self, tx_id, flag_name: str) -> bool:
+        if not tx_id:
+            return False
+
+        r: Redis = await self.db.get_redis()
+        flag_name = self.normalize_flag_name(flag_name)
+        value = await r.hget(self.key_to_tx(tx_id), flag_name)
+        return self._as_bool(value)
+
+    async def set_tx_flag(self, tx_id, flag_name: str, value=True):
+        if not tx_id:
+            return
+        await self.write_tx_status(tx_id, {
+            self.normalize_flag_name(flag_name): value,
+        })
+
+    async def is_component_seen(self, tx_id, component_name: str) -> bool:
+        return await self.has_tx_flag(tx_id, self.component_flag_name(component_name))
+
+    async def mark_component_as_seen(self, tx_id, component_name: str, value=True):
+        await self.set_tx_flag(tx_id, self.component_flag_name(component_name), value=value)
 
     @staticmethod
     def _convert_type(v):
@@ -80,3 +129,23 @@ class EventDatabase(WithLogger):
         key = self.key_to_tx(tx_id)
         await r.delete(key)
         self.logger.warning(f'Erased tx_id {tx_id} from the database.')
+
+
+class EventDbTxDeduplicator:
+    """
+    Small EventDatabase-backed deduplicator.
+
+    Instead of a separate bloom filter keyspace, it stores a per-component
+    seen-flag directly inside the existing `tx:tracker:{tx_id}` hash.
+    """
+
+    def __init__(self, event_db: EventDatabase, component_name: str):
+        self.event_db = event_db
+        self.component_name = component_name
+        self.flag_name = event_db.component_flag_name(component_name)
+
+    async def have_ever_seen_hash(self, tx_id) -> bool:
+        return await self.event_db.has_tx_flag(tx_id, self.flag_name)
+
+    async def mark_as_seen(self, tx_id):
+        await self.event_db.set_tx_flag(tx_id, self.flag_name, True)
