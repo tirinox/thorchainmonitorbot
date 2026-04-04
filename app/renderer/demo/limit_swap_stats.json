@@ -32,12 +32,12 @@
       { "pair": "BTC.BTC->THOR.RUNE",                                                        "opened_count": 358, "opened_usd": 589420.50, "unique_traders": 132 },
       { "pair": "ETH.ETH->THOR.RUNE",                                                        "opened_count": 276, "opened_usd": 389240.25, "unique_traders": 109 },
       { "pair": "BTC.BTC->ETH.ETH",                                                          "opened_count": 168, "opened_usd": 274180.00, "unique_traders":  82 },
-      { "pair": "AVAX.AVAX->THOR.RUNE",                                                      "opened_count": 124, "opened_usd":  81340.75, "unique_traders":  57 },
-      { "pair": "DOGE.DOGE->THOR.RUNE",                                                      "opened_count":  89, "opened_usd":  28460.50, "unique_traders":  43 },
       { "pair": "ETH.ETH->ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",             "opened_count":  78, "opened_usd": 143920.00, "unique_traders":  48 },
-      { "pair": "BNB.BNB->THOR.RUNE",                                                        "opened_count":  57, "opened_usd":  38740.25, "unique_traders":  35 },
+      { "pair": "AVAX.AVAX->THOR.RUNE",                                                      "opened_count": 124, "opened_usd":  81340.75, "unique_traders":  57 },
       { "pair": "BCH.BCH->BTC.BTC",                                                          "opened_count":  38, "opened_usd":  62180.50, "unique_traders":  24 },
       { "pair": "AVAX.AVAX->BTC.BTC",                                                        "opened_count":  25, "opened_usd":  41230.00, "unique_traders":  17 },
+      { "pair": "BNB.BNB->THOR.RUNE",                                                        "opened_count":  57, "opened_usd":  38740.25, "unique_traders":  35 },
+      { "pair": "DOGE.DOGE->THOR.RUNE",                                                      "opened_count":  89, "opened_usd":  28460.50, "unique_traders":  43 },
       { "pair": "LTC.LTC->THOR.RUNE",                                                        "opened_count":  15, "opened_usd":  11680.75, "unique_traders":  11 }
     ],
     "open_orders": {

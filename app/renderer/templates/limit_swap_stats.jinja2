@@ -141,24 +141,25 @@
                  margin-top: 10px; min-height: 0; overflow: hidden; }
   .pair-row {
     display: grid;
-    grid-template-columns: 44px 1fr 86px 110px;
-    gap: 10px; align-items: center;
-    padding: 8px 12px 8px 4px;
+    grid-template-columns: 40px minmax(0, 1fr) 68px 94px;
+    gap: 8px; align-items: center;
+    padding: 8px 10px 8px 2px;
     border-radius: 13px;
     background: rgba(255,255,255,.03);
   }
   .pair-rank {
-    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     background: linear-gradient(180deg, #33FF99, #23DCC8);
-    color: #041a12; font-size: 17px; font-weight: 800;
+    color: #041a12; font-size: 16px; font-weight: 800;
   }
   .pair-name {
     color: #fff; font-size: 26px; font-weight: 800; letter-spacing: .03em;
+    line-height: 1.05; padding-right: 4px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .pair-count { text-align: right; color: #d6f0e8; font-size: 28px; font-weight: 800; }
-  .pair-usd   { text-align: right; color: #6e8a91; font-size: 22px; font-weight: 600; }
+  .pair-count { text-align: right; color: #d6f0e8; font-size: 24px; font-weight: 800; white-space: nowrap; }
+  .pair-usd   { text-align: right; color: #6e8a91; font-size: 20px; font-weight: 600; white-space: nowrap; }
   .pair-row-others { background: rgba(255,255,255,.06); }
 
   /* ── empty state ─────────────────────────────────────── */

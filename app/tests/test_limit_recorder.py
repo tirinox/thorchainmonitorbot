@@ -437,6 +437,68 @@ async def test_get_summary_uses_hll_for_cross_day_unique_traders(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_get_infographic_data_sorts_top_pairs_by_volume(monkeypatch):
+    import jobs.limit_recorder as limit_recorder_module
+
+    monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
+
+    deps = DepContainer()
+    deps.db = cast(DB, cast(object, FakeDB()))
+    deps.pool_cache = FakePoolCache(make_price_holder())
+
+    recorder = LimitSwapStatsRecorder(deps)
+
+    day1 = 1_700_000_000
+
+    high_volume_pair = make_deposit_tx(
+        tx_hash='open-btc-rune',
+        memo='=<:THOR.RUNE:thor1dest:100000000/100800/0',
+        asset='BTC.BTC',
+        amount=100_000_000,
+        signer='thor1btc',
+        height=100,
+        timestamp=day1,
+    )
+    lower_volume_pair_1 = make_deposit_tx(
+        tx_hash='open-eth-rune-1',
+        memo='=<:THOR.RUNE:thor1dest:100000000/100800/0',
+        asset='ETH.ETH',
+        amount=100_000_000,
+        signer='thor1eth1',
+        height=101,
+        timestamp=day1,
+    )
+    lower_volume_pair_2 = make_deposit_tx(
+        tx_hash='open-eth-rune-2',
+        memo='=<:THOR.RUNE:thor1dest:100000000/100800/0',
+        asset='ETH.ETH',
+        amount=100_000_000,
+        signer='thor1eth2',
+        height=102,
+        timestamp=day1,
+    )
+
+    await recorder.on_data(None, LimitSwapBlockUpdate(
+        block_no=102,
+        timestamp=day1,
+        new_opened_limit_swaps=[high_volume_pair, lower_volume_pair_1, lower_volume_pair_2],
+        closed_limit_swaps=[],
+        partial_swaps=[],
+    ))
+
+    stats = await recorder.get_infographic_data(days=1, end_ts=day1)
+
+    assert [pair.pair for pair in stats.top_pairs] == [
+        'BTC.BTC->THOR.RUNE',
+        'ETH.ETH->THOR.RUNE',
+    ]
+    assert stats.top_pairs[0].opened_usd == 30_000.0
+    assert stats.top_pairs[0].opened_count == 1
+    assert stats.top_pairs[1].opened_usd == 4_000.0
+    assert stats.top_pairs[1].opened_count == 2
+
+
+@pytest.mark.asyncio
 async def test_get_daily_data_default_14_days(monkeypatch):
     import jobs.limit_recorder as limit_recorder_module
 
@@ -461,7 +523,7 @@ async def test_get_daily_data_default_14_days(monkeypatch):
 async def test_closed_limit_dedup_uses_tx_id(monkeypatch):
     import jobs.limit_recorder as limit_recorder_module
 
-    monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
+    monkeypatch.setattr(limit_recorder_module, 'EventDbTxDeduplicator', FakeDedup)
 
     deps = DepContainer()
     deps.db = cast(DB, cast(object, FakeDB()))

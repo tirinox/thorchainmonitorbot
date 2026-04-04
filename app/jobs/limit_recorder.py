@@ -338,8 +338,7 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
                 )
                 for pair_name in curr_pair_totals
             ],
-            key=lambda x: x.opened_count,
-            reverse=True,
+            key=lambda x: (-x.opened_usd, -x.opened_count, x.pair),
         )
 
         # ── live open-order snapshot from THORNode ────────────────────────
