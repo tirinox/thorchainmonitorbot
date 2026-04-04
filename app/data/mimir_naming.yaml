@@ -24,7 +24,11 @@ special_vote_values:
     7: Blockdaemon
     8: Helius
 translate:
-  SOL-RPC-PROVIDER: Solana RPC Provider
+  ADR020: ADR-20 Add AppLayer
+  ADR021: ADR-21 Marketing Budget
+  ADR022: ADR-22 Per Block Swap Scoring
+  ADR23: ADR-23 Reserve Restructuring
+  ADR25: ADR-25 Update Dev Fund Address
   CLOUDPROVIDERLIMIT: Cloud Provider Limit
   DESIREDMAXVALIDATORSET: Desired Max Validator Set
   DESIREDVALIDATORSET: Desired Validator Set
@@ -82,6 +86,7 @@ translate:
   POLSYNTHUTILIZATION: POL Synth Utilization
   POLTARGETSYNTHPERPOOLDEPTH: POL Target Synth Per Pool Depth
   POOLDEPTHFORYGGFUNDINGMIN: Pool Depth For Ygg Funding Min
+  SOL-RPC-PROVIDER: Solana RPC Provider
   SOLVENCYHALTBCHCHAIN: Solvency Halt BCH Chain
   SOLVENCYHALTBNBCHAIN: Solvency Halt BNB Chain
   SOLVENCYHALTBTCCHAIN: Solvency Halt BTC Chain
@@ -103,12 +108,6 @@ translate:
   SYNTHSLIPMINBPS: Synth Slip Min BPS
   THORNAME: THOR Name
   THORNAMES: THOR Names
-  ADR23: ADR-23 Reserve Restructuring
-  ADR022: ADR-22 Per Block Swap Scoring
-  ADR021: ADR-21 Marketing Budget
-  ADR020: ADR-20 Add AppLayer
-  ADR25: ADR-25 Update Dev Fund Address
-
 types:
   basis_points:
   - CLOUDPROVIDERLIMIT
@@ -331,6 +330,7 @@ word_transform:
   RUJI: RUJI
   SNX: SNX
   SOL: SOL
+  SOL-SOL: SOL.SOL
   TCY: TCY
   THOR-RUJI: THOR.RUJI
   THOR-TCY: THOR.TCY
@@ -399,6 +399,7 @@ words:
 - WITHDRAWAL
 - ADDRESSES
 - AFFILIATE
+- ALLOWANCE
 - AVAILABLE
 - AVAX-AVAX
 - BAREMETAL
@@ -453,8 +454,10 @@ words:
 - PROPOSAL
 - PROTOCOL
 - PROVIDER
+- PROVIDES
 - RAGNAROK
 - RECEIVES
+- RECOVERY
 - REGISTER
 - REQUIRED
 - SECURITY
@@ -491,10 +494,12 @@ words:
 - PENDING
 - PROCESS
 - RESERVE
+- RETIRED
 - RETRIES
 - SAVINGS
 - SECURED
 - SIGNING
+- SOL-SOL
 - STAKING
 - SUPPORT
 - SURPLUS
@@ -519,6 +524,7 @@ words:
 - INCOME
 - KEYGEN
 - LENGTH
+- MANUAL
 - MINTCY
 - NATIVE
 - NUMBER
@@ -634,10 +640,6 @@ words:
 - LUNA
 - LUNE
 - MEMO
-- NEXT
-- ADD
-- MAX
-- SOL
 - MINT
 - MISS
 - MULT
@@ -657,6 +659,7 @@ words:
 - STOP
 - SWAP
 - TEXT
+- THIS
 - THOR
 - TIME
 - TRON
