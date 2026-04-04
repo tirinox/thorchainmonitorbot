@@ -647,6 +647,52 @@ class ThorSwapperClout(NamedTuple):
         )
 
 
+class ThorMemoReference(NamedTuple):
+    reference: int
+    asset: str
+    memo: str
+    height: int
+    registration_hash: str
+    registered_by: str
+    used_by_txs: List[str]
+
+    @classmethod
+    def from_json(cls, j):
+        j = j or {}
+        return cls(
+            reference=int(j.get('reference', 0)),
+            asset=j.get('asset', ''),
+            memo=j.get('memo', ''),
+            height=int(j.get('height', 0)),
+            registration_hash=j.get('registration_hash', ''),
+            registered_by=j.get('registered_by', ''),
+            used_by_txs=list(j.get('used_by_txs', [])),
+        )
+
+
+class ThorMemoCheck(NamedTuple):
+    reference: int
+    available: bool
+    expires_at: int
+    usage_count: int
+    max_use: int
+    can_register: bool
+    memo: str
+
+    @classmethod
+    def from_json(cls, j):
+        j = j or {}
+        return cls(
+            reference=int(j.get('reference', 0)),
+            available=bool(j.get('available', False)),
+            expires_at=int(j.get('expires_at', 0)),
+            usage_count=int(j.get('usage_count', 0)),
+            max_use=int(j.get('max_use', 0)),
+            can_register=bool(j.get('can_register', False)),
+            memo=j.get('memo', ''),
+        )
+
+
 class ThorTxStatus(NamedTuple):
     tx: dict
     planned_out_txs: List[dict]

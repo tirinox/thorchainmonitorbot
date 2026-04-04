@@ -161,6 +161,20 @@ class ThorConnector:
         data = await self._request(url)
         return data
 
+    async def query_memo_reference(self, registration_hash: str) -> ThorMemoReference:
+        url = self.env.path_memo_reference.format(registration_hash=registration_hash)
+        data = await self._request(url)
+        if isinstance(data, dict) and data.get('code') is not None and data.get('message'):
+            raise ThorException(data)
+        return ThorMemoReference.from_json(data)
+
+    async def query_memo_check(self, asset: str, amount) -> ThorMemoCheck:
+        url = self.env.path_memo_check.format(asset=asset, amount=amount)
+        data = await self._request(url)
+        if isinstance(data, dict) and data.get('code') is not None and data.get('message'):
+            raise ThorException(data)
+        return ThorMemoCheck.from_json(data)
+
     async def query_trade_units(self, height=None):
         url = self.env.path_trade_units
         data = await self._request(url, height=height)
