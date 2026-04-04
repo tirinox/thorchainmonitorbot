@@ -40,6 +40,7 @@ from jobs.transfer_recorder import RuneTransferRecorder
 from jobs.node_churn import NodeChurnDetector
 from jobs.pol_recorder import POLStateRecorder
 from jobs.price_recorder import PriceRecorder
+from jobs.ref_memo_cache import RefMemoCache
 from jobs.rune_burn_recorder import RuneBurnRecorder
 from jobs.scanner.limit_detector import LimitSwapDetector
 from jobs.scanner.native_scan import BlockScanner
@@ -287,6 +288,8 @@ class App(WithLogger):
             max_attempts = d.cfg.as_int('native_scanner.max_attempts_per_block', 5)
             d.block_scanner = BlockScanner(d, max_attempts=max_attempts, role='main')
             tasks.append(d.block_scanner)
+            d.ref_memo_cache = RefMemoCache(d)
+            d.block_scanner.add_subscriber(d.ref_memo_cache)
             reserve_address = d.cfg.as_str('native_scanner.reserve_address')
 
             if d.cfg.get('native_scanner.limit_swaps.enabled', True):

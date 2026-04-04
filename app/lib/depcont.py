@@ -82,6 +82,7 @@ class DepContainer:
     dex_analytics = None
     affiliate_recorder = None
     route_recorder = None
+    ref_memo_cache = None
 
     scheduler: Optional[PrivateScheduler] = None
     pub_scheduler: Optional[PublicScheduler] = None
