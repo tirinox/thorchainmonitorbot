@@ -107,6 +107,7 @@ translate:
   ADR022: ADR-22 Per Block Swap Scoring
   ADR021: ADR-21 Marketing Budget
   ADR020: ADR-20 Add AppLayer
+  ADR25: ADR-25 Update Dev Fund Address
 
 types:
   basis_points:
