@@ -1,8 +1,13 @@
 import asyncio
 
-from jobs.scanner.native_scan import BlockScanner
-from jobs.user_counter import UserCounterMiddleware
+from jobs.scanner.block_result import BlockResult
 from tools.lib.lp_common import LpAppFramework
+
+
+async def dbg_failing_scan_date(app: LpAppFramework, block_no=25615925):
+    # load block from network
+    block: BlockResult = await app.deps.block_scanner.fetch_one_block(block_no)
+    print('block', block_no, 'date', block.timestamp)
 
 
 async def demo_one_block(app: LpAppFramework, block_no):
@@ -17,7 +22,8 @@ async def demo_one_block(app: LpAppFramework, block_no):
 async def run():
     app = LpAppFramework()
     async with app:
-        await demo_one_block(app, 20947105)
+        # await demo_one_block(app, 20947105)
+        await dbg_failing_scan_date(app, 25615925)
 
 
 if __name__ == '__main__':

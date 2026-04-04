@@ -228,8 +228,17 @@ def date_parse_rfc_z_no_ms(s):
 
 def date_parse_rfc(s: str):
     s = s.rstrip('Z')
-    s = s[:-3]
-    return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%f")
+
+    if '.' not in s:
+        return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S")
+
+    base, fractional = s.split('.', 1)
+    fractional = ''.join(ch for ch in fractional if ch.isdigit())
+    if not fractional:
+        return datetime.strptime(base, "%Y-%m-%dT%H:%M:%S")
+
+    fractional = (fractional + '000000')[:6]
+    return datetime.strptime(f'{base}.{fractional}', "%Y-%m-%dT%H:%M:%S.%f")
 
 
 def discard_time(dt: datetime):

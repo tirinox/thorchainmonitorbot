@@ -1,6 +1,8 @@
+from datetime import datetime
+
 import pytest
 
-from lib.date_utils import seconds_human, DAY, HOUR, MINUTE
+from lib.date_utils import seconds_human, DAY, HOUR, MINUTE, date_parse_rfc
 
 
 @pytest.mark.parametrize(('x', 's'), [
@@ -36,3 +38,13 @@ from lib.date_utils import seconds_human, DAY, HOUR, MINUTE
 ])
 def test_seconds_human(x, s):
     assert seconds_human(x) == s
+
+
+@pytest.mark.parametrize(('raw', 'expected'), [
+    ('2026-04-03T18:58:33.308Z', datetime(2026, 4, 3, 18, 58, 33, 308000)),
+    ('2026-03-26T21:36:57.934136659Z', datetime(2026, 3, 26, 21, 36, 57, 934136)),
+    ('2026-04-03T18:58:33Z', datetime(2026, 4, 3, 18, 58, 33)),
+])
+def test_date_parse_rfc_supports_variable_fractional_precision(raw, expected):
+    assert date_parse_rfc(raw) == expected
+
