@@ -17,6 +17,7 @@ PROGRESS_EVERY = 100
 class ReferenceMemoHit:
     block_no: int
     block_ts: float
+    action: ActionType
     source: str
     tx_ref: str
     memo: str
@@ -27,7 +28,7 @@ class ReferenceMemoHit:
         return format_date(self.block_ts) if self.block_ts else 'n/a'
 
 
-def parse_reference_memo(memo: str):
+def parse_memo_as_action(memo: str, action: ActionType):
     if not memo:
         return None
 
@@ -36,20 +37,23 @@ def parse_reference_memo(memo: str):
     except Exception:
         return None
 
-    if parsed and parsed.action == ActionType.REFERENCE:
+    if parsed and parsed.action == action:
         return parsed
     return None
 
 
-def find_reference_hits_in_block(block: BlockResult, include_observed=True) -> list[ReferenceMemoHit]:
+def find_reference_hits_in_block(block: BlockResult,
+                                 action: ActionType = ActionType.REFERENCE,
+                                 include_observed=True) -> list[ReferenceMemoHit]:
     hits = []
 
     for tx in block.txs:
-        parsed = parse_reference_memo(tx.memo)
+        parsed = parse_memo_as_action(tx.memo, action)
         if parsed:
             hits.append(ReferenceMemoHit(
                 block_no=block.block_no,
                 block_ts=block.timestamp,
+                action=action,
                 source='native',
                 tx_ref=tx.tx_hash,
                 memo=tx.memo,
@@ -58,12 +62,13 @@ def find_reference_hits_in_block(block: BlockResult, include_observed=True) -> l
 
     if include_observed:
         for tx in block.all_observed_txs:
-            parsed = parse_reference_memo(tx.memo)
+            parsed = parse_memo_as_action(tx.memo, action)
             if parsed:
                 direction = 'in' if tx.is_inbound else 'out'
                 hits.append(ReferenceMemoHit(
                     block_no=block.block_no,
                     block_ts=block.timestamp,
+                    action=action,
                     source=f'observed_{direction}',
                     tx_ref=tx.tx_id,
                     memo=tx.memo,
@@ -99,11 +104,17 @@ async def resolve_block_range(app, start_block=None, end_block=None, blocks_back
     return current_block, start_block, end_block
 
 
-async def dbg_scan_reference_memos(app, start_block=None, end_block=None,
-                                   blocks_back=DEFAULT_BLOCKS_BACK,
-                                   stride=DEFAULT_STRIDE,
-                                   include_observed=True,
-                                   stop_on_first=False):
+async def _dbg_scan_reference_like_memos(app, *,
+                                         action: ActionType,
+                                         scan_title: str,
+                                         hit_label: str,
+                                         start_block=None,
+                                         end_block=None,
+                                         blocks_back=DEFAULT_BLOCKS_BACK,
+                                         stride=DEFAULT_STRIDE,
+                                         include_observed=True,
+                                         stop_on_first=False,
+                                         warm_reference_cache=False):
     current_block, start_block, end_block = await resolve_block_range(
         app,
         start_block=start_block,
@@ -113,10 +124,12 @@ async def dbg_scan_reference_memos(app, start_block=None, end_block=None,
     stride = max(1, int(stride))
 
     scanner = BlockScannerCached(app.deps, last_block=start_block, stride=stride)
-    ref_memo_cache = RefMemoCache(app.deps)
-    ref_memo_cache._dedup.ignore_all_checks = True
+    ref_memo_cache = None
+    if warm_reference_cache:
+        ref_memo_cache = RefMemoCache(app.deps)
+        ref_memo_cache._dedup.ignore_all_checks = True
 
-    print('>>> Reference memo scan')
+    print(f'>>> {scan_title}')
     print(f'    current block     : {current_block:,}')
     print(f'    start block       : {start_block:,}')
     print(f'    end block         : {end_block:,}')
@@ -140,12 +153,13 @@ async def dbg_scan_reference_memos(app, start_block=None, end_block=None,
             print(f'[{block_no:,}] scanner error: {block.error.code} {block.error.message}')
             continue
 
-        await ref_memo_cache.on_data(scanner, block)
+        if ref_memo_cache:
+            await ref_memo_cache.on_data(scanner, block)
 
-        hits = find_reference_hits_in_block(block, include_observed=include_observed)
+        hits = find_reference_hits_in_block(block, action=action, include_observed=include_observed)
         if hits:
             total_hits += len(hits)
-            print(f'>>> block #{block_no:,} produced {len(hits)} reference memo hit(s)')
+            print(f'>>> block #{block_no:,} produced {len(hits)} {hit_label} hit(s)')
             for hit in hits:
                 print_hit(hit)
             if stop_on_first:
@@ -157,6 +171,45 @@ async def dbg_scan_reference_memos(app, start_block=None, end_block=None,
     print('>>> Done')
     print(f'    scanned blocks : {total_blocks:,}')
     print(f'    total hits     : {total_hits:,}')
+
+
+async def dbg_scan_reference_memos(app, start_block=None, end_block=None,
+                                   blocks_back=DEFAULT_BLOCKS_BACK,
+                                   stride=DEFAULT_STRIDE,
+                                   include_observed=True,
+                                   stop_on_first=False):
+    await _dbg_scan_reference_like_memos(
+        app,
+        action=ActionType.REFERENCE,
+        scan_title='Reference memo scan',
+        hit_label='reference memo',
+        start_block=start_block,
+        end_block=end_block,
+        blocks_back=blocks_back,
+        stride=stride,
+        include_observed=include_observed,
+        stop_on_first=stop_on_first,
+        warm_reference_cache=True,
+    )
+
+
+async def dbg_scan_use_reference_memos(app, start_block=None, end_block=None,
+                                       blocks_back=DEFAULT_BLOCKS_BACK,
+                                       stride=DEFAULT_STRIDE,
+                                       include_observed=True,
+                                       stop_on_first=False):
+    await _dbg_scan_reference_like_memos(
+        app,
+        action=ActionType.USE_REFERENCE,
+        scan_title='USE_REFERENCE memo scan',
+        hit_label='use reference memo',
+        start_block=start_block,
+        end_block=end_block,
+        blocks_back=blocks_back,
+        stride=stride,
+        include_observed=include_observed,
+        stop_on_first=stop_on_first,
+    )
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -186,12 +239,19 @@ async def run(args=None):
 
     app = LpAppFramework()
     async with app:
-        await dbg_scan_reference_memos(
+        # await dbg_scan_reference_memos(
+        #     app,
+        #     start_block=args.start_block,
+        #     end_block=args.end_block,
+        #     blocks_back=args.blocks_back,
+        #     stride=args.stride,
+        #     include_observed=not args.native_only,
+        #     stop_on_first=args.stop_on_first,
+        # )
+        await dbg_scan_use_reference_memos(
             app,
-            start_block=args.start_block,
-            end_block=args.end_block,
-            blocks_back=args.blocks_back,
-            stride=args.stride,
+            blocks_back=10000,
+            stride=1,
             include_observed=not args.native_only,
             stop_on_first=args.stop_on_first,
         )
@@ -199,4 +259,3 @@ async def run(args=None):
 
 if __name__ == '__main__':
     asyncio.run(run())
-

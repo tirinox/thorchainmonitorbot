@@ -6,6 +6,7 @@ from api.midgard.parser import MidgardParserV2
 from comm.telegram.telegram import telegram_send_message_basic, TG_TEST_USER
 from comm.twitter.twitter_bot import twitter_text_length, TwitterBotMock
 from jobs.fetch.tx import TxFetcher
+from jobs.ref_memo_cache import RefMemoCache
 from jobs.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from jobs.scanner.native_scan import BlockScanner
 from jobs.user_counter import UserCounterMiddleware
@@ -81,6 +82,7 @@ class LpAppFramework(App):
         d.pub_alert_executor = PublicAlertJobExecutor(d)
         d.pub_scheduler = await d.pub_alert_executor.configure_jobs()
         d.user_counter = UserCounterMiddleware(d)
+        d.ref_memo_cache = RefMemoCache(d)
 
         # often required
         d.volume_recorder = VolumeRecorder(d)

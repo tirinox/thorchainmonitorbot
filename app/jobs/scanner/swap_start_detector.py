@@ -21,11 +21,64 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
         self.deps = deps
         self.ph = None
 
-    def make_swap_start_event(self, msg: dict, tx_hash, height, is_deposit) -> Optional[AlertSwapStart]:
+    @staticmethod
+    def _coins_from_msg(msg: dict):
+        return msg.get('coins') or safe_get(msg, 'tx', 'coins') or []
+
+    @staticmethod
+    def _reference_id_from_amount_suffix(msg: dict) -> int:
+        coins = SwapStartDetectorFromBlock._coins_from_msg(msg)
+        if not coins:
+            return 0
+
+        coin = coins[0]
+        raw_amount = coin.get('amount', 0) if isinstance(coin, dict) else getattr(coin, 'amount', 0)
+
+        try:
+            amount_int = abs(int(raw_amount))
+        except (TypeError, ValueError):
+            return 0
+
+        suffix = str(amount_int)[-5:]
+        try:
+            return int(suffix)
+        except (TypeError, ValueError):
+            return 0
+
+    async def _resolve_real_memo(self, msg: dict, tx_hash='') -> Optional[str]:
+        memo_str = msg.get('memo') or safe_get(msg, 'tx', 'memo') or ''
+        ref_cache = self.deps.ref_memo_cache
+        if not ref_cache:
+            return memo_str or None
+
+        parsed = THORMemo.parse_memo(memo_str, no_raise=True) if memo_str else None
+
+        reference_id = 0
+        if parsed and parsed.action == ActionType.USE_REFERENCE:
+            try:
+                reference_id = int(parsed.reference_memo or 0)
+            except (TypeError, ValueError):
+                reference_id = 0
+        elif not memo_str:
+            reference_id = self._reference_id_from_amount_suffix(msg)
+
+        if reference_id <= 0:
+            return memo_str or None
+
+        resolved_memo = await ref_cache.get_memo(reference_id)
+        if resolved_memo:
+            return resolved_memo
+
+        self.logger.warning(
+            f'Could not resolve memo reference {reference_id} for tx {tx_hash or safe_get(msg, "tx", "id") or "?"}'
+        )
+        return memo_str or None
+
+    async def make_swap_start_event(self, msg: dict, tx_hash, height, is_deposit) -> Optional[AlertSwapStart]:
         """
         msg is a dict, either MsgDeposit.messages[i] or MsgObservedTxIn.messages[i].txs[j].tx
         """
-        memo_str = msg.get('memo') or safe_get(msg, 'tx', 'memo')
+        memo_str = await self._resolve_real_memo(msg, tx_hash)
         if memo_str is None:
             self.logger.debug(f'No memo in swap tx: {msg}')
             return None
@@ -38,7 +91,7 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
         if memo.action not in (ActionType.SWAP, ActionType.LIMIT_ORDER):
             return None
 
-        coins = msg.get('coins') or safe_get(msg, 'tx', 'coins')
+        coins = self._coins_from_msg(msg)
         if not coins:
             self.logger.error(f'No coins in swap tx: {msg}')
             return None
@@ -96,42 +149,44 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
             is_limit=(memo.action == ActionType.LIMIT_ORDER),
         )
 
-    def handle_deposits(self, txs: Iterable[NativeThorTx], height):
+    async def handle_deposits(self, txs: Iterable[NativeThorTx], height):
         results = []
         for tx in txs:
             for msg in tx.messages:
                 try:
-                    if event := self.make_swap_start_event(msg.attrs, tx.tx_hash, height, is_deposit=True):
+                    if event := await self.make_swap_start_event(msg.attrs, tx.tx_hash, height, is_deposit=True):
                         results.append(event)
                 except Exception as e:
                     self.logger.exception(f'Could not parse DepositTx TX ({tx.tx_hash}): {e!r}', exc_info=True)
 
         return results
 
-    def handle_observed_txs(self, txs: Iterable[ThorObservedTx], height: int):
+    async def handle_observed_txs(self, txs: Iterable[ThorObservedTx], height: int):
+        results = []
         for obs_tx in txs:
             try:
                 # Instead of Message there goes just Tx. For this particular test their attributes are compatible!
                 if obs_tx.is_inbound:
-                    if event := self.make_swap_start_event(obs_tx.original, obs_tx.tx_id, height, is_deposit=False):
-                        yield event
+                    if event := await self.make_swap_start_event(obs_tx.original, obs_tx.tx_id, height, is_deposit=False):
+                        results.append(event)
             except Exception as e:
                 self.logger.error(f'Could not parse Observed In TX ({obs_tx}): {e!r}')
+        return results
 
-    def detect_swaps(self, b: BlockResult, ph: PriceHolder):
+    async def detect_swaps(self, b: BlockResult, ph: PriceHolder):
         self.ph = ph
         deposits = b.find_tx_by_type(ThorTxMessage.MsgDeposit)
-        deposit_swap_starts = list(self.handle_deposits(deposits, b.block_no))
+        deposit_swap_starts = await self.handle_deposits(deposits, b.block_no)
 
         # they are based only on memo parsed (just intention, real swap quantity may differ)
         observed_in_txs = b.all_observed_txs
-        observed_in_txs = list(self.handle_observed_txs(observed_in_txs, b.block_no))
+        observed_in_txs = await self.handle_observed_txs(observed_in_txs, b.block_no)
 
         return deposit_swap_starts + observed_in_txs
 
     async def on_data(self, sender, data: BlockResult):
         ph = await self.deps.pool_cache.get()
-        swaps = self.detect_swaps(data, ph)
+        swaps = await self.detect_swaps(data, ph)
         if swaps:
             self.logger.info(f'Found {len(swaps)} swap starts in block #{data.block_no}')
             asyncio.create_task(self._handle_new_swaps(swaps))

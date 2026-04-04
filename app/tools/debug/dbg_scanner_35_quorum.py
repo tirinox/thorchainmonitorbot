@@ -22,8 +22,8 @@ async def demo_one_block(app: LpAppFramework, block_no):
 async def run():
     app = LpAppFramework()
     async with app:
-        # await demo_one_block(app, 20947105)
-        await dbg_failing_scan_date(app, 25615925)
+        await demo_one_block(app, 25624623)
+        await dbg_failing_scan_date(app, 25624623)
 
 
 if __name__ == '__main__':

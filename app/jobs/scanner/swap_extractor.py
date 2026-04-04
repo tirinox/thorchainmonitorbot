@@ -70,7 +70,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
     async def register_new_swaps(self, block: BlockResult):
         ph = await self.deps.pool_cache.get()
-        swaps = self._swap_detector.detect_swaps(block, ph)
+        swaps = await self._swap_detector.detect_swaps(block, ph)
 
         for swap in swaps:
             swap: AlertSwapStart

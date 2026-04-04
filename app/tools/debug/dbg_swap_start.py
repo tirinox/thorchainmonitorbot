@@ -43,9 +43,8 @@ async def dbg_run_specific_tx(app: LpAppFramework, tx_id: str):
 async def run():
     app = LpAppFramework()
     async with app:
-        # await dbg_run_continuous(app, start_block=-300)
         # await dbg_run_continuous(app)
-        await dbg_run_specific_tx(app, '8BC553B659B7E474A900AE61E73D2530B554CF43C8BBF439C42F29A4E9E798AA')
+        await dbg_run_specific_tx(app, '9780B3B145291DDDDE40CCFE0896D1D7A66C8E03E23EA3AC6A20F2414F66ECA7')
 
 
 if __name__ == '__main__':

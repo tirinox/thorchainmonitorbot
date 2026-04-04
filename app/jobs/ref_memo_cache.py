@@ -160,4 +160,3 @@ class RefMemoCache(INotified, WithLogger):
             self.logger.info(
                 f'RefMemoCache stored {cached_count} reference memo(s) from block #{data.block_no}'
             )
-

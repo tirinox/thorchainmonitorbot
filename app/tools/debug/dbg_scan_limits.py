@@ -3,23 +3,84 @@ import json
 from pathlib import Path
 
 from jobs.limit_recorder import LimitSwapStatsRecorder
-from jobs.scanner.limit_detector import LimitSwapDetector
+from jobs.scanner.limit_detector import LimitSwapDetector, LimitSwapBlockUpdate
 from jobs.scanner.scan_cache import BlockScannerCached
+from lib.delegates import INotified
+from lib.texts import sep
+from lib.utils import say
 from tools.lib.lp_common import LpAppFramework
 
 DEMO_DIR = Path(__file__).parents[2] / 'renderer' / 'demo'
+
+
+class PrintDetectedLimitSwapInfo(INotified):
+    @staticmethod
+    def _shorten(text: str, max_len: int = 160) -> str:
+        text = str(text or '')
+        return text if len(text) <= max_len else f'{text[:max_len - 3]}...'
+
+    @staticmethod
+    def _event_txid(ev) -> str:
+        return str(ev.get('txid') or ev.get('in_tx_id') or '')
+
+    @staticmethod
+    def _announcement(update: LimitSwapBlockUpdate) -> str:
+        parts = []
+        if update.new_opened_limit_swaps:
+            parts.append(f'{len(update.new_opened_limit_swaps)} opened')
+        if update.closed_limit_swaps:
+            parts.append(f'{len(update.closed_limit_swaps)} closed')
+        if update.partial_swaps:
+            parts.append(f'{len(update.partial_swaps)} partial')
+        parts_str = ', '.join(parts)
+        return f'Limit swap event in block {update.block_no}. {parts_str}.'
+
+    async def on_data(self, sender, update: LimitSwapBlockUpdate):
+        sep(f'Limit swap update @ block {update.block_no}')
+
+        if update.new_opened_limit_swaps:
+            print(f'New limit swaps: {len(update.new_opened_limit_swaps)}')
+            for tx in update.new_opened_limit_swaps:
+                print(
+                    f'  OPEN   tx={tx.tx_hash} '
+                    f'signer={tx.first_signer_address or "?"} '
+                    f'memo={self._shorten(tx.memo)}'
+                )
+
+        if update.closed_limit_swaps:
+            print(f'Closed limit swaps: {len(update.closed_limit_swaps)}')
+            for closed in update.closed_limit_swaps:
+                ev = closed.event
+                print(
+                    f'  CLOSE  txid={closed.txid or self._event_txid(ev) or "?"} '
+                    f'reason={self._shorten(closed.reason or ev.get("reason") or "") or "?"} '
+                    f'memo={self._shorten(ev.memo)}'
+                )
+
+        if update.partial_swaps:
+            print(f'Partial swap fills: {len(update.partial_swaps)}')
+            for ev in update.partial_swaps:
+                print(
+                    f'  PARTIAL txid={self._event_txid(ev) or "?"} '
+                    f'asset={ev.asset or "?"} '
+                    f'amount={ev.amount or 0} '
+                    f'memo={self._shorten(ev.memo)}'
+                )
+
+        await say(self._announcement(update))
 
 
 async def dbg_limit_detector_continuous(app: LpAppFramework, last_block=0):
     d = app.deps
     if not last_block:
         last_block = await d.last_block_cache.get_thor_block()
-        last_block -= 10000
+        last_block -= 30000
         # last_block = 24802335
     block_scanner = BlockScannerCached(d, last_block=last_block)
 
     limit_swap_detector = LimitSwapDetector(d)
     block_scanner.add_subscriber(limit_swap_detector)
+    limit_swap_detector.add_subscriber(PrintDetectedLimitSwapInfo())
 
     limit_swap_recorder = LimitSwapStatsRecorder(d)
     limit_swap_detector.add_subscriber(limit_swap_recorder)
