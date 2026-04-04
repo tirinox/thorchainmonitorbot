@@ -4,16 +4,13 @@ from itertools import cycle
 from typing import List
 
 from api.aionode.types import ThorMimir, ThorMimirVote
-from comm.localization.eng_base import BaseLocalization
-from comm.localization.languages import Language
 from jobs.fetch.cap import CapInfoFetcher
 from jobs.fetch.mimir import ConstMimirFetcher
 from lib.depcont import DepContainer
 from lib.var_file import var_file_loop
-from models.mimir import AlertMimirVoting, MimirTuple
+from models.mimir import MimirTuple
 from models.mimir_naming import MIMIR_PAUSE_GLOBAL
 from notify.public.mimir_notify import MimirChangedNotifier
-from notify.public.voting_notify import VotingNotifier
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -27,36 +24,6 @@ async def demo_cap_test(app: LpAppFramework):
     cap_fetcher = CapInfoFetcher(app.deps)
     r = await cap_fetcher.fetch()
     print(r)
-
-
-async def demo_voting(app: LpAppFramework):
-    mimir_to_test = 'CHURNINTERVAL'.upper()
-
-    mm = app.deps.mimir_const_holder
-    vot_man = mm.voting_manager
-    voting = vot_man.find_voting(mimir_to_test)
-    prev_state = await VotingNotifier(app.deps).read_prev_state()
-    prev_voting = prev_state.get(voting.key)
-    option = next(iter(voting.options.values()))
-    # prev_progress = prev_voting.get(str(option.value))  # str(.), that's because JSON keys are strings
-
-    mm.get_entry(mimir_to_test).real_value = 1213
-
-    # loc: BaseLocalization = app.deps.loc_man.default
-    for language in (Language.ENGLISH, Language.ENGLISH_TWITTER, Language.RUSSIAN):
-        # for language in (Language.ENGLISH_TWITTER,):
-        loc: BaseLocalization = app.deps.loc_man[language]
-        await app.send_test_tg_message(loc.notification_text_mimir_voting_progress(
-            AlertMimirVoting(mm, voting, option)
-        ))
-
-    # await app.deps.broadcaster.notify_preconfigured_channels(
-    #     BaseLocalization.notification_text_mimir_voting_progress,
-    #     app.deps.mimir_const_holder,
-    #     XXXXXXX_KEY, prev_progress, voting, option,
-    # )
-
-    # print(loc, app)
 
 
 class MimirMockChangesFetcher(ConstMimirFetcher):
@@ -200,7 +167,6 @@ async def dbg_humanize_some_keys(app):
 
 async def run():
     app = LpAppFramework()
-    
 
     mimir = await app.deps.mimir_cache.get()
     print(mimir)
