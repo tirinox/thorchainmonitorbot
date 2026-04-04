@@ -141,10 +141,11 @@ class EventDbTxDeduplicator:
     seen-flag directly inside the existing `tx:tracker:{tx_id}` hash.
     """
 
-    def __init__(self, db: DB, component_name: str, *args, **kwargs):
+    def __init__(self, db: DB, component_name: str, *args, ignore_all_checks=False, **kwargs):
         self.event_db = EventDatabase(db)
         self.component_name = component_name
         self.flag_name = self.event_db.component_flag_name(component_name)
+        self.ignore_all_checks = bool(ignore_all_checks)
 
     @property
     def key(self):
@@ -159,12 +160,18 @@ class EventDbTxDeduplicator:
         return await self.have_ever_seen_hash(tx.tx_hash)
 
     async def have_ever_seen_hash(self, tx_id) -> bool:
+        if self.ignore_all_checks and tx_id:
+            return False
         return await self.event_db.has_tx_flag(tx_id, self.flag_name)
 
     async def mark_as_seen(self, tx_id):
+        if self.ignore_all_checks:
+            return
         await self.event_db.set_tx_flag(tx_id, self.flag_name, True)
 
     async def mark_as_seen_txs(self, txs: list[ThorAction]):
+        if self.ignore_all_checks:
+            return
         for tx in txs:
             if tx and tx.tx_hash:
                 await self.mark_as_seen(tx.tx_hash)

@@ -189,3 +189,40 @@ async def test_event_db_tx_deduplicator_only_new_hashes_preserves_order_and_dupl
     assert await dedup.only_seen_hashes(tx_hashes) == ['tx-seen']
 
 
+@pytest.mark.asyncio
+async def test_event_db_tx_deduplicator_can_ignore_all_checks_for_hashes():
+    db = cast(DB, cast(object, FakeDB()))
+    ev_db = EventDatabase(db)
+    dedup = EventDbTxDeduplicator(db, 'volume_recorded', ignore_all_checks=True)
+
+    await dedup.mark_as_seen('tx-seen')
+
+    assert await dedup.have_ever_seen_hash('tx-seen') is False
+    assert await dedup.only_new_hashes(['tx-new', 'tx-seen']) == ['tx-new', 'tx-seen']
+    assert await dedup.only_seen_hashes(['tx-new', 'tx-seen']) == []
+    assert await ev_db.has_tx_flag('tx-seen', 'seen_volume_recorded') is False
+
+
+@pytest.mark.asyncio
+async def test_event_db_tx_deduplicator_can_ignore_all_checks_for_tx_objects():
+    db = cast(DB, cast(object, FakeDB()))
+    dedup = EventDbTxDeduplicator(db, 'large_tx_announced', ignore_all_checks=True)
+
+    tx_new = cast(ThorAction, cast(object, SimpleNamespace(tx_hash='tx-new')))
+    tx_seen = cast(ThorAction, cast(object, SimpleNamespace(tx_hash='tx-seen')))
+    tx_empty = cast(ThorAction, cast(object, SimpleNamespace(tx_hash='')))
+    txs = [tx_new, tx_seen]
+
+    await dedup.mark_as_seen_txs(cast(list[ThorAction], cast(object, [tx_seen, tx_empty])))
+
+    only_new = await dedup.only_new_txs(cast(list[ThorAction], cast(object, txs)))
+    only_seen = await dedup.only_seen_txs(cast(list[ThorAction], cast(object, txs)))
+
+    assert [tx.tx_hash for tx in only_new] == ['tx-new', 'tx-seen']
+    assert only_seen == []
+    assert await dedup.have_ever_seen(tx_new) is False
+    assert await dedup.have_ever_seen(tx_seen) is False
+    assert await dedup.have_ever_seen(cast(ThorAction, cast(object, None))) is True
+    assert await dedup.have_ever_seen(tx_empty) is True
+
+
