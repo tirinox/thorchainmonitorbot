@@ -175,8 +175,8 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
 
     async def detect_swaps(self, b: BlockResult, ph: PriceHolder):
         self.ph = ph
-        deposits = b.find_tx_by_type(ThorTxMessage.MsgDeposit)
-        deposit_swap_starts = await self.handle_deposits(deposits, b.block_no)
+
+        deposit_swap_starts = await self.handle_deposits(b.deposits, b.block_no)
 
         # they are based only on memo parsed (just intention, real swap quantity may differ)
         observed_in_txs = b.all_observed_txs
