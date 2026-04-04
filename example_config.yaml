@@ -37,13 +37,17 @@ thor:
   network_id: "mainnet"
 
   node:
-    node_url: "https://thornode.ninerealms.com/"
-    rpc_node_url: "https://rpc.ninerealms.com/"
+# retired
+#    node_url: "https://thornode.ninerealms.com/"
+#    rpc_node_url: "https://rpc.ninerealms.com/"
+#    backup_node_url: "https://thornode-archive.ninerealms.com"
+    node_url: "https://gateway.liquify.com/chain/thorchain_api/"
+    rpc_node_url: "https://gateway.liquify.com/chain/thorchain_rpc/"
     backup_node_url: "https://thornode-archive.ninerealms.com"
 
   midgard:
     tries: 3
-    public_url: "https://midgard.ninerealms.com/"
+    public_url: "https://gateway.liquify.com/chain/thorchain_midgard/"
   #    public_url: "https://midgard.thorchain.info/"
 
   timeout: 20.0
