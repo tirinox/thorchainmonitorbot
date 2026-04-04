@@ -1,7 +1,8 @@
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Optional
 
+from api.aionode.types import thor_to_float
 from jobs.scanner.block_result import BlockResult
-from jobs.scanner.tx import NativeThorTx, ThorEvent
+from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorObservedTx, ThorTxMessage
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -15,13 +16,25 @@ class ClosedLimitSwap(NamedTuple):
     @property
     def txid(self) -> str:
         attrs = self.event.attrs if isinstance(self.event.attrs, dict) else {}
-        return str(attrs.get('txid') or '')
+        return str(attrs.get('txid') or attrs.get('id') or attrs.get('in_tx_id') or '')
+
+
+class OpenedLimitSwap(NamedTuple):
+    tx_id: str
+    memo: str
+    source_asset: str
+    source_amount: int
+    source_amount_float: float
+    source_decimals: int = 8
+    trader: str = ''
+    target_asset: str = ''
+    thor_block_no: int = 0
 
 
 class LimitSwapBlockUpdate(NamedTuple):
     block_no: int
     timestamp: int
-    new_opened_limit_swaps: List[NativeThorTx]
+    new_opened_limit_swaps: List[OpenedLimitSwap]
     closed_limit_swaps: List[ClosedLimitSwap]
     partial_swaps: List[ThorEvent]
 
@@ -39,6 +52,68 @@ class LimitSwapDetector(WithLogger, INotified, WithDelegates):
     @staticmethod
     def is_completed(status):
         return "completed" in status.lower()
+
+    @staticmethod
+    def _extract_native_trader(tx: NativeThorTx) -> str:
+        for message in tx.messages:
+            if signer := message.get('signer', ''):
+                return str(signer)
+            if from_address := message.get('from_address', ''):
+                return str(from_address)
+        return str(tx.first_signer_address or '')
+
+    @staticmethod
+    def _extract_native_first_coin(tx: NativeThorTx) -> tuple[str, int]:
+        for message in tx.messages:
+            if message.type == ThorTxMessage.MsgDeposit and message.coins:
+                coin = message.coins[0]
+                return str(coin.get('asset', '')), int(coin.get('amount', 0))
+
+            if message.is_send:
+                amounts = message.get('amount', [])
+                if amounts:
+                    coin = amounts[0]
+                    return str(coin.get('asset') or coin.get('denom', '')), int(coin.get('amount', 0))
+
+        return '', 0
+
+    @classmethod
+    def _make_opened_limit_swap_from_native_tx(cls, tx: NativeThorTx) -> Optional[OpenedLimitSwap]:
+        parsed = THORMemo.parse_memo(tx.memo or '', no_raise=True)
+        if not parsed or parsed.action != ActionType.LIMIT_ORDER:
+            return None
+
+        source_asset, source_amount = cls._extract_native_first_coin(tx)
+        return OpenedLimitSwap(
+            tx_id=str(tx.tx_hash or ''),
+            memo=str(tx.memo or ''),
+            source_asset=source_asset,
+            source_amount=int(source_amount or 0),
+            source_amount_float=thor_to_float(source_amount or 0),
+            source_decimals=8,
+            trader=cls._extract_native_trader(tx),
+            target_asset=str(parsed.asset or ''),
+            thor_block_no=int(tx.height or 0),
+        )
+
+    @staticmethod
+    def _make_opened_limit_swap_from_observed_tx(tx: ThorObservedTx, thor_block_no: int = 0) -> Optional[OpenedLimitSwap]:
+        parsed = THORMemo.parse_memo(tx.memo or '', no_raise=True)
+        if not parsed or parsed.action != ActionType.LIMIT_ORDER:
+            return None
+
+        coin = tx.coins[0] if tx.coins else None
+        return OpenedLimitSwap(
+            tx_id=str(tx.tx_id or ''),
+            memo=str(tx.memo or ''),
+            source_asset=str(coin.asset if coin else ''),
+            source_amount=int(coin.amount if coin else 0),
+            source_amount_float=float(coin.amount_float if coin else 0.0),
+            source_decimals=int(coin.decimals if coin else 8),
+            trader=str(tx.from_address or ''),
+            target_asset=str(parsed.asset or ''),
+            thor_block_no=int(thor_block_no or 0),
+        )
 
     @staticmethod
     def get_closed_limit_swaps(block: BlockResult):
@@ -123,6 +198,13 @@ class LimitSwapDetector(WithLogger, INotified, WithDelegates):
 
         return raw_reason
 
+    @classmethod
+    def build_closed_limit_swaps(cls, block: BlockResult) -> list[ClosedLimitSwap]:
+        return [
+            ClosedLimitSwap(ev, cls.get_limit_swap_close_reason(ev))
+            for ev in cls.get_limit_swap_close_end_block_events(block)
+        ]
+
     @staticmethod
     def get_limit_swap_txs(block: BlockResult):
         """
@@ -143,16 +225,29 @@ class LimitSwapDetector(WithLogger, INotified, WithDelegates):
     @staticmethod
     def get_new_opened_limit_swap_txs(block: BlockResult):
         """
-        Yield txs that open a new limit swap (`=<...`).
+        Yield normalized limit-swap openings from both THOR native deposits and
+        observed external inbound txs.
 
         This intentionally excludes modify memos (`m=<...`), because those are not
         newly opened orders.
         """
-        for tx in block.txs:
+        seen_tx_ids = set()
+
+        for tx in block.deposits:
             try:
-                parsed = THORMemo.parse_memo(tx.memo or '', no_raise=True)
-                if parsed and parsed.action == ActionType.LIMIT_ORDER:
-                    yield tx
+                opened = LimitSwapDetector._make_opened_limit_swap_from_native_tx(tx)
+                if opened and opened.tx_id and opened.tx_id not in seen_tx_ids:
+                    seen_tx_ids.add(opened.tx_id)
+                    yield opened
+            except Exception:
+                continue
+
+        for tx in block.all_observed_txs:
+            try:
+                opened = LimitSwapDetector._make_opened_limit_swap_from_observed_tx(tx, block.block_no)
+                if opened and opened.tx_id and opened.tx_id not in seen_tx_ids:
+                    seen_tx_ids.add(opened.tx_id)
+                    yield opened
             except Exception:
                 continue
 
@@ -165,10 +260,7 @@ class LimitSwapDetector(WithLogger, INotified, WithDelegates):
             block_no=b.block_no,
             timestamp=int(b.timestamp or 0),
             new_opened_limit_swaps=list(self.get_new_opened_limit_swap_txs(b)),
-            closed_limit_swaps=[
-                ClosedLimitSwap(ev, self.get_limit_swap_close_reason(ev))
-                for ev in self.get_limit_swap_close_end_block_events(b)
-            ],
+            closed_limit_swaps=self.build_closed_limit_swaps(b),
             partial_swaps=list(self.get_swap_limit_end_block_events(b)),
         )
 

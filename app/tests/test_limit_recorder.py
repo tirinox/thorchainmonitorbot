@@ -5,8 +5,8 @@ from typing import cast
 import pytest
 
 from jobs.limit_recorder import LimitSwapStatsRecorder, OpenLimitSwapMeta
-from jobs.scanner.limit_detector import LimitSwapBlockUpdate, ClosedLimitSwap
-from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorTxMessage
+from jobs.scanner.limit_detector import LimitSwapBlockUpdate, ClosedLimitSwap, OpenedLimitSwap
+from jobs.scanner.tx import ThorEvent
 from lib.db import DB
 from lib.depcont import DepContainer
 from models.pool_info import PoolInfo
@@ -111,22 +111,27 @@ def make_price_holder():
     return ph
 
 
-def make_deposit_tx(tx_hash: str, memo: str, asset: str, amount: int, signer: str, height: int, timestamp: int):
-    msg = ThorTxMessage.from_dict({
-        '@type': ThorTxMessage.MsgDeposit,
-        'coins': [{'asset': asset, 'amount': str(amount)}],
-        'signer': signer,
-    })
-    return NativeThorTx(
-        tx_hash=tx_hash,
-        code=0,
-        events=[],
-        height=height,
-        original={},
-        signers=[],
-        messages=[msg],
+def make_opened_limit_swap(
+    tx_id: str,
+    memo: str,
+    source_asset: str,
+    source_amount: int,
+    source_amount_float: float,
+    trader: str,
+    target_asset: str,
+    source_decimals: int = 8,
+    thor_block_no: int = 0,
+):
+    return OpenedLimitSwap(
+        tx_id=tx_id,
         memo=memo,
-        timestamp=timestamp,
+        source_asset=source_asset,
+        source_amount=source_amount,
+        source_amount_float=source_amount_float,
+        source_decimals=source_decimals,
+        trader=trader,
+        target_asset=target_asset,
+        thor_block_no=thor_block_no,
     )
 
 
@@ -139,7 +144,7 @@ def make_event(ev_type: str, **attrs):
 async def test_limit_recorder_daily_stats(monkeypatch):
     import jobs.limit_recorder as limit_recorder_module
 
-    monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
+    monkeypatch.setattr(limit_recorder_module, 'EventDbTxDeduplicator', FakeDedup)
 
     deps = DepContainer()
     deps.db = cast(DB, cast(object, FakeDB()))
@@ -150,23 +155,25 @@ async def test_limit_recorder_daily_stats(monkeypatch):
     day1 = 1_700_000_000
     day2 = day1 + 86_400
 
-    tx1 = make_deposit_tx(
-        tx_hash='open-1',
+    tx1 = make_opened_limit_swap(
+        tx_id='open-1',
         memo='=<:ETH.ETH:thor1dest:2500000000/100800/0',
-        asset='BTC.BTC',
-        amount=100_000_000,
-        signer='thor1alice',
-        height=100,
-        timestamp=day1,
+        source_asset='BTC.BTC',
+        source_amount=100_000_000,
+        source_amount_float=1.0,
+        trader='thor1alice',
+        target_asset='ETH.ETH',
+        thor_block_no=100,
     )
-    tx2 = make_deposit_tx(
-        tx_hash='open-2',
+    tx2 = make_opened_limit_swap(
+        tx_id='open-2',
         memo='=<:BTC.BTC:thor1dest:100000000/100800/0',
-        asset='ETH.ETH',
-        amount=100_000_000,
-        signer='thor1bob',
-        height=101,
-        timestamp=day1,
+        source_asset='ETH.ETH',
+        source_amount=100_000_000,
+        source_amount_float=1.0,
+        trader='thor1bob',
+        target_asset='BTC.BTC',
+        thor_block_no=101,
     )
 
     opened_update = LimitSwapBlockUpdate(
@@ -230,7 +237,7 @@ async def test_limit_recorder_daily_stats(monkeypatch):
 async def test_clean_old_open_meta_removes_stale_and_malformed(monkeypatch):
     import jobs.limit_recorder as limit_recorder_module
 
-    monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
+    monkeypatch.setattr(limit_recorder_module, 'EventDbTxDeduplicator', FakeDedup)
 
     deps = DepContainer()
     deps.db = cast(DB, cast(object, FakeDB()))
@@ -275,7 +282,7 @@ async def test_clean_old_open_meta_removes_stale_and_malformed(monkeypatch):
 async def test_get_daily_data_and_summary(monkeypatch):
     import jobs.limit_recorder as limit_recorder_module
 
-    monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
+    monkeypatch.setattr(limit_recorder_module, 'EventDbTxDeduplicator', FakeDedup)
 
     deps = DepContainer()
     deps.db = cast(DB, cast(object, FakeDB()))
@@ -286,23 +293,25 @@ async def test_get_daily_data_and_summary(monkeypatch):
     day1 = 1_700_000_000
     day2 = day1 + 86_400
 
-    tx1 = make_deposit_tx(
-        tx_hash='open-1',
+    tx1 = make_opened_limit_swap(
+        tx_id='open-1',
         memo='=<:ETH.ETH:thor1dest:2500000000/100800/0',
-        asset='BTC.BTC',
-        amount=100_000_000,
-        signer='thor1alice',
-        height=100,
-        timestamp=day1,
+        source_asset='BTC.BTC',
+        source_amount=100_000_000,
+        source_amount_float=1.0,
+        trader='thor1alice',
+        target_asset='ETH.ETH',
+        thor_block_no=100,
     )
-    tx2 = make_deposit_tx(
-        tx_hash='open-2',
+    tx2 = make_opened_limit_swap(
+        tx_id='open-2',
         memo='=<:BTC.BTC:thor1dest:100000000/100800/0',
-        asset='ETH.ETH',
-        amount=100_000_000,
-        signer='thor1bob',
-        height=101,
-        timestamp=day1,
+        source_asset='ETH.ETH',
+        source_amount=100_000_000,
+        source_amount_float=1.0,
+        trader='thor1bob',
+        target_asset='BTC.BTC',
+        thor_block_no=101,
     )
 
     await recorder.on_data(None, LimitSwapBlockUpdate(
@@ -381,7 +390,7 @@ async def test_get_daily_data_and_summary(monkeypatch):
 async def test_get_summary_uses_hll_for_cross_day_unique_traders(monkeypatch):
     import jobs.limit_recorder as limit_recorder_module
 
-    monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
+    monkeypatch.setattr(limit_recorder_module, 'EventDbTxDeduplicator', FakeDedup)
 
     deps = DepContainer()
     deps.db = cast(DB, cast(object, FakeDB()))
@@ -392,23 +401,25 @@ async def test_get_summary_uses_hll_for_cross_day_unique_traders(monkeypatch):
     day1 = 1_700_000_000
     day2 = day1 + 86_400
 
-    tx1 = make_deposit_tx(
-        tx_hash='open-a',
+    tx1 = make_opened_limit_swap(
+        tx_id='open-a',
         memo='=<:ETH.ETH:thor1dest:2500000000/100800/0',
-        asset='BTC.BTC',
-        amount=100_000_000,
-        signer='thor1same',
-        height=100,
-        timestamp=day1,
+        source_asset='BTC.BTC',
+        source_amount=100_000_000,
+        source_amount_float=1.0,
+        trader='thor1same',
+        target_asset='ETH.ETH',
+        thor_block_no=100,
     )
-    tx2 = make_deposit_tx(
-        tx_hash='open-b',
+    tx2 = make_opened_limit_swap(
+        tx_id='open-b',
         memo='=<:BTC.BTC:thor1dest:100000000/100800/0',
-        asset='ETH.ETH',
-        amount=100_000_000,
-        signer='thor1same',
-        height=101,
-        timestamp=day2,
+        source_asset='ETH.ETH',
+        source_amount=100_000_000,
+        source_amount_float=1.0,
+        trader='thor1same',
+        target_asset='BTC.BTC',
+        thor_block_no=101,
     )
 
     await recorder.on_data(None, LimitSwapBlockUpdate(
@@ -440,7 +451,7 @@ async def test_get_summary_uses_hll_for_cross_day_unique_traders(monkeypatch):
 async def test_get_infographic_data_sorts_top_pairs_by_volume(monkeypatch):
     import jobs.limit_recorder as limit_recorder_module
 
-    monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
+    monkeypatch.setattr(limit_recorder_module, 'EventDbTxDeduplicator', FakeDedup)
 
     deps = DepContainer()
     deps.db = cast(DB, cast(object, FakeDB()))
@@ -450,32 +461,32 @@ async def test_get_infographic_data_sorts_top_pairs_by_volume(monkeypatch):
 
     day1 = 1_700_000_000
 
-    high_volume_pair = make_deposit_tx(
-        tx_hash='open-btc-rune',
+    high_volume_pair = make_opened_limit_swap(
+        tx_id='open-btc-rune',
         memo='=<:THOR.RUNE:thor1dest:100000000/100800/0',
-        asset='BTC.BTC',
-        amount=100_000_000,
-        signer='thor1btc',
-        height=100,
-        timestamp=day1,
+        source_asset='BTC.BTC',
+        source_amount=100_000_000,
+        source_amount_float=1.0,
+        trader='thor1btc',
+        target_asset='THOR.RUNE',
     )
-    lower_volume_pair_1 = make_deposit_tx(
-        tx_hash='open-eth-rune-1',
+    lower_volume_pair_1 = make_opened_limit_swap(
+        tx_id='open-eth-rune-1',
         memo='=<:THOR.RUNE:thor1dest:100000000/100800/0',
-        asset='ETH.ETH',
-        amount=100_000_000,
-        signer='thor1eth1',
-        height=101,
-        timestamp=day1,
+        source_asset='ETH.ETH',
+        source_amount=100_000_000,
+        source_amount_float=1.0,
+        trader='thor1eth1',
+        target_asset='THOR.RUNE',
     )
-    lower_volume_pair_2 = make_deposit_tx(
-        tx_hash='open-eth-rune-2',
+    lower_volume_pair_2 = make_opened_limit_swap(
+        tx_id='open-eth-rune-2',
         memo='=<:THOR.RUNE:thor1dest:100000000/100800/0',
-        asset='ETH.ETH',
-        amount=100_000_000,
-        signer='thor1eth2',
-        height=102,
-        timestamp=day1,
+        source_asset='ETH.ETH',
+        source_amount=100_000_000,
+        source_amount_float=1.0,
+        trader='thor1eth2',
+        target_asset='THOR.RUNE',
     )
 
     await recorder.on_data(None, LimitSwapBlockUpdate(
@@ -502,7 +513,7 @@ async def test_get_infographic_data_sorts_top_pairs_by_volume(monkeypatch):
 async def test_get_daily_data_default_14_days(monkeypatch):
     import jobs.limit_recorder as limit_recorder_module
 
-    monkeypatch.setattr(limit_recorder_module, 'TxDeduplicator', FakeDedup)
+    monkeypatch.setattr(limit_recorder_module, 'EventDbTxDeduplicator', FakeDedup)
 
     fixed_now = 1_700_000_000
     monkeypatch.setattr(limit_recorder_module, 'now_ts', lambda: fixed_now)
@@ -534,14 +545,15 @@ async def test_closed_limit_dedup_uses_tx_id(monkeypatch):
     day1 = 1_700_000_000
     day2 = day1 + 86_400
 
-    tx1 = make_deposit_tx(
-        tx_hash='open-1',
+    tx1 = make_opened_limit_swap(
+        tx_id='open-1',
         memo='=<:ETH.ETH:thor1dest:2500000000/100800/0',
-        asset='BTC.BTC',
-        amount=100_000_000,
-        signer='thor1alice',
-        height=100,
-        timestamp=day1,
+        source_asset='BTC.BTC',
+        source_amount=100_000_000,
+        source_amount_float=1.0,
+        trader='thor1alice',
+        target_asset='ETH.ETH',
+        thor_block_no=100,
     )
 
     await recorder.on_data(None, LimitSwapBlockUpdate(
@@ -579,5 +591,43 @@ async def test_closed_limit_dedup_uses_tx_id(monkeypatch):
     assert day2_stats['closed_count'] == 1.0
     assert day2_stats['closed_duration_blocks_sum'] == 10.0
     assert day2_stats['closed_duration_samples'] == 1.0
+
+
+@pytest.mark.asyncio
+async def test_opened_observed_limit_swap_uses_amount_float_for_usd_pricing(monkeypatch):
+    import jobs.limit_recorder as limit_recorder_module
+
+    monkeypatch.setattr(limit_recorder_module, 'EventDbTxDeduplicator', FakeDedup)
+
+    deps = DepContainer()
+    deps.db = cast(DB, cast(object, FakeDB()))
+    deps.pool_cache = FakePoolCache(make_price_holder())
+
+    recorder = LimitSwapStatsRecorder(deps)
+
+    day1 = 1_700_000_000
+    observed_open = make_opened_limit_swap(
+        tx_id='observed-open-1',
+        memo='=<:BTC.BTC:bc1qfoo:1000000/100800/0',
+        source_asset='ETH.ETH',
+        source_amount=2,
+        source_amount_float=2.0,
+        source_decimals=0,
+        trader='0xobserved',
+        target_asset='BTC.BTC',
+    )
+
+    await recorder.on_data(None, LimitSwapBlockUpdate(
+        block_no=500,
+        timestamp=day1,
+        new_opened_limit_swaps=[observed_open],
+        closed_limit_swaps=[],
+        partial_swaps=[],
+    ))
+
+    day1_stats = await recorder.accumulator.get(day1)
+    assert day1_stats['opened_count'] == 1.0
+    assert day1_stats['opened_usd'] == 4_000.0
+    assert day1_stats['pair:BTC.BTC->ETH.ETH:opened_usd'] == 4_000.0
 
 

@@ -1,8 +1,8 @@
 import pytest
 
-from jobs.scanner.limit_detector import LimitSwapDetector, LimitSwapBlockUpdate
+from jobs.scanner.limit_detector import LimitSwapDetector, LimitSwapBlockUpdate, OpenedLimitSwap
 from jobs.scanner.block_result import BlockResult, ScannerError
-from jobs.scanner.tx import NativeThorTx, ThorEvent
+from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorTxMessage
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 
@@ -24,6 +24,68 @@ def make_tx(memo: str):
         signers=[],
         messages=[],
         memo=memo,
+        timestamp=0,
+    )
+
+
+def make_deposit_tx(tx_hash: str, memo: str, asset: str = 'BTC.BTC', amount: int = 100_000_000, signer: str = 'thor1alice'):
+    msg = ThorTxMessage.from_dict({
+        '@type': ThorTxMessage.MsgDeposit,
+        'coins': [{'asset': asset, 'amount': str(amount)}],
+        'signer': signer,
+    })
+    return NativeThorTx(
+        tx_hash=tx_hash,
+        code=0,
+        events=[],
+        height=12345,
+        original={},
+        signers=[],
+        messages=[msg],
+        memo=memo,
+        timestamp=0,
+    )
+
+
+def make_observed_quorum_tx(tx_id: str, memo: str, asset: str = 'ETH.ETH', amount: int = 2, decimals: int = 0,
+                            from_address: str = '0xalice'):
+    msg = ThorTxMessage.from_dict({
+        '@type': ThorTxMessage.MsgObservedTxQuorum,
+        'quoTx': {
+            'obsTx': {
+                'tx': {
+                    'id': tx_id,
+                    'chain': 'ETH',
+                    'from_address': from_address,
+                    'to_address': 'thor1vault',
+                    'coins': [{
+                        'asset': asset,
+                        'amount': str(amount),
+                        'decimals': str(decimals),
+                    }],
+                    'gas': [],
+                    'memo': memo,
+                },
+                'status': 'incomplete',
+                'out_hashes': [],
+                'block_height': '24792173',
+                'finalise_height': '24792173',
+                'aggregator': '',
+                'aggregator_target': '',
+                'aggregator_target_limit': None,
+            },
+            'inbound': True,
+        },
+    })
+    return NativeThorTx(
+        tx_hash=f'native-{tx_id}',
+        code=0,
+        events=[],
+        height=12345,
+        original={},
+        signers=[],
+        messages=[msg],
+        memo='',
         timestamp=0,
     )
 
@@ -80,20 +142,47 @@ def test_get_limit_swap_txs():
 
 
 def test_get_new_opened_limit_swap_txs():
-    tx1 = make_tx('=<:BTC.BTC:bc1qfoo:1000000/100800/0')
-    tx2 = make_tx('m=<:1234BTC.BTC:5678ETH.ETH:2500000000')
-    tx3 = make_tx('=:BTC.BTC:bc1qbar:1000000')
+    tx1 = make_deposit_tx('native-open', '=<:BTC.BTC:bc1qfoo:1000000/100800/0', asset='BTC.BTC', amount=100_000_000,
+                          signer='thor1native')
+    tx2 = make_deposit_tx('native-modify', 'm=<:1234BTC.BTC:5678ETH.ETH:2500000000')
+    tx3 = make_deposit_tx('native-swap', '=:BTC.BTC:bc1qbar:1000000')
+    tx4 = make_observed_quorum_tx('observed-open', '=<:BTC.BTC:bc1qfoo:1000000/100800/0', amount=2, decimals=0,
+                                  from_address='0xobserved')
+    tx5 = make_observed_quorum_tx('observed-modify', 'm=<:200000000ETH.USDC-0XABC:98900ETH.ETH:0')
 
     block = BlockResult(
         block_no=12345,
-        txs=[tx1, tx2, tx3],
+        txs=[tx1, tx2, tx3, tx4, tx5],
         end_block_events=[],
         begin_block_events=[],
         error=ScannerError(0, ''),
     )
 
     found = list(LimitSwapDetector.get_new_opened_limit_swap_txs(block))
-    assert found == [tx1]
+    assert found == [
+        OpenedLimitSwap(
+            tx_id='native-open',
+            memo='=<:BTC.BTC:bc1qfoo:1000000/100800/0',
+            source_asset='BTC.BTC',
+            source_amount=100_000_000,
+            source_amount_float=1.0,
+            source_decimals=8,
+            trader='thor1native',
+            target_asset='BTC.BTC',
+            thor_block_no=12345,
+        ),
+        OpenedLimitSwap(
+            tx_id='observed-open',
+            memo='=<:BTC.BTC:bc1qfoo:1000000/100800/0',
+            source_asset='ETH.ETH',
+            source_amount=2,
+            source_amount_float=2.0,
+            source_decimals=0,
+            trader='0xobserved',
+            target_asset='BTC.BTC',
+            thor_block_no=12345,
+        ),
+    ]
 
 
 def test_get_limit_swap_close_reason():
@@ -125,8 +214,11 @@ class Collector(INotified):
 
 @pytest.mark.asyncio
 async def test_on_data_emits_structured_payload():
-    tx_open = make_tx('=<:BTC.BTC:bc1qfoo:1000000/100800/0')
-    tx_modify = make_tx('m=<:1234BTC.BTC:5678ETH.ETH:2500000000')
+    tx_open = make_deposit_tx('native-open', '=<:BTC.BTC:bc1qfoo:1000000/100800/0', asset='BTC.BTC', amount=100_000_000,
+                              signer='thor1native')
+    tx_modify = make_deposit_tx('native-modify', 'm=<:1234BTC.BTC:5678ETH.ETH:2500000000')
+    tx_observed = make_observed_quorum_tx('observed-open', '=<:ETH.ETH:0xfoo:1000000/100800/0', asset='ETH.ETH',
+                                          amount=2, decimals=0, from_address='0xobserved')
 
     partial = make_event('swap', memo='=<:BTC.BTC:bc1qfoo:1000000/100800/0')
     close = make_event('limit_swap_close')
@@ -134,7 +226,7 @@ async def test_on_data_emits_structured_payload():
 
     block = BlockResult(
         block_no=777,
-        txs=[tx_open, tx_modify],
+        txs=[tx_open, tx_modify, tx_observed],
         end_block_events=[partial, close],
         begin_block_events=[],
         error=ScannerError(0, ''),
@@ -150,7 +242,30 @@ async def test_on_data_emits_structured_payload():
     payload = collector.items[0]
     assert isinstance(payload, LimitSwapBlockUpdate)
     assert payload.block_no == 777
-    assert payload.new_opened_limit_swaps == [tx_open]
+    assert payload.new_opened_limit_swaps == [
+        OpenedLimitSwap(
+            tx_id='native-open',
+            memo='=<:BTC.BTC:bc1qfoo:1000000/100800/0',
+            source_asset='BTC.BTC',
+            source_amount=100_000_000,
+            source_amount_float=1.0,
+            source_decimals=8,
+            trader='thor1native',
+            target_asset='BTC.BTC',
+            thor_block_no=12345,
+        ),
+        OpenedLimitSwap(
+            tx_id='observed-open',
+            memo='=<:ETH.ETH:0xfoo:1000000/100800/0',
+            source_asset='ETH.ETH',
+            source_amount=2,
+            source_amount_float=2.0,
+            source_decimals=0,
+            trader='0xobserved',
+            target_asset='ETH.ETH',
+            thor_block_no=777,
+        ),
+    ]
     assert len(payload.closed_limit_swaps) == 1
     assert payload.closed_limit_swaps[0].event == close
     assert payload.closed_limit_swaps[0].reason == LimitSwapDetector.REASON_FAILED

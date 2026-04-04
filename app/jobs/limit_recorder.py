@@ -8,8 +8,8 @@ from typing import Optional
 
 from api.aionode.types import thor_to_float
 from jobs.scanner.event_db import EventDbTxDeduplicator
-from jobs.scanner.limit_detector import LimitSwapBlockUpdate
-from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorTxMessage
+from jobs.scanner.limit_detector import LimitSwapBlockUpdate, OpenedLimitSwap
+from jobs.scanner.tx import ThorEvent
 from lib.accumulator import DailyAccumulator
 from lib.active_users import DailyActiveUserCounter
 from lib.date_utils import now_ts, DAY, format_thor_blocks_duration
@@ -23,7 +23,6 @@ from models.limit_swap import (
     LimitSwapDailyPoint, LimitSwapDelta, LimitSwapDeltas,
     LimitSwapOpenState, LimitSwapPairStats, LimitSwapPeriodStats, LimitSwapTotals,
 )
-from models.memo import THORMemo, ActionType
 
 
 @dataclass
@@ -73,6 +72,7 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
     OPEN_META_CLEAN_EVERY_N_UPDATES = 50
     DEDUP_OPENED_COMPONENT = 'limit_swap_opened'
     DEDUP_CLOSED_COMPONENT = 'limit_swap_closed'
+    DEDUP_PARTIAL_COMPONENT = 'limit_swap_partial'
 
     def __init__(self, deps: DepContainer):
         super().__init__()
@@ -80,6 +80,7 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         self.accumulator = DailyAccumulator(self.ACCUM_NAME, deps.db)
         self._opened_dedup = EventDbTxDeduplicator(self.deps.db, self.DEDUP_OPENED_COMPONENT)
         self._closed_dedup = EventDbTxDeduplicator(self.deps.db, self.DEDUP_CLOSED_COMPONENT)
+        self._partial_dedup = EventDbTxDeduplicator(self.deps.db, self.DEDUP_PARTIAL_COMPONENT)
         self._trader_counter = DailyActiveUserCounter(self.deps.db.redis, 'LimitSwapTraders')
         self._pair_trader_counters: dict[str, DailyActiveUserCounter] = {}
 
@@ -447,31 +448,6 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
 
 
     @staticmethod
-    def _extract_tx_signer_extract_tx_signer(tx: NativeThorTx) -> str:
-        for message in tx.messages:
-            if signer := message.get('signer', ''):
-                return str(signer)
-            if from_address := message.get('from_address', ''):
-                return str(from_address)
-        return str(tx.first_signer_address or '')
-
-    @staticmethod
-    def _extract_first_coin(tx: NativeThorTx):
-        for message in tx.messages:
-            if message.type == ThorTxMessage.MsgDeposit and message.coins:
-                coin = message.coins[0]
-                return coin.get('asset', ''), int(coin.get('amount', 0))
-
-            if message.is_send:
-                amounts = message.get('amount', [])
-                if amounts:
-                    coin = amounts[0]
-                    asset = coin.get('asset') or coin.get('denom', '')
-                    return asset, int(coin.get('amount', 0))
-
-        return '', 0
-
-    @staticmethod
     def _normalize_asset_name(asset: str) -> str:
         if not asset:
             return ''
@@ -482,12 +458,11 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         except Exception:
             return str(asset)
 
-    def _price_coin_usd(self, ph, asset: str, amount: int) -> float:
-        if not asset or amount <= 0:
+    def _price_coin_usd(self, ph, asset: str, amount_float: float) -> float:
+        if not asset or amount_float <= 0:
             return 0.0
 
         asset = self._normalize_asset_name(asset)
-        amount_float = thor_to_float(amount)
 
         if is_rune(asset):
             return amount_float * ph.usd_per_rune
@@ -504,35 +479,45 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             self.logger.warning(f'Failed to price asset {asset}: {e!r}')
             return 0.0
 
-    def _build_open_meta(self, tx: NativeThorTx, fallback_ts: int, ph) -> Optional[OpenLimitSwapMeta]:
-        parsed = THORMemo.parse_memo(tx.memo or '', no_raise=True)
-        if not parsed or parsed.action != ActionType.LIMIT_ORDER:
-            return None
-
-        source_asset, source_amount = self._extract_first_coin(tx)
-        source_asset = self._normalize_asset_name(source_asset)
-        target_asset = self._normalize_asset_name(parsed.asset)
+    def _build_open_meta(
+        self,
+        opened: OpenedLimitSwap,
+        fallback_block_no: int,
+        fallback_ts: int,
+        ph,
+    ) -> Optional[OpenLimitSwapMeta]:
+        source_asset = self._normalize_asset_name(opened.source_asset)
+        target_asset = self._normalize_asset_name(opened.target_asset)
         if not source_asset or not target_asset:
-            self.logger.warning(f'Cannot derive pair for limit swap {tx.tx_hash}: {tx.memo!r}')
+            self.logger.warning(f'Cannot derive pair for limit swap {opened.tx_id}: {opened.memo!r}')
             return None
 
         return OpenLimitSwapMeta(
-            tx_hash=str(tx.tx_hash),
-            block_no=int(tx.height or 0),
-            timestamp=int(tx.timestamp or fallback_ts or now_ts()),
+            tx_hash=str(opened.tx_id),
+            block_no=int(opened.thor_block_no or fallback_block_no or 0),
+            timestamp=int(fallback_ts or now_ts()),
             source_asset=source_asset,
             target_asset=target_asset,
-            usd_amount=self._price_coin_usd(ph, source_asset, source_amount),
-            trader=self._extract_tx_signer_extract_tx_signer(tx),  # fixme
+            usd_amount=self._price_coin_usd(ph, source_asset, float(opened.source_amount_float or 0.0)),
+            trader=str(opened.trader or ''),
         )
 
     def _build_partial_usd(self, ev: ThorEvent, ph) -> float:
         try:
             swap = EventSwap.from_event(ev)
-            return self._price_coin_usd(ph, swap.asset, swap.amount)
+            return self._price_coin_usd(ph, swap.asset, thor_to_float(swap.amount or 0))
         except Exception as e:
             self.logger.warning(f'Failed to price partial limit swap event: {e!r}')
             return 0.0
+
+    @staticmethod
+    def _partial_event_key(block_no: int, ev: ThorEvent) -> str:
+        attrs = ev.attrs if isinstance(ev.attrs, dict) else {}
+        tx_id = str(attrs.get('txid') or attrs.get('id') or attrs.get('in_tx_id') or '')
+        asset = str(ev.asset or attrs.get('asset', '') or attrs.get('_asset', ''))
+        amount = int(ev.amount or attrs.get('amount', 0) or attrs.get('_amount', 0) or 0)
+        memo = str(ev.memo or attrs.get('memo', ''))
+        return f'{int(block_no or 0)}:{tx_id}:{asset}:{amount}:{memo}'
 
     async def _update_unique_traders_snapshot(self, traders: set[str], ts: int):
         traders = {t for t in traders if t}
@@ -555,7 +540,7 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         return self._pair_trader_counters[slug]
 
     async def _process_opened(self, data: LimitSwapBlockUpdate, ph):
-        tx_map = {tx.tx_hash: tx for tx in data.new_opened_limit_swaps if tx and tx.tx_hash}
+        tx_map = {tx.tx_id: tx for tx in data.new_opened_limit_swaps if tx and tx.tx_id}
         new_hashes = await self._opened_dedup.only_new_hashes(list(tx_map.keys()))
         traders = set()
         pair_traders: dict[str, set[str]] = defaultdict(set)
@@ -564,7 +549,7 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             tx = tx_map.get(tx_hash)
             if not tx:
                 continue
-            meta = self._build_open_meta(tx, data.timestamp, ph)
+            meta = self._build_open_meta(tx, data.block_no, data.timestamp, ph)
             if not meta:
                 continue
 
@@ -597,23 +582,38 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         await self._update_unique_traders_snapshot(traders, ts)
 
     async def _process_partials(self, data: LimitSwapBlockUpdate, ph):
-        for ev in data.partial_swaps:
+        partial_map = {
+            self._partial_event_key(data.block_no, ev): ev
+            for ev in data.partial_swaps
+            if ev
+        }
+        new_partial_keys = await self._partial_dedup.only_new_hashes(list(partial_map.keys()))
+
+        for partial_key in new_partial_keys:
+            ev = partial_map.get(partial_key)
+            if not ev:
+                continue
+
             usd_amount = self._build_partial_usd(ev, ph)
             await self.accumulator.add(
                 data.timestamp or now_ts(),
                 partial_count=1,
                 partial_usd=usd_amount,
             )
+            await self._partial_dedup.mark_as_seen(partial_key)
 
     async def _process_closed(self, data: LimitSwapBlockUpdate):
         all_tx_ids = [item.txid for item in data.closed_limit_swaps]
         new_tx_ids = set(await self._closed_dedup.only_new_hashes(all_tx_ids))
         ts = data.timestamp or now_ts()
         touched_duration = False
+        processed_tx_ids = set()
 
         for item in data.closed_limit_swaps:
-            if item.txid not in new_tx_ids:
+            if item.txid not in new_tx_ids or item.txid in processed_tx_ids:
                 continue
+
+            processed_tx_ids.add(item.txid)
 
             fields = {
                 'closed_count': 1,
