@@ -53,6 +53,18 @@ def test_memo2():
     print(m)
 
 
+@pytest.mark.parametrize('memo', [
+    'migrate:123456',
+    'migrate',
+    'migrate:123456|ignored comment',
+])
+def test_migrate_memo_parses_and_ignores_suffix(memo):
+    m = THORMemo.parse_memo(memo)
+
+    assert m.action == ActionType.MIGRATE
+    assert m.dest_address == ''
+
+
 @pytest.mark.parametrize('x, y, result', [
     (ActionType.ADD_LIQUIDITY, ActionType.ADD_LIQUIDITY, True),
     ('', False, False),

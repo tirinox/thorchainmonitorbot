@@ -87,6 +87,8 @@ class ActionType(Enum):
 
     SWITCH = 'switch'
 
+    MIGRATE = 'migrate'
+
     REFERENCE = 'reference'
     USE_REFERENCE = 'use_reference'
 
@@ -121,9 +123,9 @@ MEMO_ACTION_TABLE = {
     "pool+": ActionType.RUNEPOOL_ADD,
     "pool-": ActionType.RUNEPOOL_WITHDRAW,
     "switch": ActionType.SWITCH,
+    "migrate": ActionType.MIGRATE,
     "=<": ActionType.LIMIT_ORDER,  # new!
     "m=<": ActionType.LIMIT_ORDER_MODIFY,
-    # "migrate": TxMigrate,
     # "ragnarok": TxRagnarok,
     # "consolidate": TxConsolidate,
     "reference": ActionType.REFERENCE,
@@ -385,6 +387,9 @@ class THORMemo:
                 destination_address=destination_address,
             )
 
+        elif tx_type == ActionType.MIGRATE:
+            return cls(ActionType.MIGRATE)
+
         elif tx_type == ActionType.REFERENCE:
             reference_memo = gist.split(':', maxsplit=1)[1].strip()
             return cls(ActionType.REFERENCE, reference_memo=reference_memo)
@@ -492,6 +497,9 @@ class THORMemo:
 
         elif self.action == ActionType.SWITCH:
             return f'SWITCH:{self.dest_address}'
+
+        elif self.action == ActionType.MIGRATE:
+            return 'MIGRATE'
 
         elif self.action == ActionType.REFERENCE:
             return f'REFERENCE:{self.reference_memo}'
