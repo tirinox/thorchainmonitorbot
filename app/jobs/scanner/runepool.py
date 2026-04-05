@@ -3,7 +3,7 @@ from typing import List
 from api.aionode.types import thor_to_float
 from jobs.fetch.cached.pool import PoolCache
 from jobs.scanner.block_result import BlockResult
-from jobs.scanner.tx import ThorTxMessage
+from jobs.scanner.tx import ThorTxMessage, ThorMessageType
 from lib.db import DB
 from lib.delegates import INotified, WithDelegates
 from lib.logs import WithLogger
@@ -52,7 +52,7 @@ class RunePoolEventDecoder(WithLogger, INotified, WithDelegates):
             self.logger.error(f'Empty tx or message in RUNE pool @ #{height}')
             return results
 
-        if message.type != message.MsgDeposit:
+        if message.type != ThorMessageType.MsgDeposit:
             self.logger.error(f'Unexpected message type in RUNE pool tx: {message} @ #{height}')
             return results
 

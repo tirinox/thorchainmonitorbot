@@ -36,7 +36,6 @@ from jobs.fetch.stream_watchlist import StreamingSwapWatchListFetcher, Streaming
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.tx import TxFetcher
 from jobs.limit_recorder import LimitSwapStatsRecorder
-from jobs.transfer_recorder import RuneTransferRecorder
 from jobs.node_churn import NodeChurnDetector
 from jobs.pol_recorder import POLStateRecorder
 from jobs.price_recorder import PriceRecorder
@@ -50,6 +49,7 @@ from jobs.scanner.swap_routes import SwapRouteRecorder
 from jobs.scanner.swap_start_detector import SwapStartDetectorFromBlock
 from jobs.scanner.trade_acc import TradeAccEventDecoder
 from jobs.scanner.transfer_detector import RuneTransferDetector
+from jobs.transfer_recorder import RuneTransferRecorder
 from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_filler import VolumeFillerUpdater
 from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
@@ -93,7 +93,6 @@ from notify.public.price_notify import PriceChangeNotifier
 from notify.public.queue_notify import QueueNotifier, QueueStoreMetrics
 from notify.public.runepool_notify import RunePoolTransactionNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
-from notify.public.stats_notify import NetworkStatsNotifier
 from notify.public.trade_acc_notify import TradeAccTransactionNotifier
 from notify.public.transfer_notify import RuneMoveNotifier
 from notify.public.tx_notify import GenericTxNotifier, LiquidityTxNotifier, SwapTxNotifier
@@ -409,7 +408,7 @@ class App(WithLogger):
                     start_detector_from_list.add_subscriber(stream_swap_notifier)
                     stream_swap_notifier.add_subscriber(d.alert_presenter)
 
-            # Depracted
+            # Deprecated
             # if d.cfg.tx.refund.get('enabled', True):
             #     d.refund_notifier_tx = RefundTxNotifier(d, d.cfg.tx.refund, curve=curve)
             #

@@ -3,7 +3,7 @@ from typing import List
 
 from jobs.scanner.block_result import ThorEvent
 from jobs.scanner.native_scan import BlockResult
-from jobs.scanner.tx import NativeThorTx
+from jobs.scanner.tx import NativeThorTx, ThorMessageType
 from lib.constants import thor_to_float, DEFAULT_RESERVE_ADDRESS, BOND_MODULE, DEFAULT_RUNE_FEE, \
     RUNE_DENOM, RUNE_SYMBOL, NATIVE_RUNE_SYMBOL
 from lib.delegates import WithDelegates, INotified
@@ -51,7 +51,7 @@ class RuneTransferDetectorNativeTX(WithLogger):
                             comment=comment,
                             memo=tx.memo,
                         ))
-                elif message.type == message.MsgDeposit:
+                elif message.type == ThorMessageType.MsgDeposit:
                     for coin in message.coins:
                         transfers.append(NativeTokenTransfer(
                             from_addr=message.get('signer', '?'),

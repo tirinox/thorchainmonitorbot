@@ -2,7 +2,7 @@ from typing import Iterable, Optional
 
 from jobs.fetch.cached.pool import PoolCache
 from jobs.scanner.block_result import BlockResult
-from jobs.scanner.tx import ThorTxMessage, ThorObservedTx
+from jobs.scanner.tx import ThorTxMessage, ThorObservedTx, ThorMessageType
 from lib.constants import thor_to_float
 from lib.delegates import INotified, WithDelegates
 from lib.logs import WithLogger
@@ -34,7 +34,7 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
         # We need to check all transactions in the block for MsgDeposit and plain "sends" with memo
         for tx in block.txs:
             for message in tx.messages:
-                if message.type == message.MsgDeposit or message.is_send:
+                if message.type == ThorMessageType.MsgDeposit or message.is_send:
                     # trade withdraw
                     tx_events = self._make_withdrawals(message, block.block_no, tx.tx_hash, ph)
                     for event in tx_events:
