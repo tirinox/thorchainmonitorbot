@@ -89,6 +89,8 @@ class ActionType(Enum):
 
     MIGRATE = 'migrate'
 
+    CONSOLIDATE = 'consolidate'
+
     REFERENCE = 'reference'
     USE_REFERENCE = 'use_reference'
 
@@ -125,9 +127,8 @@ MEMO_ACTION_TABLE = {
     "switch": ActionType.SWITCH,
     "migrate": ActionType.MIGRATE,
     "=<": ActionType.LIMIT_ORDER,  # new!
-    "m=<": ActionType.LIMIT_ORDER_MODIFY,
+    "consolidate": ActionType.CONSOLIDATE,
     # "ragnarok": TxRagnarok,
-    # "consolidate": TxConsolidate,
     "reference": ActionType.REFERENCE,
     "r": ActionType.USE_REFERENCE,
 }
@@ -390,6 +391,9 @@ class THORMemo:
         elif tx_type == ActionType.MIGRATE:
             return cls(ActionType.MIGRATE)
 
+        elif tx_type == ActionType.CONSOLIDATE:
+            return cls(ActionType.CONSOLIDATE)
+
         elif tx_type == ActionType.REFERENCE:
             reference_memo = gist.split(':', maxsplit=1)[1].strip()
             return cls(ActionType.REFERENCE, reference_memo=reference_memo)
@@ -500,6 +504,9 @@ class THORMemo:
 
         elif self.action == ActionType.MIGRATE:
             return 'MIGRATE'
+
+        elif self.action == ActionType.CONSOLIDATE:
+            return 'CONSOLIDATE'
 
         elif self.action == ActionType.REFERENCE:
             return f'REFERENCE:{self.reference_memo}'
