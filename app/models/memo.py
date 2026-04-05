@@ -126,6 +126,7 @@ MEMO_ACTION_TABLE = {
     "pool-": ActionType.RUNEPOOL_WITHDRAW,
     "switch": ActionType.SWITCH,
     "migrate": ActionType.MIGRATE,
+    "m=<": ActionType.LIMIT_ORDER_MODIFY,
     "=<": ActionType.LIMIT_ORDER,  # new!
     "consolidate": ActionType.CONSOLIDATE,
     # "ragnarok": TxRagnarok,
