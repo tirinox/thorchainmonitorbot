@@ -147,12 +147,13 @@
                     {% if streaming_count and streaming_count > 1 %}
                         {{ streaming_count }} subswaps
                     {% endif %}
-                    {% if rapid_swap_stats and rapid_swap_stats.blocks_saved > 0 %}
-                        <div class="rapid-saved-blocks">
-                            ⚡ {{ rapid_swap_stats.blocks_saved }} / {{ rapid_swap_stats.streaming_swap_quantity or rapid_swap_stats.total_swaps }} blocks saved
-                        </div>
-                        <div class="rapid-saved-time" id="rapid-saved-time"></div>
-                    {% endif %}
+{#                todo: improve  #}
+{#                    {% if rapid_swap_stats and rapid_swap_stats.blocks_saved > 0 %}#}
+{#                        <div class="rapid-saved-blocks">#}
+{#                            ⚡ {{ rapid_swap_stats.blocks_saved }} / {{ rapid_swap_stats.streaming_swap_quantity or rapid_swap_stats.total_swaps }} blocks saved#}
+{#                        </div>#}
+{#                        <div class="rapid-saved-time" id="rapid-saved-time"></div>#}
+{#                    {% endif %}#}
                 </div>
             {% endif %}
         </div>
