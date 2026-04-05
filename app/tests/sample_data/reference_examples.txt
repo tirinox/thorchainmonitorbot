@@ -45,3 +45,6 @@
 block 25621372 has memoless tx 819974DE3F88E2FDD0F1F85E210CE08BCE900A65B11B52B10AAF706A3A8016DE
 memo = ""
 
+-----
+
+block 25598933 has limit swap modification tx

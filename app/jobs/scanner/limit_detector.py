@@ -2,7 +2,7 @@ from typing import List, NamedTuple, Optional
 
 from api.aionode.types import thor_to_float
 from jobs.scanner.block_result import BlockResult
-from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorObservedTx, ThorTxMessage
+from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorObservedTx, ThorMessageType
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -65,7 +65,7 @@ class LimitSwapDetector(WithLogger, INotified, WithDelegates):
     @staticmethod
     def _extract_native_first_coin(tx: NativeThorTx) -> tuple[str, int]:
         for message in tx.messages:
-            if message.type == ThorTxMessage.MsgDeposit and message.coins:
+            if message.type == ThorMessageType.MsgDeposit and message.coins:
                 coin = message.coins[0]
                 return str(coin.get('asset', '')), int(coin.get('amount', 0))
 
@@ -79,14 +79,15 @@ class LimitSwapDetector(WithLogger, INotified, WithDelegates):
 
     @classmethod
     def _make_opened_limit_swap_from_native_tx(cls, tx: NativeThorTx) -> Optional[OpenedLimitSwap]:
-        parsed = THORMemo.parse_memo(tx.memo or '', no_raise=True)
+        memo_txt = tx.memo or tx.first_message_memo or ''
+        parsed = THORMemo.parse_memo(memo_txt, no_raise=True)
         if not parsed or parsed.action != ActionType.LIMIT_ORDER:
             return None
 
         source_asset, source_amount = cls._extract_native_first_coin(tx)
         return OpenedLimitSwap(
             tx_id=str(tx.tx_hash or ''),
-            memo=str(tx.memo or ''),
+            memo=memo_txt,
             source_asset=source_asset,
             source_amount=int(source_amount or 0),
             source_amount_float=thor_to_float(source_amount or 0),
