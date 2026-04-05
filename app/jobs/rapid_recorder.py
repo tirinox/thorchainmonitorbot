@@ -8,51 +8,50 @@ from models.events import EventSwap, parse_swap_and_out_event
 
 
 class RapidSwapRecorder(INotified, WithLogger):
-	"""
-	Minimal rapid-swap recorder scaffold.
+    """
+    Minimal rapid-swap recorder scaffold.
 
-	Current scope:
-	  - receives a scanned `BlockResult`
-	  - inspects `end_block_events`
-	  - groups `swap` events by inbound tx id
-	  - identifies tx ids that have more than one swap event in the same block
+    Current scope:
+      - receives a scanned `BlockResult`
+      - inspects `end_block_events`
+      - groups `swap` events by inbound tx id
+      - identifies tx ids that have more than one swap event in the same block
 
-	Persistence and downstream reporting will be added later.
-	"""
+    Persistence and downstream reporting will be added later.
+    """
 
-	def __init__(self, deps: DepContainer):
-		super().__init__()
-		self.deps = deps
-		self.last_seen_block_no = 0
-		self.last_rapid_candidates: dict[str, list[EventSwap]] = {}
+    def __init__(self, deps: DepContainer):
+        super().__init__()
+        self.deps = deps
+        self.last_seen_block_no = 0
+        self.last_rapid_candidates: dict[str, list[EventSwap]] = {}
 
-	@staticmethod
-	def iter_swap_events(block: BlockResult):
-		for raw_event in block.end_block_events:
-			parsed_event = parse_swap_and_out_event(raw_event)
-			if isinstance(parsed_event, EventSwap):
-				yield parsed_event
+    @staticmethod
+    def iter_swap_events(block: BlockResult):
+        for raw_event in block.end_block_events:
+            parsed_event = parse_swap_and_out_event(raw_event)
+            if isinstance(parsed_event, EventSwap):
+                yield parsed_event
 
-	def collect_rapid_swap_candidates(self, block: BlockResult) -> dict[str, list[EventSwap]]:
-		grouped_by_tx_id: dict[str, list[EventSwap]] = defaultdict(list)
+    def collect_rapid_swap_candidates(self, block: BlockResult) -> dict[str, list[EventSwap]]:
+        grouped_by_tx_id: dict[str, list[EventSwap]] = defaultdict(list)
 
-		for swap_event in self.iter_swap_events(block):
-			if swap_event.tx_id:
-				grouped_by_tx_id[swap_event.tx_id].append(swap_event)
+        for swap_event in self.iter_swap_events(block):
+            if swap_event.tx_id:
+                grouped_by_tx_id[swap_event.tx_id].append(swap_event)
 
-		return {
-			tx_id: swap_events
-			for tx_id, swap_events in grouped_by_tx_id.items()
-			if len(swap_events) > 1
-		}
+        return {
+            tx_id: swap_events
+            for tx_id, swap_events in grouped_by_tx_id.items()
+            if len(swap_events) > 1
+        }
 
-	async def on_data(self, sender, data: BlockResult):
-		self.last_seen_block_no = int(data.block_no or 0)
-		self.last_rapid_candidates = self.collect_rapid_swap_candidates(data)
+    async def on_data(self, sender, block: BlockResult):
+        self.last_seen_block_no = int(block.block_no or 0)
+        self.last_rapid_candidates = self.collect_rapid_swap_candidates(block)
 
-		if self.last_rapid_candidates:
-			self.logger.info(
-				f'RapidSwapRecorder found {len(self.last_rapid_candidates)} '
-				f'rapid-swap candidate txs in block #{data.block_no}'
-			)
-
+        if self.last_rapid_candidates:
+            self.logger.info(
+                f'RapidSwapRecorder found {len(self.last_rapid_candidates)} '
+                f'rapid-swap candidate txs in block #{block.block_no}'
+            )

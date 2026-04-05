@@ -8,7 +8,6 @@ from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.money import pretty_dollar
 from models.memo import THORMemo
-from notify.dup_stop import TxDeduplicator
 
 
 class AffiliateRecorder(WithLogger, INotified):
@@ -72,7 +71,7 @@ class AffiliateRecorder(WithLogger, INotified):
         print(tx)
         pass  # todo
 
-    async def on_data(self, sender, data: BlockResult):
+    async def on_data(self, sender, block: BlockResult):
         """
         Look for events like this:
         {

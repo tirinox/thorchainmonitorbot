@@ -142,16 +142,16 @@ class WasmRecordProgressPrinter(INotified):
         self.print_every = print_every
         self._count = 0
 
-    async def on_data(self, sender, data: BlockResult):
+    async def on_data(self, sender, block: BlockResult):
         self._count += 1
         if self._count % self.print_every == 0:
-            block_ts = float(data.timestamp) if data.timestamp else now_ts()
+            block_ts = float(block.timestamp) if block.timestamp else now_ts()
             calls_today = await self.recorder.get_daily_calls(block_ts)
             users_today = await self.recorder.get_daily_unique_users(block_ts)
             calls_7d = await self.recorder.get_calls_range(block_ts - 7 * DAY, block_ts)
             total_7d = sum(int(float(d.get(CosmWasmRecorder.KEY_CALLS, 0))) for d in calls_7d.values())
             print(
-                f"  block #{data.block_no:>9}  "
+                f"  block #{block.block_no:>9}  "
                 f"calls today={calls_today:>6}  users today={users_today:>5}  "
                 f"calls 7d={total_7d:>7}  "
                 f"({datetime.now().strftime('%H:%M:%S')})"

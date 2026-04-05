@@ -58,14 +58,14 @@ class CosmWasmRecorder(INotified, WithLogger):
     # Core recording logic
     # ------------------------------------------------------------------
 
-    async def on_data(self, sender, data: BlockResult):
+    async def on_data(self, sender, block: BlockResult):
         # Use the block's own timestamp so historical replays land in the correct daily bucket.
-        now = float(data.timestamp) if data.timestamp else now_ts()
+        now = float(block.timestamp) if block.timestamp else now_ts()
 
-        all_hashes = [tx.tx_hash for tx in data.txs if tx.tx_hash]
+        all_hashes = [tx.tx_hash for tx in block.txs if tx.tx_hash]
         new_hashes = set(await self._dedup.only_new_hashes(all_hashes))
 
-        for tx in data.txs:
+        for tx in block.txs:
             if tx.tx_hash not in new_hashes:
                 continue
 
@@ -92,7 +92,7 @@ class CosmWasmRecorder(INotified, WithLogger):
             await self._dedup.mark_as_seen(tx.tx_hash)
 
             self.logger.debug(
-                f'Block #{data.block_no}: tx={tx.tx_hash[:8]}... '
+                f'Block #{block.block_no}: tx={tx.tx_hash[:8]}... '
                 f'user={user} contracts={matched_contracts}'
             )
 

@@ -174,29 +174,29 @@ class RuneTransferDetector(WithDelegates, INotified, WithLogger):
         self.tx_proc = RuneTransferDetectorNativeTX()
         self.log_proc = RuneTransferDetectorTxLogs(reserve_address)
 
-    async def process_block(self, data: BlockResult) -> List[NativeTokenTransfer]:
-        if not data.txs or not data.begin_block_events:
-            self.logger.debug(f'Empty block #{data.block_no}?')
+    async def process_block(self, block: BlockResult) -> List[NativeTokenTransfer]:
+        if not block.txs or not block.begin_block_events:
+            self.logger.debug(f'Empty block #{block.block_no}?')
             return []
 
-        transfers_tx = self.tx_proc.process_block(data.txs, data.block_no)
-        transfers_logs = self.log_proc.process_events(data)
+        transfers_tx = self.tx_proc.process_block(block.txs, block.block_no)
+        transfers_logs = self.log_proc.process_events(block)
 
         transfers = transfers_tx + transfers_logs
 
         # Stamp the real block timestamp so downstream recorders store data
         # under the correct calendar day instead of today's date.
-        if data.timestamp:
+        if block.timestamp:
             for t in transfers:
-                t.block_ts = data.timestamp
+                t.block_ts = block.timestamp
 
         if transfers:
-            self.logger.info(f'Detected total {len(transfers)} transfers at block #{data.block_no} '
+            self.logger.info(f'Detected total {len(transfers)} transfers at block #{block.block_no} '
                              f'({len(transfers_tx)} from TXs, {len(transfers_logs)} from logs).')
 
         return transfers
 
-    async def on_data(self, sender, data: BlockResult):
-        transfers = await self.process_block(data)
+    async def on_data(self, sender, block: BlockResult):
+        transfers = await self.process_block(block)
         if transfers:
             await self.pass_data_to_listeners(transfers)

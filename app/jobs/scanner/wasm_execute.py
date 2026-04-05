@@ -8,8 +8,8 @@ class CosmwasmExecuteDecoder(WithLogger, INotified, WithDelegates):
         super().__init__()
         self.contract_whitelist = contract_whitelist
 
-    def decode(self, data: BlockResult):
-        for tx in data.txs:
+    def decode(self, block: BlockResult):
+        for tx in block.txs:
             for message in tx.messages:
                 if not message.is_contract:
                     continue
@@ -17,6 +17,6 @@ class CosmwasmExecuteDecoder(WithLogger, INotified, WithDelegates):
                     continue
                 yield tx
 
-    async def on_data(self, sender, data: BlockResult):
-        for tx in self.decode(data):
+    async def on_data(self, sender, block: BlockResult):
+        for tx in self.decode(block):
             await self.pass_data_to_listeners(tx)

@@ -22,17 +22,17 @@ class RunePoolEventDecoder(WithLogger, INotified, WithDelegates):
         self.redis = db.redis
         self.pool_cache = pool_cache
 
-    async def on_data(self, sender, data: BlockResult):
+    async def on_data(self, sender, block: BlockResult):
         usd_per_rune = await self.pool_cache.get_usd_per_rune()
 
         all_events = {}
-        for tx in data.txs:
+        for tx in block.txs:
             # RunePool Deposit/Withdraw are MsgDeposit With top-layer Memo: "POOL+/POOL-"
             if memo_str := tx.memo:
                 if memo_ob := THORMemo.parse_memo(memo_str, no_raise=True):
                     if is_action(memo_ob.action, (ActionType.RUNEPOOL_ADD, ActionType.RUNEPOOL_WITHDRAW)):
                         for message in tx.messages:
-                            tx_events = self._convert_tx_to_event(tx, message, memo_ob, data.block_no, usd_per_rune)
+                            tx_events = self._convert_tx_to_event(tx, message, memo_ob, block.block_no, usd_per_rune)
                             for event in tx_events:
                                 all_events[event.tx_hash] = event
 

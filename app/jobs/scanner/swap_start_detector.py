@@ -2,7 +2,7 @@ import asyncio
 from typing import Optional, Iterable
 
 from jobs.scanner.native_scan import BlockResult
-from jobs.scanner.tx import NativeThorTx, ThorTxMessage, ThorObservedTx
+from jobs.scanner.tx import NativeThorTx, ThorObservedTx
 from lib.constants import NATIVE_RUNE_SYMBOL, thor_to_float, THOR_BLOCK_TIME
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
@@ -184,11 +184,11 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
 
         return deposit_swap_starts + observed_in_txs
 
-    async def on_data(self, sender, data: BlockResult):
+    async def on_data(self, sender, block: BlockResult):
         ph = await self.deps.pool_cache.get()
-        swaps = await self.detect_swaps(data, ph)
+        swaps = await self.detect_swaps(block, ph)
         if swaps:
-            self.logger.info(f'Found {len(swaps)} swap starts in block #{data.block_no}')
+            self.logger.info(f'Found {len(swaps)} swap starts in block #{block.block_no}')
             asyncio.create_task(self._handle_new_swaps(swaps))
 
     async def _handle_new_swaps(self, swap_start_events: list[AlertSwapStart]):

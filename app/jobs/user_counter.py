@@ -36,8 +36,8 @@ class UserCounterMiddleware(INotified, WithLogger):
         users -= self._excluded_addresses
         return users
 
-    async def on_data(self, sender, data: BlockResult):
-        users = self.get_unique_users(data)
+    async def on_data(self, sender, block: BlockResult):
+        users = self.get_unique_users(block)
         if users:
             self.logger.info(f'Adding {len(users)} unique users at this tick.')
             self.logger.debug(f'{users = }')

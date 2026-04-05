@@ -97,7 +97,7 @@ async def dbg_transfer_record_from_past(app: LpAppFramework, days: int = 14, sta
         try:
             block_result = await scanner.fetch_one_block(block_no)
             if block_result and not block_result.is_error:
-                await transfer_detector.on_data(sender=None, data=block_result)
+                await transfer_detector.on_data(sender=None, block=block_result)
         except Exception as e:
             print(f'[Error] block {block_no}: {e}')
 
