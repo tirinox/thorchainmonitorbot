@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import NamedTuple, List, Optional
 
 from api.aionode.types import ThorCoinDec
@@ -76,27 +77,29 @@ class ThorEvent(NamedTuple):
         self.attrs['_height'] = int(value)
 
 
-class ThorTxMessage(NamedTuple):
-    attrs: dict
-
+class ThorMessageType(str, Enum):
     MsgObservedTxIn = '/types.MsgObservedTxIn'
     MsgDeposit = '/types.MsgDeposit'
     MsgSend = '/types.MsgSend'
     MsgSendCosmos = '/cosmos.bank.v1beta1.MsgSend'
     MsgExecuteContract = '/cosmwasm.wasm.v1.MsgExecuteContract'
-    MsgObservedTxQuorum = '/types.MsgObservedTxQuorum'  # new!
+    MsgObservedTxQuorum = '/types.MsgObservedTxQuorum'
+
+
+class ThorTxMessage(NamedTuple):
+    attrs: dict
 
     @property
     def is_send(self):
-        return self.type == self.MsgSend or self.type == self.MsgSendCosmos
+        return self.type == ThorMessageType.MsgSend or self.type == ThorMessageType.MsgSendCosmos
 
     @property
     def is_contract(self):
-        return self.type == self.MsgExecuteContract
+        return self.type == ThorMessageType.MsgExecuteContract
 
     @property
     def is_quorum(self):
-        return self.type == self.MsgObservedTxQuorum
+        return self.type == ThorMessageType.MsgObservedTxQuorum
 
     @property
     def txs(self) -> List[dict]:
@@ -267,3 +270,8 @@ class NativeThorTx(NamedTuple):
 
     def find_events_by_type(self, ev_type):
         return [e for e in self.events if e.type == ev_type]
+
+    @property
+    def first_message_memo(self):
+        msg = self.first_message
+        return msg.memo if msg else ''

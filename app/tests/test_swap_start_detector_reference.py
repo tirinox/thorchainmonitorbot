@@ -1,10 +1,8 @@
-from typing import cast
-
 import pytest
 
 from jobs.scanner.block_result import BlockResult, ScannerError
 from jobs.scanner.swap_start_detector import SwapStartDetectorFromBlock
-from jobs.scanner.tx import NativeThorTx, ThorTxMessage
+from jobs.scanner.tx import NativeThorTx, ThorTxMessage, ThorMessageType
 from lib.depcont import DepContainer
 from models.memo import ActionType
 from models.pool_info import PoolInfo
@@ -35,7 +33,7 @@ def make_price_holder():
 
 def make_observed_quorum_native_tx(tx_id: str, memo: str, amount: int, asset: str = 'BTC.BTC') -> NativeThorTx:
     msg = ThorTxMessage.from_dict({
-        '@type': ThorTxMessage.MsgObservedTxQuorum,
+        '@type': ThorMessageType.MsgObservedTxQuorum.value,
         'quoTx': {
             'obsTx': {
                 'tx': {
@@ -134,4 +132,3 @@ async def test_detect_swaps_skips_observed_tx_when_reference_memo_cannot_be_reso
 
     assert swaps == []
     assert cache.calls == [11791]
-

@@ -3,7 +3,7 @@ import re
 from dataclasses import dataclass, replace
 from typing import List, NamedTuple, Iterable
 
-from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorObservedTx, ThorTxMessage
+from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorObservedTx, ThorMessageType
 from lib.date_utils import date_parse_rfc
 from lib.utils import safe_get
 
@@ -96,10 +96,10 @@ class BlockResult:
         observed_txs = {}
         for tx in self.txs:
             for message in tx.messages:
-                if message.type == message.MsgObservedTxIn:
+                if message.type == ThorMessageType.MsgObservedTxIn:
                     for inner_tx in message.txs:
                         observed_txs[inner_tx['tx']['id']] = inner_tx
-                elif message.type == message.MsgObservedTxQuorum:
+                elif message.type == ThorMessageType.MsgObservedTxQuorum:
                     quo_tx = message.get('quoTx', {})
                     obs_tx = quo_tx.get('obsTx', {})
                     is_inbound = quo_tx.get('inbound', False)
@@ -113,4 +113,4 @@ class BlockResult:
 
     @property
     def deposits(self):
-        return self.find_tx_by_type(ThorTxMessage.MsgDeposit)
+        return self.find_tx_by_type(ThorMessageType.MsgDeposit)

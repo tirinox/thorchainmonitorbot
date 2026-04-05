@@ -2,7 +2,7 @@ import pytest
 
 from jobs.scanner.limit_detector import LimitSwapDetector, LimitSwapBlockUpdate, OpenedLimitSwap
 from jobs.scanner.block_result import BlockResult, ScannerError
-from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorTxMessage
+from jobs.scanner.tx import NativeThorTx, ThorEvent, ThorTxMessage, ThorMessageType
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 
@@ -30,7 +30,7 @@ def make_tx(memo: str):
 
 def make_deposit_tx(tx_hash: str, memo: str, asset: str = 'BTC.BTC', amount: int = 100_000_000, signer: str = 'thor1alice'):
     msg = ThorTxMessage.from_dict({
-        '@type': ThorTxMessage.MsgDeposit,
+        '@type': ThorMessageType.MsgDeposit.value,
         'coins': [{'asset': asset, 'amount': str(amount)}],
         'signer': signer,
     })
@@ -50,7 +50,7 @@ def make_deposit_tx(tx_hash: str, memo: str, asset: str = 'BTC.BTC', amount: int
 def make_observed_quorum_tx(tx_id: str, memo: str, asset: str = 'ETH.ETH', amount: int = 2, decimals: int = 0,
                             from_address: str = '0xalice'):
     msg = ThorTxMessage.from_dict({
-        '@type': ThorTxMessage.MsgObservedTxQuorum,
+        '@type': ThorMessageType.MsgObservedTxQuorum.value,
         'quoTx': {
             'obsTx': {
                 'tx': {
@@ -270,5 +270,4 @@ async def test_on_data_emits_structured_payload():
     assert payload.closed_limit_swaps[0].event == close
     assert payload.closed_limit_swaps[0].reason == LimitSwapDetector.REASON_FAILED
     assert payload.partial_swaps == [partial]
-
 
