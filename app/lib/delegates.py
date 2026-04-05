@@ -50,7 +50,7 @@ class WithDelegates:
             try:
                 await delegate.on_data(sender, data)
             except Exception as e:
-                logging.exception(f"{e!r}")
+                logging.exception(f"Exception in delegate {delegate.__class__.__name__}: {e!r}")
 
             t1 = time.monotonic()
             summary[str(delegate)] = t1 - t0
