@@ -1,6 +1,8 @@
 
 import asyncio
 import logging
+import re
+import time
 from contextlib import suppress
 from typing import Optional
 
@@ -19,6 +21,8 @@ from notify.channel import MessageType, BoardMessage, MESSAGE_SEPARATOR
 
 class TwitterBot(WithLogger):
     MAX_TWEETS_PER_DAY = 300
+    SYMBOL_PATTERN = re.compile(r'\$([A-Za-z]{2,5})\b')
+    FULL_RUNE_SYMBOL = 'RUNE'
 
     def __init__(self, cfg: Config):
         super().__init__()
@@ -38,7 +42,13 @@ class TwitterBot(WithLogger):
         # assert consumer_key and consumer_secret and access_token and access_token_secret
 
         self.max_length = cfg.as_int('twitter.max_length', TWITTER_LIMIT_CHARACTERS)
+        self.full_rune_symbol_cooldown = cfg.as_interval('twitter.full_symbol_cooldown', '12h')
+        self._last_full_rune_symbol_ts: Optional[float] = None
         self.logger.info(f'TwitterBot is allowed to post {self.max_length} characters.')
+        self.logger.info(
+            f'TwitterBot will preserve full ${self.FULL_RUNE_SYMBOL} once every '
+            f'{self.full_rune_symbol_cooldown:.0f} seconds.'
+        )
 
         # a) bearer. does not work for us
         # self.auth = tweepy.OAuth2BearerHandler(bearer_token)
@@ -60,9 +70,7 @@ class TwitterBot(WithLogger):
 
     async def verify_credentials(self, loop=None):
         try:
-            loop = loop or asyncio.get_event_loop()
-            await loop.run_in_executor(None, self.api.verify_credentials)
-            self.logger.debug('Good!')
+            await asyncio.to_thread(self.api.verify_credentials)
             return True
         except Exception as e:
             self.logger.error(f'Bad: {e!r}!')
@@ -72,10 +80,41 @@ class TwitterBot(WithLogger):
         img_tag = "with image" if bool(image) else ""
         self.logger.info(f'🐦🐦🐦 Tweets [{twitter_text_length(text)} symbols]: "\n{text}\n". 🐦🐦🐦 {img_tag}')
 
+    def prepare_twitter_text(self, text: str) -> str:
+        if not text:
+            return text
+
+        now = time.monotonic()
+        allow_full_rune = self.full_rune_symbol_cooldown <= 0 or (
+            self._last_full_rune_symbol_ts is None or
+            now - self._last_full_rune_symbol_ts >= self.full_rune_symbol_cooldown
+        )
+
+        used_full_rune = False
+
+        def replacer(match: re.Match):
+            nonlocal used_full_rune
+
+            symbol = match.group(1)
+            if symbol == self.FULL_RUNE_SYMBOL and allow_full_rune and not used_full_rune:
+                used_full_rune = True
+                return f'${symbol}'
+
+            return symbol
+
+        prepared_text = self.SYMBOL_PATTERN.sub(replacer, text)
+
+        if used_full_rune:
+            self._last_full_rune_symbol_ts = now
+
+        return prepared_text
+
     @limits(calls=MAX_TWEETS_PER_DAY, period=DAY)
     def post_sync(self, text: str, image=None):
         if not text:
             return
+
+        text = self.prepare_twitter_text(text)
 
         real_len = twitter_text_length(text)
         if real_len >= self.max_length:
@@ -165,6 +204,7 @@ class TwitterBotMock(TwitterBot):
         self.exceptions = bool(cfg.get('twitter.mock_raise', False))
 
     def post_sync(self, text: str, image=None):
+        text = self.prepare_twitter_text(text)
         self.log_tweet(text, image)
         if self.exceptions:
             raise Exception('Alas! Mock exception!')

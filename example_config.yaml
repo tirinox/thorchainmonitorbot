@@ -116,6 +116,8 @@ twitter:
   max_length: 25000  # With Twitter Premium
   #  max_length: 280  # Without Twitter Premium
 
+  full_symbol_cooldown: 12h  # keep one full $RUNE post once per cooldown window
+
   bot:
     consumer_key: "111"
     consumer_secret: "222"
