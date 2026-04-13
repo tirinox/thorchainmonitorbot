@@ -610,10 +610,10 @@ class App(WithLogger):
         if d.cfg.get('twitter.enabled', False):
             if d.cfg.get('twitter.is_mock', False):
                 self.logger.warning('Using Twitter Mock bot! All Tweets will go only to the logs!')
-                d.twitter_bot = TwitterBotMock(d.cfg)
+                d.twitter_bot = TwitterBotMock(d.cfg, d.db)
             else:
                 self.logger.info('Using real Twitter bot.')
-                d.twitter_bot = TwitterBot(d.cfg)
+                d.twitter_bot = TwitterBot(d.cfg, d.db)
 
             d.twitter_bot.emergency = d.emergency
 

@@ -11,7 +11,7 @@ from tools.lib.lp_common import LpAppFramework
 class AuthTwitterApp(App):
     def __init__(self):
         super().__init__()
-        self.twitter_bot = TwitterBot(self.deps.cfg)
+        self.twitter_bot = TwitterBot(self.deps.cfg, self.deps.db)
         self.twitter_bot.is_mock = False
 
     async def authorize(self):

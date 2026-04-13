@@ -49,7 +49,7 @@ async def twitter_post_price(app: LpAppFramework):
 
 async def twitter_post_burned_rune(app: LpAppFramework):
     notifier = BurnNotifier(app.deps)
-    event = await notifier.get_event()
+    event = await getattr(notifier, 'get_event')()
     photo, name = app.deps.alert_presenter.render_rune_burn_graph(event)
     loc = app.deps.loc_man.default
     text = loc.notification_rune_burn(event)
@@ -66,7 +66,7 @@ async def main():
         print(os.getcwd())
         # cfg = Config('../../../temp/twitter.yaml')
         cfg = app.deps.cfg
-        twitter_bot = TwitterBotMock(cfg) if MOCK else TwitterBot(cfg)
+        twitter_bot = TwitterBotMock(cfg, app.deps.db) if MOCK else TwitterBot(cfg, app.deps.db)
 
         # configure
         app.deps.twitter_bot = twitter_bot

@@ -10,9 +10,11 @@ import tweepy
 from ratelimit import limits
 
 from lib.logs import WithLogger
+from lib.cooldown import Cooldown
 from .text_length import TWITTER_LIMIT_CHARACTERS, twitter_text_length, twitter_cut_text
 from lib.config import Config
 from lib.date_utils import DAY
+from lib.db import DB
 from lib.draw_utils import img_to_bio
 from lib.emergency import EmergencyReport
 from lib.utils import random_hex
@@ -23,10 +25,12 @@ class TwitterBot(WithLogger):
     MAX_TWEETS_PER_DAY = 300
     SYMBOL_PATTERN = re.compile(r'\$([A-Za-z]{2,5})\b')
     FULL_RUNE_SYMBOL = 'RUNE'
+    FULL_RUNE_COOLDOWN_KEY = 'TwitterBot:full-symbol'
 
-    def __init__(self, cfg: Config):
+    def __init__(self, cfg: Config, db: Optional[DB] = None):
         super().__init__()
         self.cfg = cfg
+        self.db = db
         keys = cfg.get('twitter.bot')
 
         consumer_key = keys.as_str('consumer_key')
@@ -44,6 +48,11 @@ class TwitterBot(WithLogger):
         self.max_length = cfg.as_int('twitter.max_length', TWITTER_LIMIT_CHARACTERS)
         self.full_rune_symbol_cooldown = cfg.as_interval('twitter.full_symbol_cooldown', '12h')
         self._last_full_rune_symbol_ts: Optional[float] = None
+        self.full_rune_symbol_cd = (
+            Cooldown(self.db, self.FULL_RUNE_COOLDOWN_KEY, self.full_rune_symbol_cooldown)
+            if self.db is not None and self.full_rune_symbol_cooldown > 0
+            else None
+        )
         self.logger.info(f'TwitterBot is allowed to post {self.max_length} characters.')
         self.logger.info(
             f'TwitterBot will preserve full ${self.FULL_RUNE_SYMBOL} once every '
@@ -80,16 +89,7 @@ class TwitterBot(WithLogger):
         img_tag = "with image" if bool(image) else ""
         self.logger.info(f'🐦🐦🐦 Tweets [{twitter_text_length(text)} symbols]: "\n{text}\n". 🐦🐦🐦 {img_tag}')
 
-    def prepare_twitter_text(self, text: str) -> str:
-        if not text:
-            return text
-
-        now = time.monotonic()
-        allow_full_rune = self.full_rune_symbol_cooldown <= 0 or (
-            self._last_full_rune_symbol_ts is None or
-            now - self._last_full_rune_symbol_ts >= self.full_rune_symbol_cooldown
-        )
-
+    def rewrite_twitter_text(self, text: str, allow_full_rune: bool) -> tuple[str, bool]:
         used_full_rune = False
 
         def replacer(match: re.Match):
@@ -102,10 +102,28 @@ class TwitterBot(WithLogger):
 
             return symbol
 
-        prepared_text = self.SYMBOL_PATTERN.sub(replacer, text)
+        return self.SYMBOL_PATTERN.sub(replacer, text), used_full_rune
+
+    async def prepare_twitter_text(self, text: str) -> str:
+        if not text:
+            return text
+
+        if self.full_rune_symbol_cd is not None:
+            allow_full_rune = await self.full_rune_symbol_cd.can_do()
+        else:
+            now = time.monotonic()
+            allow_full_rune = self.full_rune_symbol_cooldown <= 0 or (
+                self._last_full_rune_symbol_ts is None or
+                now - self._last_full_rune_symbol_ts >= self.full_rune_symbol_cooldown
+            )
+
+        prepared_text, used_full_rune = self.rewrite_twitter_text(text, allow_full_rune)
 
         if used_full_rune:
-            self._last_full_rune_symbol_ts = now
+            if self.full_rune_symbol_cd is not None:
+                await self.full_rune_symbol_cd.do()
+            else:
+                self._last_full_rune_symbol_ts = time.monotonic()
 
         return prepared_text
 
@@ -113,8 +131,6 @@ class TwitterBot(WithLogger):
     def post_sync(self, text: str, image=None):
         if not text:
             return
-
-        text = self.prepare_twitter_text(text)
 
         real_len = twitter_text_length(text)
         if real_len >= self.max_length:
@@ -139,6 +155,7 @@ class TwitterBot(WithLogger):
     async def post(self, text: str, image=None, executor=None, loop=None):
         if not text:
             return
+        text = await self.prepare_twitter_text(text)
         loop = loop or asyncio.get_event_loop()
         await loop.run_in_executor(executor, self.post_sync, text, image)
 
@@ -199,12 +216,11 @@ class TwitterBot(WithLogger):
 
 
 class TwitterBotMock(TwitterBot):
-    def __init__(self, cfg: Config):
-        super().__init__(cfg)
+    def __init__(self, cfg: Config, db: Optional[DB] = None):
+        super().__init__(cfg, db)
         self.exceptions = bool(cfg.get('twitter.mock_raise', False))
 
     def post_sync(self, text: str, image=None):
-        text = self.prepare_twitter_text(text)
         self.log_tweet(text, image)
         if self.exceptions:
             raise Exception('Alas! Mock exception!')

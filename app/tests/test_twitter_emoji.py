@@ -1,16 +1,55 @@
+import json
+
+import pytest
+
 from comm.twitter.text_length import twitter_text_length, twitter_cut_text, \
     twitter_intelligent_text_splitter, abbreviate_some_long_words, TWITTER_T_CO_LENGTH, TWITTER_T_CO_EXAMPLE
 from comm.twitter.twitter_bot import TwitterBot
-from lib.date_utils import HOUR
+from lib.config import Config
+from lib.date_utils import HOUR, now_ts
 from lib.money import EMOJI_SCALE
 from lib.texts import progressbar, find_country_emoji
 
 
-def _make_twitter_bot():
-    bot = TwitterBot.__new__(TwitterBot)
-    bot.full_rune_symbol_cooldown = 12 * HOUR
-    bot._last_full_rune_symbol_ts = None
-    return bot
+class _FakeRedis:
+    def __init__(self):
+        self.data = {}
+
+    async def get(self, key):
+        return self.data.get(key)
+
+    async def set(self, key, value):
+        self.data[key] = value
+
+
+class _FakeDB:
+    def __init__(self):
+        self.redis = _FakeRedis()
+
+    async def get_redis(self):
+        return self.redis
+
+
+def _make_cfg():
+    return Config(data={
+        'twitter': {
+            'max_length': 280,
+            'full_symbol_cooldown': '12h',
+            'bot': {
+                'consumer_key': '1',
+                'consumer_secret': '2',
+                'access_token': '3',
+                'access_token_secret': '4',
+                'client_id': '5',
+                'client_secret': '6',
+                'bearer_token': '7',
+            }
+        }
+    })
+
+
+def _make_twitter_bot(db=None):
+    return TwitterBot(_make_cfg(), db=db)
 
 
 def test_emoji_text_length():
@@ -98,33 +137,36 @@ def test_abbreviate():
     assert twitter_text_length(shortened_text) < original_length
 
 
-def test_twitter_symbol_rewrite_preserves_rune_once(monkeypatch):
+def test_twitter_symbol_rewrite_preserves_rune_once():
     bot = _make_twitter_bot()
-    monkeypatch.setattr('comm.twitter.twitter_bot.time.monotonic', lambda: 100.0)
 
     text = 'Buy $RUNE, pair it with $BTC, and mention $RUNE again.'
-    assert bot.prepare_twitter_text(text) == 'Buy $RUNE, pair it with BTC, and mention RUNE again.'
-    assert bot._last_full_rune_symbol_ts == 100.0
+    prepared, used = bot.rewrite_twitter_text(text, allow_full_rune=True)
+
+    assert prepared == 'Buy $RUNE, pair it with BTC, and mention RUNE again.'
+    assert used is True
 
 
-def test_twitter_symbol_rewrite_respects_cooldown(monkeypatch):
+@pytest.mark.asyncio
+async def test_twitter_symbol_rewrite_respects_cooldown_with_db():
+    db = _FakeDB()
+    bot = _make_twitter_bot(db)
+
+    assert await bot.prepare_twitter_text('First $RUNE post and $ETH') == 'First $RUNE post and ETH'
+    assert await bot.prepare_twitter_text('Second $RUNE post and $BTC') == 'Second RUNE post and BTC'
+
+    cooldown_key = bot.full_rune_symbol_cd.get_key(bot.FULL_RUNE_COOLDOWN_KEY)
+    db.redis.data[cooldown_key] = json.dumps({'time': now_ts() - 13 * HOUR, 'count': 0})
+
+    assert await bot.prepare_twitter_text('Third $RUNE post') == 'Third $RUNE post'
+
+
+def test_twitter_symbol_rewrite_only_targets_valid_lengths():
     bot = _make_twitter_bot()
-
-    monkeypatch.setattr('comm.twitter.twitter_bot.time.monotonic', lambda: 100.0)
-    assert bot.prepare_twitter_text('First $RUNE post and $ETH') == 'First $RUNE post and ETH'
-
-    monkeypatch.setattr('comm.twitter.twitter_bot.time.monotonic', lambda: 100.0 + 60 * 60)
-    assert bot.prepare_twitter_text('Second $RUNE post and $BTC') == 'Second RUNE post and BTC'
-
-    monkeypatch.setattr('comm.twitter.twitter_bot.time.monotonic', lambda: 100.0 + 13 * HOUR)
-    assert bot.prepare_twitter_text('Third $RUNE post') == 'Third $RUNE post'
-
-
-def test_twitter_symbol_rewrite_only_targets_valid_lengths(monkeypatch):
-    bot = _make_twitter_bot()
-    monkeypatch.setattr('comm.twitter.twitter_bot.time.monotonic', lambda: 100.0)
 
     text = 'Keep $A and $ABCDEFX untouched, but strip $BTC.'
-    assert bot.prepare_twitter_text(text) == 'Keep $A and $ABCDEFX untouched, but strip BTC.'
+    prepared, used = bot.rewrite_twitter_text(text, allow_full_rune=False)
+    assert prepared == 'Keep $A and $ABCDEFX untouched, but strip BTC.'
+    assert used is False
 
 
