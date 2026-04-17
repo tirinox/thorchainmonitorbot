@@ -11,34 +11,61 @@ from lib.constants import THOR_BLOCK_TIME, RUNE_DENOM
 from lib.date_utils import DAY, now_ts
 from lib.utils import parallel_run_in_groups
 from models.transfer import AlertRuneTransferStats, NativeTokenTransfer
-from notify.public.cex_flow import CEXFlowRecorder
 from notify.public.transfer_notify import RuneMoveNotifier
 from tools.lib.lp_common import LpAppFramework
 
 DEMO_DIR = Path(__file__).parents[2] / 'renderer' / 'demo'
 
 
-def _build_fake_rune_transfer(rng: random.Random, cex_list: list[str], ts: float, idx: int) -> NativeTokenTransfer:
-    cex_addr = rng.choice(cex_list)
-    non_cex_addr = f'thor1debugfake{idx:02d}{rng.randrange(10_000, 99_999)}'
-    amount = round(rng.uniform(750, 25_000), 2)
-    direction = rng.choice(('deposit', 'withdrawal'))
+def _build_fake_thor_address(rng: random.Random, idx: int, suffix: str = 'fake') -> str:
+    return f'thor1debug{suffix}{idx:03d}{rng.randrange(10_000, 99_999)}'
 
-    if direction == 'deposit':
-        from_addr, to_addr = non_cex_addr, cex_addr
+
+def _build_day_offsets(rng: random.Random, days: int, transfer_count: int) -> list[int]:
+    if days <= 0:
+        raise ValueError('days must be > 0')
+    if transfer_count <= 0:
+        raise ValueError('transfer_count must be > 0')
+
+    base_count, extra_count = divmod(transfer_count, days)
+    day_offsets = [day for day in range(days) for _ in range(base_count)]
+
+    if extra_count:
+        extra_days = list(range(days))
+        rng.shuffle(extra_days)
+        day_offsets.extend(sorted(extra_days[:extra_count]))
+
+    rng.shuffle(day_offsets)
+    return sorted(day_offsets)
+
+
+def _build_fake_rune_transfer(rng: random.Random, cex_list: list[str], ts: float, idx: int,
+                              transfer_kind: str | None = None) -> NativeTokenTransfer:
+    cex_addr = rng.choice(cex_list)
+    non_cex_from_addr = _build_fake_thor_address(rng, idx * 2 - 1, suffix='from')
+    non_cex_to_addr = _build_fake_thor_address(rng, idx * 2, suffix='to')
+    amount = round(rng.uniform(750, 25_000), 2)
+    transfer_kind = transfer_kind or rng.choice(('deposit', 'withdrawal', 'peer_to_peer'))
+
+    if transfer_kind == 'deposit':
+        from_addr, to_addr = non_cex_from_addr, cex_addr
+    elif transfer_kind == 'withdrawal':
+        from_addr, to_addr = cex_addr, non_cex_to_addr
+    elif transfer_kind == 'peer_to_peer':
+        from_addr, to_addr = non_cex_from_addr, non_cex_to_addr
     else:
-        from_addr, to_addr = cex_addr, non_cex_addr
+        raise ValueError(f'Unknown transfer_kind: {transfer_kind}')
 
     return NativeTokenTransfer(
         from_addr=from_addr,
         to_addr=to_addr,
         block=int(ts // THOR_BLOCK_TIME),
-        tx_hash=f'debug-fake-rune-transfer-{idx:02d}',
+        tx_hash=f'debug-fake-rune-transfer-{transfer_kind}-{idx:03d}',
         amount=amount,
         usd_per_asset=1.0,
         is_native=True,
         asset=RUNE_DENOM,
-        comment='debug fake cex flow',
+        comment=f'debug fake {transfer_kind} transfer',
         memo='',
         block_ts=ts,
     )
@@ -62,10 +89,6 @@ async def main():
             d.rune_move_notifier.add_subscriber(d.alert_presenter)
             transfer_decoder.add_subscriber(d.rune_move_notifier)
 
-        if d.cfg.get('token_transfer.flow_summary.enabled', True):
-            cex_flow_notifier = CEXFlowRecorder(d)
-            # cex_flow_notifier.summary_cd.cooldown = 10
-            transfer_decoder.add_subscriber(cex_flow_notifier)
 
         await d.block_scanner.run()
 
@@ -180,12 +203,14 @@ async def dbg_transfer_stats_fill_fake_data(app: LpAppFramework, days: int = 14,
     """
     Seed `RuneTransferRecorder` with synthetic RUNE transfers over the last `days` days.
 
-    The generated transfers are split between CEX deposits and withdrawals, use
-    the configured CEX list, and stay within the recorder's normal filtering
-    rules so the infographic/debug output works exactly like real data.
+    The generated transfers are distributed across the requested day window,
+    include a mix of CEX deposits / withdrawals and peer-to-peer sends, use the
+    configured CEX list, and stay within the recorder's normal filtering rules
+    so the infographic/debug output works exactly like real data.
     """
-    if transfer_count < 5 or transfer_count > 10:
-        raise ValueError('transfer_count should be between 5 and 10 for the debug helper')
+
+    if transfer_count <= 0:
+        raise ValueError('transfer_count must be > 0')
 
     recorder = RuneTransferRecorder(app.deps)
     cex_list = sorted(recorder.cex_list)
@@ -198,7 +223,7 @@ async def dbg_transfer_stats_fill_fake_data(app: LpAppFramework, days: int = 14,
     rng = random.Random(1337)
     base_end_ts = now_ts()
 
-    day_offsets = sorted(rng.sample(range(days), transfer_count))
+    day_offsets = _build_day_offsets(rng, days, transfer_count)
     transfers = []
     for idx, day_offset in enumerate(day_offsets, start=1):
         ts = base_end_ts - (days - 1 - day_offset) * DAY + rng.uniform(0, DAY - 1)
@@ -229,7 +254,7 @@ async def dbg_transfer_stats_send(app: LpAppFramework):
 async def run():
     app = LpAppFramework(log_level=logging.INFO)
     async with app:
-        # await dbg_transfer_stats_fill_fake_data(app, days=14, transfer_count=8)
+        # await dbg_transfer_stats_fill_fake_data(app, days=14, transfer_count=80)
         # await dbg_transfer_record_from_past(app, days=6, stride=50, concurrency=16)
         # await dbg_transfer_stats_last_data(app)
         # await dbg_transfer_stats_dump_demo(app)

@@ -12,9 +12,10 @@ from notify.channel import MessageType
 class FakeRecorder:
     def __init__(self, deps):
         self.deps = deps
+        self.calls = []
 
     async def get_summary(self, days):
-        self.days = days
+        self.calls.append(days)
         return {
             'days': days,
             'start_date': '2026-04-12',
@@ -51,21 +52,23 @@ async def test_rune_cex_flow_broadcasts_infographic(monkeypatch):
     presenter = AlertPresenter.__new__(AlertPresenter)
     presenter.deps = SimpleNamespace(broadcaster=broadcaster)
     presenter.broadcaster = broadcaster
+    fake_recorder = FakeRecorder(None)
 
     async def fake_render(self, loc, data):
-        assert data.period_days == 2
+        assert data.period_days == 7
         assert data.usd_per_rune == 3.21
         return Image.new('RGB', (2, 2), 'white'), 'rune_transfer_stats.png'
 
     monkeypatch.setattr(AlertPresenter, 'render_rune_transfer_stats', fake_render)
-    monkeypatch.setattr('notify.alert_presenter.RuneTransferRecorder', FakeRecorder)
+    monkeypatch.setattr('notify.alert_presenter.RuneTransferRecorder', lambda deps: fake_recorder)
 
     flow = RuneCEXFlow(
         rune_cex_inflow=1000.0,
         rune_cex_outflow=234.5,
         total_transfers=3,
         usd_per_rune=3.21,
-        period_sec=2 * DAY,
+        period_sec=DAY,
+        infographic_period_sec=7 * DAY,
     )
 
     await presenter._handle_rune_cex_flow(flow)
@@ -79,4 +82,5 @@ async def test_rune_cex_flow_broadcasts_infographic(monkeypatch):
     assert message.photo_file_name == 'rune_transfer_stats.png'
     assert message.photo is not None
     assert 'CEX flow: 3 transfers' in message.text
+    assert fake_recorder.calls == [1, 7]
 

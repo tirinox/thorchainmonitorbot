@@ -26,7 +26,6 @@ from models.runepool import AlertRunepoolStats, POLState, AlertPOLState, Runepoo
 from models.trade_acc import AlertTradeAccountStats
 from models.transfer import AlertRuneTransferStats
 from notify.pub_scheduler import PublicScheduler
-from notify.public.cex_flow import CEXFlowRecorder
 from notify.public.price_notify import PriceChangeNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
 
@@ -59,7 +58,6 @@ class PublicAlertJobExecutor(WithLogger):
         self.pol_fetcher = POLAndRunePoolFetcher(deps)
         self.key_stats_fetcher = KeyStatsFetcher(deps)
         self.trade_acc_fetcher = TradeAccountFetcher(deps)
-        self.cex_flow_recorder = CEXFlowRecorder(deps)
 
     async def _send_alert(self, data, alert_type: str):
         if not data:
@@ -155,16 +153,19 @@ class PublicAlertJobExecutor(WithLogger):
         await self._send_alert(alert, "price alert")
 
     async def job_rune_cex_flow(self):
-        flow = await self.cex_flow_recorder.get_event(period=DAY)
+        recorder = RuneTransferRecorder(self.deps)
+        flow = await recorder.get_cex_flow(period=DAY)
         if not flow:
             self.deps.emergency.report('CEXFlow', 'No CEX flow')
             raise Exception("No CEX flow data available.")
 
-        if flow.total_rune < self.cex_flow_recorder.min_rune_in_summary:
+        flow.infographic_period_sec = 7 * DAY
+
+        if flow.total_rune < recorder.min_rune_in_summary:
             self.deps.emergency.report(
                 'CEXFlow', 'CEX flow is lower than the minimum rune in summary.',
                 flow=flow,
-                min_rune=self.cex_flow_recorder.min_rune_in_summary,
+                min_rune=recorder.min_rune_in_summary,
             )
             raise Exception("CEX flow is lower than the minimum rune in summary.")
 

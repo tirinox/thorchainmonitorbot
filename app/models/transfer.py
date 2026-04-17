@@ -64,6 +64,7 @@ class RuneCEXFlow:
     overflow: bool = False
     usd_per_rune: float = 0.0
     period_sec: float = DAY
+    infographic_period_sec: float | None = None
 
     @property
     def total_rune(self):

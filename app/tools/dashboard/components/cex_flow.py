@@ -1,14 +1,14 @@
 import streamlit as st
 
 from lib.date_utils import DAY
-from notify.public.cex_flow import CEXFlowRecorder
+from jobs.transfer_recorder import RuneTransferRecorder
 from tools.dashboard.helpers import run_coro
 
 
 async def cex_flow_dashboard_info_async(app):
     d = app.deps
-    cex_flow_notifier = CEXFlowRecorder(d)
-    flow = await cex_flow_notifier.read_within_period(period=DAY)
+    recorder = RuneTransferRecorder(d)
+    flow = await recorder.get_cex_flow(period=DAY)
     return flow
 
 

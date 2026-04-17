@@ -167,13 +167,26 @@ class AlertPresenter(INotified, WithLogger):
 
     async def _handle_rune_cex_flow(self, flow: RuneCEXFlow):
         recorder = RuneTransferRecorder(self.deps)
-        period_days = max(1, round(flow.period_sec / DAY))
-        summary = await recorder.get_summary(days=period_days)
-        data = AlertRuneTransferStats.from_summary(summary, usd_per_rune=flow.usd_per_rune)
+        text_period_days = max(1, round(flow.period_sec / DAY))
+        infographic_period_sec = flow.infographic_period_sec or flow.period_sec
+        infographic_period_days = max(1, round(infographic_period_sec / DAY))
+
+        text_summary = await recorder.get_summary(days=text_period_days)
+        infographic_summary = await recorder.get_summary(days=infographic_period_days)
+
+        text_data = AlertRuneTransferStats.from_summary(text_summary, usd_per_rune=flow.usd_per_rune)
+        infographic_data = AlertRuneTransferStats.from_summary(infographic_summary, usd_per_rune=flow.usd_per_rune)
+
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_rune_transfer_stats(text_data)
+            photo, photo_name = await self.render_rune_transfer_stats(loc, infographic_data)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            return text
+
         await self.broadcaster.broadcast_to_all(
             "public:rune_cex_flow",
-            BaseLocalization.notification_text_rune_transfer_stats,
-            data)
+            message_gen)
 
     async def _handle_block_speed(self, event: EventBlockSpeed):
         async def _block_speed_picture_generator(loc: BaseLocalization, points, event):

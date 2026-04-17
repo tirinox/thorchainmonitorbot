@@ -81,7 +81,6 @@ from notify.personal.price_divergence import PersonalPriceDivergenceNotifier, Se
 from notify.personal.scheduled import PersonalPeriodicNotificationService
 from notify.pub_configure import PublicAlertJobExecutor
 from notify.public.cap_notify import LiquidityCapNotifier
-from notify.public.cex_flow import CEXFlowRecorder
 from notify.public.chain_id_notify import ChainIdNotifier
 from notify.public.chain_notify import TradingHaltedNotifier
 from notify.public.dex_report_notify import DexReportNotifier
@@ -311,9 +310,6 @@ class App(WithLogger):
                 d.rune_move_notifier.add_subscriber(d.alert_presenter)
                 transfer_decoder.add_subscriber(d.rune_move_notifier)
 
-            # always record cex flow events
-            cex_flow_notifier = CEXFlowRecorder(d)
-            transfer_decoder.add_subscriber(cex_flow_notifier)
 
             # always record rune transfer volume / CEX deposit+withdrawal stats
             d.rune_transfer_recorder = RuneTransferRecorder(d)

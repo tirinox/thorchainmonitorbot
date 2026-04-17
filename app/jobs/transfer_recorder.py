@@ -7,7 +7,7 @@ from lib.date_utils import DAY, now_ts
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from models.transfer import NativeTokenTransfer
+from models.transfer import NativeTokenTransfer, RuneCEXFlow
 
 
 class RuneTransferRecorder(INotified, WithLogger):
@@ -32,6 +32,7 @@ class RuneTransferRecorder(INotified, WithLogger):
         cfg = deps.cfg.get('token_transfer')
         self.cex_list = set(cfg.as_list('cex_list'))
         self.ignore_cex2cex = bool(cfg.get('ignore_cex2cex', True))
+        self.min_rune_in_summary = cfg.as_float('flow_summary.min_rune_sum', 10_000)
 
         self.accumulator = DailyAccumulator(self.ACCUM_NAME, deps.db)
 
@@ -67,10 +68,14 @@ class RuneTransferRecorder(INotified, WithLogger):
 
     async def _record_transfer(self, transfer: NativeTokenTransfer, ts: float):
         amount = transfer.amount
+        is_cex_related = self._is_cex(transfer.to_addr) or self._is_cex(transfer.from_addr)
         fields = {
             'volume_rune': amount,
             'transfer_count': 1,
         }
+
+        if is_cex_related:
+            fields['cex_transfer_count'] = 1
 
         if self._is_cex(transfer.to_addr):
             fields['cex_inflow_rune'] = amount
@@ -97,6 +102,7 @@ class RuneTransferRecorder(INotified, WithLogger):
         return {
             'volume_rune': 0.0,
             'transfer_count': 0.0,
+            'cex_transfer_count': 0.0,
             'cex_inflow_rune': 0.0,
             'cex_outflow_rune': 0.0,
             'cex_inflow_count': 0.0,
@@ -158,4 +164,26 @@ class RuneTransferRecorder(INotified, WithLogger):
             'cex_netflow_rune': totals['cex_inflow_rune'] - totals['cex_outflow_rune'],
             'daily': daily,
         }
+
+    @staticmethod
+    def period_to_days(period_sec: float) -> int:
+        return max(1, round(period_sec / DAY))
+
+    async def get_cex_flow(self, period: float = DAY, end_ts: Optional[float] = None) -> RuneCEXFlow:
+        period_days = self.period_to_days(period)
+        summary = await self.get_summary(days=period_days, end_ts=end_ts)
+        usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+
+        total_transfers = int(summary.get('cex_transfer_count') or 0)
+        if not total_transfers:
+            total_transfers = int(summary.get('cex_inflow_count', 0) + summary.get('cex_outflow_count', 0))
+
+        return RuneCEXFlow(
+            rune_cex_inflow=float(summary.get('cex_inflow_rune', 0.0)),
+            rune_cex_outflow=float(summary.get('cex_outflow_rune', 0.0)),
+            total_transfers=total_transfers,
+            overflow=False,
+            usd_per_rune=usd_per_rune,
+            period_sec=period_days * DAY,
+        )
 
