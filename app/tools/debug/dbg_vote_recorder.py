@@ -100,7 +100,7 @@ class FakeVoteInjector(INotified, WithDelegates):
             for signer in unused_signers[:votes_to_add]:
                 chosen = random.choices(options, weights=weights, k=1)[0]
                 synthetic_votes[signer] = chosen
-                changes.append(f"  {key}  signer={signer}  — → {chosen}")
+                changes.append(f"  {key}  signer={signer}  → {chosen}")
 
             for signer, current_value in list(synthetic_votes.items()):
                 if random.random() > self.flip_chance:

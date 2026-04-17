@@ -2546,7 +2546,7 @@ class BaseLocalization(ABC):  # == English
             f'({e.cex_inflow_count} deposits)\n'
             f'⬇ CEX outflow: {bold(short_rune(e.cex_outflow_rune))} '
             f'({e.cex_outflow_count} withdrawals)\n'
-            f'{net_emoji} Net flow: {bold(short_rune(abs(nf)))} — {net_label}'
+            f'{net_emoji} Net flow: {bold(short_rune(abs(nf)))} - {net_label}'
         )
 
     TEXT_RUNE_TRANSFER_STATS_NO_DATA = '😩 No RUNE transfer data available yet.'

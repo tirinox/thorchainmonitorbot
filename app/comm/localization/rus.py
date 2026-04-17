@@ -1599,7 +1599,7 @@ class RussianLocalization(BaseLocalization):
             f'({e.cex_inflow_count} переводов)\n'
             f'⬇ CEX вывод: {bold(short_rune(e.cex_outflow_rune))} '
             f'({e.cex_outflow_count} выводов)\n'
-            f'{net_emoji} Поток на биржи: {bold(short_rune(abs(nf)))} — {net_label}'
+            f'{net_emoji} Поток на биржи: {bold(short_rune(abs(nf)))} - {net_label}'
         )
 
     # ----- SUPPLY ------

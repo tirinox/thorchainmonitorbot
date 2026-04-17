@@ -641,7 +641,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'({e.cex_inflow_count} deposits)\n'
             f'⬇ CEX outflow: {short_rune(e.cex_outflow_rune)} '
             f'({e.cex_outflow_count} withdrawals)\n'
-            f'{net_emoji} Net flow: {short_rune(abs(nf))} — {net_label}'
+            f'{net_emoji} Net flow: {short_rune(abs(nf))} - {net_label}'
         )
 
     def notification_text_rune_transfer_public(self, t: NativeTokenTransfer, name_map: NameMap):
