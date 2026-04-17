@@ -1,20 +1,47 @@
 import asyncio
 import json
 import logging
+import random
 from pathlib import Path
 
 from jobs.scanner.scan_cache import BlockScannerCached
 from jobs.scanner.transfer_detector import RuneTransferDetector
 from jobs.transfer_recorder import RuneTransferRecorder
-from lib.constants import THOR_BLOCK_TIME
-from lib.date_utils import DAY
+from lib.constants import THOR_BLOCK_TIME, RUNE_DENOM
+from lib.date_utils import DAY, now_ts
 from lib.utils import parallel_run_in_groups
-from models.transfer import AlertRuneTransferStats
+from models.transfer import AlertRuneTransferStats, NativeTokenTransfer
 from notify.public.cex_flow import CEXFlowRecorder
 from notify.public.transfer_notify import RuneMoveNotifier
 from tools.lib.lp_common import LpAppFramework
 
 DEMO_DIR = Path(__file__).parents[2] / 'renderer' / 'demo'
+
+
+def _build_fake_rune_transfer(rng: random.Random, cex_list: list[str], ts: float, idx: int) -> NativeTokenTransfer:
+    cex_addr = rng.choice(cex_list)
+    non_cex_addr = f'thor1debugfake{idx:02d}{rng.randrange(10_000, 99_999)}'
+    amount = round(rng.uniform(750, 25_000), 2)
+    direction = rng.choice(('deposit', 'withdrawal'))
+
+    if direction == 'deposit':
+        from_addr, to_addr = non_cex_addr, cex_addr
+    else:
+        from_addr, to_addr = cex_addr, non_cex_addr
+
+    return NativeTokenTransfer(
+        from_addr=from_addr,
+        to_addr=to_addr,
+        block=int(ts // THOR_BLOCK_TIME),
+        tx_hash=f'debug-fake-rune-transfer-{idx:02d}',
+        amount=amount,
+        usd_per_asset=1.0,
+        is_native=True,
+        asset=RUNE_DENOM,
+        comment='debug fake cex flow',
+        memo='',
+        block_ts=ts,
+    )
 
 
 async def main():
@@ -148,33 +175,53 @@ async def dbg_transfer_stats_dump_demo(app: LpAppFramework, days: int = 14):
     print(json.dumps(output, indent=2))
 
 
-async def dbg_transfer_stats_send(app: LpAppFramework, days: int = 14):
+async def dbg_transfer_stats_fill_fake_data(app: LpAppFramework, days: int = 14, transfer_count: int = 8,
+                                            clear_existing: bool = True):
     """
-    Build the RUNE transfer stats infographic from live Redis data and post it
-    to the public channels via alert_presenter (same path as the scheduled job).
+    Seed `RuneTransferRecorder` with synthetic RUNE transfers over the last `days` days.
+
+    The generated transfers are split between CEX deposits and withdrawals, use
+    the configured CEX list, and stay within the recorder's normal filtering
+    rules so the infographic/debug output works exactly like real data.
+    """
+    if transfer_count < 5 or transfer_count > 10:
+        raise ValueError('transfer_count should be between 5 and 10 for the debug helper')
+
+    recorder = RuneTransferRecorder(app.deps)
+    cex_list = sorted(recorder.cex_list)
+    if not cex_list:
+        raise ValueError('CEX list is empty; cannot seed fake transfer data')
+
+    if clear_existing:
+        await recorder.accumulator.clear()
+
+    rng = random.Random(1337)
+    base_end_ts = now_ts()
+
+    day_offsets = sorted(rng.sample(range(days), transfer_count))
+    transfers = []
+    for idx, day_offset in enumerate(day_offsets, start=1):
+        ts = base_end_ts - (days - 1 - day_offset) * DAY + rng.uniform(0, DAY - 1)
+        transfers.append(_build_fake_rune_transfer(rng, cex_list, ts, idx))
+
+    await recorder.on_data(sender=None, transfers=transfers)
+
+    summary = await recorder.get_summary(days=days)
+    brief = {k: v for k, v in summary.items() if k != 'daily'}
+    print(f'Filled RuneTransferRecorder with {len(transfers)} fake transfers across the last {days} days.')
+    print(json.dumps(brief, indent=2, sort_keys=True))
+    return summary
+
+
+async def dbg_transfer_stats_send(app: LpAppFramework):
+    """
+    Run the public `job_rune_cex_flow` job directly so the debug helper uses
+    the same code path as the scheduled alert.
     """
     d = app.deps
-    recorder = RuneTransferRecorder(d)
-    summary = await recorder.get_summary(days=days)
 
-    if not summary.get('transfer_count'):
-        print('No RUNE transfer data in Redis yet — run the scanner first.')
-        return
-
-    usd_per_rune = await d.pool_cache.get_usd_per_rune()
-    data = AlertRuneTransferStats.from_summary(summary, usd_per_rune=usd_per_rune)
-
-    print(
-        f'Sending RUNE transfer stats infographic\n'
-        f'  period   : {data.period_days}d  ({data.start_date} – {data.end_date})\n'
-        f'  volume   : {data.volume_rune:,.0f} RUNE\n'
-        f'  cex in   : {data.cex_inflow_rune:,.0f} RUNE  ({data.cex_inflow_count} deposits)\n'
-        f'  cex out  : {data.cex_outflow_rune:,.0f} RUNE  ({data.cex_outflow_count} withdrawals)\n'
-        f'  net flow : {data.cex_netflow_rune:+,.0f} RUNE\n'
-        f'  usd/rune : ${usd_per_rune:.4f}'
-    )
-
-    await d.alert_presenter.handle_data(data)
+    print('Running public `job_rune_cex_flow`...')
+    await d.pub_alert_executor.job_rune_cex_flow()
     print('Infographic sent — waiting for delivery…')
     await asyncio.sleep(5)
 
@@ -182,10 +229,12 @@ async def dbg_transfer_stats_send(app: LpAppFramework, days: int = 14):
 async def run():
     app = LpAppFramework(log_level=logging.INFO)
     async with app:
+        # await dbg_transfer_stats_fill_fake_data(app, days=14, transfer_count=8)
         # await dbg_transfer_record_from_past(app, days=6, stride=50, concurrency=16)
         # await dbg_transfer_stats_last_data(app)
         # await dbg_transfer_stats_dump_demo(app)
         await dbg_transfer_stats_send(app)
+        # await dbg_transfer_stats_fill_fake_data(app, days=14, transfer_count=8, clear_existing=False)
 
 
 if __name__ == '__main__':
