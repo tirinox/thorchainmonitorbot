@@ -98,6 +98,8 @@ async def dbg_wasm_period_stats(app: LpAppFramework, wasm_cache: WasmCache = Non
         wasm_cache=wasm_cache,
         recorder=recorder,
         last_block_cache=app.deps.last_block_cache,
+        contract_name_cache=app.deps.rujira_contract_name_cache,
+        top_label_limit=app.deps.cfg.as_int('rujira.contract_names.infographic_name_limit', 32),
     )
 
     sep()
@@ -123,7 +125,7 @@ async def dbg_wasm_period_stats(app: LpAppFramework, wasm_cache: WasmCache = Non
     print(f"Top contracts ({len(ps.top_contracts)}):")
     for i, tc in enumerate(ps.top_contracts, 1):
         print(f"  {i:>2}. calls={tc.calls:>6}  users={tc.unique_users:>5}"
-              f"  label={tc.label!r}")
+              f"  label={tc.label!r}  display={tc.display_label!r}")
         print(f"      {tc.address}")
 
     sep()
@@ -223,6 +225,8 @@ async def dbg_save_demo_json(app: LpAppFramework, days: float = 7.0, top_n: int 
         wasm_cache=wasm_cache,
         recorder=recorder,
         last_block_cache=app.deps.last_block_cache,
+        contract_name_cache=app.deps.rujira_contract_name_cache,
+        top_label_limit=app.deps.cfg.as_int('rujira.contract_names.infographic_name_limit', 32),
     )
 
     sep()
@@ -272,9 +276,9 @@ async def main():
     async with app:
         # comment/uncomment the desired debug function(s) below:
 
-        # await dbg_broadcast_app_layer_stats(app)
+        await dbg_broadcast_app_layer_stats(app)
         # await dbg_save_demo_json(app)
-        await dbg_continuous_record(app, start_block=24_812_774)
+        # await dbg_continuous_record(app, start_block=24_812_774)
         # await dbg_continuous_record(app, blocks_back=20_000)
 
 

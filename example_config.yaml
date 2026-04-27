@@ -598,6 +598,12 @@ chain_id:
 rujira:
   enabled: true
 
+  contract_names:
+    refresh_period: 6h
+    source_url: "https://raw.githubusercontent.com/thorchain/thorchain-explorer-v2/main/data/contracts/rujira-mainnet.json"
+    local_file: "data/rujira/rujira-mainnet.json"
+    infographic_name_limit: 32
+
   merge:
     enabled: true
     period: 1d

@@ -185,11 +185,13 @@ class WasmTopContract:
     label: str
     calls: int
     unique_users: int
+    display_label: str = ''
 
     def to_dict(self) -> dict:
         return {
             'address': self.address,
             'label': self.label,
+            'display_label': self.display_label,
             'calls': self.calls,
             'unique_users': self.unique_users,
         }
@@ -199,6 +201,7 @@ class WasmTopContract:
         return cls(
             address=str(d['address']),
             label=str(d.get('label', '')),
+            display_label=str(d.get('display_label') or d.get('label', '')),
             calls=int(d['calls']),
             unique_users=int(d['unique_users']),
         )

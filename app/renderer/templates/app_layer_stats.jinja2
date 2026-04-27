@@ -416,7 +416,7 @@
 							<div class="contract-row">
 								<div class="rank">{{ loop.index }}</div>
 								<div class="contract-name">
-									<div class="contract-label">{{ c.label or 'Unlabeled contract' }}</div>
+									<div class="contract-label">{{ c.display_label or c.label or 'Unlabeled contract' }}</div>
 									<div class="contract-address">{% if c.address | length > 14 %}{{ c.address[:10] }}…{{ c.address[-4:] }}{% else %}{{ c.address }}{% endif %}</div>
 								</div>
 								<div class="contract-metric">

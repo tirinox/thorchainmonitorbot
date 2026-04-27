@@ -1,8 +1,10 @@
 
+from jobs.fetch.cached.rujira_contract_names import RujiraContractNameCache
 from jobs.fetch.cached.wasm import WasmCache
 from jobs.wasm_recorder import CosmWasmRecorder
 from lib.date_utils import now_ts, DAY
 from lib.logs import WithLogger
+from lib.texts import shorten_text
 from models.wasm import WasmPeriodStats, WasmTopContract, WasmDailyPoint
 
 
@@ -21,11 +23,15 @@ class WasmStatsBuilder(WithLogger):
         wasm_cache: WasmCache,
         recorder: CosmWasmRecorder,
         last_block_cache=None,
+        contract_name_cache: RujiraContractNameCache = None,
+        top_label_limit: int = 32,
     ):
         super().__init__()
         self.wasm_cache = wasm_cache
         self.recorder = recorder
         self.last_block_cache = last_block_cache
+        self.contract_name_cache = contract_name_cache
+        self.top_label_limit = top_label_limit
 
     async def build(self, days: float = 7.0, top_n: int = 10) -> WasmPeriodStats:
         now = now_ts()
@@ -112,18 +118,32 @@ class WasmStatsBuilder(WithLogger):
         top_contracts = []
         for addr, calls in ranked:
             label = await self.wasm_cache.get_label(addr)
+            display_label = await self._resolve_display_label(addr, label)
             unique_users = await self.recorder.get_contract_unique_users(addr, days=days)
             top_contracts.append(WasmTopContract(
                 address=addr,
                 label=label,
                 calls=calls,
                 unique_users=unique_users,
+                display_label=display_label,
             ))
             self.logger.debug(
                 f"  top contract: calls={calls:>6}  users={unique_users:>5}"
-                f"  label={label!r}  {addr}"
+                f"  label={label!r}  display={display_label!r}  {addr}"
             )
         return top_contracts
+
+    async def _resolve_display_label(self, address: str, label: str) -> str:
+        friendly_label = label
+
+        if self.contract_name_cache is not None:
+            try:
+                friendly_label = await self.contract_name_cache.resolve_name(address, fallback=label)
+            except Exception as exc:
+                self.logger.warning(f'Could not resolve friendly contract name for {address}: {exc}')
+
+        friendly_label = friendly_label or label or 'Unlabeled contract'
+        return shorten_text(friendly_label, self.top_label_limit, end='…')
 
     async def _build_daily_chart(
         self,

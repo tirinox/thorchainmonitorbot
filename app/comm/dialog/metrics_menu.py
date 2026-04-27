@@ -468,6 +468,8 @@ class MetricsDialog(BaseDialog):
             wasm_cache=wasm_cache,
             recorder=recorder,
             last_block_cache=self.deps.last_block_cache,
+            contract_name_cache=self.deps.rujira_contract_name_cache,
+            top_label_limit=self.deps.cfg.as_int('rujira.contract_names.infographic_name_limit', 32),
         )
         stats = await builder.build(days=7, top_n=10)
 

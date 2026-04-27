@@ -19,6 +19,7 @@ from jobs.fetch.cached.last_block import LastBlockCached, LastBlockEventGenerato
 from jobs.fetch.cached.mimir import MimirCached
 from jobs.fetch.cached.nodes import NodeCache
 from jobs.fetch.cached.pool import PoolCache
+from jobs.fetch.cached.rujira_contract_names import RujiraContractNameCache
 from jobs.fetch.cached.rune_market import RuneMarketInfoCache
 from jobs.fetch.cached.swap_history import SwapHistoryFetcher
 from jobs.fetch.cached.wasm import WasmCache
@@ -199,6 +200,19 @@ class App(WithLogger):
         d.pool_cache = PoolCache(d)
         d.node_cache = NodeCache(d)
         d.market_info_cache = RuneMarketInfoCache(d)
+        d.rujira_contract_name_cache = RujiraContractNameCache(
+            session=d.session,
+            db=d.db,
+            source_url=d.cfg.as_str(
+                'rujira.contract_names.source_url',
+                RujiraContractNameCache.DEFAULT_SOURCE_URL,
+            ),
+            local_file=d.cfg.as_str(
+                'rujira.contract_names.local_file',
+                'data/rujira/rujira-mainnet.json',
+            ),
+            cache_period=d.cfg.as_interval('rujira.contract_names.refresh_period', '6h'),
+        )
 
         d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_cache)
         d.alert_presenter.name_service = d.name_service

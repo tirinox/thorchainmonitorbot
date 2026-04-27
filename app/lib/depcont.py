@@ -13,6 +13,7 @@ from comm.telegram.telegram import TelegramBot
 from comm.twitter.twitter_bot import TwitterBot
 from jobs.fetch.cached.last_block import LastBlockCached
 from jobs.fetch.cached.mimir import MimirCached
+from jobs.fetch.cached.rujira_contract_names import RujiraContractNameCache
 from jobs.fetch.cached.swap_history import SwapHistoryFetcher
 from jobs.fetch.cached.wasm import WasmCache
 from lib.config import Config
@@ -103,6 +104,7 @@ class DepContainer:
     node_cache = None
     market_info_cache = None
     wasm_cache: Optional[WasmCache] = None
+    rujira_contract_name_cache: Optional[RujiraContractNameCache] = None
 
     queue_holder: QueueInfo = field(default_factory=QueueInfo.error)
     mimir_const_holder: Optional[MimirHolder] = None
