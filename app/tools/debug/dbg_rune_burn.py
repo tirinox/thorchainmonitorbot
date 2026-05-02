@@ -45,10 +45,9 @@ async def run():
     app = LpAppFramework(log_level='INFO')
     async with app:
         rec = RuneBurnRecorder(app.deps)
-        # await dbg_repopulate(app, rec)
-        # await demo_burn_picture(app, rec)
-        # await demo_last_burn_event(app, rec)
-        await dbg_record_continuous(app, rec)
+        await dbg_repopulate(app, rec)
+        await demo_last_burn_event(app, rec)
+        # await dbg_record_continuous(app, rec)
 
 
 if __name__ == '__main__':

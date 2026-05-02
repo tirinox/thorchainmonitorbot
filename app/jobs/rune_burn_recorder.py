@@ -3,7 +3,8 @@ from typing import Optional
 import pandas as pd
 from tqdm import tqdm
 
-from lib.constants import THOR_BLOCK_TIME, THOR_BASIS_POINT_MAX, ADR17_TIMESTAMP, thor_to_float
+from lib.constants import THOR_BLOCK_TIME, THOR_BASIS_POINT_MAX, ADR17_TIMESTAMP, thor_to_float, \
+    ADR23_APPLY_BLOCK, ADR23_MAX_SUPPLY_AFTER_PATCH_RAW, ADR23_MAX_SUPPLY_PATCH_DELTA_RAW
 from lib.date_utils import now_ts, DAY, ts_event_points_to_pandas
 from lib.delegates import INotified
 from lib.depcont import DepContainer
@@ -26,7 +27,28 @@ class RuneBurnRecorder(INotified, WithLogger):
     async def on_data(self, sender, mimir: MimirHolder):
         curr_max_supply_8 = self.get_current_max_supply(mimir)
         if curr_max_supply_8:
-            await self.ts.add(max_supply=curr_max_supply_8)
+            curr_max_supply_8 = self.normalize_max_supply_8(curr_max_supply_8, block=mimir.last_thor_block)
+            await self.ts.add(max_supply=curr_max_supply_8, normalized=1)
+
+    @staticmethod
+    def normalize_max_supply_8(max_supply_8, block: int | None = None):
+        if max_supply_8 is None:
+            return None
+
+        max_supply_8 = int(max_supply_8)
+        if max_supply_8 <= 0:
+            return max_supply_8
+
+        if block is not None:
+            if int(block) < ADR23_APPLY_BLOCK:
+                return max_supply_8 - ADR23_MAX_SUPPLY_PATCH_DELTA_RAW
+            return max_supply_8
+
+        # Fallback for legacy time-series points already stored without block context.
+        if max_supply_8 > ADR23_MAX_SUPPLY_AFTER_PATCH_RAW:
+            return max_supply_8 - ADR23_MAX_SUPPLY_PATCH_DELTA_RAW
+
+        return max_supply_8
 
     def get_current_max_supply(self, mimir: MimirHolder):
         if not mimir:
@@ -62,6 +84,7 @@ class RuneBurnRecorder(INotified, WithLogger):
         mimir: MimirHolder = await self.deps.mimir_cache.get_mimir_holder()
         curr_max_supply_8 = self.get_current_max_supply(mimir)
         system_income_burn_bp = self.get_income_burn_bps(mimir)
+        curr_max_supply_8 = self.normalize_max_supply_8(curr_max_supply_8, block=mimir.last_thor_block)
 
         # then convert
         curr_max_supply = thor_to_float(curr_max_supply_8)
@@ -100,8 +123,10 @@ class RuneBurnRecorder(INotified, WithLogger):
         all_points = await self.ts.get_last_points(self.tally_period)
         df = ts_event_points_to_pandas(all_points, shift_time=False)
         df["t"] = pd.to_datetime(df["t"], unit='s')
+        df = df[df['max_supply'] > 0].copy()
         df['max_supply'] = df['max_supply'].apply(thor_to_float)
         df['max_supply_delta'] = -df['max_supply'].diff().fillna(0)
+        df['max_supply_delta'] = df['max_supply_delta'].clip(lower=0)
         return df
 
     @staticmethod
@@ -137,7 +162,7 @@ class RuneBurnRecorder(INotified, WithLogger):
 
         for _ in tqdm(range(int(max_points))):
             max_supply = await self.get_supply_at_block(block)
-            await self.ts.add_ts(ts, max_supply=max_supply)
+            await self.ts.add_ts(ts, max_supply=max_supply, normalized=1)
 
             self.logger.info(f"block: {block}, ts: {ts}, max_supply: {max_supply}")
 
@@ -148,12 +173,12 @@ class RuneBurnRecorder(INotified, WithLogger):
 
     async def get_supply_at_block(self, block: int):
         mimir = await self.deps.thor_connector.query_mimir(height=int(block))
-        return mimir[MIMIR_KEY_MAX_RUNE_SUPPLY] if mimir else None
+        return self.normalize_max_supply_8(mimir[MIMIR_KEY_MAX_RUNE_SUPPLY], block=int(block)) if mimir else None
 
     async def get_supply_time_ago(self, sec_ago: float, tolerance_percent=10):
         data, _ = await self.ts.get_best_point_ago(sec_ago, tolerance_percent=tolerance_percent)
         if data and 'max_supply' in data:
-            return data['max_supply']
+            return int(float(data['max_supply']))
         else:
             block = await self.deps.last_block_cache.get_thor_block_time_ago(sec_ago)
             return await self.get_supply_at_block(block)
