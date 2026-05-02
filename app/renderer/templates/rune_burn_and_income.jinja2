@@ -148,25 +148,26 @@
 
         // points are [ [x, y], [x, y], ... ]
 
-        let dateStrings = runeBurnt.map(point => new Date(point[0] * 1e3));
-        console.log(dateStrings)
+        const formatDayLabel = (timestampSec) => {
+            const date = new Date(timestampSec * 1e3);
+            const day = date.getUTCDate().toString().padStart(2, '0');
+            const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+            return `${day}.${month}`;
+        };
 
-        // format dates to DD.MM HH:MM
-        let prevDate = null
-        dateStrings = dateStrings.reverse().map(date => {
-            const day = date.getDate().toString().padStart(2, '0');
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-//            const hours = date.getHours().toString().padStart(2, '0');
-//            const minutes = date.getMinutes().toString().padStart(2, '0');even
-            const label = `${day}.${month}`
-            if (prevDate === label) {
-                return ' '
-            } else {
-                prevDate = label
-                return label
-            }
-        }).reverse()
+        const pointDayLabels = runeBurnt.map(point => formatDayLabel(point[0]));
+        const dateStrings = runeBurnt.map(point => new Date(point[0] * 1e3).toISOString());
+        const dayTickLabels = pointDayLabels.map((label, index) => {
+            const prevLabel = index > 0 ? pointDayLabels[index - 1] : null;
+            return label === prevLabel ? '' : label;
+        });
+
+        if (dayTickLabels.length > 1 && dayTickLabels[0] !== '' && dayTickLabels[1] !== '') {
+            dayTickLabels[0] = '';
+        }
+
         console.log(dateStrings)
+        console.log(dayTickLabels)
 
         const values = runeBurnt.map(point => point[1]);
 
@@ -209,9 +210,13 @@
                             color: 'rgba(255, 255, 255, 0.1)',
                         },
                         ticks: {
+                            autoSkip: false,
+                            callback: (_, index) => dayTickLabels[index] || '',
                             font: {
                                 size: 24,
-                            }
+                            },
+                            maxRotation: 0,
+                            minRotation: 0,
                         },
                     },
                     y: {
