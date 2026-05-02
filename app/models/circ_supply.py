@@ -1,6 +1,7 @@
 from typing import NamedTuple, Dict
 
-from lib.constants import RUNE_SUPPLY_AFTER_SWITCH, RUNE_IDEAL_SUPPLY, RUNE_BURNT_ADR_12, ThorRealms
+from lib.constants import RUNE_SUPPLY_AFTER_SWITCH, RUNE_IDEAL_SUPPLY, RUNE_BURNT_ADR_12, \
+    ADR23_MAX_SUPPLY_PATCH_DELTA_RUNE, ThorRealms
 from lib.date_utils import DAY, now_ts
 from lib.money import calculate_yearly_growth_from_values, distort_randomly
 
@@ -65,10 +66,6 @@ class RuneCirculatingSupply(NamedTuple):
     @property
     def total_burned_rune(self):
         return RUNE_IDEAL_SUPPLY - self.total
-
-    @property
-    def structural_burnt_rune(self):
-        return self.total_burned_rune
 
     @property
     def killed_switched(self):
@@ -142,7 +139,7 @@ class RuneCirculatingSupply(NamedTuple):
 
     @property
     def burnt_rune_from_income(self):
-        return RUNE_IDEAL_SUPPLY - self.maximum
+        return max(0, RUNE_IDEAL_SUPPLY - self.maximum - ADR23_MAX_SUPPLY_PATCH_DELTA_RUNE)
 
     @property
     def adr23_burnt_rune(self):

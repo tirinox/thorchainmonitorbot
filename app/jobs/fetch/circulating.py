@@ -72,6 +72,7 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         return await self.thor.query_supply()
 
     async def get_thor_rune_total_supply(self):
+        """which is around 360M now"""
         supplies = await self.get_all_native_token_supplies()
         return self.get_pure_rune_from_thor_array(supplies)
 
