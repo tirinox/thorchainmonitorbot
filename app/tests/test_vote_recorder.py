@@ -1,6 +1,6 @@
 import json
-from collections import defaultdict
 from typing import cast
+from types import SimpleNamespace
 
 import pytest
 
@@ -11,39 +11,7 @@ from lib.db import DB
 from lib.depcont import DepContainer
 from lib.date_utils import DAY, now_ts
 from models.mimir import MimirHolder, MimirVoteManager, MimirEntry
-from types import SimpleNamespace
-
-
-class FakeRedis:
-    def __init__(self):
-        self.hashes = defaultdict(dict)
-
-    async def hset(self, name, *args, mapping=None):
-        bucket = self.hashes[name]
-        if mapping is not None:
-            for key, value in mapping.items():
-                bucket[key] = value
-            return len(mapping)
-        if len(args) == 2:
-            field, value = args
-            bucket[field] = value
-            return 1
-        raise TypeError("Unsupported hset call")
-
-    async def hget(self, name, field):
-        return self.hashes.get(name, {}).get(field)
-
-    async def hgetall(self, name):
-        return dict(self.hashes.get(name, {}))
-
-    async def delete(self, *names):
-        for name in names:
-            self.hashes.pop(name, None)
-
-
-class FakeDB:
-    def __init__(self):
-        self.redis = FakeRedis()
+from tests.fakes import FakeDB
 
 
 def make_recorder() -> VoteRecorder:

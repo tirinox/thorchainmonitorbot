@@ -11,6 +11,7 @@ from jobs.fetch.wasm_stats import WasmStatsBuilder
 from jobs.wasm_recorder import CosmWasmRecorder
 from lib.db import DB
 from models.wasm import WasmTopContract
+from tests.fakes import FakeDB
 
 
 TEST_PAYLOAD = {
@@ -71,27 +72,6 @@ class FakeSession:
         if self.exc is not None:
             raise self.exc
         return self.response
-
-
-class FakeRedis:
-    def __init__(self):
-        self.values = {}
-
-    async def get(self, key):
-        return self.values.get(key)
-
-    async def set(self, key, value):
-        self.values[key] = value
-        return True
-
-
-class FakeDB:
-    def __init__(self):
-        self.redis = FakeRedis()
-
-    async def get_redis(self):
-        return self.redis
-
 
 class StubWasmCache:
     async def get_label(self, address: str) -> str:

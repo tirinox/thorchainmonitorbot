@@ -5,8 +5,7 @@ from jobs.scanner.swap_start_detector import SwapStartDetectorFromBlock
 from jobs.scanner.tx import NativeThorTx, ThorTxMessage, ThorMessageType
 from lib.depcont import DepContainer
 from models.memo import ActionType
-from models.pool_info import PoolInfo
-from models.price import PriceHolder
+from tests.fakes import make_price_holder
 
 
 class FakeRefMemoCache:
@@ -17,19 +16,6 @@ class FakeRefMemoCache:
     async def get_memo(self, reference_id):
         self.calls.append(reference_id)
         return self.mapping.get(int(reference_id), '')
-
-
-def make_price_holder():
-    ph = PriceHolder(stable_coins=['THOR.RUNE'])
-    ph.usd_per_rune = 2.0
-    ph.pool_info_map = {
-        'BTC.BTC': PoolInfo('BTC.BTC', balance_asset=100_000_000, balance_rune=1_500_000_000_000,
-                            pool_units=1, status=PoolInfo.AVAILABLE, usd_per_asset=30_000.0),
-        'ETH.ETH': PoolInfo('ETH.ETH', balance_asset=1_000_000_000, balance_rune=1_000_000_000_000,
-                            pool_units=1, status=PoolInfo.AVAILABLE, usd_per_asset=2_000.0),
-    }
-    return ph
-
 
 def make_observed_quorum_native_tx(tx_id: str, memo: str, amount: int, asset: str = 'BTC.BTC') -> NativeThorTx:
     msg = ThorTxMessage.from_dict({

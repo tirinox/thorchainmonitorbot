@@ -1,4 +1,3 @@
-from collections import defaultdict
 from datetime import datetime
 from typing import cast
 
@@ -9,73 +8,7 @@ from jobs.scanner.limit_detector import LimitSwapBlockUpdate, ClosedLimitSwap, O
 from jobs.scanner.tx import ThorEvent
 from lib.db import DB
 from lib.depcont import DepContainer
-from models.pool_info import PoolInfo
-from models.price import PriceHolder
-
-
-class FakeRedis:
-    def __init__(self):
-        self.hashes = defaultdict(dict)
-        self.hll = defaultdict(set)
-
-    async def hincrbyfloat(self, name, key, value):
-        bucket = self.hashes[name]
-        bucket[key] = float(bucket.get(key, 0.0)) + float(value)
-        return bucket[key]
-
-    async def hset(self, name, *args, mapping=None):
-        bucket = self.hashes[name]
-        if mapping is not None:
-            for k, v in mapping.items():
-                bucket[k] = v
-            return len(mapping)
-        if len(args) == 2:
-            field, value = args
-            bucket[field] = value
-            return 1
-        raise TypeError("Unsupported hset call")
-
-    async def hget(self, name, field):
-        return self.hashes.get(name, {}).get(field)
-
-    async def hgetall(self, name):
-        bucket = self.hashes.get(name, {})
-        return {
-            k: (str(v) if isinstance(v, (int, float)) else v)
-            for k, v in bucket.items()
-        }
-
-    async def hdel(self, name, *fields):
-        bucket = self.hashes.get(name, {})
-        deleted = 0
-        for field in fields:
-            if field in bucket:
-                del bucket[field]
-                deleted += 1
-        return deleted
-
-    async def pfadd(self, name, *values):
-        self.hll[name].update(str(v) for v in values)
-        return 1
-
-    async def pfcount(self, *names):
-        combined = set()
-        for name in names:
-            combined.update(self.hll.get(name, set()))
-        return len(combined)
-
-    async def delete(self, *names):
-        for name in names:
-            self.hashes.pop(name, None)
-            self.hll.pop(name, None)
-
-
-class FakeDB:
-    def __init__(self):
-        self.redis = FakeRedis()
-
-    async def get_redis(self):
-        return self.redis
+from tests.fakes import FakeDB, FakePoolCache, make_price_holder
 
 
 class FakeDedup:
@@ -89,27 +22,6 @@ class FakeDedup:
     async def mark_as_seen(self, tx_id):
         if tx_id:
             self.seen.add(tx_id)
-
-
-class FakePoolCache:
-    def __init__(self, ph):
-        self._ph = ph
-
-    async def get(self):
-        return self._ph
-
-
-def make_price_holder():
-    ph = PriceHolder(stable_coins=['THOR.RUNE'])
-    ph.usd_per_rune = 2.0
-    ph.pool_info_map = {
-        'BTC.BTC': PoolInfo('BTC.BTC', balance_asset=100_000_000, balance_rune=1_500_000_000_000,
-                            pool_units=1, status=PoolInfo.AVAILABLE, usd_per_asset=30_000.0),
-        'ETH.ETH': PoolInfo('ETH.ETH', balance_asset=1_000_000_000, balance_rune=1_000_000_000_000,
-                            pool_units=1, status=PoolInfo.AVAILABLE, usd_per_asset=2_000.0),
-    }
-    return ph
-
 
 def make_opened_limit_swap(
     tx_id: str,
