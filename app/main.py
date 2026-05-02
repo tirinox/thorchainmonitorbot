@@ -40,6 +40,7 @@ from jobs.limit_recorder import LimitSwapStatsRecorder
 from jobs.node_churn import NodeChurnDetector
 from jobs.pol_recorder import POLStateRecorder
 from jobs.price_recorder import PriceRecorder
+from jobs.rapid_recorder import RapidSwapRecorder
 from jobs.ref_memo_cache import RefMemoCache
 from jobs.rune_burn_recorder import RuneBurnRecorder
 from jobs.scanner.limit_detector import LimitSwapDetector
@@ -302,6 +303,8 @@ class App(WithLogger):
             tasks.append(d.block_scanner)
             d.ref_memo_cache = RefMemoCache(d)
             d.block_scanner.add_subscriber(d.ref_memo_cache)
+            d.rapid_swap_recorder = RapidSwapRecorder(d)
+            d.block_scanner.add_subscriber(d.rapid_swap_recorder)
             reserve_address = d.cfg.as_str('native_scanner.reserve_address')
 
             if d.cfg.get('native_scanner.limit_swaps.enabled', True):
