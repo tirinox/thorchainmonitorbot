@@ -8,7 +8,7 @@ import yaml
 from dotenv import load_dotenv
 
 from api.aionode.env import ThorEnvironment, MAINNET, MULTICHAIN_STAGENET_ENVIRONMENT
-from lib.constants import NetworkIdents, STABLE_COIN_POOLS
+from lib.constants import NetworkIdents, STABLE_COIN_POOLS, THOR_ADDRESS_DICT, TREASURY_LP_ADDRESS
 from lib.date_utils import parse_timespan_to_seconds
 from lib.path import get_app_path
 from lib.utils import strip_trailing_slash
@@ -204,3 +204,68 @@ class Config(SubConfig):
     @property
     def stable_coins(self):
         return self.get_pure('thor.stable_coins', default=STABLE_COIN_POOLS)
+
+    @property
+    def treasury_lp_address(self):
+        return self.as_str('supply.treasury_lp_address', TREASURY_LP_ADDRESS)
+
+    def _default_thor_address_dict(self):
+        result = dict(THOR_ADDRESS_DICT)
+
+        if self.treasury_lp_address != TREASURY_LP_ADDRESS:
+            treasury_lp_entry = result.pop(TREASURY_LP_ADDRESS, None)
+            if treasury_lp_entry:
+                result[self.treasury_lp_address] = treasury_lp_entry
+
+        return result
+
+    @staticmethod
+    def _parse_tracked_supply_address(address, value):
+        if not address:
+            logging.warning('Skipping supply.tracked_addresses entry without address')
+            return None
+
+        if isinstance(value, dict):
+            name = value.get('name')
+            realm = value.get('realm')
+        elif isinstance(value, (list, tuple)) and len(value) >= 2:
+            name, realm = value[0], value[1]
+        else:
+            logging.warning(f'Skipping malformed supply.tracked_addresses entry for "{address}": {value!r}')
+            return None
+
+        if not name or not realm:
+            logging.warning(f'Skipping incomplete supply.tracked_addresses entry for "{address}": {value!r}')
+            return None
+
+        return str(address), (str(name), str(realm))
+
+    @property
+    def thor_address_dict(self):
+        configured = self.get_pure('supply.tracked_addresses', default={})
+        if not configured:
+            return self._default_thor_address_dict()
+
+        result = {}
+
+        if isinstance(configured, dict):
+            for address, value in configured.items():
+                if parsed := self._parse_tracked_supply_address(address, value):
+                    result[parsed[0]] = parsed[1]
+        elif isinstance(configured, list):
+            for entry in configured:
+                if not isinstance(entry, dict):
+                    logging.warning(f'Skipping malformed supply.tracked_addresses list item: {entry!r}')
+                    continue
+
+                address = entry.get('address')
+                if parsed := self._parse_tracked_supply_address(address, entry):
+                    result[parsed[0]] = parsed[1]
+        else:
+            logging.warning(
+                f'Config path "supply.tracked_addresses" has unsupported type {type(configured).__name__}; '
+                'using hardcoded defaults'
+            )
+
+        return result or self._default_thor_address_dict()
+

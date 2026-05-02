@@ -32,6 +32,17 @@ class RuneCirculatingSupply(NamedTuple):
     maximum: int
     holders: Dict[str, RuneHoldEntry]
 
+    # Supply model:
+    # 500M initial supply
+    #   -> structural burns reflected in `total`:
+    #      switch burn + ADR-012 lending burn + ADR-023 reserve burn
+    #   -> dynamic burn reflected in `maximum`:
+    #      ADR-017 system income burn
+    #
+    # In other words:
+    #   current total supply = initial supply - structural burns
+    #   current max supply   = current total supply - dynamic burn
+
     @classmethod
     def from_json(cls, d):
         holders = {k: RuneHoldEntry.from_dict(v) for k, v in d['holders'].items()}
@@ -54,6 +65,10 @@ class RuneCirculatingSupply(NamedTuple):
     @property
     def total_burned_rune(self):
         return RUNE_IDEAL_SUPPLY - self.total
+
+    @property
+    def structural_burnt_rune(self):
+        return self.total_burned_rune
 
     @property
     def killed_switched(self):
@@ -130,7 +145,9 @@ class RuneCirculatingSupply(NamedTuple):
         return RUNE_IDEAL_SUPPLY - self.maximum
 
     @property
-    def lending_burnt_rune(self):
+    def adr23_burnt_rune(self):
+        # ADR-023 reserve burn lives in actual total supply reduction,
+        # after removing switch burn and ADR-012 from the original 500M path.
         return RUNE_SUPPLY_AFTER_SWITCH - self.total - self.adr12_burnt_rune
 
     @property

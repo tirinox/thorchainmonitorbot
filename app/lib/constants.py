@@ -40,6 +40,7 @@ TRX_SYMBOL = 'TRON.TRX'
 RUNE_IDEAL_SUPPLY = 500_000_000
 RUNE_SUPPLY_AFTER_SWITCH = 486_051_059
 RUNE_BURNT_ADR_12 = 60_000_000
+RUNE_BURNT_ADR_23 = 64_910_000
 
 RUNE_DENOM = 'rune'
 TCY_DENOM = 'tcy'
@@ -287,7 +288,7 @@ class ThorRealms:
     INCOME_BURN = 'System income burn'
 
 
-# todo: this information is already put in the config file
+# Fallback defaults for supply tracking; prefer configuring via supply.tracked_addresses in config.yaml.
 THOR_ADDRESS_DICT = {
     # Reserves:
     'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt': (ThorRealms.RESERVES, ThorRealms.RESERVES),
@@ -295,9 +296,7 @@ THOR_ADDRESS_DICT = {
 
     # Treasury:
     'thor1qd4my7934h2sn5ag5eaqsde39va4ex2asz3yv5': ('Treasury Multisig', ThorRealms.TREASURY),  # empty now
-    'thor10qh5272ktq4wes8ex343ky9rsuehcypddjh08k': ('Treasury Vultisig', ThorRealms.TREASURY),
-    # 'thor1505gp5h48zd24uexrfgka70fg8ccedafsnj0e3': ('Treasury 1', ThorRealms.TREASURY),
-    # 'thor14n2q7tpemxcha8zc26j0g5pksx4x3a9xw9ryq9': ('Treasury 2', ThorRealms.TREASURY),
+    'thor1lhufh0mwasa0lk9udppdegmvnkgqt08f0m9p5g': ('Treasury Vult', ThorRealms.TREASURY),
     TREASURY_LP_ADDRESS: ('Treasury LP', ThorRealms.TREASURY),
 
     # CEX:

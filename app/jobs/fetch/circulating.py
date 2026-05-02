@@ -13,13 +13,16 @@ from models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY
 
 
 class RuneCirculatingSupplyFetcher(WithLogger):
-    def __init__(self, session: ClientSession, thor: ThorConnector, midgard: MidgardConnector, step_sleep=0):
+    def __init__(self, session: ClientSession, thor: ThorConnector, midgard: MidgardConnector,
+                 step_sleep=0, thor_address_dict=None, treasury_lp_address=TREASURY_LP_ADDRESS):
         super().__init__()
         self.session = session
         self.thor = thor
         self.step_sleep = step_sleep
         self.midgard = midgard
         self.maya = MayaConnector(session)
+        self.thor_address_dict = thor_address_dict or THOR_ADDRESS_DICT
+        self.treasury_lp_address = treasury_lp_address
 
     async def fetch(self) -> RuneCirculatingSupply:
         """
@@ -30,18 +33,19 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         thor_rune_max_supply = await self.get_max_supply_from_mimir()  # 500M - burned income part = mimir MaxRuneSupply
 
         result = RuneCirculatingSupply(
-            int(thor_rune_supply),
-            thor_rune_max_supply, {}
+            total=int(thor_rune_supply),
+            maximum=thor_rune_max_supply,
+            holders={}
         )
 
-        for address, (wallet_name, realm) in THOR_ADDRESS_DICT.items():
+        for address, (wallet_name, realm) in self.thor_address_dict.items():
             # No hurry, do it step by step
             await asyncio.sleep(self.step_sleep)
 
             balance = await self.get_thor_address_balance(address)
 
             # fixme: other treasury addresses also hold some LP!
-            # if address == TREASURY_LP_ADDRESS:
+            # if address == self.treasury_lp_address:
             #     lp_balance = await self.get_treasury_lp_value()
             #     self.logger.info(f'Treasury LP balance ({address}): {lp_balance} Rune')
             #     balance += lp_balance
@@ -77,7 +81,8 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         j = await self.thor.query_raw(url_balance)
         return self.get_pure_rune_from_thor_array(j['balances'])
 
-    async def get_treasury_lp_value(self, address=TREASURY_LP_ADDRESS):
+    async def get_treasury_lp_value(self, address=None):
+        address = address or self.treasury_lp_address
         tr_lp = await self.midgard.query_pool_membership(address)
         pools = await self.midgard.query_pools()
         rune_accum = 0.0

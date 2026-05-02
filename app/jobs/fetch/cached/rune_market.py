@@ -46,7 +46,9 @@ class RuneMarketInfoCache(CachedDataSource[RuneMarketInfo]):
             self.deps.session,
             thor=self.deps.thor_connector,
             midgard=self.deps.midgard_connector,
-            step_sleep=self.deps.cfg.sleep_step
+            step_sleep=self.deps.cfg.sleep_step,
+            thor_address_dict=self.deps.cfg.thor_address_dict,
+            treasury_lp_address=self.deps.cfg.treasury_lp_address,
         )
 
     @retries(5)

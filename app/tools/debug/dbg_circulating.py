@@ -44,7 +44,9 @@ async def my_test_circulating(lp_app: LpAppFramework):
 def get_rune_supply_fetcher(app: LpAppFramework):
     return RuneCirculatingSupplyFetcher(
         app.deps.session, app.deps.thor_connector,
-        midgard=app.deps.midgard_connector
+        midgard=app.deps.midgard_connector,
+        thor_address_dict=app.deps.cfg.thor_address_dict,
+        treasury_lp_address=app.deps.cfg.treasury_lp_address,
     )
 
 
