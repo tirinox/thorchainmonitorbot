@@ -1637,9 +1637,13 @@ class RussianLocalization(BaseLocalization):
     SUPPLY_PIC_MAYA = 'Maya пул'
     SUPPLY_PIC_POOLED = 'В пулах'
     SUPPLY_PIC_BURNED = 'Сожжено'
+    SUPPLY_PIC_BURNED_ADR23 = 'ADR-023'
+    SUPPLY_PIC_BURNED_ADR12 = 'ADR-012'
+    SUPPLY_PIC_BURNED_INCOME = 'Burn system income'
+    SUPPLY_PIC_BURNED_GENERAL = 'Сожжено'
     SUPPLY_PIC_SECTION_CIRCULATING = 'Нативные циркулируют'
     SUPPLY_PIC_SECTION_LOCKED = 'Нативные заблокированы'
-    SUPPLY_PIC_SECTION_KILLED = 'Уничтоженные'
+    SUPPLY_PIC_SECTION_KILLED = 'Switch burn'
 
     # ---- MY WALLET ALERTS ----
 

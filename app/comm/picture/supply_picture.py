@@ -262,53 +262,50 @@ class SupplyPictureGenerator(BasePictureGenerator):
         # Top level sections
         protocol_section = self.supply.reserves_without_pol + self.supply.pol
         working_section = self.supply.runepool + self.supply.bonded + self.supply.pooled
-        free_float_section = self.supply.total - protocol_section - working_section
+        locked_section = protocol_section + working_section
+        free_float_section = self.supply.total - locked_section
         burned_section = self.supply.total_burned_rune
 
         # Top level layout (horizontal)
         (
-            locked_rect,
             working_rect,
             circulating_rect,
             burned_rect,
         ) = self._pack([
-            PackItem('', protocol_section, ''),
-            PackItem('', working_section, ''),
+            PackItem('', locked_section, ''),
             PackItem('', free_float_section, ''),
             PackItem('', burned_section, '')
         ], outer_rect, align=DrawRectPacker.H)
 
         # --------------------------------------------------------------------------------------------------------------
-        # Column 1 is protocol section: Reserves and POL
+        # Column 1: locked RUNE in protocol/users. Reserve and POL now live below liquidity pools.
         self._pack([
+            PackItem(
+                self.loc.SUPPLY_PIC_BONDED, self.supply.bonded, self.PALETTE[ThorRealms.BONDED],
+                meta(realm=ThorRealms.BONDED, prev=self.prev_supply.bonded)
+            ),
+            PackItem(
+                self.loc.SUPPLY_PIC_POOLED, self.supply.pooled, self.PALETTE[ThorRealms.LIQ_POOL],
+                meta(realm=ThorRealms.LIQ_POOL, prev=self.prev_supply.pooled)
+            ),
             PackItem(
                 self.translate.get(ThorRealms.RESERVES, ThorRealms.RESERVES),
                 self.supply.reserves_without_pol,
                 self.PALETTE.get(ThorRealms.RESERVES, 'black'),
-                meta_data=meta(realm=ThorRealms.RESERVES, max_value_font=80)
+                meta(realm=ThorRealms.RESERVES, max_value_font=80, max_title_font=26, label='tight_top')
             ),
             PackItem(
                 self.loc.SUPPLY_PIC_POL, self.supply.pol, self.PALETTE[ThorRealms.POL],
-                meta(realm=ThorRealms.POL, prev=self.prev_supply.pol)
+                meta(realm=ThorRealms.POL, prev=self.prev_supply.pol, max_title_font=24, label='tight_top')
             ),
-        ], locked_rect, align=DrawRectPacker.V)
-
-        # --------------------------------------------------------------------------------------------------------------
-        # Column 2: Users' Rune those are working in the protocol
-        self._pack([
-            PackItem(self.loc.SUPPLY_PIC_BONDED, self.supply.bonded, self.PALETTE[ThorRealms.BONDED],
-                     meta(realm=ThorRealms.BONDED, prev=self.prev_supply.bonded)),
-            PackItem(self.loc.SUPPLY_PIC_POOLED, self.supply.pooled, self.PALETTE[ThorRealms.LIQ_POOL],
-                     meta(realm=ThorRealms.LIQ_POOL, prev=self.prev_supply.pooled)),
             PackItem(self.loc.SUPPLY_PIC_RUNE_POOL, self.supply.runepool, self.PALETTE[ThorRealms.RUNEPOOL],
                      meta(realm=ThorRealms.RUNEPOOL,
                           label='tight_top', max_title_font=24, prev=self.prev_supply.runepool
                           )),
-
         ], working_rect, align=DrawRectPacker.V)
 
         # --------------------------------------------------------------------------------------------------------------
-        # Column 3: Circulating Rune
+        # Column 2: Circulating Rune
 
         # first, we will show CEX block
         cex_items = [
@@ -355,17 +352,18 @@ class SupplyPictureGenerator(BasePictureGenerator):
         ], circulating_rect, align=DrawRectPacker.V)
 
         # --------------------------------------------------------------------------------------------------------------
-        # Column 4: Burned and Killed Rune
+        # Column 3: Burned and Killed Rune
         adr12_burned = self.supply.adr12_burnt_rune
+        adr23_burned = self.supply.adr23_burnt_rune
         killed_switched = self.supply.killed_switched
 
-        if burned_section >= (adr12_burned + killed_switched):
+        if burned_section >= (adr12_burned + adr23_burned + killed_switched):
             burn_items = []
-            if self.supply.lending_burnt_rune > 0:
+            if adr23_burned > 0:
                 burn_items.append(PackItem(
-                    self.loc.SUPPLY_PIC_BURNED_LENDING, self.supply.lending_burnt_rune,
+                    self.loc.SUPPLY_PIC_BURNED_ADR23, adr23_burned,
                     self.PALETTE[ThorRealms.BURNED],
-                    meta(value=True, realm=ThorRealms.BURNED, prev=self.prev_supply.lending_burnt_rune)
+                    meta(value=True, realm=ThorRealms.BURNED, prev=self.prev_supply.adr23_burnt_rune)
                 ))
             if self.supply.adr12_burnt_rune > 0:
                 burn_items.append(PackItem(
@@ -398,7 +396,8 @@ class SupplyPictureGenerator(BasePictureGenerator):
                 realm=ThorRealms.INCOME_BURN,
                 value=True,
                 prev=self.prev_supply.burnt_rune_from_income,
-                label='up', title_fill='#ffcf40'
+                # label='up',
+                title_fill='#ffcf40'
             )
         ))
 
