@@ -14,6 +14,10 @@
     Filter: None
 
     Redis credentials are loaded from "redis_copy_keys.env" file in the same directory as this script.
+
+    3. Copy Limit swap data
+
+    PYTHONPATH=app python app/tools/redis_copy_keys.py --pattern "Accum:LimitSwaps:*"
 """
 import datetime
 import os

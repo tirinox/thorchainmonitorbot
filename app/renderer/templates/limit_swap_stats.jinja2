@@ -1,4 +1,4 @@
-{% set _width, _height = set_viewport_size(1440, 1020) %}
+    {% set _width, _height = set_viewport_size(1440, 1020) %}
 {% extends "base.jinja2" %}
 
 {% block content %}
@@ -8,16 +8,6 @@
 {% set max_pairs = max_pairs | default(6) | int %}
 
 {# ── helpers ─────────────────────────────────────────────── #}
-{% macro short_asset(full) -%}
-  {%- if '.' in full -%}{{- full.split('.', 1)[1].split('-')[0] -}}
-  {%- else -%}{{- full.split('-')[0] -}}{%- endif -%}
-{%- endmacro %}
-
-{% macro pair_label(pair_str) -%}
-  {%- set sides = pair_str.split('->') -%}
-  {{- short_asset(sides[0]) }} ⇄ {{ short_asset(sides[1]) -}}
-{%- endmacro %}
-
 {% macro delta_class(pct) -%}
   {%- set p = pct | float -%}
   {%- if p > 0 -%}delta-pos{%- elif p < 0 -%}delta-neg{%- else -%}delta-zero{%- endif -%}
@@ -302,7 +292,7 @@
           {% for p in top_pairs[:max_pairs] %}
             <div class="pair-row">
               <div class="pair-rank">{{ loop.index }}</div>
-              <div class="pair-name">{{ pair_label(p.pair) }}</div>
+              <div class="pair-name">{{ p.pair_label or p.pair }}</div>
               <div class="pair-count">{{ p.opened_count }}</div>
               <div class="pair-usd">{{ short_dollar(p.opened_usd) }}</div>
             </div>

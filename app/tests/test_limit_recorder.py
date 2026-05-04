@@ -415,10 +415,18 @@ async def test_get_infographic_data_sorts_top_pairs_by_volume(monkeypatch):
         'BTC.BTC->THOR.RUNE',
         'ETH.ETH->THOR.RUNE',
     ]
+    assert [pair.pair_label for pair in stats.top_pairs] == [
+        'BTC ⇄ RUNE ᚱ',
+        'ETH ⇄ RUNE ᚱ',
+    ]
     assert stats.top_pairs[0].opened_usd == 30_000.0
     assert stats.top_pairs[0].opened_count == 1
     assert stats.top_pairs[1].opened_usd == 4_000.0
     assert stats.top_pairs[1].opened_count == 2
+
+    payload = stats.to_dict()
+    assert payload['top_pairs'][0]['pair_label'] == 'BTC ⇄ RUNE ᚱ'
+    assert payload['top_pairs'][1]['pair_label'] == 'ETH ⇄ RUNE ᚱ'
 
 
 @pytest.mark.asyncio
@@ -506,7 +514,7 @@ async def test_closed_limit_dedup_uses_tx_id(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_opened_observed_limit_swap_uses_amount_float_for_usd_pricing(monkeypatch):
+async def test_opened_observed_limit_swap_uses_thor_base_units_for_usd_pricing(monkeypatch):
     import jobs.limit_recorder as limit_recorder_module
 
     monkeypatch.setattr(limit_recorder_module, 'EventDbTxDeduplicator', FakeDedup)
@@ -522,9 +530,9 @@ async def test_opened_observed_limit_swap_uses_amount_float_for_usd_pricing(monk
         tx_id='observed-open-1',
         memo='=<:BTC.BTC:bc1qfoo:1000000/100800/0',
         source_asset='ETH.ETH',
-        source_amount=2,
+        source_amount=200_000_000,
         source_amount_float=2.0,
-        source_decimals=0,
+        source_decimals=18,
         trader='0xobserved',
         target_asset='BTC.BTC',
     )
@@ -541,5 +549,47 @@ async def test_opened_observed_limit_swap_uses_amount_float_for_usd_pricing(monk
     assert day1_stats['opened_count'] == 1.0
     assert day1_stats['opened_usd'] == 4_000.0
     assert day1_stats['pair:BTC.BTC->ETH.ETH:opened_usd'] == 4_000.0
+
+
+@pytest.mark.asyncio
+async def test_open_meta_resolves_shorthand_target_asset_via_fuzzy_search(monkeypatch):
+    import jobs.limit_recorder as limit_recorder_module
+
+    monkeypatch.setattr(limit_recorder_module, 'EventDbTxDeduplicator', FakeDedup)
+
+    deps = DepContainer()
+    deps.db = cast(DB, cast(object, FakeDB()))
+    deps.pool_cache = FakePoolCache(make_price_holder())
+
+    recorder = LimitSwapStatsRecorder(deps)
+
+    day1 = 1_700_000_000
+    opened = make_opened_limit_swap(
+        tx_id='open-short-target',
+        memo='=<:e:thor1dest:100000000/100800/0',
+        source_asset='BTC.BTC',
+        source_amount=100_000_000,
+        source_amount_float=1.0,
+        trader='thor1alice',
+        target_asset='e',
+        thor_block_no=123,
+    )
+
+    await recorder.on_data(None, LimitSwapBlockUpdate(
+        block_no=123,
+        timestamp=day1,
+        new_opened_limit_swaps=[opened],
+        closed_limit_swaps=[],
+        partial_swaps=[],
+    ))
+
+    saved_meta = await recorder._load_open_meta('open-short-target')
+    assert saved_meta is not None
+    assert saved_meta.source_asset == 'BTC.BTC'
+    assert saved_meta.target_asset == 'ETH.ETH'
+
+    day1_stats = await recorder.accumulator.get(day1)
+    assert day1_stats['pair:BTC.BTC->ETH.ETH:opened_count'] == 1.0
+    assert 'pair:BTC.BTC->E.E:opened_count' not in day1_stats
 
 

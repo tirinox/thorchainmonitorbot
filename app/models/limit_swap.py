@@ -38,6 +38,7 @@ class LimitSwapDailyPoint:
 class LimitSwapPairStats:
     """Stats for a single canonical trading pair."""
     pair: str = ''
+    pair_label: str = ''
     opened_count: int = 0
     opened_usd: float = 0.0
     unique_traders: int = 0
@@ -73,6 +74,7 @@ class LimitSwapOpenState:
             'pairs': [
                 {
                     'pair': p.pair,
+                    'pair_label': p.pair_label,
                     'opened_count': p.opened_count,
                     'opened_usd': p.opened_usd,
                     'unique_traders': p.unique_traders,
@@ -134,6 +136,7 @@ class LimitSwapPeriodStats:
             'top_pairs': [
                 {
                     'pair': p.pair,
+                    'pair_label': p.pair_label,
                     'opened_count': p.opened_count,
                     'opened_usd': p.opened_usd,
                     'unique_traders': p.unique_traders,

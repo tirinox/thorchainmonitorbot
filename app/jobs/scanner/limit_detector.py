@@ -104,12 +104,13 @@ class LimitSwapDetector(WithLogger, INotified, WithDelegates):
             return None
 
         coin = tx.coins[0] if tx.coins else None
+        source_amount = int(coin.amount if coin else 0)
         return OpenedLimitSwap(
             tx_id=str(tx.tx_id or ''),
             memo=str(tx.memo or ''),
             source_asset=str(coin.asset if coin else ''),
-            source_amount=int(coin.amount if coin else 0),
-            source_amount_float=float(coin.amount_float if coin else 0.0),
+            source_amount=source_amount,
+            source_amount_float=thor_to_float(source_amount),
             source_decimals=int(coin.decimals if coin else 8),
             trader=str(tx.from_address or ''),
             target_asset=str(parsed.asset or ''),

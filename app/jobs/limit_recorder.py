@@ -333,6 +333,7 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
             [
                 LimitSwapPairStats(
                     pair=pair_name,
+                    pair_label=self._pretty_pair_label_from_canonical_name(pair_name),
                     opened_count=int(curr_pair_totals[pair_name]['opened_count']),
                     opened_usd=round(curr_pair_totals[pair_name]['opened_usd'], 2),
                     unique_traders=pair_unique.get(pair_name, 0),
@@ -361,6 +362,7 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
                     [
                         LimitSwapPairStats(
                             pair=self._pair_canonical_name(p.source_asset, p.target_asset),
+                            pair_label=self._pretty_pair_label(p.source_asset, p.target_asset),
                             opened_count=int(p.count or 0),
                             opened_usd=round(float(p.total_value_usd or 0), 2),
                         )
@@ -448,21 +450,51 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
 
 
     @staticmethod
-    def _normalize_asset_name(asset: str) -> str:
+    def _normalize_asset_name(asset: str, ph=None) -> str:
         if not asset:
             return ''
         if is_rune(asset):
             return 'THOR.RUNE'
+        if ph:
+            try:
+                resolved = ph.pool_fuzzy_first(asset, restore_type=True)
+                if resolved:
+                    return resolved
+            except Exception:
+                pass
         try:
             return str(Asset.from_string(asset))
         except Exception:
             return str(asset)
 
+    @classmethod
+    def _pretty_asset_name(cls, asset: str) -> str:
+        normalized = cls._normalize_asset_name(asset)
+        if not normalized:
+            return ''
+        try:
+            return Asset.from_string(normalized).pretty_str
+        except Exception:
+            return normalized
+
+    @classmethod
+    def _pretty_pair_label(cls, asset_a: str, asset_b: str) -> str:
+        left, right = cls._canonical_pair(asset_a, asset_b)
+        return f'{cls._pretty_asset_name(left)} ⇄ {cls._pretty_asset_name(right)}'
+
+    @classmethod
+    def _pretty_pair_label_from_canonical_name(cls, pair_name: str) -> str:
+        try:
+            asset_a, asset_b = pair_name.split('->', maxsplit=1)
+        except ValueError:
+            return pair_name
+        return cls._pretty_pair_label(asset_a, asset_b)
+
     def _price_coin_usd(self, ph, asset: str, amount_float: float) -> float:
         if not asset or amount_float <= 0:
             return 0.0
 
-        asset = self._normalize_asset_name(asset)
+        asset = self._normalize_asset_name(asset, ph)
 
         if is_rune(asset):
             return amount_float * ph.usd_per_rune
@@ -486,8 +518,8 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         fallback_ts: int,
         ph,
     ) -> Optional[OpenLimitSwapMeta]:
-        source_asset = self._normalize_asset_name(opened.source_asset)
-        target_asset = self._normalize_asset_name(opened.target_asset)
+        source_asset = self._normalize_asset_name(opened.source_asset, ph)
+        target_asset = self._normalize_asset_name(opened.target_asset, ph)
         if not source_asset or not target_asset:
             self.logger.warning(f'Cannot derive pair for limit swap {opened.tx_id}: {opened.memo!r}')
             return None
