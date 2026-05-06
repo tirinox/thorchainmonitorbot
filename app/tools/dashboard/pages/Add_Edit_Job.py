@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from typing import Optional
 
@@ -24,10 +25,23 @@ def form_add_job(edit_job: Optional[SchedJobCfg] = None):
     if edit_job:
         func_name = st.text_input("Function (cannot edit)", value=edit_job.func, disabled=True)
     else:
-        types = PublicAlertJobExecutor.AVAILABLE_TYPES.keys()
-        func_name = st.selectbox("Function", list(types))
+        app = get_app()
+        sched: PublicScheduler = app.deps.pub_scheduler
+        jobs: list[SchedJobCfg] = run_coro(sched.load_config_from_db(silent=True))
+        distribution = sched.job_distribution(jobs)
+        absent_jobs = PublicAlertJobExecutor.get_function_that_are_absent(list(distribution.keys()))
+        existing_jobs = [job_type for job_type in PublicAlertJobExecutor.AVAILABLE_TYPES.keys()
+                         if job_type not in absent_jobs]
+        func_name = st.selectbox("Function", absent_jobs + existing_jobs)
 
     enabled = st.checkbox("Enabled?", value=edit_job.enabled if edit_job else False)
+
+    args_json = st.text_area(
+        "Job arguments (JSON object, optional)",
+        value=json.dumps(edit_job.args if edit_job else {}, ensure_ascii=False, indent=2),
+        height=180,
+        help="These kwargs will be stored with the job and passed into the selected async job function on every run.",
+    )
 
     st.subheader("Trigger parameters")
 
@@ -119,11 +133,22 @@ def form_add_job(edit_job: Optional[SchedJobCfg] = None):
         job_id = edit_job.id if edit_job else f"{func_name}_job_{int(datetime.now().timestamp())}"
 
         try:
+            job_args = json.loads(args_json.strip() or "{}")
+        except json.JSONDecodeError as e:
+            st.error(f"Job arguments JSON is invalid: {e}")
+            return None
+
+        if not isinstance(job_args, dict):
+            st.error("Job arguments must be a JSON object.")
+            return None
+
+        try:
             job_cfg = SchedJobCfg(
                 id=job_id,
                 enabled=enabled,
                 func=func_name,
                 variant=variant,
+                args=job_args,
                 max_instances=max_instances,
                 coalesce=coalesce,
                 misfire_grace_time=misfire_grace_time,
