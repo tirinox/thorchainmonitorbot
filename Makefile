@@ -49,7 +49,8 @@ restart: # Restart containers.
 
 .PHONY: poke
 poke: # Restart only the bot container, API server and dashboard without restarting the database server.
-	@docker compose restart $(BOTNAME) api dashboard
+	git pull
+	@docker compose restart $(BOTNAME) api dashboard nginx
 	@make -s logs
 
 
