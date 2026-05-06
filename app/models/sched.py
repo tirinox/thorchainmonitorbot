@@ -1,7 +1,8 @@
+import json
 from datetime import datetime
-from typing import Optional, Literal
+from typing import Any, Optional, Literal
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class SchedVariant:
@@ -84,6 +85,7 @@ class SchedJobCfg(BaseModel):
     func: str
     enabled: bool = True
     variant: Literal["interval", "cron", "date"]
+    args: dict[str, Any] = Field(default_factory=dict)
 
     interval: Optional[IntervalCfg] = None
     cron: Optional[CronCfg] = None
@@ -93,6 +95,19 @@ class SchedJobCfg(BaseModel):
     max_instances: int = 1
     coalesce: bool = True
     misfire_grace_time: Optional[int] = None
+
+    @field_validator("args")
+    @classmethod
+    def validate_args(cls, value):
+        if value is None:
+            return {}
+        if not isinstance(value, dict):
+            raise TypeError("Job args must be a dictionary")
+        try:
+            json.dumps(value)
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"Job args must be JSON-serializable: {e}") from e
+        return value
 
     @model_validator(mode="after")
     def validate_by_variant(self):

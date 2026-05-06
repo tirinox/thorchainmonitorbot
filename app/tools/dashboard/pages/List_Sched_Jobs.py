@@ -1,3 +1,4 @@
+import json
 import time
 
 import streamlit as st
@@ -88,6 +89,11 @@ for job in jobs:
     st.divider()
     with cols[0]:
         st.metric(f'ID={job.id!r}', job.func)
+        if job.args:
+            args_text = json.dumps(job.args, ensure_ascii=False, separators=(',', ': '))
+            if len(args_text) > 160:
+                args_text = f'{args_text[:157]}...'
+            st.caption(f'args: {args_text}')
     with cols[1]:
         st.markdown(f"#### {job.variant}")
         if job.variant == 'interval':

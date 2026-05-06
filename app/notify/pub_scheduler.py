@@ -4,7 +4,7 @@ import functools
 import json
 import time
 from collections import defaultdict
-from typing import List
+from typing import Any, List
 from typing import Optional, Literal
 
 from apscheduler.events import EVENT_JOB_MISSED, EVENT_JOB_ERROR
@@ -196,19 +196,37 @@ class PublicScheduler(WithLogger):
             return 'reloaded'
         elif command == self.COMMAND_RUN_NOW:
             job_id = payload.get('job_id')
+            run_args = payload.get('args')
             if job_id:
                 await self.db_log.warning('job_scheduled_now', job_id=job_id)
-                return await self.run_job_now_by_id(job_id)
+                return await self.run_job_now_by_id(job_id, args=run_args)
             elif func := payload.get('func'):
                 await self.db_log.warning('job_scheduled_now', func=func)
-                return await self.run_job_by_function(func)
+                return await self.run_job_by_function(func, args=run_args)
             else:
                 await self.logger.error(f'Cannot run {command} with parameters {payload}')
                 return None
         else:
             return "unknown_command"
 
-    async def run_job_now_by_id(self, job_id):
+    @staticmethod
+    def _normalize_job_args(args: Optional[dict[str, Any]]) -> dict[str, Any]:
+        if args is None:
+            return {}
+        if not isinstance(args, dict):
+            raise ValueError('Job args must be a dictionary.')
+        return dict(args)
+
+    def _merge_job_args(
+            self,
+            base_args: Optional[dict[str, Any]] = None,
+            override_args: Optional[dict[str, Any]] = None,
+    ) -> dict[str, Any]:
+        merged_args = self._normalize_job_args(base_args)
+        merged_args.update(self._normalize_job_args(override_args))
+        return merged_args
+
+    async def run_job_now_by_id(self, job_id, args: Optional[dict[str, Any]] = None):
         job_cfg = self.find_job_by_id(job_id)
         if not job_cfg:
             raise RuntimeError(f'Job with id {job_id} not found; cannot run now.')
@@ -220,13 +238,18 @@ class PublicScheduler(WithLogger):
         self.logger.info(f'Job {job_id} scheduled to run now via control message!')
 
         # Run the job immediately
-        one_time_cfg = job_cfg.model_copy(update={'enabled': True})
+        one_time_cfg = job_cfg.model_copy(update={
+            'enabled': True,
+            'args': self._merge_job_args(job_cfg.args, args),
+        })
         return await coro(one_time_cfg, with_retries=False)
 
-    async def run_job_by_function(self, func_name: str):
+    async def run_job_by_function(self, func_name: str, args: Optional[dict[str, Any]] = None):
         self.logger.info(f'Function {func_name} is run by name')
         coro = self._registered_jobs.get(func_name)
-        return await coro(None, with_retries=False)
+        if not coro:
+            raise RuntimeError(f'Job function {func_name} is not registered; cannot run by function name.')
+        return await coro(None, with_retries=False, override_args=self._normalize_job_args(args))
 
     async def post_command(self, command: str, timeout=15.0, **kwargs):
         return await self._rpc({
@@ -250,16 +273,17 @@ class PublicScheduler(WithLogger):
         if load_before:
             await self.load_config_from_db()
 
-        exists = any(existing_job.id == job_cfg.id for existing_job in self._scheduled_jobs)
+        existing_index = next((i for i, existing_job in enumerate(self._scheduled_jobs) if existing_job.id == job_cfg.id),
+                              None)
+        exists = existing_index is not None
         if exists and not allow_replace:
             self.logger.error(f"Job with id {job_cfg.id} already exists; cannot add duplicate.")
             raise ValueError(f"Job with id {job_cfg.id} already exists.")
 
-        if allow_replace:
-            # Remove existing job with the same id
-            self._scheduled_jobs = [job for job in self._scheduled_jobs if job.id != job_cfg.id]
-
-        self._scheduled_jobs.append(job_cfg)
+        if exists and allow_replace:
+            self._scheduled_jobs[existing_index] = job_cfg
+        else:
+            self._scheduled_jobs.append(job_cfg)
         await self.save_config_to_db()
         await self.db_log.info(
             "job_replaced" if exists else "job_created",
@@ -278,13 +302,18 @@ class PublicScheduler(WithLogger):
         func_name = func.__name__
 
         @functools.wraps(func)
-        async def wrapper(desc: Optional[SchedJobCfg], with_retries=True):
+        async def wrapper(
+                desc: Optional[SchedJobCfg],
+                with_retries=True,
+                override_args: Optional[dict[str, Any]] = None,
+        ):
             current_delay = self.retry_delay
             stats = JobStats(self.db, key=desc.id if desc else f'_direct_{func_name}')
             self.logger.info(f"Starting job with retry logic: {func_name}.")
             await self.db_log.info('run', phase='start', job=func_name)
             start_time = time.monotonic()
             job_id = desc.id if desc else 0
+            job_args = self._merge_job_args(desc.args if desc else None, override_args)
             retry_count = self.retries if with_retries else 1
             for attempt in range(1, retry_count + 1):
                 try:
@@ -298,7 +327,7 @@ class PublicScheduler(WithLogger):
                         return None
 
                     await stats.set_is_running(True)
-                    result = await func()
+                    result = await func(**job_args) if job_args else await func()
                     elapsed = time.monotonic() - start_time
                     await self.db_log.info('run', phase='complete',
                                            job=func_name, job_id=job_id, elapsed=elapsed)

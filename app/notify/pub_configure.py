@@ -65,15 +65,15 @@ class PublicAlertJobExecutor(WithLogger):
             raise Exception(f"No data for {alert_type}")
         await self.deps.alert_presenter.handle_data(data)
 
-    async def job_tcy_summary(self):
+    async def job_tcy_summary(self, **job_args):
         data = await self.tcy_info_fetcher.fetch()
         await self._send_alert(data, "tcy summary alert")
 
-    async def job_secured_asset_summary(self):
+    async def job_secured_asset_summary(self, **job_args):
         data = await self.secured_asset_fetcher.fetch()
         await self._send_alert(data, "secured asset summary alert")
 
-    async def job_pol_summary(self):
+    async def job_pol_summary(self, **job_args):
         pvdb = PrevStateDB(self.deps.db, POLState)
         previous: Optional[POLState] = await pvdb.get()
 
@@ -85,7 +85,7 @@ class PublicAlertJobExecutor(WithLogger):
 
         await pvdb.set(data.current)
 
-    async def job_runepool_summary(self):
+    async def job_runepool_summary(self, **job_args):
         data = await self.pol_fetcher.fetch()
         usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
 
@@ -102,7 +102,7 @@ class PublicAlertJobExecutor(WithLogger):
 
         await pvdb.set(data.runepool)
 
-    async def job_key_metrics(self):
+    async def job_key_metrics(self, **job_args):
         data: AlertKeyStats = await self.key_stats_fetcher.fetch()
         if not data.current.btc_total_usd:
             raise ValueError(f'No pool data! Aborting.')
@@ -112,13 +112,13 @@ class PublicAlertJobExecutor(WithLogger):
 
         await self._send_alert(data, "key metrics infographic")
 
-    async def job_top_pools(self):
+    async def job_top_pools(self, **job_args):
         fetcher = BestPoolsFetcher(self.deps)
         event_pools, pool_map_struct = await fetcher.get_top_pools()
         await self._send_alert(event_pools, "top pools alert")
         await fetcher.save_prev_pool_map(pool_map_struct)
 
-    async def job_supply_chart(self):
+    async def job_supply_chart(self, **job_args):
         market_info: RuneMarketInfo = await self.deps.market_info_cache.get()
 
         if not market_info or not (supply := market_info.supply_info):
@@ -133,19 +133,19 @@ class PublicAlertJobExecutor(WithLogger):
         await self._send_alert(market_info, "circulating supply alert")
         await pvdb.set(market_info.supply_info)
 
-    async def job_rune_burn_chart(self):
+    async def job_rune_burn_chart(self, **job_args):
         recorder = RuneBurnRecorder(self.deps)
         if not (event := await recorder.get_event()):
             raise ValueError("No rune burn event data available!")
         await self._send_alert(event, "rune burn chart alert")
 
-    async def job_trade_account_summary(self):
+    async def job_trade_account_summary(self, **job_args):
         data: AlertTradeAccountStats = await self.trade_acc_fetcher.fetch()
         await self._send_alert(data, "trade account stats")
 
-    async def job_price_alert(self):
+    async def job_price_alert(self, price_graph_days: int = 7, **job_args):
         pn = PriceChangeNotifier(self.deps)
-        pn.price_graph_period = 7 * DAY
+        pn.price_graph_period = price_graph_days * DAY
         market_info: RuneMarketInfo = await self.deps.market_info_cache.get()
         alert = await pn.make_event(
             market_info,
@@ -153,7 +153,7 @@ class PublicAlertJobExecutor(WithLogger):
         )
         await self._send_alert(alert, "price alert")
 
-    async def job_net_stats_summary(self):
+    async def job_net_stats_summary(self, **job_args):
         nsn = NetworkStatsNotifier(self.deps)
         old_info = await nsn.get_previous_stats()
 
@@ -171,7 +171,7 @@ class PublicAlertJobExecutor(WithLogger):
         )
         await self._send_alert(event, "network stats summary alert")
 
-    async def job_app_layer_stats(self):
+    async def job_app_layer_stats(self, days: int = 7, top_n: int = 10, **job_args):
         wasm_cache = self.deps.wasm_cache or WasmCache(self.deps.thor_connector, db=self.deps.db)
         recorder = CosmWasmRecorder(self.deps.db)
         builder = WasmStatsBuilder(
@@ -181,21 +181,22 @@ class PublicAlertJobExecutor(WithLogger):
             contract_name_cache=self.deps.rujira_contract_name_cache,
             top_label_limit=self.deps.cfg.as_int('rujira.contract_names.infographic_name_limit', 32),
         )
-        stats = await builder.build(days=7, top_n=10)
+        stats = await builder.build(days=days, top_n=top_n)
         if not stats.total_calls:
             raise ValueError("No app layer stats data available.")
         await self._send_alert(stats, "app layer stats infographic")
 
-    async def job_limit_swap_stats(self):
+    async def job_limit_swap_stats(self, days: int = 7, **job_args):
         recorder = LimitSwapStatsRecorder(self.deps)
-        stats = await recorder.get_infographic_data(days=7)
+        stats = await recorder.get_infographic_data(days=days)
         if not stats.total.opened_count:
             raise ValueError("No limit swap stats data available.")
         await self._send_alert(stats, "limit swap stats infographic")
 
-    async def job_rune_transfer_stats(self):
+    async def job_rune_transfer_stats(self, days: int | None = None, **job_args):
         recorder = RuneTransferRecorder(self.deps)
-        summary = await recorder.get_summary(days=self.RUNE_TRANSFER_STATS_SUMMARY_DAYS)
+        summary_days = self.RUNE_TRANSFER_STATS_SUMMARY_DAYS if days is None else days
+        summary = await recorder.get_summary(days=summary_days)
         if not summary.get('transfer_count'):
             raise ValueError("No RUNE transfer stats data available yet.")
         usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
