@@ -2,7 +2,6 @@ from types import SimpleNamespace
 
 import pytest
 
-from jobs.transfer_recorder import RuneTransferRecorder
 from models.transfer import AlertRuneTransferStats
 from notify.pub_configure import PublicAlertJobExecutor
 from tools.dashboard.components.cex_flow import rune_transfer_stats_dashboard_info_async
