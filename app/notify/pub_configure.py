@@ -42,7 +42,6 @@ class PubAlertJobNames:
     TRADE_ASSET_SUMMARY = "trade_account_summary"
 
     PRICE_ALERT = "price_alert"
-    RUNE_CEX_FLOW = "rune_cex_flow"
     NET_STATS_SUMMARY = "net_stats_summary"
     APP_LAYER_STATS = "app_layer_stats"
     LIMIT_SWAP_STATS = "limit_swap_stats"
@@ -50,6 +49,8 @@ class PubAlertJobNames:
 
 
 class PublicAlertJobExecutor(WithLogger):
+    RUNE_TRANSFER_STATS_SUMMARY_DAYS = 7
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -152,25 +153,6 @@ class PublicAlertJobExecutor(WithLogger):
         )
         await self._send_alert(alert, "price alert")
 
-    async def job_rune_cex_flow(self):
-        recorder = RuneTransferRecorder(self.deps)
-        flow = await recorder.get_cex_flow(period=DAY)
-        if not flow:
-            self.deps.emergency.report('CEXFlow', 'No CEX flow')
-            raise Exception("No CEX flow data available.")
-
-        flow.infographic_period_sec = 7 * DAY
-
-        if flow.total_rune < recorder.min_rune_in_summary:
-            self.deps.emergency.report(
-                'CEXFlow', 'CEX flow is lower than the minimum rune in summary.',
-                flow=flow,
-                min_rune=recorder.min_rune_in_summary,
-            )
-            raise Exception("CEX flow is lower than the minimum rune in summary.")
-
-        await self._send_alert(flow, "rune cex flow alert")
-
     async def job_net_stats_summary(self):
         nsn = NetworkStatsNotifier(self.deps)
         old_info = await nsn.get_previous_stats()
@@ -213,7 +195,7 @@ class PublicAlertJobExecutor(WithLogger):
 
     async def job_rune_transfer_stats(self):
         recorder = RuneTransferRecorder(self.deps)
-        summary = await recorder.get_summary(days=14)
+        summary = await recorder.get_summary(days=self.RUNE_TRANSFER_STATS_SUMMARY_DAYS)
         if not summary.get('transfer_count'):
             raise ValueError("No RUNE transfer stats data available yet.")
         usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
@@ -232,7 +214,6 @@ class PublicAlertJobExecutor(WithLogger):
         PubAlertJobNames.RUNE_BURN_CHART: job_rune_burn_chart,
         PubAlertJobNames.TRADE_ASSET_SUMMARY: job_trade_account_summary,
         PubAlertJobNames.PRICE_ALERT: job_price_alert,
-        PubAlertJobNames.RUNE_CEX_FLOW: job_rune_cex_flow,
         PubAlertJobNames.NET_STATS_SUMMARY: job_net_stats_summary,
         PubAlertJobNames.APP_LAYER_STATS: job_app_layer_stats,
         PubAlertJobNames.LIMIT_SWAP_STATS: job_limit_swap_stats,

@@ -240,13 +240,13 @@ async def dbg_transfer_stats_fill_fake_data(app: LpAppFramework, days: int = 14,
 
 async def dbg_transfer_stats_send(app: LpAppFramework):
     """
-    Run the public `job_rune_cex_flow` job directly so the debug helper uses
+    Run the public `job_rune_transfer_stats` job directly so the debug helper uses
     the same code path as the scheduled alert.
     """
     d = app.deps
 
-    print('Running public `job_rune_cex_flow`...')
-    await d.pub_alert_executor.job_rune_cex_flow()
+    print('Running public `job_rune_transfer_stats`...')
+    await d.pub_alert_executor.job_rune_transfer_stats()
     print('Infographic sent — waiting for delivery…')
     await asyncio.sleep(5)
 

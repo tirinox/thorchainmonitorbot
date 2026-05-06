@@ -47,7 +47,7 @@ from models.s_swap import AlertSwapStart
 from models.secured import AlertSecuredAssetSummary
 from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
-from models.transfer import NativeTokenTransfer, RuneCEXFlow, AlertRuneTransferStats
+from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
 from models.wasm import WasmPeriodStats
 from models.limit_swap import LimitSwapPeriodStats
 from models.tx import ThorAction, ThorSubTx, EventLargeTransaction
@@ -2053,13 +2053,6 @@ class BaseLocalization(ABC):  # == English
 
     def seconds_human(self, s):
         return seconds_human(s)
-
-    # ----- FLOW ------
-
-    @staticmethod
-    def cex_flow_emoji(cex_flow: RuneCEXFlow):
-        limit = 1000.0
-        return '🟢' if cex_flow.netflow_usd < -limit else ('🔴' if cex_flow.netflow_usd > limit else '⚪️')
 
 
     # ----- SUPPLY ------

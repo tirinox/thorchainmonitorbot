@@ -2,7 +2,7 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 
 from lib.date_utils import format_date, now_ts
-from tools.dashboard.components.cex_flow import cex_flow_dashboard_info
+from tools.dashboard.components.cex_flow import rune_transfer_stats_dashboard_info
 from tools.dashboard.components.curve import curve_dashboard_info
 from tools.dashboard.components.dedup import dedup_dashboard_info
 from tools.dashboard.components.fetchers import fetchers_dashboard_info
@@ -28,7 +28,7 @@ tab_dict = {
     "Fetchers": fetchers_dashboard_info,
     "Curve": curve_dashboard_info,
     "Stats": stats_dashboard_info,
-    "CEX Flow": cex_flow_dashboard_info,
+    "RUNE Transfer Stats": rune_transfer_stats_dashboard_info,
     "Block scanner": block_scanner_info,
 }
 

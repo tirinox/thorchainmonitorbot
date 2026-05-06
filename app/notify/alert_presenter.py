@@ -13,7 +13,6 @@ from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.achievement.ach_list import Achievement
 from jobs.fetch.cached.last_block import EventLastBlock
 from jobs.fetch.chain_id import AlertChainIdChange
-from jobs.transfer_recorder import RuneTransferRecorder
 from lib.constants import THOR_BLOCKS_PER_MINUTE, thor_to_float, THOR_BASIS_POINT_MAX, Chains
 from lib.date_utils import DAY
 from lib.delegates import INotified
@@ -43,7 +42,7 @@ from models.s_swap import AlertSwapStart
 from models.secured import AlertSecuredAssetSummary
 from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
-from models.transfer import RuneCEXFlow, NativeTokenTransfer, AlertRuneTransferStats
+from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from models.wasm import WasmPeriodStats
@@ -74,9 +73,7 @@ class AlertPresenter(INotified, WithLogger):
         asyncio.create_task(self.handle_data(data))
 
     async def handle_data(self, data):
-        if isinstance(data, RuneCEXFlow):
-            await self._handle_rune_cex_flow(data)
-        elif isinstance(data, NativeTokenTransfer):
+        if isinstance(data, NativeTokenTransfer):
             await self._handle_rune_transfer(data)
         elif isinstance(data, EventBlockSpeed):
             await self._handle_block_speed(data)
@@ -164,29 +161,6 @@ class AlertPresenter(INotified, WithLogger):
             "public:rune_transfer",
             BaseLocalization.notification_text_rune_transfer_public,
             transfer, name_map)
-
-    async def _handle_rune_cex_flow(self, flow: RuneCEXFlow):
-        recorder = RuneTransferRecorder(self.deps)
-        text_period_days = max(1, round(flow.period_sec / DAY))
-        infographic_period_sec = flow.infographic_period_sec or flow.period_sec
-        infographic_period_days = max(1, round(infographic_period_sec / DAY))
-
-        text_summary = await recorder.get_summary(days=text_period_days)
-        infographic_summary = await recorder.get_summary(days=infographic_period_days)
-
-        text_data = AlertRuneTransferStats.from_summary(text_summary, usd_per_rune=flow.usd_per_rune)
-        infographic_data = AlertRuneTransferStats.from_summary(infographic_summary, usd_per_rune=flow.usd_per_rune)
-
-        async def message_gen(loc: BaseLocalization):
-            text = loc.notification_text_rune_transfer_stats(text_data)
-            photo, photo_name = await self.render_rune_transfer_stats(loc, infographic_data)
-            if photo is not None:
-                return BoardMessage.make_photo(photo, text, photo_name)
-            return text
-
-        await self.broadcaster.broadcast_to_all(
-            "public:rune_cex_flow",
-            message_gen)
 
     async def _handle_block_speed(self, event: EventBlockSpeed):
         async def _block_speed_picture_generator(loc: BaseLocalization, points, event):
@@ -737,18 +711,27 @@ class AlertPresenter(INotified, WithLogger):
         photo_name = 'rune_transfer_stats.png'
         return photo, photo_name
 
-    async def _handle_rune_transfer_stats(self, data: AlertRuneTransferStats):
+
+    async def _broadcast_rune_transfer_stats(
+            self,
+            topic: str,
+            text_data: AlertRuneTransferStats,
+            infographic_data: AlertRuneTransferStats | None = None,
+    ):
+        infographic_data = infographic_data or text_data
+
         async def message_gen(loc: BaseLocalization):
-            text = loc.notification_text_rune_transfer_stats(data)
-            photo, photo_name = await self.render_rune_transfer_stats(loc, data)
+            text = loc.notification_text_rune_transfer_stats(text_data)
+            photo, photo_name = await self.render_rune_transfer_stats(loc, infographic_data)
             if photo is not None:
                 return BoardMessage.make_photo(photo, text, photo_name)
             else:
                 return text
 
-        await self.deps.broadcaster.broadcast_to_all(
-            'public:rune_transfers:stats',
-            message_gen)
+        await self.deps.broadcaster.broadcast_to_all(topic, message_gen)
+
+    async def _handle_rune_transfer_stats(self, data: AlertRuneTransferStats):
+        await self._broadcast_rune_transfer_stats('public:rune_transfers:stats', data)
 
     async def _handle_app_layer_stats(self, data: WasmPeriodStats):
         async def message_gen(loc: BaseLocalization):

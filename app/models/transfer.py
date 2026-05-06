@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from typing import List
 
 from lib.constants import RUNE_DENOM
-from lib.date_utils import DAY
 from .asset import is_rune
 
 
@@ -54,37 +53,6 @@ class NativeTokenTransfer:
                 if ignore_comment in comment:
                     return True
         return False
-
-
-@dataclass
-class RuneCEXFlow:
-    rune_cex_inflow: float
-    rune_cex_outflow: float
-    total_transfers: int
-    overflow: bool = False
-    usd_per_rune: float = 0.0
-    period_sec: float = DAY
-    infographic_period_sec: float | None = None
-
-    @property
-    def total_rune(self):
-        return self.rune_cex_inflow + self.rune_cex_outflow
-
-    @property
-    def rune_cex_netflow(self):
-        return self.rune_cex_inflow - self.rune_cex_outflow
-
-    @property
-    def in_usd(self):
-        return self.usd_per_rune * self.rune_cex_inflow
-
-    @property
-    def out_usd(self):
-        return self.usd_per_rune * self.rune_cex_outflow
-
-    @property
-    def netflow_usd(self):
-        return self.usd_per_rune * self.rune_cex_netflow
 
 
 @dataclass

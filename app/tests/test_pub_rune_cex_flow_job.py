@@ -2,30 +2,35 @@ from types import SimpleNamespace
 
 import pytest
 
-from lib.date_utils import DAY
-from models.transfer import RuneCEXFlow
-from notify.pub_configure import PublicAlertJobExecutor
 from jobs.transfer_recorder import RuneTransferRecorder
+from models.transfer import AlertRuneTransferStats
+from notify.pub_configure import PublicAlertJobExecutor
+from tools.dashboard.components.cex_flow import rune_transfer_stats_dashboard_info_async
 
 
 @pytest.mark.asyncio
-async def test_job_rune_cex_flow_uses_rune_transfer_recorder(monkeypatch):
+async def test_job_rune_transfer_stats_uses_rune_transfer_recorder(monkeypatch):
     captured = {}
 
     class FakeRecorder:
         def __init__(self, deps):
             self.deps = deps
-            self.min_rune_in_summary = 10_000
 
-        async def get_cex_flow(self, period):
-            captured['period'] = period
-            return RuneCEXFlow(
-                rune_cex_inflow=15_000.0,
-                rune_cex_outflow=2_500.0,
-                total_transfers=3,
-                usd_per_rune=2.75,
-                period_sec=period,
-            )
+        async def get_summary(self, days):
+            captured['days'] = days
+            return {
+                'days': days,
+                'start_date': '2026-04-08',
+                'end_date': '2026-04-14',
+                'volume_rune': 17_500.0,
+                'transfer_count': 3,
+                'cex_inflow_rune': 15_000.0,
+                'cex_outflow_rune': 2_500.0,
+                'cex_inflow_count': 2,
+                'cex_outflow_count': 1,
+                'cex_netflow_rune': 12_500.0,
+                'daily': [],
+            }
 
     async def fake_handle_data(data):
         captured['data'] = data
@@ -35,45 +40,62 @@ async def test_job_rune_cex_flow_uses_rune_transfer_recorder(monkeypatch):
     executor = PublicAlertJobExecutor.__new__(PublicAlertJobExecutor)
     executor.deps = SimpleNamespace(
         alert_presenter=SimpleNamespace(handle_data=fake_handle_data),
-        emergency=SimpleNamespace(report=lambda *args, **kwargs: captured.setdefault('emergency_calls', []).append((args, kwargs))),
+        pool_cache=SimpleNamespace(get_usd_per_rune=lambda: None),
     )
 
-    await executor.job_rune_cex_flow()
+    async def fake_get_usd_per_rune():
+        return 2.75
 
-    assert captured['period'] == DAY
-    assert isinstance(captured['data'], RuneCEXFlow)
-    assert captured['data'].total_rune == 17_500.0
-    assert captured['data'].period_sec == DAY
-    assert captured['data'].infographic_period_sec == 7 * DAY
-    assert captured.get('emergency_calls', []) == []
+    executor.deps.pool_cache.get_usd_per_rune = fake_get_usd_per_rune
+
+    await executor.job_rune_transfer_stats()
+
+    assert captured['days'] == PublicAlertJobExecutor.RUNE_TRANSFER_STATS_SUMMARY_DAYS
+    assert isinstance(captured['data'], AlertRuneTransferStats)
+    assert captured['data'].period_days == PublicAlertJobExecutor.RUNE_TRANSFER_STATS_SUMMARY_DAYS
+    assert captured['data'].transfer_count == 3
+    assert captured['data'].usd_per_rune == 2.75
 
 
 @pytest.mark.asyncio
-async def test_rune_transfer_recorder_get_cex_flow_builds_flow_from_summary():
-    recorder = RuneTransferRecorder.__new__(RuneTransferRecorder)
-    recorder.deps = SimpleNamespace(
-        pool_cache=SimpleNamespace(get_usd_per_rune=lambda: None)
-    )
+async def test_rune_transfer_stats_dashboard_info_async_uses_summary(monkeypatch):
+    captured = {}
+
+    class FakeRecorder:
+        def __init__(self, deps):
+            self.deps = deps
+
+        async def get_summary(self, days):
+            captured['days'] = days
+            return {
+                'days': days,
+                'start_date': '2026-04-08',
+                'end_date': '2026-04-14',
+                'volume_rune': 12_579.0,
+                'transfer_count': 4,
+                'cex_inflow_rune': 12_345.0,
+                'cex_outflow_rune': 234.0,
+                'cex_inflow_count': 3,
+                'cex_outflow_count': 1,
+                'cex_netflow_rune': 12_111.0,
+                'daily': [],
+            }
 
     async def fake_get_usd_per_rune():
         return 3.5
 
-    async def fake_get_summary(days, end_ts=None):
-        assert days == 2
-        return {
-            'cex_transfer_count': 4,
-            'cex_inflow_rune': 12_345.0,
-            'cex_outflow_rune': 234.0,
-        }
+    monkeypatch.setattr('tools.dashboard.components.cex_flow.RuneTransferRecorder', FakeRecorder)
 
-    recorder.deps.pool_cache.get_usd_per_rune = fake_get_usd_per_rune
-    recorder.get_summary = fake_get_summary
+    app = SimpleNamespace(
+        deps=SimpleNamespace(
+            pool_cache=SimpleNamespace(get_usd_per_rune=fake_get_usd_per_rune),
+        )
+    )
 
-    flow = await recorder.get_cex_flow(period=2 * DAY)
+    data = await rune_transfer_stats_dashboard_info_async(app)
 
-    assert flow.rune_cex_inflow == 12_345.0
-    assert flow.rune_cex_outflow == 234.0
-    assert flow.total_transfers == 4
-    assert flow.usd_per_rune == 3.5
-    assert flow.period_sec == 2 * DAY
-
+    assert captured['days'] == PublicAlertJobExecutor.RUNE_TRANSFER_STATS_SUMMARY_DAYS
+    assert isinstance(data, AlertRuneTransferStats)
+    assert data.period_days == PublicAlertJobExecutor.RUNE_TRANSFER_STATS_SUMMARY_DAYS
+    assert data.cex_inflow_rune == 12_345.0
+    assert data.usd_per_rune == 3.5

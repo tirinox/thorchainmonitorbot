@@ -18,6 +18,10 @@
     3. Copy Limit swap data
 
     PYTHONPATH=app python app/tools/redis_copy_keys.py --pattern "Accum:LimitSwaps:*"
+
+    4. copy run transfers
+
+    PYTHONPATH=app python app/tools/redis_copy_keys.py --pattern "Accum:RuneTransfers:*"
 """
 import datetime
 import os
