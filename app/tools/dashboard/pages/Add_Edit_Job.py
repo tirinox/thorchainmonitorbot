@@ -11,6 +11,24 @@ from notify.pub_scheduler import PublicScheduler
 from tools.dashboard.helpers import run_coro, get_app
 
 
+def _build_function_picker_options(sched: PublicScheduler) -> tuple[list[str], dict[str, int], int]:
+    jobs: list[SchedJobCfg] = run_coro(sched.load_config_from_db(silent=True))
+    distribution = sched.job_distribution(jobs)
+    all_job_types = list(PublicAlertJobExecutor.AVAILABLE_TYPES.keys())
+    absent_jobs = PublicAlertJobExecutor.get_function_that_are_absent(list(distribution.keys()))
+    existing_jobs = [job_type for job_type in all_job_types if job_type not in absent_jobs]
+    ordered_job_types = absent_jobs + existing_jobs
+    default_index = 0
+    return ordered_job_types, distribution, default_index
+
+
+def _format_job_function_option(func_name: str, distribution: dict[str, int]) -> str:
+    count = distribution.get(func_name, 0)
+    if count == 0:
+        return f"🆕 {func_name} — not added yet (0)"
+    return f"✓ {func_name} — added ({count})"
+
+
 def form_add_job(edit_job: Optional[SchedJobCfg] = None):
     st.subheader("Select job trigger type")
     variants = [SchedVariant.INTERVAL, SchedVariant.CRON, SchedVariant.DATE]
@@ -27,12 +45,14 @@ def form_add_job(edit_job: Optional[SchedJobCfg] = None):
     else:
         app = get_app()
         sched: PublicScheduler = app.deps.pub_scheduler
-        jobs: list[SchedJobCfg] = run_coro(sched.load_config_from_db(silent=True))
-        distribution = sched.job_distribution(jobs)
-        absent_jobs = PublicAlertJobExecutor.get_function_that_are_absent(list(distribution.keys()))
-        existing_jobs = [job_type for job_type in PublicAlertJobExecutor.AVAILABLE_TYPES.keys()
-                         if job_type not in absent_jobs]
-        func_name = st.selectbox("Function", absent_jobs + existing_jobs)
+        function_options, distribution, default_index = _build_function_picker_options(sched)
+        func_name = st.selectbox(
+            "Function",
+            function_options,
+            index=default_index,
+            format_func=lambda option: _format_job_function_option(option, distribution),
+            help="Job types marked with 🆕 are not configured yet and are shown first. Types marked with ✓ are already present; the number shows how many jobs of that type already exist.",
+        )
 
     enabled = st.checkbox("Enabled?", value=edit_job.enabled if edit_job else False)
 
