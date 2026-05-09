@@ -703,7 +703,7 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def url_for_tx_tracker(tx_id: str):
-        return f'https://track.ninerealms.com/{tx_id}'
+        return f'https://track.thorchain.org/{tx_id}'
 
     def _add_input_output_links(self, tx, name_map, text_inputs, text_outputs, text_user):
         address, _ = tx.sender_address_and_chain
