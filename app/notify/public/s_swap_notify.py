@@ -1,5 +1,7 @@
 from jobs.scanner.arb_detector import ArbBotDetector, ArbStatus
 from jobs.scanner.event_db import EventDatabase, EventDbTxDeduplicator
+from lib.constants import Chains
+from lib.date_utils import parse_timespan_to_seconds, seconds_human
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -17,6 +19,8 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         super().__init__()
         self.deps = deps
         self._ev_db = EventDatabase(deps.db)
+        self.max_age_sec = parse_timespan_to_seconds(deps.cfg.tx.max_age)
+        self.thor_block_time_sec = Chains.block_time_default(Chains.THOR)
         self.min_streaming_swap_usd = self.deps.cfg.as_float(
             'tx.swap.also_trigger_when.streaming_swap.volume_greater', 2500.0)
         self.check_unique = True
@@ -40,11 +44,14 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         log_f = self.logger.debug
 
         if e.is_limit:
-            # fixme
+            # todo: limit swap handler
             return False
 
         if not e.is_streaming:
             log_f(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: not streaming')
+            return False
+
+        if not await self.is_swap_fresh_enough(e):
             return False
 
         if self.check_unique:
@@ -64,6 +71,39 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
             return False
 
         self.logger.info(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: eligible')
+        return True
+
+    async def is_swap_fresh_enough(self, event: AlertSwapStart) -> bool:
+        if self.max_age_sec == 0:
+            return True
+
+        if not event.block_height:
+            self.logger.warning(f'Swap start {event.tx_id}: no block height, skipping age check')
+            return True
+
+        try:
+            last_block_cache = getattr(self.deps, 'last_block_cache', None)
+            if not last_block_cache:
+                self.logger.warning(f'Swap start {event.tx_id}: no last block cache, skipping age check')
+                return True
+
+            last_block = await last_block_cache.get_thor_block()
+            if not last_block:
+                self.logger.warning(f'Swap start {event.tx_id}: THORChain last block unavailable, skipping age check')
+                return True
+
+            block_delta = max(0, int(last_block) - int(event.block_height))
+            age_sec = block_delta * self.thor_block_time_sec
+            if age_sec > self.max_age_sec:
+                self.logger.info(
+                    f'Swap start {event.tx_id}: {event.in_asset} -> {event.out_asset}: too old '
+                    f'({seconds_human(age_sec)} > {seconds_human(self.max_age_sec)}, '
+                    f'block gap = {block_delta})'
+                )
+                return False
+        except Exception as e:
+            self.logger.warning(f'Swap start {event.tx_id}: failed to check age: {e}')
+
         return True
 
     async def load_extra_tx_information(self, event: AlertSwapStart):

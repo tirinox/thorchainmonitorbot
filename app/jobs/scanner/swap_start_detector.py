@@ -167,7 +167,13 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
             try:
                 # Instead of Message there goes just Tx. For this particular test their attributes are compatible!
                 if obs_tx.is_inbound:
-                    if event := await self.make_swap_start_event(obs_tx.original, obs_tx.tx_id, height, is_deposit=False):
+                    try:
+                        observed_height = int(obs_tx.block_height)
+                    except (TypeError, ValueError):
+                        observed_height = height
+
+                    if event := await self.make_swap_start_event(
+                            obs_tx.original, obs_tx.tx_id, observed_height, is_deposit=False):
                         results.append(event)
             except Exception as e:
                 self.logger.error(f'Could not parse Observed In TX ({obs_tx}): {e!r}')
