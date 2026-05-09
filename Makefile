@@ -59,12 +59,13 @@ pull: # Pull the latest changes from the repository.
 	@git pull
 
 
-.PHONY: develop-last-commit-to-main
-develop-last-commit-to-main: # Cherry-pick the latest develop commit into main, push main, and switch back to develop.
+
+.PHONY: merge-develop-into-main
+merge-develop-into-main: # Merge develop into main, push main, and switch back to develop.
 	git fetch origin && \
 	git switch main && \
 	git pull --ff-only origin main && \
-	git cherry-pick develop && \
+	git merge develop && \
 	git push origin main && \
 	git switch develop
 
