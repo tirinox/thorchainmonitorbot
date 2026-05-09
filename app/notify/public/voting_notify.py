@@ -11,13 +11,20 @@ from models.mimir import MimirVoteManager, MimirVoteOption, MimirVoting, MimirHo
 
 class VotingNotifier(INotified, WithDelegates, WithLogger):
     IGNORE_IF_THERE_ARE_MORE_UPDATES_THAN = 6
+    GLOBAL_CD_KEY = 'VotingNotification:Global'
 
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
         cfg = deps.cfg.get('constants.voting')
         self.notification_cd_time = parse_timespan_to_seconds(cfg.as_str('notification.cooldown'))
+        self.global_notification_cd_time = parse_timespan_to_seconds(
+            cfg.as_str('notification.global_cooldown', '6h')
+        )
+        self.global_notification_cd_hits = cfg.as_int('notification.global_hits_before_cd', 2)
         assert self.notification_cd_time > 0
+        assert self.global_notification_cd_time > 0
+        assert self.global_notification_cd_hits > 0
         self.vote_recorder = VoteRecorder(deps)
 
         self.ignore_more_thant = cfg.as_int('ignore_if_more_than_event', self.IGNORE_IF_THERE_ARE_MORE_UPDATES_THAN)
@@ -50,16 +57,25 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
 
     async def _on_progress_changed(self, key, prev_progress, voting: MimirVoting, vote_option: MimirVoteOption):
         cd = Cooldown(self.deps.db, f'VotingNotification:{key}:{vote_option.value}', self.notification_cd_time)
-        if await cd.can_do():
-            alert = await self.vote_recorder.get_alert_for_key(
-                key,
-                7 * DAY,
-                holder=self.deps.mimir_const_holder,
-                triggered_option=vote_option,
-            )
-            if alert is not None:
-                await self.pass_data_to_listeners(alert)
-            await cd.do()
+        global_cd = Cooldown(
+            self.deps.db,
+            self.GLOBAL_CD_KEY,
+            self.global_notification_cd_time,
+            self.global_notification_cd_hits,
+        )
+        if not await cd.can_do() or not await global_cd.can_do():
+            return
+
+        alert = await self.vote_recorder.get_alert_for_key(
+            key,
+            7 * DAY,
+            holder=self.deps.mimir_const_holder,
+            triggered_option=vote_option,
+        )
+        if alert is not None:
+            await self.pass_data_to_listeners(alert)
+        await cd.do()
+        await global_cd.do()
 
     async def on_data(self, sender, data: MimirHolder):
         prev_state = await self.read_prev_state()

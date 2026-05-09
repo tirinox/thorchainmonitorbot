@@ -11,7 +11,7 @@ from lib.constants import bp_to_float
 from lib.date_utils import format_time_ago, now_ts
 from lib.delegates import INotified, WithDelegates
 from lib.logs import WithLogger
-from lib.texts import split_by_camel_case
+from lib.texts import split_by_camel_case, shorten_text
 from .base import BaseModelMixin
 from .mimir_naming import MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, MimirNameRules, EXTRA_AUTO_SOLVENCY_MIMIRS, \
     MIMIR_PAUSE_GLOBAL
@@ -20,6 +20,7 @@ from .node_info import NodeInfo, NetworkNodes
 # for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
 ADMIN_VALUE = 1
 SUPER_MAJORITY = 0.66666667
+MIMIR_VOTING_KEY_DISPLAY_LIMIT = 24
 
 
 @dataclass
@@ -389,6 +390,10 @@ class AlertMimirVoting(NamedTuple):
     def pretty_name(self):
         return self.holder.pretty_name(self.voting.key)
 
+    @classmethod
+    def display_key(cls, key: str) -> str:
+        return shorten_text(key, MIMIR_VOTING_KEY_DISPLAY_LIMIT)
+
     def to_dict(self, loc) -> dict:
         history = []
         if self.voting_history:
@@ -407,6 +412,7 @@ class AlertMimirVoting(NamedTuple):
 
         return {
             'key': self.voting.key,
+            'key_display': self.display_key(self.voting.key),
             'pretty_name': self.pretty_name,
             'current_value': self.current_constant_value,
             'active_nodes': self.voting.active_nodes_count,

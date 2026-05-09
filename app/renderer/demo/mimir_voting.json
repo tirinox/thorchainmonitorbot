@@ -2,6 +2,7 @@
   "template_name": "mimir_voting.jinja2",
   "parameters": {
     "key": "NEXTCHAIN",
+    "key_display": "NEXTCHAIN",
     "pretty_name": "Next Chain",
     "current_value": null,
     "active_nodes": 100,

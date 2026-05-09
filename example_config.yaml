@@ -502,6 +502,8 @@ constants:
     enabled: true
     notification:
       cooldown: 2h
+      global_cooldown: 6h
+      global_hits_before_cd: 2
 
 
 chain_halt_state:
