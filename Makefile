@@ -59,6 +59,16 @@ pull: # Pull the latest changes from the repository.
 	@git pull
 
 
+.PHONY: develop-last-commit-to-main
+develop-last-commit-to-main: # Cherry-pick the latest develop commit into main, push main, and switch back to develop.
+	git fetch origin && \
+	git switch main && \
+	git pull --ff-only origin main && \
+	git cherry-pick develop && \
+	git push origin main && \
+	git switch develop
+
+
 .PHONY: logs
 logs: # Show logs.
 	@docker compose logs -f --tail 1000 $(BOTNAME)
