@@ -12,6 +12,7 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.utils import hash_of_string_repr, say, safe_get
+from models.asset import is_rune
 from models.events import EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut, EventSwap
 from models.s_swap import AlertSwapStart
@@ -240,6 +241,10 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         return swap_props.build_action(ts)
 
     async def check_is_outbound_signed(self, tx_id, height=None, swap_props: SwapProps = None):
+        # note! this maybe dangerous
+        if is_rune(swap_props.attrs.get('out_asset', '')):
+            return True
+
         if not swap_props.is_output_l1_asset:
             return True
 
