@@ -85,6 +85,11 @@ class ActionType(Enum):
     TRADE_ACC_DEPOSIT = 'trade+'
     TRADE_ACC_WITHDRAW = 'trade-'
 
+    SECURED_ASSET_ADD = 'secure+'
+    SECURED_ASSET_WITHDRAW = 'secure-'
+
+    WASM_EXECUTE = 'x'
+
     SWITCH = 'switch'
 
     MIGRATE = 'migrate'
@@ -122,6 +127,10 @@ MEMO_ACTION_TABLE = {
     "~": ActionType.THORNAME,
     "trade+": ActionType.TRADE_ACC_DEPOSIT,
     "trade-": ActionType.TRADE_ACC_WITHDRAW,
+    "secure+": ActionType.SECURED_ASSET_ADD,
+    "secure-": ActionType.SECURED_ASSET_WITHDRAW,
+    "x": ActionType.WASM_EXECUTE,
+    "exec": ActionType.WASM_EXECUTE,
     "pool+": ActionType.RUNEPOOL_ADD,
     "pool-": ActionType.RUNEPOOL_WITHDRAW,
     "switch": ActionType.SWITCH,
@@ -176,6 +185,8 @@ class THORMemo:
     name_expiry: Union[str, int] = ''
 
     reference_memo: str = ''
+
+    payload: str = ''
 
     def __str__(self):
         return self.build()
@@ -372,6 +383,18 @@ class THORMemo:
         elif tx_type == ActionType.TRADE_ACC_WITHDRAW:
             return cls.withdraw_trade_account(dest_address=ith(components, 1, ''))
 
+        elif tx_type == ActionType.SECURED_ASSET_ADD:
+            return cls.secured_asset_add(dest_address=ith(components, 1, ''))
+
+        elif tx_type == ActionType.SECURED_ASSET_WITHDRAW:
+            return cls.secured_asset_withdraw(dest_address=ith(components, 1, ''))
+
+        elif tx_type == ActionType.WASM_EXECUTE:
+            return cls.wasm_execute(
+                contract_address=ith(components, 1, ''),
+                payload=ith(components, 2, ''),
+            )
+
         elif tx_type == ActionType.RUNEPOOL_ADD:
             return cls.runepool_add()
 
@@ -493,6 +516,15 @@ class THORMemo:
 
         elif self.action == ActionType.TRADE_ACC_WITHDRAW:
             memo = f'TRADE-:{self.dest_address}'
+
+        elif self.action == ActionType.SECURED_ASSET_ADD:
+            memo = f'SECURE+:{self.dest_address}'
+
+        elif self.action == ActionType.SECURED_ASSET_WITHDRAW:
+            memo = f'SECURE-:{self.dest_address}'
+
+        elif self.action == ActionType.WASM_EXECUTE:
+            memo = f'X:{self.dest_address}:{self.payload}'
 
         elif self.action == ActionType.RUNEPOOL_ADD:
             memo = 'POOL+'
@@ -663,6 +695,28 @@ class THORMemo:
         return cls(
             ActionType.TRADE_ACC_WITHDRAW,
             dest_address=dest_address
+        )
+
+    @classmethod
+    def secured_asset_add(cls, dest_address: str):
+        return cls(
+            ActionType.SECURED_ASSET_ADD,
+            dest_address=dest_address,
+        )
+
+    @classmethod
+    def secured_asset_withdraw(cls, dest_address: str):
+        return cls(
+            ActionType.SECURED_ASSET_WITHDRAW,
+            dest_address=dest_address,
+        )
+
+    @classmethod
+    def wasm_execute(cls, contract_address: str, payload: str = ''):
+        return cls(
+            ActionType.WASM_EXECUTE,
+            dest_address=contract_address,
+            payload=payload,
         )
 
     @classmethod

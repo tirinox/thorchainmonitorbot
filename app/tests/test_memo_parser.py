@@ -53,6 +53,45 @@ def test_memo2():
     print(m)
 
 
+@pytest.mark.parametrize('memo, action, dest, payload, built', [
+    (
+        'SECURE+:thor1x2whgc2nt665y0kc44uywhynazvp0l8tp0vtu6',
+        ActionType.SECURED_ASSET_ADD,
+        'thor1x2whgc2nt665y0kc44uywhynazvp0l8tp0vtu6',
+        '',
+        'SECURE+:thor1x2whgc2nt665y0kc44uywhynazvp0l8tp0vtu6',
+    ),
+    (
+        'secure-:bc1qp8278yutn09r2wu3jrc8xg2a7hgdgwv2gvsdyw',
+        ActionType.SECURED_ASSET_WITHDRAW,
+        'bc1qp8278yutn09r2wu3jrc8xg2a7hgdgwv2gvsdyw',
+        '',
+        'SECURE-:bc1qp8278yutn09r2wu3jrc8xg2a7hgdgwv2gvsdyw',
+    ),
+    (
+        'x:tthor14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sw58u9f:AA==',
+        ActionType.WASM_EXECUTE,
+        'tthor14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sw58u9f',
+        'AA==',
+        'X:tthor14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sw58u9f:AA==',
+    ),
+    (
+        'exec:tthor14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sw58u9f:eyJmb28iOiJiYXIifQ==',
+        ActionType.WASM_EXECUTE,
+        'tthor14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sw58u9f',
+        'eyJmb28iOiJiYXIifQ==',
+        'X:tthor14hj2tavq8fpesdwxxcu44rty3hh90vhujrvcmstl4zr3txmfvw9sw58u9f:eyJmb28iOiJiYXIifQ==',
+    ),
+])
+def test_new_memo_types_parse_and_build(memo, action, dest, payload, built):
+    m = THORMemo.parse_memo(memo)
+
+    assert m.action == action
+    assert m.dest_address == dest
+    assert m.payload == payload
+    assert m.build() == built
+
+
 @pytest.mark.parametrize('memo', [
     'migrate:123456',
     'migrate',
