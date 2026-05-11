@@ -2,6 +2,7 @@ import asyncio
 from typing import Optional, Iterable
 
 from jobs.scanner.native_scan import BlockResult
+from jobs.scanner.event_db import EventDbTxDeduplicator
 from jobs.scanner.tx import NativeThorTx, ThorObservedTx
 from lib.constants import NATIVE_RUNE_SYMBOL, thor_to_float, THOR_BLOCK_TIME
 from lib.delegates import INotified, WithDelegates
@@ -16,10 +17,15 @@ from models.s_swap import AlertSwapStart
 
 
 class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
+    OBSERVED_TX_DEDUP_COMPONENT = 'ss_start_observed_first_seen'
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
         self.ph = None
+        self.observed_tx_deduplicator = EventDbTxDeduplicator(
+            deps.db, self.OBSERVED_TX_DEDUP_COMPONENT
+        ) if getattr(deps, 'db', None) else None
 
     @staticmethod
     def _coins_from_msg(msg: dict):
@@ -166,15 +172,23 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
         for obs_tx in txs:
             try:
                 # Instead of Message there goes just Tx. For this particular test their attributes are compatible!
-                if obs_tx.is_inbound:
-                    try:
-                        observed_height = int(obs_tx.block_height)
-                    except (TypeError, ValueError):
-                        observed_height = height
+                if not obs_tx.is_inbound:
+                    continue
 
-                    if event := await self.make_swap_start_event(
-                            obs_tx.original, obs_tx.tx_id, observed_height, is_deposit=False):
-                        results.append(event)
+                if not obs_tx.tx_id:
+                    self.logger.debug('Skipping observed inbound tx without tx_id')
+                    continue
+
+                if self.observed_tx_deduplicator:
+                    if await self.observed_tx_deduplicator.have_ever_seen_hash(obs_tx.tx_id):
+                        self.logger.debug(f'Skipping repeated observed inbound tx {obs_tx.tx_id}')
+                        continue
+
+                    await self.observed_tx_deduplicator.mark_as_seen(obs_tx.tx_id)
+
+                if event := await self.make_swap_start_event(
+                        obs_tx.original, obs_tx.tx_id, height, is_deposit=False):
+                    results.append(event)
             except Exception as e:
                 self.logger.error(f'Could not parse Observed In TX ({obs_tx}): {e!r}')
         return results

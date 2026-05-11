@@ -175,7 +175,7 @@ async def test_streaming_swap_start_disables_age_filter_when_max_age_is_zero():
 
 
 @pytest.mark.asyncio
-async def test_observed_quorum_swap_uses_original_observed_block_height_and_is_filtered_by_notify():
+async def test_observed_quorum_swap_uses_thorchain_block_height_and_stays_fresh():
     deps = make_deps(max_age='2d', last_block=26_101_907)
     detector = SwapStartDetectorFromBlock(deps)
     notifier = StreamingSwapStartTxNotifier(deps)
@@ -186,9 +186,25 @@ async def test_observed_quorum_swap_uses_original_observed_block_height_and_is_f
     assert len(swaps) == 1
     event = swaps[0]
     assert event.tx_id == '54F2B5075E6CAA7B2D3363A77C3384CAF8B9C3C448B8C04E1C0409016CAD6C2F'
-    assert event.block_height == 24_814_698
-    assert event.block_height != block.block_no
+    assert event.block_height == block.block_no
 
-    assert await notifier.is_swap_eligible(event) is False
+    assert await notifier.is_swap_eligible(event) is True
+
+
+@pytest.mark.asyncio
+async def test_observed_quorum_swap_is_ignored_when_seen_again_in_later_blocks():
+    deps = make_deps(max_age='2d', last_block=26_101_917)
+    detector = SwapStartDetectorFromBlock(deps)
+    ph = make_price_holder()
+
+    first_block = make_block(make_observed_quorum_native_tx_from_sample(), block_no=26_101_907)
+    repeated_block = make_block(make_observed_quorum_native_tx_from_sample(), block_no=26_101_917)
+
+    first_swaps = await detector.detect_swaps(first_block, ph)
+    repeated_swaps = await detector.detect_swaps(repeated_block, ph)
+
+    assert len(first_swaps) == 1
+    assert first_swaps[0].block_height == first_block.block_no
+    assert repeated_swaps == []
 
 

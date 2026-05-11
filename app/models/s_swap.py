@@ -96,6 +96,7 @@ class AlertSwapStart:
     in_asset: str
     out_asset: str
     volume_usd: float
+    # THORChain block height where the swap start was observed by this bot.
     block_height: int
     memo: THORMemo
     memo_str: str
