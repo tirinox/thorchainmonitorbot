@@ -1,37 +1,41 @@
 {
   "template_name": "swap_finished.jinja2",
   "parameters": {
-    "tx_hash_in": "356B4E43540880B69A22D7ACA9F0F62E80087C947819AE8118EAAA8100D360C0",
-    "source_user_name": "0x12..9932",
-    "source_address": "0x1234567890abcdef4567890abcdef1234567890",
-    "source_amount": 31.88522,
-    "source_asset": "ETH.ETH",
-    "source_asset_logo": "ETH.ETH",
-    "source_asset_name": "ETH",
+    "tx_hash_in": "8C14E6FF69A290ADCB7A2EAB8E927FDBB0B80C7FE30F6A9A7EF4AB61D9E13E4D",
+    "source_user_name": "0x8a..42f1",
+    "source_address": "0x8ac35d7fb6a34e971524b7a2d2f52441966442f1",
+    "source_amount": 42.125,
+    "source_asset": "ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+    "source_asset_logo": "ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+    "source_asset_name": "USDC",
     "source_chain_logo": "",
-    "source_volume_usd": 4772300,
-    "tx_hash_out": "77809539AF910D4FDB6133F4D6427A9A0AF943C11940EC607DD67F3446407978",
-    "destination_user_name": "valgalla.thor",
-    "destination_address": "valgalla.thor",
-    "destination_amount": 4.222323,
+    "source_volume_usd": 42125,
+    "tx_hash_out": "D8764A23EB16D9F2F0C4201AC95118D11C44E93939342D9DAF2B72712D813281",
+    "destination_user_name": "fastswap.thor",
+    "destination_address": "fastswap.thor",
+    "destination_amount": 41.7328,
     "destination_asset": "BSC~USDT-0X55D398326F99059FF775485246999027B3197955",
     "destination_logo": "BSC.USDT-0X55D398326F99059FF775485246999027B3197955",
-    "destination_asset_name": "BSC",
+    "destination_asset_name": "USDT",
     "destination_chain_logo": "BSC.BNB",
-    "destination_volume_usd": 4660923,
-    "affiliate_names": ["Vultisig"],
-    "affiliate_logos": [""],
-    "affiliate_fee": 0.5,
-    "liquidity_fee_percent": 0.015222,
-    "total_time_sec": 3600,
-    "streaming_count": 100,
+    "destination_volume_usd": 41733,
+    "affiliate_names": [
+      "Vultisig"
+    ],
+    "affiliate_logos": [
+      ""
+    ],
+    "affiliate_fee": 0.25,
+    "liquidity_fee_percent": 0.0098,
+    "total_time_sec": 96,
+    "streaming_count": 12,
     "rapid_swap_stats": {
-      "total_swaps": 100,
-      "distinct_blocks": 50,
-      "blocks_with_multi": 50,
-      "blocks_saved": 50,
-      "streaming_swap_quantity": 100,
-      "saved_time": 300.0
+      "total_swaps": 12,
+      "distinct_blocks": 5,
+      "blocks_with_multi": 4,
+      "blocks_saved": 7,
+      "streaming_swap_quantity": 12,
+      "saved_time": 42.0
     },
     "refund": false,
     "refund_rate": 0,
@@ -39,4 +43,3 @@
     "_height": 720
   }
 }
-

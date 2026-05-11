@@ -3,7 +3,19 @@
 
 {% block content %}
 
-    {% with title="SWAP FINISHED ✅" %}
+    {% set is_rapid_swap = rapid_swap_stats and rapid_swap_stats.blocks_saved > 0 %}
+    {% set rapid_saved_seconds = (rapid_swap_stats.saved_time | round | int) if is_rapid_swap else 0 %}
+    {% if is_rapid_swap %}
+        {% if rapid_saved_seconds >= 3600 %}
+            {% set rapid_saved_time_text = '%02d:%02d:%02d saved' % (rapid_saved_seconds // 3600, (rapid_saved_seconds % 3600) // 60, rapid_saved_seconds % 60) %}
+        {% else %}
+            {% set rapid_saved_time_text = '%02d:%02d saved' % (rapid_saved_seconds // 60, rapid_saved_seconds % 60) %}
+        {% endif %}
+    {% else %}
+        {% set rapid_saved_time_text = '' %}
+    {% endif %}
+
+    {% with title="SWAP FINISHED ✅", header_badge="⚡ RAPID SWAP" if is_rapid_swap else "", header_badge_extra=rapid_saved_time_text if is_rapid_swap else "" %}
         {% include "components/header.jinja2" %}
     {% endwith %}
 
@@ -59,17 +71,63 @@
             margin-left: -8px;
         }
 
-        .rapid-saved-blocks {
-            font-size: 22px;
-            color: #f5c518;
-            margin-top: 4px;
-            font-weight: bolder;
+        .header-box {
+            top: 18px;
         }
 
-        .rapid-saved-time {
-            font-size: 17px;
-            color: rgba(245, 197, 24, 0.72);
-            font-weight: normal;
+
+        .rapid-swap-meta {
+            width: 300px;
+            bottom: 138px;
+            transform: translateX(-42px);
+        }
+
+        .rapid-saved-blocks {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            padding: 11px 16px 12px;
+            margin-top: 4px;
+            box-shadow: 0 0 18px rgba(0, 0, 0, 0.28);
+        }
+
+        .rapid-saved-blocks-main {
+            font-size: 24px;
+            color: #f5c518;
+            font-weight: 800;
+            line-height: 1.05;
+            text-shadow: 0 0 12px rgba(245, 197, 24, 0.2);
+        }
+
+        .rapid-saved-blocks-sub {
+            font-size: 21px;
+            color: #fff2b1;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .time-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .time-block-flex.rapid-time-block {
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rapid-time-block .clock {
+            padding: 6px 8px 6px 3px;
+        }
+
+        .rapid-time-block .wait-time {
+            margin-bottom: 0;
+            font-size: 46px;
+            font-weight: 500;
+            line-height: 1;
         }
 
     </style>
@@ -142,18 +200,20 @@
 
         <div class="line-box">
             <img src="renderer/static/img/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
-            {% if (streaming_count and streaming_count > 1) or (rapid_swap_stats and rapid_swap_stats.blocks_saved > 0) %}
-                <div class="above-arrow streaming-count midgard-turqoise">
-                    {% if streaming_count and streaming_count > 1 %}
+            {% if (streaming_count and streaming_count > 1) or is_rapid_swap %}
+                <div class="above-arrow streaming-count midgard-turqoise {{ "rapid-swap-meta" if is_rapid_swap else "" }}">
+                    {% if is_rapid_swap %}
+                        <div class="rapid-saved-blocks">
+                            <div class="rapid-saved-blocks-main">
+                                ⚡ {{ rapid_swap_stats.streaming_swap_quantity or rapid_swap_stats.total_swaps }} subswaps
+                            </div>
+                            <div class="rapid-saved-blocks-sub">
+                                in {{ rapid_swap_stats.distinct_blocks }} blocks
+                            </div>
+                        </div>
+                    {% elif streaming_count and streaming_count > 1 %}
                         {{ streaming_count }} subswaps
                     {% endif %}
-{#                todo: improve  #}
-{#                    {% if rapid_swap_stats and rapid_swap_stats.blocks_saved > 0 %}#}
-{#                        <div class="rapid-saved-blocks">#}
-{#                            ⚡ {{ rapid_swap_stats.blocks_saved }} / {{ rapid_swap_stats.streaming_swap_quantity or rapid_swap_stats.total_swaps }} blocks saved#}
-{#                        </div>#}
-{#                        <div class="rapid-saved-time" id="rapid-saved-time"></div>#}
-{#                    {% endif %}#}
                 </div>
             {% endif %}
         </div>
@@ -182,9 +242,11 @@
                         ({{ short_dollar(destination_volume_usd) }})
                     </div>
 
-                    <div class="time-block-flex" id="time-block">
+                    <div class="time-block-flex {{ "rapid-time-block" if is_rapid_swap else "" }}" id="time-block">
                         <img src="renderer/static/img/time-is-money.png" alt="Time is money..." class="clock">
-                        <div class="wait-time" id="wait-time"></div>
+                        <div class="time-stack">
+                            <div class="wait-time" id="wait-time"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -209,14 +271,6 @@
             // hide #time-block
             document.querySelector('#time-block').style.display = 'none';
         }
-
-        {% if rapid_swap_stats and rapid_swap_stats.blocks_saved > 0 %}
-        const rapidSavedTime = Math.round({{ rapid_swap_stats.saved_time }});
-        const rapidEl = document.querySelector('#rapid-saved-time');
-        if (rapidEl && rapidSavedTime > 0) {
-            rapidEl.textContent = formatTime(rapidSavedTime) + ' saved';
-        }
-        {% endif %}
     </script>
 
 {% endblock %}

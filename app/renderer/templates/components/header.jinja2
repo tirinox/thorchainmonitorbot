@@ -5,10 +5,55 @@
         font-size: 43px;
         color: #c8c8c8;
         font-weight: bold;
+        line-height: 1.05;
+    }
+
+    .header-title-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .page-subtitle-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 8px 18px 9px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(35, 220, 200, 0.15), rgba(245, 197, 24, 0.15));
+        border: 1px solid rgba(245, 197, 24, 0.35);
+        color: #f5c518;
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        text-shadow: 0 0 14px rgba(245, 197, 24, 0.22);
+        box-shadow: 0 0 24px rgba(0, 0, 0, 0.22);
+    }
+
+    .page-subtitle-badge-extra {
+        color: #fff2b1;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: none;
+        opacity: 0.95;
     }
 
 </style>
 <div class="header-box">
     <img class="logo" src="renderer/static/img/tc_logo_transparent.png?rv=1" alt="THORChain logo">
-    <div class="page-title">THORCHAIN {{ title }}</div>
+    <div class="header-title-stack">
+        <div class="page-title">THORCHAIN {{ title }}</div>
+        {% if header_badge %}
+            <div class="page-subtitle-badge">
+                <span>{{ header_badge }}</span>
+                {% if header_badge_extra %}
+                    <span class="page-subtitle-badge-extra">{{ header_badge_extra }}</span>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
 </div>

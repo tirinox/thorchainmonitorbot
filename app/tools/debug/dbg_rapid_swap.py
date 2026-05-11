@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import logging
+from pprint import pprint
 
 from jobs.rapid_recorder import RapidSwapRecorder
 from jobs.scanner.event_db import EventDatabase
@@ -13,6 +14,7 @@ from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.texts import sep
 from lib.utils import say
+from models.events import EventStreamingSwap, EventSwap, EventOutbound
 from models.memo import ActionType
 from tools.lib.lp_common import LpAppFramework
 
@@ -258,6 +260,91 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
+async def dbg_print_tx_status(app, tx_id: str = DEFAULT_WATCH_TX_ID):
+    ev_db = EventDatabase(app.deps.db)
+    swap_props = await ev_db.read_tx_status(tx_id)
+
+    print('=' * 120)
+    print(f'TX STATUS DEBUG: {tx_id}')
+    print('=' * 120)
+
+    if not swap_props:
+        print('No tx status found in EventDatabase.')
+        return None
+
+    print('\n--- attrs ---')
+    pprint(dict(swap_props.attrs))
+
+    print('\n--- derived flags ---')
+    print(f'status            = {swap_props.status}')
+    print(f'given_away        = {swap_props.given_away}')
+    print(f'has_started       = {swap_props.has_started}')
+    print(f'has_swaps         = {swap_props.has_swaps}')
+    print(f'is_finished       = {swap_props.is_finished}')
+    print(f'is_completed      = {swap_props.is_completed}')
+    print(f'is_streaming      = {swap_props.is_streaming}')
+    print(f'is_output_l1_asset= {swap_props.is_output_l1_asset}')
+    print(f'is_output_trade   = {swap_props.is_output_trade}')
+    print(f'from_address      = {swap_props.from_address}')
+    print(f'in_coin           = {swap_props.in_coin}')
+
+    try:
+        rs = swap_props.rapid_swap_stats
+        print('\n--- rapid swap stats ---')
+        print(f'total_swaps       = {rs.total_swaps}')
+        print(f'distinct_blocks   = {rs.distinct_blocks}')
+        print(f'blocks_with_multi = {rs.blocks_with_multi}')
+        print(f'blocks_saved      = {rs.blocks_saved}')
+        print(f'streaming_qty     = {rs.streaming_swap_quantity}')
+    except Exception as e:
+        print(f'\nFailed to compute rapid_swap_stats: {e!r}')
+
+    print('\n--- events ---')
+    for i, ev in enumerate(swap_props.events, start=1):
+        print(f'\n[{i:02d}] {ev.__class__.__name__}')
+
+        if isinstance(ev, EventSwap):
+            print(f'  height                 = {ev.height}')
+            print(f'  tx_id                  = {ev.tx_id}')
+            print(f'  pool                   = {ev.pool}')
+            print(f'  asset                  = {ev.asset}')
+            print(f'  amount                 = {ev.amount}')
+            print(f'  emit_asset             = {ev.emit_asset}')
+            print(f'  streaming_swap_count   = {ev.streaming_swap_count}')
+            print(f'  streaming_swap_quantity= {ev.streaming_swap_quantity}')
+            print(f'  memo                   = {ev.memo}')
+
+        elif isinstance(ev, EventOutbound):
+            print(f'  height     = {ev.height}')
+            print(f'  tx_id      = {ev.tx_id}')
+            print(f'  out_id     = {ev.out_id}')
+            print(f'  chain      = {ev.chain}')
+            print(f'  to_address = {ev.to_address}')
+            print(f'  amount     = {ev.amount}')
+            print(f'  asset      = {ev.asset}')
+            print(f'  memo       = {ev.memo}')
+
+        elif isinstance(ev, EventStreamingSwap):
+            print(f'  height       = {ev.height}')
+            print(f'  tx_id        = {ev.tx_id}')
+            print(f'  quantity     = {ev.quantity}')
+            print(f'  count        = {ev.count}')
+            print(f'  last_height  = {ev.last_height}')
+            print(f'  deposit      = {ev.deposit}')
+            print(f'  in           = {ev.in_amt_str}')
+            print(f'  out          = {ev.out_amt_str}')
+
+        else:
+            print(f'  raw = {ev}')
+
+    print('\n--- outbounds gathered ---')
+    for out in swap_props.gather_outbounds():
+        print(out)
+
+    print('=' * 120)
+    return swap_props
+
+
 async def run(args=None):
     parser = build_arg_parser()
     args = parser.parse_args(args=args)
@@ -266,6 +353,8 @@ async def run(args=None):
 
     app = LpAppFramework(log_level=log_level)
     async with app:
+        await dbg_print_tx_status(app, tx_id=args.tx_id)
+        return
         await dbg_rapid_swap_continuous(
             app,
             start_block=args.start_block,
