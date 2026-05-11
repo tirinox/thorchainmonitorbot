@@ -1,9 +1,8 @@
 import json
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from typing import NamedTuple, List, Optional
 
 from jobs.scanner.block_result import ThorEvent
-from lib.constants import THOR_BLOCK_TIME
 from models.asset import is_rune, is_trade_asset, Asset
 from models.events import EventSwap, EventStreamingSwap, EventOutbound, parse_swap_and_out_event, TypeEventSwapAndOut, \
     EventTradeAccountDeposit
@@ -12,6 +11,29 @@ from models.memo import THORMemo
 from models.s_swap import StreamingSwap, RapidSwapStats
 from models.tx import ThorAction, SUCCESS, ThorMetaSwap, ThorCoin, ThorSubTx
 
+
+
+def rapid_swap_execution_key(ev: EventSwap):
+    """
+    Logical swap-execution key used for rapid-swap detection.
+
+    For streaming swaps, multiple pool-hop ev_swap events can belong to the same
+    sub-swap execution and therefore share the same streaming_swap_count. Those
+    must count as a single execution unit. When streaming metadata is absent,
+    fall back to block height so same-block multi-hop still collapses to one unit.
+    """
+    count = int(ev.streaming_swap_count or 0)
+    if count > 0:
+        return ('stream', count)
+    return ('block', int(ev.height or 0))
+
+
+def group_rapid_swap_executions(swap_events: List[EventSwap]) -> "OrderedDict[tuple, List[EventSwap]]":
+    grouped = OrderedDict()
+    for ev in swap_events:
+        key = rapid_swap_execution_key(ev)
+        grouped.setdefault(key, []).append(ev)
+    return grouped
 
 
 class SwapProps(NamedTuple):
@@ -188,22 +210,25 @@ class SwapProps(NamedTuple):
         Analyse ev_swap_xxx events to measure rapid-swap (block-batching) efficiency.
 
         Returns a RapidSwapStats with:
-          - total_swaps:       how many ev_swap events exist
-          - distinct_blocks:   how many unique block heights those swaps span
-          - blocks_with_multi: how many of those blocks contain >1 swap
+          - total_swaps:       how many logical sub-swap executions exist
+                               (distinct streaming_swap_count values, not raw pool hops)
+          - distinct_blocks:   how many unique block heights those logical executions span
+          - blocks_with_multi: how many of those blocks contain >1 logical execution
           - blocks_saved:      total_swaps - distinct_blocks
-                               (without batching, each swap would need its own block)
+                               (without batching, each logical execution would need its own block)
 
-        Example – heights [100,100,100, 102,102,102, 104,104]:
-          total_swaps=8, distinct_blocks=3, blocks_with_multi=3, blocks_saved=5
+        Example – ev_swap_xxx rows for streaming counts [60,60, 61,61] in one block:
+          total_swaps=2, distinct_blocks=1, blocks_with_multi=1, blocks_saved=1
         """
         swap_events: List[EventSwap] = [ev for ev in self.events if isinstance(ev, EventSwap)]
 
+        execution_groups = group_rapid_swap_executions(swap_events)
         swaps_per_block: dict = defaultdict(int)
-        for ev in swap_events:
-            swaps_per_block[ev.height] += 1
+        for group in execution_groups.values():
+            representative = group[0]
+            swaps_per_block[representative.height] += 1
 
-        total_swaps = len(swap_events)
+        total_swaps = len(execution_groups)
         distinct_blocks = len(swaps_per_block)
         blocks_with_multi = sum(1 for count in swaps_per_block.values() if count > 1)
         blocks_saved = total_swaps - distinct_blocks

@@ -143,15 +143,15 @@ class RapidSwapStats(NamedTuple):
     """
     Statistics about rapid (batched) swap execution within a single streaming swap.
 
-    Example – ev_swap heights: [100, 100, 100, 102, 102, 102, 104, 104]
-      total_swaps          = 8
-      distinct_blocks      = 3  (100, 102, 104)
-      blocks_with_multi    = 3  (all three have >1 swap)
-      blocks_saved         = 8 - 3 = 5
+    Example – ev_swap rows in one block with streaming counts [60, 60, 61, 61]
+      total_swaps          = 2  (logical executions: 60 and 61)
+      distinct_blocks      = 1
+      blocks_with_multi    = 1
+      blocks_saved         = 2 - 1 = 1
     """
-    total_swaps: int           # total number of ev_swap events
-    distinct_blocks: int       # number of unique block heights containing a swap
-    blocks_with_multi: int     # blocks that hold more than one swap (rapid swap active)
+    total_swaps: int           # total number of logical swap executions (distinct streaming_swap_count values)
+    distinct_blocks: int       # number of unique block heights containing those logical executions
+    blocks_with_multi: int     # blocks that hold more than one logical execution (rapid swap active)
     blocks_saved: int          # total_swaps - distinct_blocks  (execution blocks saved)
     streaming_swap_quantity: int = 0  # first non-zero streaming_swap_quantity across all ev_swap events
 

@@ -5,6 +5,15 @@ from lib.constants import POOL_MODULE, NATIVE_RUNE_SYMBOL, thor_to_float, bp_to_
 from lib.utils import expect_string
 
 
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        if value in (None, ''):
+            return default
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
 class EventSwap(NamedTuple):
     pool: str = ''
     swap_target: int = 0
@@ -30,19 +39,19 @@ class EventSwap(NamedTuple):
         attrs = event.attrs
         return cls(
             pool=attrs.get('pool', ''),
-            swap_target=int(attrs.get('swap_target', 0)),
-            swap_slip=int(attrs.get('swap_slip', 0)),
-            liquidity_fee=int(attrs.get('liquidity_fee', 0)),
-            liquidity_fee_in_rune=int(attrs.get('liquidity_fee_in_rune', 0)),
+            swap_target=_safe_int(attrs.get('swap_target', 0)),
+            swap_slip=_safe_int(attrs.get('swap_slip', 0)),
+            liquidity_fee=_safe_int(attrs.get('liquidity_fee', 0)),
+            liquidity_fee_in_rune=_safe_int(attrs.get('liquidity_fee_in_rune', 0)),
             emit_asset=attrs.get('emit_asset', ''),
-            streaming_swap_quantity=int(attrs.get('streaming_swap_quantity', 0)),
-            streaming_swap_count=int(attrs.get('streaming_swap_count', 0)),
+            streaming_swap_quantity=_safe_int(attrs.get('streaming_swap_quantity', 0)),
+            streaming_swap_count=_safe_int(attrs.get('streaming_swap_count', 0)),
             tx_id=attrs.get('id', ''),
             chain=attrs.get('chain', ''),
             from_address=attrs.get('from', ''),
             to_address=attrs.get('to', ''),
             coin=attrs.get('coin', ''),
-            amount=event.amount or int(attrs.get('amount', 0)),
+            amount=event.amount or _safe_int(attrs.get('amount', 0)),
             asset=event.asset or attrs.get('asset', ''),
             memo=attrs.get('memo', ''),
             original=event,

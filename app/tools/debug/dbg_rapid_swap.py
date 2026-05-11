@@ -3,24 +3,30 @@ import asyncio
 import logging
 
 from jobs.rapid_recorder import RapidSwapRecorder
+from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.block_result import BlockResult
 from jobs.scanner.native_scan import BlockScanner
+from jobs.scanner.swap_props import group_rapid_swap_executions
+from jobs.scanner.swap_extractor import SwapExtractorBlock
 from lib.constants import THOR_BLOCK_TIME, thor_to_float
 from lib.delegates import INotified
+from lib.depcont import DepContainer
 from lib.texts import sep
 from lib.utils import say
+from models.memo import ActionType
 from tools.lib.lp_common import LpAppFramework
 
 DEFAULT_SLEEP_PERIOD = THOR_BLOCK_TIME * 0.99
 DEFAULT_LOG_LEVEL = 'INFO'
 SCANNER_ROLE = 'dbg_rapid_swap'
+DEFAULT_START_BLOCK = 26130215 - 1
+DEFAULT_WATCH_TX_ID = '220DB364FB625F7570A7C1C5B56831A22F88405F3713453908EBFFD0C7A627C4'
 
 
 class RapidSwapDebugPrinter(INotified):
-    def __init__(self, recorder: RapidSwapRecorder, speak=True):
+    def __init__(self, recorder: RapidSwapRecorder, watch_tx_id: str = ''):
         self.recorder = recorder
-        self.speak = speak
-        self._announced_batches = set()
+        self.watch_tx_id = (watch_tx_id or '').upper()
 
     @staticmethod
     def _shorten(text: str, max_len: int = 180) -> str:
@@ -43,13 +49,14 @@ class RapidSwapDebugPrinter(INotified):
             return f' stream={count}/{quantity}'
         return f' stream=0/{quantity}'
 
-    @classmethod
-    def _announcement(cls, block_no: int, tx_id: str, swap_count: int) -> str:
-        tx_short = cls._shorten(tx_id, max_len=12)
-        return f'Rapid swap x {swap_count} in block {block_no} for {tx_short}'
-
     async def on_data(self, sender, block: BlockResult):
         rapid_candidates = self.recorder.collect_rapid_swap_candidates(block)
+        if self.watch_tx_id:
+            rapid_candidates = {
+                tx_id: swap_events
+                for tx_id, swap_events in rapid_candidates.items()
+                if str(tx_id).upper() == self.watch_tx_id
+            }
         if not rapid_candidates:
             return
 
@@ -59,13 +66,14 @@ class RapidSwapDebugPrinter(INotified):
         )
 
         for tx_id, swap_events in sorted(rapid_candidates.items(), key=lambda item: (-len(item[1]), item[0])):
-            batch_key = self.recorder._dedup_key(block.block_no, tx_id)
-            swap_count = len(swap_events)
+            execution_groups = group_rapid_swap_executions(swap_events)
+            swap_count = len(execution_groups)
+            raw_event_count = len(swap_events)
             blocks_saved = max(0, swap_count - 1)
             trader = next((event.from_address for event in swap_events if event.from_address), '?')
             memo = next((event.memo for event in swap_events if event.memo), '')
             summary = (
-                f'RAPID block={block.block_no} tx={tx_id} swaps={swap_count} '
+                f'RAPID block={block.block_no} tx={tx_id} swaps={swap_count} raw_events={raw_event_count} '
                 f'blocks_saved={blocks_saved} trader={trader} memo={self._shorten(memo)}'
             )
             logging.warning(summary)
@@ -82,11 +90,59 @@ class RapidSwapDebugPrinter(INotified):
                     f'memo={self._shorten(swap_event.memo)}'
                 )
 
-            if self.speak and batch_key not in self._announced_batches:
-                await say(self._announcement(block.block_no, tx_id, swap_count))
-                self._announced_batches.add(batch_key)
-
         print()
+
+
+class RapidSwapCompletedDebugNotifier(INotified):
+    def __init__(self, deps: DepContainer, speak=True, watch_tx_id: str = ''):
+        self.speak = speak
+        self._ev_db = EventDatabase(deps.db)
+        self._announced_txs = set()
+        self.watch_tx_id = (watch_tx_id or '').upper()
+        self._watched_tx_completed = asyncio.Event()
+
+    @property
+    def watched_tx_completed(self) -> bool:
+        return self._watched_tx_completed.is_set()
+
+    async def on_data(self, sender, txs: list):
+        announced = []
+
+        for tx in txs:
+            if not tx or not tx.is_of_type(ActionType.SWAP):
+                continue
+
+            if self.watch_tx_id and str(tx.tx_hash).upper() != self.watch_tx_id:
+                continue
+
+            self._watched_tx_completed.set()
+
+            if tx.tx_hash in self._announced_txs:
+                continue
+
+            swap_props = await self._ev_db.read_tx_status(tx.tx_hash)
+            if not swap_props:
+                continue
+
+            rapid_stats = swap_props.rapid_swap_stats
+            if rapid_stats.blocks_saved <= 0:
+                continue
+
+            self._announced_txs.add(tx.tx_hash)
+            announced.append(tx.tx_hash)
+            summary = (
+                f'RAPID FINISHED tx={tx.tx_hash} '
+                f'blocks_saved={rapid_stats.blocks_saved} '
+                f'total_swaps={rapid_stats.total_swaps} '
+                f'distinct_blocks={rapid_stats.distinct_blocks}'
+            )
+            logging.warning(summary)
+            print(summary)
+
+            if self.speak:
+                await say('rapid swap')
+
+        return announced
 
 
 async def resolve_start_block(app: LpAppFramework, start_block: int | None):
@@ -103,9 +159,10 @@ async def resolve_start_block(app: LpAppFramework, start_block: int | None):
 async def dbg_rapid_swap_continuous(
     app: LpAppFramework,
     *,
-    start_block: int | None = None,
+    start_block: int | None = DEFAULT_START_BLOCK,
     stop_block: int | None = None,
     sleep_period: float = DEFAULT_SLEEP_PERIOD,
+    watch_tx_id: str = DEFAULT_WATCH_TX_ID,
     speak=True,
 ):
     d = app.deps
@@ -125,14 +182,19 @@ async def dbg_rapid_swap_continuous(
     scanner.stop_block = int(stop_block) + 1 if stop_block is not None else 0
 
     recorder = RapidSwapRecorder(d)
-    printer = RapidSwapDebugPrinter(recorder, speak=speak)
+    printer = RapidSwapDebugPrinter(recorder, watch_tx_id=watch_tx_id)
+    extractor = SwapExtractorBlock(d)
+    completed_notifier = RapidSwapCompletedDebugNotifier(d, speak=speak, watch_tx_id=watch_tx_id)
     scanner.add_subscriber(recorder)
     scanner.add_subscriber(printer)
+    scanner.add_subscriber(extractor)
+    extractor.add_subscriber(completed_notifier)
 
     print('>>> Rapid swap debug scan')
     print(f'    current block : {current_block:,}')
     print(f'    start block   : {start_block:,}')
     print(f'    stop block    : {(f"{stop_block:,}" if stop_block is not None else "run forever")}')
+    print(f'    watch tx      : {watch_tx_id or "<any>"}')
     print(f'    sleep period  : {sleep_period:.2f} sec')
     print(f'    speak         : {speak}')
     print()
@@ -142,6 +204,10 @@ async def dbg_rapid_swap_continuous(
             await scanner.run_once()
         except asyncio.CancelledError:
             print('Scanner stopped: stop block reached.')
+            break
+
+        if watch_tx_id and completed_notifier.watched_tx_completed:
+            print(f'Watched tx completed: {watch_tx_id}')
             break
 
         if stop_block is not None and scanner.last_block >= stop_block + 1:
@@ -154,19 +220,24 @@ async def dbg_rapid_swap_continuous(
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description='Scan THORChain blocks with the normal BlockScanner pipeline and shout when a rapid swap is found.',
+        description='Scan THORChain blocks with rapid-swap candidate tracking plus the normal finished-swap extractor.',
     )
     parser.add_argument(
         '--start-block',
         type=int,
-        default=None,
-        help='First block to scan. Omit to start from the current tip. Negative values mean offset from current tip.',
+        default=DEFAULT_START_BLOCK,
+        help='First block to scan. Default is the currently watched debug block. Negative values mean offset from current tip.',
     )
     parser.add_argument(
         '--stop-block',
         type=int,
         default=None,
-        help='Inclusive last block to scan. Omit to keep following new blocks forever.',
+        help='Inclusive last block to scan. Omit to keep scanning until the watched tx completes.',
+    )
+    parser.add_argument(
+        '--tx-id',
+        default=DEFAULT_WATCH_TX_ID,
+        help='Only print/announce rapid-swap information for this inbound tx hash.',
     )
     parser.add_argument(
         '--sleep-period',
@@ -177,7 +248,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '--no-say',
         action='store_true',
-        help='Disable macOS speech announcements.',
+        help='Disable the short "rapid swap" speech when a completed rapid swap is detected.',
     )
     parser.add_argument(
         '--log-level',
@@ -200,6 +271,7 @@ async def run(args=None):
             start_block=args.start_block,
             stop_block=args.stop_block,
             sleep_period=float(args.sleep_period),
+            watch_tx_id=str(args.tx_id or ''),
             speak=not args.no_say,
         )
 

@@ -31,6 +31,8 @@ def make_swap_event(
     *,
     coin: str = '100000000 BTC.BTC',
     from_addr: str = 'thor1from',
+    stream_count: int = 1,
+    stream_quantity: int = 1,
 ):
     return ThorEvent.from_dict({
         'type': 'swap',
@@ -41,8 +43,8 @@ def make_swap_event(
         'liquidity_fee': '0',
         'liquidity_fee_in_rune': '0',
         'emit_asset': '1 THOR.RUNE',
-        'streaming_swap_quantity': '1',
-        'streaming_swap_count': '1',
+        'streaming_swap_quantity': str(stream_quantity),
+        'streaming_swap_count': str(stream_count),
         'chain': 'THOR',
         'from': from_addr,
         'to': 'thor1to',
@@ -78,8 +80,8 @@ def make_block(*events, block_no: int = 123, timestamp: int = 1_700_000_000):
 def test_collect_rapid_swap_candidates_finds_duplicate_swap_tx_ids_in_same_block():
     recorder = RapidSwapRecorder(DepContainer())
     block = make_block(
-        make_swap_event('rapid-1', 123, pool='BSC.USDT-0xabc'),
-        make_swap_event('rapid-1', 123, pool='BASE.ETH'),
+        make_swap_event('rapid-1', 123, pool='BSC.USDT-0xabc', stream_count=60, stream_quantity=222),
+        make_swap_event('rapid-1', 123, pool='BASE.ETH', stream_count=61, stream_quantity=222),
         make_swap_event('normal-1', 123, pool='ETH.ETH'),
         make_outbound_event('rapid-1', 123),
     )
@@ -90,12 +92,25 @@ def test_collect_rapid_swap_candidates_finds_duplicate_swap_tx_ids_in_same_block
     assert len(candidates['rapid-1']) == 2
 
 
+def test_collect_rapid_swap_candidates_ignores_multi_hop_same_streaming_count():
+    recorder = RapidSwapRecorder(DepContainer())
+    block = make_block(
+        make_swap_event('not-rapid', 123, pool='ETH.ETH', stream_count=60, stream_quantity=222),
+        make_swap_event('not-rapid', 123, pool='BTC.BTC', coin='100000000 THOR.RUNE', stream_count=60, stream_quantity=222),
+        make_outbound_event('not-rapid', 123),
+    )
+
+    candidates = recorder.collect_rapid_swap_candidates(block)
+
+    assert candidates == {}
+
+
 @pytest.mark.asyncio
 async def test_on_data_accepts_block_result_stores_last_candidates_and_persists_daily_stats():
     recorder = RapidSwapRecorder(make_deps())
     block = make_block(
-        make_swap_event('rapid-2', 555, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1rapid'),
-        make_swap_event('rapid-2', 555, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1rapid'),
+        make_swap_event('rapid-2', 555, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1rapid', stream_count=60, stream_quantity=222),
+        make_swap_event('rapid-2', 555, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1rapid', stream_count=61, stream_quantity=222),
         make_swap_event('normal-1', 555, pool='ETH.ETH', coin='100000000 THOR.RUNE', from_addr='thor1normal'),
         block_no=555,
     )
@@ -124,16 +139,16 @@ async def test_get_daily_data_and_summary_use_true_cross_day_uniques():
     day2 = day1 + 86_400
 
     await recorder.on_data(None, make_block(
-        make_swap_event('rapid-day-1', 600, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1same'),
-        make_swap_event('rapid-day-1', 600, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1same'),
+        make_swap_event('rapid-day-1', 600, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1same', stream_count=60, stream_quantity=222),
+        make_swap_event('rapid-day-1', 600, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1same', stream_count=61, stream_quantity=222),
         make_swap_event('normal-day-1', 600, pool='ETH.ETH', coin='100000000 THOR.RUNE', from_addr='thor1other'),
         block_no=600,
         timestamp=day1,
     ))
 
     await recorder.on_data(None, make_block(
-        make_swap_event('rapid-day-2', 601, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1same'),
-        make_swap_event('rapid-day-2', 601, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1same'),
+        make_swap_event('rapid-day-2', 601, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1same', stream_count=60, stream_quantity=222),
+        make_swap_event('rapid-day-2', 601, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1same', stream_count=61, stream_quantity=222),
         make_swap_event('normal-day-2', 601, pool='ETH.ETH', coin='100000000 THOR.RUNE', from_addr='thor1another'),
         block_no=601,
         timestamp=day2,
@@ -169,8 +184,8 @@ async def test_on_data_initializes_hll_counters_when_db_redis_is_not_ready_yet()
     assert deps.db.redis is None
 
     await recorder.on_data(None, make_block(
-        make_swap_event('rapid-lazy', 777, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1lazy'),
-        make_swap_event('rapid-lazy', 777, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1lazy'),
+        make_swap_event('rapid-lazy', 777, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1lazy', stream_count=60, stream_quantity=222),
+        make_swap_event('rapid-lazy', 777, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1lazy', stream_count=61, stream_quantity=222),
         make_swap_event('normal-lazy', 777, pool='ETH.ETH', coin='100000000 THOR.RUNE', from_addr='thor1normal'),
         block_no=777,
     ))

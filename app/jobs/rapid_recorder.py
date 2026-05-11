@@ -1,9 +1,11 @@
 from collections import defaultdict
 from datetime import datetime
-from typing import Optional
+from typing import Optional, cast
 
+from redis.asyncio import Redis
 from jobs.scanner.event_db import EventDbTxDeduplicator
 from jobs.scanner.block_result import BlockResult
+from jobs.scanner.swap_props import group_rapid_swap_executions
 from lib.accumulator import DailyAccumulator
 from lib.active_users import DailyActiveUserCounter
 from lib.constants import thor_to_float
@@ -30,12 +32,13 @@ class RapidSwapRecorder(INotified, WithLogger):
         self.last_rapid_candidates: dict[str, list[EventSwap]] = {}
 
         db = getattr(deps, 'db', None)
+        lazy_redis = cast(Redis, cast(object, None))
 
         self.accumulator = DailyAccumulator(self.ACCUM_NAME, db) if db else None
         self._rapid_batch_dedup = EventDbTxDeduplicator(db, self.DEDUP_COMPONENT) if db else None
-        self._rapid_tx_counter = DailyActiveUserCounter(None, self.RAPID_TX_COUNTER_NAME) if db else None
-        self._total_swap_counter = DailyActiveUserCounter(None, self.TOTAL_SWAP_COUNTER_NAME) if db else None
-        self._rapid_user_counter = DailyActiveUserCounter(None, self.RAPID_USER_COUNTER_NAME) if db else None
+        self._rapid_tx_counter = DailyActiveUserCounter(lazy_redis, self.RAPID_TX_COUNTER_NAME) if db else None
+        self._total_swap_counter = DailyActiveUserCounter(lazy_redis, self.TOTAL_SWAP_COUNTER_NAME) if db else None
+        self._rapid_user_counter = DailyActiveUserCounter(lazy_redis, self.RAPID_USER_COUNTER_NAME) if db else None
 
     @staticmethod
     def iter_swap_events(block: BlockResult):
@@ -57,7 +60,7 @@ class RapidSwapRecorder(INotified, WithLogger):
         return {
             tx_id: swap_events
             for tx_id, swap_events in grouped_by_tx_id.items()
-            if len(swap_events) > 1
+            if len(group_rapid_swap_executions(swap_events)) > 1
         }
 
     @staticmethod
@@ -176,14 +179,17 @@ class RapidSwapRecorder(INotified, WithLogger):
 
         for batch_key in new_batch_keys:
             tx_id, swap_events = batch_map[batch_key]
-            volume_usd = sum(self._price_swap_usd(swap_event, price_holder) for swap_event in swap_events)
-            blocks_saved = max(0, len(swap_events) - 1)
+            execution_groups = group_rapid_swap_executions(swap_events)
+            representative_events = [group[0] for group in execution_groups.values()]
+            volume_usd = sum(self._price_swap_usd(swap_event, price_holder) for swap_event in representative_events)
+            logical_swap_count = len(execution_groups)
+            blocks_saved = max(0, logical_swap_count - 1)
 
             await self.accumulator.add(
                 ts,
                 rapid_swap_volume_usd=volume_usd,
                 rapid_swap_blocks_saved=blocks_saved,
-                rapid_swap_event_count=len(swap_events),
+                rapid_swap_event_count=logical_swap_count,
             )
 
             if self._rapid_batch_dedup:
@@ -191,7 +197,8 @@ class RapidSwapRecorder(INotified, WithLogger):
 
             self.logger.debug(
                 f'Recorded rapid swap batch tx={tx_id} block={block.block_no} '
-                f'events={len(swap_events)} blocks_saved={blocks_saved} volume_usd={volume_usd:.2f}'
+                f'events={len(swap_events)} logical_swaps={logical_swap_count} '
+                f'blocks_saved={blocks_saved} volume_usd={volume_usd:.2f}'
             )
 
     async def get_daily_data(self, days: int = 14, end_ts: Optional[float] = None) -> list[dict]:
