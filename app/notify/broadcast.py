@@ -1,6 +1,8 @@
 import asyncio
 import random
-from typing import List, Tuple
+from contextlib import contextmanager
+from contextvars import ContextVar
+from typing import List, Tuple, Any
 
 from comm.localization.eng_base import BaseLocalization
 from comm.localization.manager import LocalizationManager
@@ -14,6 +16,7 @@ from notify.channel import Messengers, ChannelDescriptor, CHANNEL_INACTIVE, Boar
 
 class Broadcaster(WithLogger):
     EXTRA_RETRY_DELAY = 0.1
+    _ALL_CHANNELS = object()
 
     def __init__(self, d: DepContainer):
         super().__init__()
@@ -22,6 +25,7 @@ class Broadcaster(WithLogger):
         self._broadcast_lock = asyncio.Lock()
         self._rate_limit_lock = asyncio.Lock()
         self._rng = random.Random(now_ts())
+        self._public_channel_scope: ContextVar[Any] = ContextVar('public_broadcast_channels', default=self._ALL_CHANNELS)
 
         # public channels
         self.channels = list(ChannelDescriptor.from_json(j) for j in d.cfg.get_pure('broadcasting.channels'))
@@ -38,15 +42,95 @@ class Broadcaster(WithLogger):
     def get_channels(self, channel_type):
         return [c for c in self.channels if c.type == channel_type]
 
+    @staticmethod
+    def _normalize_channel_selection(channels) -> list[Any] | object:
+        if channels is None or channels is Broadcaster._ALL_CHANNELS:
+            return Broadcaster._ALL_CHANNELS
+
+        if isinstance(channels, str):
+            raw_items = [channels]
+        elif isinstance(channels, (list, tuple, set)):
+            raw_items = list(channels)
+        else:
+            raise ValueError('Broadcast channels must be a string or a list of strings/objects.')
+
+        normalized = []
+        for item in raw_items:
+            if isinstance(item, tuple) and len(item) == 2:
+                channel_type = str(item[0]).strip().lower()
+                channel_name = str(item[1]).strip()
+                if not channel_type or not channel_name:
+                    raise ValueError('Broadcast channel tuples must contain non-empty type and name values.')
+                normalized.append((channel_type, channel_name))
+                continue
+
+            if isinstance(item, dict):
+                channel_type = str(item.get('type', '')).strip().lower()
+                channel_name = str(item.get('name', '')).strip()
+                if not channel_type or not channel_name:
+                    raise ValueError('Broadcast channel objects must contain non-empty "type" and "name" fields.')
+                normalized.append((channel_type, channel_name))
+                continue
+
+            selector = str(item).strip()
+            if selector:
+                normalized.append(selector)
+
+        return normalized
+
+    @staticmethod
+    def _channel_matches_selector(channel: ChannelDescriptor, selector: Any) -> bool:
+        if isinstance(selector, tuple):
+            return channel.type == selector[0] and str(channel.channel_id) == selector[1]
+
+        selector = str(selector)
+        return selector == channel.short_coded or selector == str(channel.channel_id)
+
+    def _select_public_channels(self, requested_channels) -> list[ChannelDescriptor]:
+        normalized = self._normalize_channel_selection(requested_channels)
+        if normalized is self._ALL_CHANNELS:
+            return list(self.channels)
+
+        selected = []
+        selected_codes = set()
+        missing = []
+
+        for selector in normalized:
+            matches = [channel for channel in self.channels if self._channel_matches_selector(channel, selector)]
+            if not matches:
+                missing.append(selector)
+                continue
+
+            for channel in matches:
+                if channel.short_coded in selected_codes:
+                    continue
+                selected.append(channel)
+                selected_codes.add(channel.short_coded)
+
+        if missing:
+            self.logger.warning(f'Unknown broadcast channels requested: {missing!r}.')
+
+        return selected
+
+    @contextmanager
+    def override_channels(self, channels):
+        token = self._public_channel_scope.set(self._normalize_channel_selection(channels))
+        try:
+            yield
+        finally:
+            self._public_channel_scope.reset(token)
+
     async def get_subscribed_channels(self):
         return await self.deps.gen_alert_settings_proc.get_general_alerts_channels(self.deps.settings_manager)
 
-    async def broadcast_to_all(self, msg_type, f, *args, **kwargs):
-        subscribed_channels = await self.get_subscribed_channels()
-        all_channels = self.channels + subscribed_channels
+    async def broadcast_to_all(self, msg_type, f, *args, channels=None, **kwargs):
+        requested_channels = self._public_channel_scope.get() if channels is None else self._normalize_channel_selection(channels)
+        public_channels = self._select_public_channels(requested_channels)
+        subscribed_channels = [] if requested_channels is not self._ALL_CHANNELS else await self.get_subscribed_channels()
+        all_channels = public_channels + subscribed_channels
 
         self.logger.info(f'Total channels: {len(all_channels)}: '
-                         f'predefined – ({len(self.channels)}) and subscribed – ({len(subscribed_channels)}), {f}')
+                         f'predefined – ({len(public_channels)}) and subscribed – ({len(subscribed_channels)}), {f}')
 
         loc_man: LocalizationManager = self.deps.loc_man
         user_lang_map = {

@@ -9,6 +9,12 @@ from lib.money import format_percent
 from models.sched import SchedJobCfg
 from notify.pub_configure import PublicAlertJobExecutor
 from notify.pub_scheduler import PublicScheduler, JobStatsModel
+from tools.dashboard.channel_args import (
+    configured_channel_rows,
+    resolve_job_channels,
+    channel_selector_label,
+    format_unknown_channel,
+)
 from tools.dashboard.helpers import get_app, run_coro, st_running_sign
 
 st.set_page_config(page_title="Scheduled Jobs", layout="wide")
@@ -20,6 +26,13 @@ st_autorefresh(interval=2000, limit=2000, key="page_refresh")
 app = get_app()
 sched: PublicScheduler = app.deps.pub_scheduler
 jobs: list[SchedJobCfg] = run_coro(sched.load_config_from_db(silent=True))
+configured_channels = list(app.deps.broadcaster.channels)
+
+with st.expander(f"Configured broadcast channels ({len(configured_channels)})", expanded=False):
+    if configured_channels:
+        st.table(configured_channel_rows(configured_channels))
+    else:
+        st.info("No broadcast channels are configured in `broadcasting.channels`.")
 
 distribution = sched.job_distribution(jobs)
 absent_jobs = PublicAlertJobExecutor.get_function_that_are_absent(list(distribution.keys()))
@@ -89,8 +102,27 @@ for job in jobs:
     st.divider()
     with cols[0]:
         st.metric(f'ID={job.id!r}', job.func)
-        if job.args:
-            args_text = json.dumps(job.args, ensure_ascii=False, separators=(',', ': '))
+        raw_channels = job.args.get('channels') if job.args else None
+        resolved_channels, unknown_channels = resolve_job_channels(raw_channels, configured_channels)
+
+        st.caption("Channels")
+        if raw_channels:
+            if resolved_channels:
+                for channel in resolved_channels:
+                    st.caption(f"• {channel_selector_label(channel)}")
+
+            if unknown_channels:
+                st.caption(
+                    "Unknown channel selectors: "
+                    + ", ".join(format_unknown_channel(item) for item in unknown_channels)
+                )
+        else:
+            st.caption("• All channels")
+
+        display_args = dict(job.args) if job.args else {}
+        display_args.pop('channels', None)
+        if display_args:
+            args_text = json.dumps(display_args, ensure_ascii=False, separators=(',', ': '))
             if len(args_text) > 160:
                 args_text = f'{args_text[:157]}...'
             st.caption(f'args: {args_text}')

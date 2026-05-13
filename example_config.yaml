@@ -146,6 +146,7 @@ broadcasting:
       lang: rus
     - type: twitter
       lang: eng-tw
+      name: "twitter-default"
 
 
 node_op_tools:

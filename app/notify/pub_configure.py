@@ -60,18 +60,26 @@ class PublicAlertJobExecutor(WithLogger):
         self.key_stats_fetcher = KeyStatsFetcher(deps)
         self.trade_acc_fetcher = TradeAccountFetcher(deps)
 
-    async def _send_alert(self, data, alert_type: str):
+    @staticmethod
+    def _get_broadcast_channels(job_args) -> list[str] | list[dict] | str | None:
+        if not isinstance(job_args, dict) or 'channels' not in job_args:
+            return None
+        return job_args.get('channels')
+
+    async def _send_alert(self, data, alert_type: str, job_args=None):
         if not data:
             raise Exception(f"No data for {alert_type}")
-        await self.deps.alert_presenter.handle_data(data)
+
+        with self.deps.broadcaster.override_channels(self._get_broadcast_channels(job_args)):
+            await self.deps.alert_presenter.handle_data(data)
 
     async def job_tcy_summary(self, **job_args):
         data = await self.tcy_info_fetcher.fetch()
-        await self._send_alert(data, "tcy summary alert")
+        await self._send_alert(data, "tcy summary alert", job_args)
 
     async def job_secured_asset_summary(self, **job_args):
         data = await self.secured_asset_fetcher.fetch()
-        await self._send_alert(data, "secured asset summary alert")
+        await self._send_alert(data, "secured asset summary alert", job_args)
 
     async def job_pol_summary(self, **job_args):
         pvdb = PrevStateDB(self.deps.db, POLState)
@@ -81,7 +89,7 @@ class PublicAlertJobExecutor(WithLogger):
 
         data = data._replace(previous=previous if previous else None)
 
-        await self._send_alert(data, "POL summary alert")
+        await self._send_alert(data, "POL summary alert", job_args)
 
         await pvdb.set(data.current)
 
@@ -98,7 +106,7 @@ class PublicAlertJobExecutor(WithLogger):
             usd_per_rune=usd_per_rune,
         )
 
-        await self._send_alert(runepool_event, "runepool summary alert")
+        await self._send_alert(runepool_event, "runepool summary alert", job_args)
 
         await pvdb.set(data.runepool)
 
@@ -110,12 +118,12 @@ class PublicAlertJobExecutor(WithLogger):
         if not data or not data.previous.btc_total_usd:
             self.logger.warning(f'No previous pool data! Go on')
 
-        await self._send_alert(data, "key metrics infographic")
+        await self._send_alert(data, "key metrics infographic", job_args)
 
     async def job_top_pools(self, **job_args):
         fetcher = BestPoolsFetcher(self.deps)
         event_pools, pool_map_struct = await fetcher.get_top_pools()
-        await self._send_alert(event_pools, "top pools alert")
+        await self._send_alert(event_pools, "top pools alert", job_args)
         await fetcher.save_prev_pool_map(pool_map_struct)
 
     async def job_supply_chart(self, **job_args):
@@ -130,18 +138,18 @@ class PublicAlertJobExecutor(WithLogger):
         pvdb = PrevStateDB(self.deps.db, RuneCirculatingSupply)
         market_info.prev_supply_info = await pvdb.get()
 
-        await self._send_alert(market_info, "circulating supply alert")
+        await self._send_alert(market_info, "circulating supply alert", job_args)
         await pvdb.set(market_info.supply_info)
 
     async def job_rune_burn_chart(self, **job_args):
         recorder = RuneBurnRecorder(self.deps)
         if not (event := await recorder.get_event()):
             raise ValueError("No rune burn event data available!")
-        await self._send_alert(event, "rune burn chart alert")
+        await self._send_alert(event, "rune burn chart alert", job_args)
 
     async def job_trade_account_summary(self, **job_args):
         data: AlertTradeAccountStats = await self.trade_acc_fetcher.fetch()
-        await self._send_alert(data, "trade account stats")
+        await self._send_alert(data, "trade account stats", job_args)
 
     async def job_price_alert(self, price_graph_days: int = 7, **job_args):
         pn = PriceChangeNotifier(self.deps)
@@ -151,7 +159,7 @@ class PublicAlertJobExecutor(WithLogger):
             market_info,
             ath=False, last_ath=None
         )
-        await self._send_alert(alert, "price alert")
+        await self._send_alert(alert, "price alert", job_args)
 
     async def job_net_stats_summary(self, **job_args):
         nsn = NetworkStatsNotifier(self.deps)
@@ -169,7 +177,7 @@ class PublicAlertJobExecutor(WithLogger):
             old_info, new_info,
             nodes.node_info_list,
         )
-        await self._send_alert(event, "network stats summary alert")
+        await self._send_alert(event, "network stats summary alert", job_args)
 
     async def job_app_layer_stats(self, days: int = 7, top_n: int = 10, **job_args):
         wasm_cache = self.deps.wasm_cache or WasmCache(self.deps.thor_connector, db=self.deps.db)
@@ -184,14 +192,14 @@ class PublicAlertJobExecutor(WithLogger):
         stats = await builder.build(days=days, top_n=top_n)
         if not stats.total_calls:
             raise ValueError("No app layer stats data available.")
-        await self._send_alert(stats, "app layer stats infographic")
+        await self._send_alert(stats, "app layer stats infographic", job_args)
 
     async def job_limit_swap_stats(self, days: int = 7, **job_args):
         recorder = LimitSwapStatsRecorder(self.deps)
         stats = await recorder.get_infographic_data(days=days)
         if not stats.total.opened_count:
             raise ValueError("No limit swap stats data available.")
-        await self._send_alert(stats, "limit swap stats infographic")
+        await self._send_alert(stats, "limit swap stats infographic", job_args)
 
     async def job_rune_transfer_stats(self, days: int | None = None, **job_args):
         recorder = RuneTransferRecorder(self.deps)
@@ -201,7 +209,7 @@ class PublicAlertJobExecutor(WithLogger):
             raise ValueError("No RUNE transfer stats data available yet.")
         usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
         data = AlertRuneTransferStats.from_summary(summary, usd_per_rune=usd_per_rune)
-        await self._send_alert(data, "rune transfer stats infographic")
+        await self._send_alert(data, "rune transfer stats infographic", job_args)
 
     # maps job names to methods of this class
     AVAILABLE_TYPES = {

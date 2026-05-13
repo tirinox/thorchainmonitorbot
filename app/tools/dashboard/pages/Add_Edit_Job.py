@@ -8,6 +8,13 @@ from pydantic import ValidationError
 from models.sched import SchedVariant, SchedJobCfg, CronCfg, DateCfg, IntervalCfg
 from notify.pub_configure import PublicAlertJobExecutor
 from notify.pub_scheduler import PublicScheduler
+from tools.dashboard.channel_args import (
+    configured_channel_rows,
+    selected_channel_short_codes,
+    channel_selector_label,
+    resolve_job_channels,
+    format_unknown_channel,
+)
 from tools.dashboard.helpers import run_coro, get_app
 
 
@@ -30,6 +37,10 @@ def _format_job_function_option(func_name: str, distribution: dict[str, int]) ->
 
 
 def form_add_job(edit_job: Optional[SchedJobCfg] = None):
+    app = get_app()
+    sched: PublicScheduler = app.deps.pub_scheduler
+    configured_channels = list(app.deps.broadcaster.channels)
+
     st.subheader("Select job trigger type")
     variants = [SchedVariant.INTERVAL, SchedVariant.CRON, SchedVariant.DATE]
     variant = st.segmented_control(
@@ -43,8 +54,6 @@ def form_add_job(edit_job: Optional[SchedJobCfg] = None):
     if edit_job:
         func_name = st.text_input("Function (cannot edit)", value=edit_job.func, disabled=True)
     else:
-        app = get_app()
-        sched: PublicScheduler = app.deps.pub_scheduler
         function_options, distribution, default_index = _build_function_picker_options(sched)
         func_name = st.selectbox(
             "Function",
@@ -56,12 +65,68 @@ def form_add_job(edit_job: Optional[SchedJobCfg] = None):
 
     enabled = st.checkbox("Enabled?", value=edit_job.enabled if edit_job else False)
 
+    with st.expander(f"Configured broadcast channels ({len(configured_channels)})", expanded=False):
+        if configured_channels:
+            st.table(configured_channel_rows(configured_channels))
+        else:
+            st.info("No broadcast channels are configured in `broadcasting.channels`.")
+
     args_json = st.text_area(
         "Job arguments (JSON object, optional)",
         value=json.dumps(edit_job.args if edit_job else {}, ensure_ascii=False, indent=2),
         height=180,
-        help="These kwargs will be stored with the job and passed into the selected async job function on every run.",
+        help=(
+            "These kwargs will be stored with the job and passed into the selected async job function on every run. "
+            "The channel picker below controls the special `channels` key, which limits scheduled public alerts to "
+            "selected configured broadcast channels."
+        ),
     )
+
+    initial_selected_channels = selected_channel_short_codes(
+        edit_job.args.get('channels') if edit_job else None,
+        configured_channels,
+    )
+    selector_source = edit_job.id if edit_job else '__new_job__'
+    if st.session_state.get('job_channel_selector_source') != selector_source:
+        st.session_state['job_channel_selector'] = initial_selected_channels
+        st.session_state['job_channel_selector_source'] = selector_source
+
+    st.subheader("Broadcast channel filter")
+    selected_channels = st.multiselect(
+        "Send scheduled public alerts only to these configured channels",
+        options=[channel.short_coded for channel in configured_channels],
+        default=st.session_state.get('job_channel_selector', initial_selected_channels),
+        key='job_channel_selector',
+        format_func=lambda selector: channel_selector_label(next(
+            channel for channel in configured_channels if channel.short_coded == selector
+        )),
+        help="Leave empty to keep the default behavior and send to all configured channels.",
+    )
+
+    existing_resolved_channels, existing_unknown_channels = resolve_job_channels(
+        edit_job.args.get('channels') if edit_job else None,
+        configured_channels,
+    )
+    if selected_channels:
+        st.caption(
+            "Will save as `args.channels`: "
+            + json.dumps(selected_channels, ensure_ascii=False)
+        )
+    else:
+        st.caption("No channel filter selected — this job will keep the default broadcast-to-all behavior.")
+
+    if existing_resolved_channels:
+        st.caption(
+            "Current saved channels: "
+            + ", ".join(channel_selector_label(channel) for channel in existing_resolved_channels)
+        )
+
+    if existing_unknown_channels:
+        st.warning(
+            "Some saved `args.channels` entries do not match current configured channels: "
+            + ", ".join(format_unknown_channel(item) for item in existing_unknown_channels)
+            + ". Saving from this form will replace `args.channels` with the picker selection."
+        )
 
     st.subheader("Trigger parameters")
 
@@ -161,6 +226,11 @@ def form_add_job(edit_job: Optional[SchedJobCfg] = None):
         if not isinstance(job_args, dict):
             st.error("Job arguments must be a JSON object.")
             return None
+
+        if selected_channels:
+            job_args['channels'] = list(selected_channels)
+        else:
+            job_args.pop('channels', None)
 
         try:
             job_cfg = SchedJobCfg(
