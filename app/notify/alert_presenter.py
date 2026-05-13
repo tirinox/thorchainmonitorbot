@@ -34,6 +34,7 @@ from models.net_stats import AlertNetworkStats
 from models.node_info import AlertNodeChurn
 from models.pool_info import PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
+from models.rapid_swap import RapidSwapPeriodStats
 from models.queue import AlertQueue
 from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunepoolStats
@@ -137,6 +138,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_app_layer_stats(data)
         elif isinstance(data, LimitSwapPeriodStats):
             await self._handle_limit_swap_stats(data)
+        elif isinstance(data, RapidSwapPeriodStats):
+            await self._handle_rapid_swap_stats(data)
         elif isinstance(data, AlertRuneTransferStats):
             await self._handle_rune_transfer_stats(data)
         elif isinstance(data, EventLastBlock):
@@ -693,6 +696,11 @@ class AlertPresenter(INotified, WithLogger):
         photo_name = 'limit_swap_stats.png'
         return photo, photo_name
 
+    async def render_rapid_swap_stats(self, loc: BaseLocalization, data: RapidSwapPeriodStats):
+        photo = await self.renderer.render('rapid_swap_stats.jinja2', data.to_dict())
+        photo_name = 'rapid_swap_stats.png'
+        return photo, photo_name
+
     async def _handle_limit_swap_stats(self, data: LimitSwapPeriodStats):
         async def message_gen(loc: BaseLocalization):
             text = loc.notification_text_limit_swap_stats(data)
@@ -704,6 +712,19 @@ class AlertPresenter(INotified, WithLogger):
 
         await self.deps.broadcaster.broadcast_to_all(
             'public:limit_swaps:stats',
+            message_gen)
+
+    async def _handle_rapid_swap_stats(self, data: RapidSwapPeriodStats):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_rapid_swap_stats(data)
+            photo, photo_name = await self.render_rapid_swap_stats(loc, data)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
+        await self.deps.broadcaster.broadcast_to_all(
+            'public:rapid_swaps:stats',
             message_gen)
 
     async def render_rune_transfer_stats(self, loc: BaseLocalization, data: AlertRuneTransferStats):

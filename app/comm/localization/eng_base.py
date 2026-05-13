@@ -50,6 +50,7 @@ from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
 from models.wasm import WasmPeriodStats
 from models.limit_swap import LimitSwapPeriodStats
+from models.rapid_swap import RapidSwapPeriodStats
 from models.tx import ThorAction, ThorSubTx, EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from notify.channel import Messengers
@@ -2520,6 +2521,24 @@ class BaseLocalization(ABC):  # == English
         )
 
     TEXT_LIMIT_SWAP_STATS_NO_DATA = '😩 No limit swap data available yet.'
+
+    @staticmethod
+    def notification_text_rapid_swap_stats(e: RapidSwapPeriodStats):
+        tx_delta = up_down_arrow(e.previous.rapid_swap_count, e.total.rapid_swap_count,
+                                 percent_delta=True, brackets=True)
+        vol_delta = up_down_arrow(e.previous.rapid_swap_volume_usd, e.total.rapid_swap_volume_usd,
+                                  percent_delta=True, brackets=True)
+        user_delta = up_down_arrow(e.previous.unique_users, e.total.unique_users,
+                                   int_delta=True, brackets=True)
+        return (
+            f'⚡ <b>Rapid Swaps</b> ({e.period_days}d)\n'
+            f'📦 {bold(pretty_money(e.total.rapid_swap_count, integer=True))} txs {tx_delta}\n'
+            f'💵 {bold(short_dollar(e.total.rapid_swap_volume_usd))} volume {vol_delta}\n'
+            f'👤 {bold(pretty_money(e.total.unique_users, integer=True))} users {user_delta}\n'
+            f'⏱ {bold(seconds_human(e.total.estimated_time_saved_sec))} saved'
+        )
+
+    TEXT_RAPID_SWAP_STATS_NO_DATA = '😩 No rapid swap data available yet.'
 
     @staticmethod
     def notification_text_rune_transfer_stats(e: AlertRuneTransferStats) -> str:

@@ -10,6 +10,7 @@ from jobs.fetch.top_pools import BestPoolsFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.wasm_stats import WasmStatsBuilder
 from jobs.limit_recorder import LimitSwapStatsRecorder
+from jobs.rapid_recorder import RapidSwapRecorder
 from jobs.transfer_recorder import RuneTransferRecorder
 from jobs.rune_burn_recorder import RuneBurnRecorder
 from jobs.wasm_recorder import CosmWasmRecorder
@@ -45,6 +46,7 @@ class PubAlertJobNames:
     NET_STATS_SUMMARY = "net_stats_summary"
     APP_LAYER_STATS = "app_layer_stats"
     LIMIT_SWAP_STATS = "limit_swap_stats"
+    RAPID_SWAP_STATS = "rapid_swap_stats"
     RUNE_TRANSFER_STATS = "rune_transfer_stats"
 
 
@@ -201,6 +203,13 @@ class PublicAlertJobExecutor(WithLogger):
             raise ValueError("No limit swap stats data available.")
         await self._send_alert(stats, "limit swap stats infographic", job_args)
 
+    async def job_rapid_swap_stats(self, days: int = 7, **job_args):
+        recorder = RapidSwapRecorder(self.deps)
+        stats = await recorder.get_infographic_data(days=days)
+        if not stats.total.rapid_swap_count:
+            raise ValueError("No rapid swap stats data available.")
+        await self._send_alert(stats, "rapid swap stats infographic", job_args)
+
     async def job_rune_transfer_stats(self, days: int | None = None, **job_args):
         recorder = RuneTransferRecorder(self.deps)
         summary_days = self.RUNE_TRANSFER_STATS_SUMMARY_DAYS if days is None else days
@@ -226,6 +235,7 @@ class PublicAlertJobExecutor(WithLogger):
         PubAlertJobNames.NET_STATS_SUMMARY: job_net_stats_summary,
         PubAlertJobNames.APP_LAYER_STATS: job_app_layer_stats,
         PubAlertJobNames.LIMIT_SWAP_STATS: job_limit_swap_stats,
+        PubAlertJobNames.RAPID_SWAP_STATS: job_rapid_swap_stats,
         PubAlertJobNames.RUNE_TRANSFER_STATS: job_rune_transfer_stats,
     }
 

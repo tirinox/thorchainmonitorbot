@@ -1,3 +1,4 @@
+import asyncio
 from collections import defaultdict
 from datetime import datetime
 from typing import Optional, cast
@@ -8,12 +9,29 @@ from jobs.scanner.block_result import BlockResult
 from jobs.scanner.swap_props import group_rapid_swap_executions
 from lib.accumulator import DailyAccumulator
 from lib.active_users import DailyActiveUserCounter
-from lib.constants import thor_to_float
+from lib.constants import THOR_BLOCK_TIME, thor_to_float
 from lib.date_utils import DAY, now_ts
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.events import EventSwap, parse_swap_and_out_event
+from models.rapid_swap import (
+    RapidSwapDailyPoint,
+    RapidSwapDelta,
+    RapidSwapDeltas,
+    RapidSwapLargestSwap,
+    RapidSwapPeriodStats,
+    RapidSwapTotals,
+)
+from models.rapid_swap import (
+    RapidSwapDailyPoint,
+    RapidSwapDelta,
+    RapidSwapDeltas,
+    RapidSwapLargestSwap,
+    RapidSwapPeriodStats,
+    RapidSwapTopPairStats,
+    RapidSwapTotals,
+)
 
 
 class RapidSwapRecorder(INotified, WithLogger):
@@ -82,6 +100,18 @@ class RapidSwapRecorder(INotified, WithLogger):
             'rapid_swap_event_count': 0.0,
         }
 
+    @staticmethod
+    def _with_derived_metrics(snap: dict) -> dict:
+        rapid_swap_count = float(snap.get('rapid_swap_count', 0.0))
+        total_swap_count = float(snap.get('total_swap_count', 0.0))
+        blocks_saved = float(snap.get('rapid_swap_blocks_saved', 0.0))
+
+        return {
+            **snap,
+            'rapid_swap_share': rapid_swap_count / total_swap_count if total_swap_count else 0.0,
+            'estimated_time_saved_sec': blocks_saved * THOR_BLOCK_TIME,
+        }
+
     @classmethod
     def _normalize_snapshot(cls, ts: float, raw: Optional[dict]) -> dict:
         snap = cls._empty_snapshot()
@@ -89,16 +119,32 @@ class RapidSwapRecorder(INotified, WithLogger):
             for key in snap:
                 if key in raw:
                     snap[key] = float(raw[key])
-
-        rapid_swap_count = snap['rapid_swap_count']
-        total_swap_count = snap['total_swap_count']
-        snap['rapid_swap_share'] = rapid_swap_count / total_swap_count if total_swap_count else 0.0
+        snap = cls._with_derived_metrics(snap)
 
         return {
             'date': cls._date_str(ts),
             'timestamp': int(ts),
             **snap,
         }
+
+    @staticmethod
+    def _build_daily_timestamps(days: int, end_ts: float) -> list[float]:
+        return [end_ts - offset * DAY for offset in range(days - 1, -1, -1)]
+
+    async def _get_cumulative_counter_values(
+        self,
+        counter: Optional[DailyActiveUserCounter],
+        timestamps: list[float],
+    ) -> list[int]:
+        if not counter or not timestamps:
+            return [0] * len(timestamps)
+
+        counts = []
+        postfixes = []
+        for ts in timestamps:
+            postfixes.append(counter.key_postfix(ts))
+            counts.append(int(await counter.get_count(postfixes)))
+        return counts
 
     async def _get_price_holder(self):
         pool_cache = getattr(self.deps, 'pool_cache', None)
@@ -209,11 +255,26 @@ class RapidSwapRecorder(INotified, WithLogger):
             return []
 
         end_ts = float(end_ts or now_ts())
+        timestamps = self._build_daily_timestamps(days, end_ts)
         items = []
-        for offset in range(days - 1, -1, -1):
-            ts = end_ts - offset * DAY
+        for ts in timestamps:
             raw = await self.accumulator.get(ts)
             items.append(self._normalize_snapshot(ts, raw))
+
+        cumulative_unique_users = await self._get_cumulative_counter_values(self._rapid_user_counter, timestamps)
+
+        cumulative_tx_count = 0.0
+        cumulative_volume_usd = 0.0
+        cumulative_saved_sec = 0.0
+        for item, cumulative_users in zip(items, cumulative_unique_users):
+            cumulative_tx_count += float(item.get('rapid_swap_count', 0.0))
+            cumulative_volume_usd += float(item.get('rapid_swap_volume_usd', 0.0))
+            cumulative_saved_sec += float(item.get('estimated_time_saved_sec', 0.0))
+
+            item['cumulative_rapid_swap_count'] = cumulative_tx_count
+            item['cumulative_rapid_swap_volume_usd'] = cumulative_volume_usd
+            item['cumulative_estimated_time_saved_sec'] = cumulative_saved_sec
+            item['cumulative_unique_users'] = float(cumulative_users)
         return items
 
     async def _get_unique_counter_value(
@@ -252,18 +313,241 @@ class RapidSwapRecorder(INotified, WithLogger):
             await self._get_unique_counter_value(self._rapid_user_counter, days=days, end_ts=end_ts)
         )
 
-        rapid_swap_count = totals['rapid_swap_count']
-        total_swap_count = totals['total_swap_count']
-        rapid_swap_share = rapid_swap_count / total_swap_count if total_swap_count else 0.0
+        totals = self._with_derived_metrics(totals)
 
         return {
             'days': days,
             'start_date': daily[0]['date'] if daily else '',
             'end_date': daily[-1]['date'] if daily else '',
             **totals,
-            'rapid_swap_share': rapid_swap_share,
             'daily': daily,
         }
+
+    @staticmethod
+    def _safe_pct_change(current: float, previous: float) -> float:
+        return round((current - previous) / previous * 100.0, 2) if previous else 0.0
+
+    @staticmethod
+    def _build_totals(summary: dict) -> RapidSwapTotals:
+        rapid_swap_count = int(summary.get('rapid_swap_count', 0.0) or 0)
+        total_swap_count = int(summary.get('total_swap_count', 0.0) or 0)
+        unique_users = int(summary.get('unique_users', 0.0) or 0)
+        rapid_swap_volume_usd = round(float(summary.get('rapid_swap_volume_usd', 0.0) or 0.0), 2)
+        rapid_swap_blocks_saved = int(summary.get('rapid_swap_blocks_saved', 0.0) or 0)
+        rapid_swap_event_count = int(summary.get('rapid_swap_event_count', 0.0) or 0)
+        rapid_swap_share = float(summary.get('rapid_swap_share', 0.0) or 0.0)
+        estimated_time_saved_sec = float(summary.get('estimated_time_saved_sec', 0.0) or 0.0)
+
+        blocks_used = max(0, rapid_swap_event_count - rapid_swap_blocks_saved)
+        avg_subswaps_per_tx = rapid_swap_event_count / rapid_swap_count if rapid_swap_count else 0.0
+        avg_faster_pct = rapid_swap_blocks_saved / rapid_swap_event_count * 100.0 if rapid_swap_event_count else 0.0
+        efficiency_ratio = rapid_swap_event_count / blocks_used if blocks_used > 0 else 0.0
+
+        return RapidSwapTotals(
+            rapid_swap_count=rapid_swap_count,
+            total_swap_count=total_swap_count,
+            unique_users=unique_users,
+            rapid_swap_volume_usd=rapid_swap_volume_usd,
+            rapid_swap_blocks_saved=rapid_swap_blocks_saved,
+            rapid_swap_event_count=rapid_swap_event_count,
+            rapid_swap_share=rapid_swap_share,
+            estimated_time_saved_sec=estimated_time_saved_sec,
+            avg_subswaps_per_tx=round(avg_subswaps_per_tx, 4),
+            avg_faster_pct=round(avg_faster_pct, 2),
+            efficiency_ratio=round(efficiency_ratio, 4),
+        )
+
+    async def get_infographic_data(
+        self,
+        days: int = 7,
+        end_ts: Optional[float] = None,
+    ) -> RapidSwapPeriodStats:
+        if days <= 0:
+            raise ValueError('days must be > 0')
+
+        end_ts = float(end_ts or now_ts())
+        prev_end_ts = end_ts - days * DAY
+
+        current_summary, previous_summary = await asyncio.gather(
+            self.get_summary(days=days, end_ts=end_ts),
+            self.get_summary(days=days, end_ts=prev_end_ts),
+        )
+
+        current_total = self._build_totals(current_summary)
+        previous_total = self._build_totals(previous_summary)
+
+        daily_points = []
+        for day in current_summary.get('daily', []):
+            rapid_swap_count = int(day.get('rapid_swap_count', 0.0) or 0)
+            rapid_swap_event_count = int(day.get('rapid_swap_event_count', 0.0) or 0)
+            rapid_swap_blocks_saved = int(day.get('rapid_swap_blocks_saved', 0.0) or 0)
+
+            avg_subswaps_per_tx = rapid_swap_event_count / rapid_swap_count if rapid_swap_count else 0.0
+            avg_faster_pct = (
+                rapid_swap_blocks_saved / rapid_swap_event_count * 100.0 if rapid_swap_event_count else 0.0
+            )
+
+            daily_points.append(RapidSwapDailyPoint(
+                date=day.get('date', ''),
+                rapid_swap_count=rapid_swap_count,
+                total_swap_count=int(day.get('total_swap_count', 0.0) or 0),
+                unique_users=int(day.get('unique_users', 0.0) or 0),
+                rapid_swap_volume_usd=round(float(day.get('rapid_swap_volume_usd', 0.0) or 0.0), 2),
+                rapid_swap_blocks_saved=rapid_swap_blocks_saved,
+                rapid_swap_event_count=rapid_swap_event_count,
+                rapid_swap_share=float(day.get('rapid_swap_share', 0.0) or 0.0),
+                estimated_time_saved_sec=float(day.get('estimated_time_saved_sec', 0.0) or 0.0),
+                cumulative_rapid_swap_count=int(day.get('cumulative_rapid_swap_count', 0.0) or 0),
+                cumulative_rapid_swap_volume_usd=round(float(day.get('cumulative_rapid_swap_volume_usd', 0.0) or 0.0), 2),
+                cumulative_estimated_time_saved_sec=float(day.get('cumulative_estimated_time_saved_sec', 0.0) or 0.0),
+                cumulative_unique_users=int(day.get('cumulative_unique_users', 0.0) or 0),
+                avg_subswaps_per_tx=round(avg_subswaps_per_tx, 4),
+                avg_faster_pct=round(avg_faster_pct, 2),
+            ))
+
+        return RapidSwapPeriodStats(
+            period_days=days,
+            start_date=current_summary.get('start_date', ''),
+            end_date=current_summary.get('end_date', ''),
+            total=current_total,
+            previous=previous_total,
+            delta=RapidSwapDeltas(
+                rapid_swap_count=RapidSwapDelta(
+                    absolute=round(current_total.rapid_swap_count - previous_total.rapid_swap_count, 4),
+                    pct=self._safe_pct_change(current_total.rapid_swap_count, previous_total.rapid_swap_count),
+                ),
+                rapid_swap_volume_usd=RapidSwapDelta(
+                    absolute=round(current_total.rapid_swap_volume_usd - previous_total.rapid_swap_volume_usd, 4),
+                    pct=self._safe_pct_change(current_total.rapid_swap_volume_usd, previous_total.rapid_swap_volume_usd),
+                ),
+                unique_users=RapidSwapDelta(
+                    absolute=round(current_total.unique_users - previous_total.unique_users, 4),
+                    pct=self._safe_pct_change(current_total.unique_users, previous_total.unique_users),
+                ),
+                estimated_time_saved_sec=RapidSwapDelta(
+                    absolute=round(current_total.estimated_time_saved_sec - previous_total.estimated_time_saved_sec, 4),
+                    pct=self._safe_pct_change(current_total.estimated_time_saved_sec, previous_total.estimated_time_saved_sec),
+                ),
+                rapid_swap_share_pp=RapidSwapDelta(
+                    absolute=round((current_total.rapid_swap_share - previous_total.rapid_swap_share) * 100.0, 4),
+                    pct=self._safe_pct_change(current_total.rapid_swap_share, previous_total.rapid_swap_share),
+                ),
+            ),
+            daily=daily_points,
+            largest_swap=RapidSwapLargestSwap(),
+        )
+
+    @staticmethod
+    def _safe_pct_change(current: float, previous: float) -> float:
+        return round((current - previous) / previous * 100.0, 2) if previous else 0.0
+
+    @staticmethod
+    def _build_totals(summary: dict) -> RapidSwapTotals:
+        rapid_swap_count = int(summary.get('rapid_swap_count', 0.0) or 0)
+        total_swap_count = int(summary.get('total_swap_count', 0.0) or 0)
+        unique_users = int(summary.get('unique_users', 0.0) or 0)
+        rapid_swap_volume_usd = round(float(summary.get('rapid_swap_volume_usd', 0.0) or 0.0), 2)
+        rapid_swap_blocks_saved = int(summary.get('rapid_swap_blocks_saved', 0.0) or 0)
+        rapid_swap_event_count = int(summary.get('rapid_swap_event_count', 0.0) or 0)
+        rapid_swap_share = float(summary.get('rapid_swap_share', 0.0) or 0.0)
+        estimated_time_saved_sec = float(summary.get('estimated_time_saved_sec', 0.0) or 0.0)
+
+        blocks_used = max(0, rapid_swap_event_count - rapid_swap_blocks_saved)
+        avg_subswaps_per_tx = rapid_swap_event_count / rapid_swap_count if rapid_swap_count else 0.0
+        avg_faster_pct = rapid_swap_blocks_saved / rapid_swap_event_count * 100.0 if rapid_swap_event_count else 0.0
+        efficiency_ratio = rapid_swap_event_count / blocks_used if blocks_used > 0 else 0.0
+
+        return RapidSwapTotals(
+            rapid_swap_count=rapid_swap_count,
+            total_swap_count=total_swap_count,
+            unique_users=unique_users,
+            rapid_swap_volume_usd=rapid_swap_volume_usd,
+            rapid_swap_blocks_saved=rapid_swap_blocks_saved,
+            rapid_swap_event_count=rapid_swap_event_count,
+            rapid_swap_share=rapid_swap_share,
+            estimated_time_saved_sec=estimated_time_saved_sec,
+            avg_subswaps_per_tx=round(avg_subswaps_per_tx, 4),
+            avg_faster_pct=round(avg_faster_pct, 2),
+            efficiency_ratio=round(efficiency_ratio, 4),
+        )
+
+    async def get_infographic_data(
+        self,
+        days: int = 7,
+        end_ts: Optional[float] = None,
+    ) -> RapidSwapPeriodStats:
+        if days <= 0:
+            raise ValueError('days must be > 0')
+
+        end_ts = float(end_ts or now_ts())
+        prev_end_ts = end_ts - days * DAY
+
+        current_summary, previous_summary = await asyncio.gather(
+            self.get_summary(days=days, end_ts=end_ts),
+            self.get_summary(days=days, end_ts=prev_end_ts),
+        )
+
+        current_total = self._build_totals(current_summary)
+        previous_total = self._build_totals(previous_summary)
+
+        daily_points = [
+            RapidSwapDailyPoint(
+                date=day.get('date', ''),
+                rapid_swap_count=int(day.get('rapid_swap_count', 0.0) or 0),
+                total_swap_count=int(day.get('total_swap_count', 0.0) or 0),
+                unique_users=int(day.get('unique_users', 0.0) or 0),
+                rapid_swap_volume_usd=round(float(day.get('rapid_swap_volume_usd', 0.0) or 0.0), 2),
+                rapid_swap_blocks_saved=int(day.get('rapid_swap_blocks_saved', 0.0) or 0),
+                rapid_swap_event_count=int(day.get('rapid_swap_event_count', 0.0) or 0),
+                rapid_swap_share=float(day.get('rapid_swap_share', 0.0) or 0.0),
+                estimated_time_saved_sec=float(day.get('estimated_time_saved_sec', 0.0) or 0.0),
+                cumulative_rapid_swap_count=int(day.get('cumulative_rapid_swap_count', 0.0) or 0),
+                cumulative_rapid_swap_volume_usd=round(float(day.get('cumulative_rapid_swap_volume_usd', 0.0) or 0.0), 2),
+                cumulative_estimated_time_saved_sec=float(day.get('cumulative_estimated_time_saved_sec', 0.0) or 0.0),
+                cumulative_unique_users=int(day.get('cumulative_unique_users', 0.0) or 0),
+                avg_subswaps_per_tx=round(float(day.get('rapid_swap_event_count', 0.0) or 0.0) / float(day.get('rapid_swap_count', 0.0) or 1.0), 4)
+                if day.get('rapid_swap_count', 0.0) else 0.0,
+                avg_faster_pct=round(
+                    float(day.get('rapid_swap_blocks_saved', 0.0) or 0.0)
+                    / float(day.get('rapid_swap_event_count', 0.0) or 1.0) * 100.0,
+                    2,
+                ) if day.get('rapid_swap_event_count', 0.0) else 0.0,
+            )
+            for day in current_summary.get('daily', [])
+        ]
+
+        return RapidSwapPeriodStats(
+            period_days=days,
+            start_date=current_summary.get('start_date', ''),
+            end_date=current_summary.get('end_date', ''),
+            total=current_total,
+            previous=previous_total,
+            delta=RapidSwapDeltas(
+                rapid_swap_count=RapidSwapDelta(
+                    absolute=round(current_total.rapid_swap_count - previous_total.rapid_swap_count, 4),
+                    pct=self._safe_pct_change(current_total.rapid_swap_count, previous_total.rapid_swap_count),
+                ),
+                rapid_swap_volume_usd=RapidSwapDelta(
+                    absolute=round(current_total.rapid_swap_volume_usd - previous_total.rapid_swap_volume_usd, 4),
+                    pct=self._safe_pct_change(current_total.rapid_swap_volume_usd, previous_total.rapid_swap_volume_usd),
+                ),
+                unique_users=RapidSwapDelta(
+                    absolute=round(current_total.unique_users - previous_total.unique_users, 4),
+                    pct=self._safe_pct_change(current_total.unique_users, previous_total.unique_users),
+                ),
+                estimated_time_saved_sec=RapidSwapDelta(
+                    absolute=round(current_total.estimated_time_saved_sec - previous_total.estimated_time_saved_sec, 4),
+                    pct=self._safe_pct_change(current_total.estimated_time_saved_sec, previous_total.estimated_time_saved_sec),
+                ),
+                rapid_swap_share_pp=RapidSwapDelta(
+                    absolute=round((current_total.rapid_swap_share - previous_total.rapid_swap_share) * 100.0, 4),
+                    pct=self._safe_pct_change(current_total.rapid_swap_share, previous_total.rapid_swap_share),
+                ),
+            ),
+            daily=daily_points,
+            top_pairs=[],
+            largest_swap=RapidSwapLargestSwap(),
+        )
 
     async def on_data(self, sender, block: BlockResult):
         swap_events = list(self.iter_swap_events(block))

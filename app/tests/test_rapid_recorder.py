@@ -5,6 +5,7 @@ import pytest
 from jobs.rapid_recorder import RapidSwapRecorder
 from jobs.scanner.block_result import BlockResult, ScannerError
 from jobs.scanner.tx import ThorEvent
+from lib.constants import THOR_BLOCK_TIME
 from lib.db import DB
 from lib.depcont import DepContainer
 from tests.fakes import FakeDB, FakePoolCache, FakeRedis, make_price_holder
@@ -160,11 +161,21 @@ async def test_get_daily_data_and_summary_use_true_cross_day_uniques():
     assert daily[0]['total_swap_count'] == 2.0
     assert daily[0]['unique_users'] == 1.0
     assert daily[0]['rapid_swap_share'] == 0.5
+    assert daily[0]['estimated_time_saved_sec'] == THOR_BLOCK_TIME
+    assert daily[0]['cumulative_rapid_swap_count'] == 1.0
+    assert daily[0]['cumulative_rapid_swap_volume_usd'] == 60_000.0
+    assert daily[0]['cumulative_estimated_time_saved_sec'] == THOR_BLOCK_TIME
+    assert daily[0]['cumulative_unique_users'] == 1.0
     assert daily[1]['rapid_swap_count'] == 1.0
     assert daily[1]['total_swap_count'] == 2.0
     assert daily[1]['unique_users'] == 1.0
     assert daily[1]['rapid_swap_volume_usd'] == 60_000.0
     assert daily[1]['rapid_swap_blocks_saved'] == 1.0
+    assert daily[1]['estimated_time_saved_sec'] == THOR_BLOCK_TIME
+    assert daily[1]['cumulative_rapid_swap_count'] == 2.0
+    assert daily[1]['cumulative_rapid_swap_volume_usd'] == 120_000.0
+    assert daily[1]['cumulative_estimated_time_saved_sec'] == THOR_BLOCK_TIME * 2
+    assert daily[1]['cumulative_unique_users'] == 1.0
 
     summary = await recorder.get_summary(days=2, end_ts=day2)
     assert summary['rapid_swap_count'] == 2.0
@@ -174,6 +185,94 @@ async def test_get_daily_data_and_summary_use_true_cross_day_uniques():
     assert summary['rapid_swap_blocks_saved'] == 2.0
     assert summary['rapid_swap_event_count'] == 4.0
     assert summary['rapid_swap_share'] == 0.5
+    assert summary['estimated_time_saved_sec'] == THOR_BLOCK_TIME * 2
+
+
+@pytest.mark.asyncio
+async def test_get_daily_data_tracks_cumulative_distinct_users_and_additive_metrics():
+    recorder = RapidSwapRecorder(make_deps())
+
+    day1 = 1_700_000_000
+    day2 = day1 + 86_400
+    day3 = day2 + 86_400
+
+    await recorder.on_data(None, make_block(
+        make_swap_event('rapid-a', 700, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1alice', stream_count=60, stream_quantity=222),
+        make_swap_event('rapid-a', 700, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1alice', stream_count=61, stream_quantity=222),
+        block_no=700,
+        timestamp=day1,
+    ))
+
+    await recorder.on_data(None, make_block(
+        make_swap_event('rapid-b', 701, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1alice', stream_count=60, stream_quantity=222),
+        make_swap_event('rapid-b', 701, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1alice', stream_count=61, stream_quantity=222),
+        make_swap_event('rapid-c', 701, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1bob', stream_count=70, stream_quantity=333),
+        make_swap_event('rapid-c', 701, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1bob', stream_count=71, stream_quantity=333),
+        block_no=701,
+        timestamp=day2,
+    ))
+
+    await recorder.on_data(None, make_block(
+        make_swap_event('rapid-d', 702, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1carol', stream_count=80, stream_quantity=444),
+        make_swap_event('rapid-d', 702, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1carol', stream_count=81, stream_quantity=444),
+        block_no=702,
+        timestamp=day3,
+    ))
+
+    daily = await recorder.get_daily_data(days=3, end_ts=day3)
+
+    assert [day['rapid_swap_count'] for day in daily] == [1.0, 2.0, 1.0]
+    assert [day['cumulative_rapid_swap_count'] for day in daily] == [1.0, 3.0, 4.0]
+    assert [day['cumulative_rapid_swap_volume_usd'] for day in daily] == [60_000.0, 180_000.0, 240_000.0]
+    assert [day['cumulative_estimated_time_saved_sec'] for day in daily] == [THOR_BLOCK_TIME, THOR_BLOCK_TIME * 3, THOR_BLOCK_TIME * 4]
+    assert [day['cumulative_unique_users'] for day in daily] == [1.0, 2.0, 3.0]
+
+
+@pytest.mark.asyncio
+async def test_get_infographic_data_builds_typed_period_stats_with_previous_window_delta():
+    recorder = RapidSwapRecorder(make_deps())
+
+    day1 = 1_700_000_000
+    day2 = day1 + 86_400
+
+    await recorder.on_data(None, make_block(
+        make_swap_event('rapid-prev', 800, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1prev', stream_count=60, stream_quantity=222),
+        make_swap_event('rapid-prev', 800, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1prev', stream_count=61, stream_quantity=222),
+        block_no=800,
+        timestamp=day1,
+    ))
+
+    await recorder.on_data(None, make_block(
+        make_swap_event('rapid-now-a', 801, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1curr1', stream_count=60, stream_quantity=222),
+        make_swap_event('rapid-now-a', 801, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1curr1', stream_count=61, stream_quantity=222),
+        make_swap_event('rapid-now-b', 801, pool='BTC.BTC', coin='100000000 BTC.BTC', from_addr='thor1curr2', stream_count=70, stream_quantity=333),
+        make_swap_event('rapid-now-b', 801, pool='ETH.ETH', coin='100000000 BTC.BTC', from_addr='thor1curr2', stream_count=71, stream_quantity=333),
+        block_no=801,
+        timestamp=day2,
+    ))
+
+    stats = await recorder.get_infographic_data(days=1, end_ts=day2)
+
+    assert stats.period_days == 1
+    assert stats.start_date == stats.end_date == recorder._date_str(day2)
+    assert stats.total.rapid_swap_count == 2
+    assert stats.total.total_swap_count == 2
+    assert stats.total.unique_users == 2
+    assert stats.total.rapid_swap_volume_usd == 120_000.0
+    assert stats.total.estimated_time_saved_sec == THOR_BLOCK_TIME * 2
+    assert stats.total.avg_subswaps_per_tx == 2.0
+    assert stats.total.avg_faster_pct == 50.0
+    assert stats.total.efficiency_ratio == 2.0
+    assert stats.previous.rapid_swap_count == 1
+    assert stats.previous.unique_users == 1
+    assert stats.delta.rapid_swap_count.absolute == 1
+    assert stats.delta.unique_users.absolute == 1
+    assert stats.delta.rapid_swap_volume_usd.absolute == 60_000.0
+    assert len(stats.daily) == 1
+    assert stats.daily[0].cumulative_rapid_swap_count == 2
+    assert stats.daily[0].cumulative_unique_users == 2
+    assert stats.daily[0].cumulative_estimated_time_saved_sec == THOR_BLOCK_TIME * 2
+    assert stats.to_dict()['total']['rapid_swap_count'] == 2
 
 
 @pytest.mark.asyncio

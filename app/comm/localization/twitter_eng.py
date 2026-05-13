@@ -34,6 +34,7 @@ from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from models.wasm import WasmPeriodStats
 from models.limit_swap import LimitSwapPeriodStats
+from models.rapid_swap import RapidSwapPeriodStats
 from notify.channel import MESSAGE_SEPARATOR
 from .achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
 from .eng_base import BaseLocalization, URL_OUR_REF
@@ -968,5 +969,21 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'📋 {pretty_money(e.total.opened_count, integer=True)} orders {orders_delta}\n'
             f'💵 {short_dollar(e.total.opened_usd)} volume {vol_delta}\n'
             f'👤 {pretty_money(e.total.unique_traders, integer=True)} traders {traders_delta}'
+        )
+
+    @staticmethod
+    def notification_text_rapid_swap_stats(e: RapidSwapPeriodStats):
+        tx_delta = up_down_arrow(e.previous.rapid_swap_count, e.total.rapid_swap_count,
+                                 percent_delta=True, brackets=True)
+        vol_delta = up_down_arrow(e.previous.rapid_swap_volume_usd, e.total.rapid_swap_volume_usd,
+                                  percent_delta=True, brackets=True)
+        user_delta = up_down_arrow(e.previous.unique_users, e.total.unique_users,
+                                   int_delta=True, brackets=True)
+        return (
+            f'Rapid Swaps ({e.period_days}d)\n'
+            f'📦 {pretty_money(e.total.rapid_swap_count, integer=True)} txs {tx_delta}\n'
+            f'💵 {short_dollar(e.total.rapid_swap_volume_usd)} volume {vol_delta}\n'
+            f'👤 {pretty_money(e.total.unique_users, integer=True)} users {user_delta}\n'
+            f'⏱ {seconds_human(e.total.estimated_time_saved_sec)} saved'
         )
 

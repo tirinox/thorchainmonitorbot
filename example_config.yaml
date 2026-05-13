@@ -477,7 +477,7 @@ node_info:
     filter_nonsense: false
 
   version:
-    enabled: true
+    enabled: false  # (!) note: deprecated
     new_version_appears: # node joined/upgraded to unseen version
       enabled: true
       cooldown: 15m

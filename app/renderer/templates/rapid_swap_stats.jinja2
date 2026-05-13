@@ -1,0 +1,215 @@
+{% set _width, _height = set_viewport_size(1460, 1000) %}
+{% extends "base.jinja2" %}
+
+{% block content %}
+{% set total = total or {} %}
+{% set daily = daily or [] %}
+{% set top_pairs = top_pairs or [] %}
+{% set largest = largest_swap or {} %}
+{% set days = period_days | default(7) | int %}
+{% set blocks_used = ((total.rapid_swap_event_count | default(0) | float) - (total.rapid_swap_blocks_saved | default(0) | float)) | round | int %}
+
+{% macro delta_class(pct) -%}
+  {%- set p = pct | float -%}
+  {%- if p > 0 -%}delta-pos{%- elif p < 0 -%}delta-neg{%- else -%}delta-zero{%- endif -%}
+{%- endmacro %}
+
+{% macro render_delta(pct, suffix='%') -%}
+  {%- set p = pct | default(0) | float -%}
+  {%- if p > 0.05 or p < -0.05 -%}
+    <div class="delta {{ delta_class(p) }}">{{ '+' if p > 0 else '' }}{{ '%.1f' | format(p) }}{{ suffix }}</div>
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro duration_text(seconds) -%}
+  {%- set s = seconds | default(0) | float | round | int -%}
+  {%- set h = s // 3600 -%}
+  {%- set m = (s % 3600) // 60 -%}
+  {%- set sec = s % 60 -%}
+  {%- if h > 0 -%}{{ h }}h {{ '%02d' | format(m) }}m
+  {%- elif m > 0 -%}{{ m }}m {{ '%02d' | format(sec) }}s
+  {%- else -%}{{ sec }}s
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro pct01_text(value) -%}
+  {{ '%.1f' | format((value | default(0) | float) * 100) }}%
+{%- endmacro %}
+
+{% macro short_hash(text, head=10, tail=8) -%}
+  {%- set value = text | default('') | string -%}
+  {%- if value | length <= head + tail + 3 -%}{{ value }}
+  {%- else -%}{{ value[:head] }}...{{ value[-tail:] }}
+  {%- endif -%}
+{%- endmacro %}
+
+{% with title="RAPID SWAPS", header_badge="⚡ TIME SAVED", header_badge_extra=duration_text(total.estimated_time_saved_sec) %}
+  {% include "components/header.jinja2" %}
+{% endwith %}
+
+<style>
+  .period-pill, .card, .panel, .bottom-strip { background: linear-gradient(180deg, rgba(18,29,35,.95), rgba(10,16,21,.96)); border: 1px solid rgba(255,255,255,.05); }
+  .period-pill { position:absolute; top:38px; right:34px; min-width:300px; padding:14px 22px; border-radius:14px; text-align:right; border-color: rgba(245,197,24,.16); }
+  .period-main { color:#fff; font-size:26px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+  .period-sub { color:#94b2ad; font-size:17px; margin-top:4px; }
+  .layout { position:absolute; top:140px; left:30px; right:30px; bottom:52px; display:flex; flex-direction:column; gap:16px; }
+  .stats-grid { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:14px; }
+  .card { border-radius:18px; padding:18px 22px 16px; }
+  .card-title { color:#8fa5ab; font-size:20px; letter-spacing:.18em; text-transform:uppercase; margin-bottom:10px; }
+  .card-value-row { display:flex; align-items:flex-end; gap:14px; }
+  .card-value { color:#fff; font-size:54px; font-weight:800; line-height:1; }
+  .card-sub { margin-top:7px; color:#6f8489; font-size:18px; }
+  .delta { font-size:26px; font-weight:800; padding-bottom:4px; }
+  .delta-pos { color:#33FF99; text-shadow:0 0 14px rgba(51,255,153,.22); }
+  .delta-neg { color:#ff7f8a; text-shadow:0 0 14px rgba(255,127,138,.22); }
+  .delta-zero { color:#9ca7ad; }
+  .gold { color:#f5c518; text-shadow:0 0 14px rgba(245,197,24,.2); }
+  .green { color:#33FF99; text-shadow:0 0 14px rgba(51,255,153,.2); }
+  .cyan { color:#23DCC8; text-shadow:0 0 14px rgba(35,220,200,.2); }
+  .content-row { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(420px,1fr); gap:16px; flex:1; min-height:0; }
+  .panel { border-radius:20px; padding:20px 22px 16px; min-height:0; }
+  .panel-title { color:#fff; font-size:28px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; margin-bottom:6px; }
+  .panel-sub { color:#7f969c; font-size:17px; margin-bottom:12px; }
+  .chart-shell, .side-shell { display:flex; flex-direction:column; height:100%; }
+  .legend-row { display:flex; gap:20px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+  .legend-item { display:flex; align-items:center; gap:8px; color:#b4c4c9; font-size:18px; }
+  .legend-dot, .legend-line { flex-shrink:0; }
+  .legend-dot { width:13px; height:13px; border-radius:50%; }
+  .legend-line { width:22px; height:4px; border-radius:2px; }
+  .chart-wrap { flex:1; position:relative; min-height:0; }
+  .mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+  .mini-box, .mini-stat, .path-row, .highlight-box { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.04); }
+  .mini-box { border-radius:14px; padding:12px 14px 10px; }
+  .mini-box-title, .mini-label { color:#9eb3ba; font-size:16px; text-transform:uppercase; letter-spacing:.09em; }
+  .mini-chart-wrap { position:relative; height:135px; margin-top:8px; }
+  .footer-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:12px; }
+  .mini-stat { border-radius:13px; padding:10px 14px; }
+  .mini-value { color:#fff; font-size:26px; font-weight:800; margin-top:4px; }
+  .paths { display:flex; flex-direction:column; gap:8px; }
+  .path-row { display:grid; grid-template-columns:36px minmax(0,1fr) 76px 88px 86px; gap:8px; align-items:center; border-radius:13px; padding:9px 10px 9px 2px; }
+  .path-rank { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,#33FF99,#23DCC8); color:#041a12; font-size:15px; font-weight:800; }
+  .path-name { color:#fff; font-size:22px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .metric { text-align:right; }
+  .metric-main { color:#fff; font-size:21px; font-weight:800; }
+  .metric-sub { color:#7f979d; font-size:14px; margin-top:2px; }
+  .highlight-box { margin-top:auto; border-radius:18px; padding:16px 18px; background: linear-gradient(180deg, rgba(245,197,24,.10), rgba(35,220,200,.05)); border-color: rgba(245,197,24,.18); }
+  .highlight-kicker { color:#f5c518; font-size:16px; text-transform:uppercase; letter-spacing:.15em; font-weight:800; }
+  .highlight-title { color:#fff; font-size:31px; font-weight:800; margin-top:6px; }
+  .highlight-sub { color:#9fb5ba; font-size:18px; margin-top:6px; }
+  .highlight-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px; }
+  .highlight-item { background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.04); border-radius:12px; padding:10px 12px; }
+  .highlight-item .mini-value { font-size:24px; }
+  .highlight-hash { margin-top:12px; color:#bdd0d5; font-size:17px; }
+  .bottom-strip { display:grid; grid-template-columns:auto repeat(5,minmax(0,1fr)); align-items:center; border-radius:16px; padding:14px 20px; border-color: rgba(245,197,24,.16); }
+  .badge { display:flex; align-items:center; gap:10px; padding-right:24px; margin-right:8px; border-right:1px solid rgba(255,255,255,.07); color:#f5c518; font-size:24px; font-weight:800; text-transform:uppercase; letter-spacing:.14em; white-space:nowrap; }
+  .badge-dot { width:10px; height:10px; border-radius:50%; background:#f5c518; box-shadow:0 0 10px rgba(245,197,24,.5); }
+  .strip-cell { padding:0 18px; border-right:1px solid rgba(255,255,255,.06); }
+  .strip-cell:last-child { border-right:none; }
+</style>
+
+<div class="period-pill shadow-box">
+  <div class="period-main">Last {{ days }} days</div>
+  <div class="period-sub">{{ start_date }} — {{ end_date }}</div>
+</div>
+
+<div class="layout">
+  <div class="stats-grid">
+    <div class="card shadow-box"><div class="card-title">⚡ Rapid batches</div><div class="card-value-row"><div class="card-value">{{ total.rapid_swap_count | default(0) | int }}</div>{{ render_delta(delta.rapid_swap_count.pct) }}</div><div class="card-sub">of {{ total.total_swap_count | default(0) | int }} swap txs</div></div>
+    <div class="card shadow-box"><div class="card-title">💵 Volume</div><div class="card-value-row"><div class="card-value gold">{{ short_dollar(total.rapid_swap_volume_usd | default(0) | float) }}</div>{{ render_delta(delta.rapid_swap_volume_usd.pct) }}</div><div class="card-sub">rapid-executed notional</div></div>
+    <div class="card shadow-box"><div class="card-title">📈 Adoption share</div><div class="card-value-row"><div class="card-value green">{{ pct01_text(total.rapid_swap_share) }}</div>{{ render_delta(delta.rapid_swap_share_pp.absolute, 'pp') }}</div><div class="card-sub">share of all swap txs</div></div>
+    <div class="card shadow-box"><div class="card-title">👤 Unique users</div><div class="card-value-row"><div class="card-value cyan">{{ total.unique_users | default(0) | int }}</div>{{ render_delta(delta.unique_users.pct) }}</div><div class="card-sub">distinct rapid swappers</div></div>
+  </div>
+
+  <div class="content-row">
+    <div class="panel chart-shell shadow-box">
+      <div class="panel-title">📊 Daily activity</div>
+      <div class="panel-sub">Main chart shows volume + rapid batch count. Mini charts show adoption and time saved.</div>
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-line" style="background:rgba(245,197,24,.90)"></div>Volume</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#23DCC8"></div>Rapid batches</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#33FF99"></div>Adoption</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ffb347"></div>Time saved</div>
+      </div>
+      <div class="chart-wrap"><canvas id="rapidMainChart"></canvas></div>
+      <div class="mini-grid">
+        <div class="mini-box"><div class="mini-box-title">Adoption / day</div><div class="mini-chart-wrap"><canvas id="rapidShareChart"></canvas></div></div>
+        <div class="mini-box"><div class="mini-box-title">Saved time / day</div><div class="mini-chart-wrap"><canvas id="rapidSavedChart"></canvas></div></div>
+      </div>
+      <div class="footer-stats">
+        <div class="mini-stat"><div class="mini-label">⏱ Time saved</div><div class="mini-value">{{ duration_text(total.estimated_time_saved_sec) }}</div></div>
+        <div class="mini-stat"><div class="mini-label">⚙ Avg subs / tx</div><div class="mini-value">{{ '%.2f' | format(total.avg_subswaps_per_tx | default(0) | float) }}x</div></div>
+        <div class="mini-stat"><div class="mini-label">🚀 Avg faster</div><div class="mini-value">{{ '%.1f' | format(total.avg_faster_pct | default(0) | float) }}%</div></div>
+      </div>
+    </div>
+
+    <div class="panel side-shell shadow-box">
+      <div class="panel-title">🏁 Top rapid paths</div>
+      <div class="panel-sub">Most active pairings for the selected period.</div>
+      <div class="paths">
+        {% for p in top_pairs[:6] %}
+          <div class="path-row">
+            <div class="path-rank">{{ loop.index }}</div>
+            <div class="path-name">{{ p.pair_label }}</div>
+            <div class="metric"><div class="metric-main">{{ p.rapid_swap_count | int }}</div><div class="metric-sub">txs</div></div>
+            <div class="metric"><div class="metric-main">{{ '%.2f' | format(p.avg_subswaps | default(0) | float) }}x</div><div class="metric-sub">subs</div></div>
+            <div class="metric"><div class="metric-main">{{ duration_text(p.estimated_time_saved_sec) }}</div><div class="metric-sub">saved</div></div>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if largest.tx_id %}
+      <div class="highlight-box shadow-box">
+        <div class="highlight-kicker">Largest rapid execution</div>
+        <div class="highlight-title">{{ short_dollar(largest.usd_volume | default(0) | float) }}</div>
+        <div class="highlight-sub">{{ largest.pair_label }} · {{ largest.when }}</div>
+        <div class="highlight-grid">
+          <div class="highlight-item"><div class="mini-label">Subswaps</div><div class="mini-value">{{ largest.subswaps | default(0) | int }}</div></div>
+          <div class="highlight-item"><div class="mini-label">Blocks used</div><div class="mini-value">{{ largest.blocks_used | default(0) | int }}</div></div>
+          <div class="highlight-item"><div class="mini-label">Saved time</div><div class="mini-value gold">{{ duration_text(largest.saved_time_sec) }}</div></div>
+          <div class="highlight-item"><div class="mini-label">Faster</div><div class="mini-value green">{{ '%.1f' | format(largest.faster_pct | default(0) | float) }}%</div></div>
+        </div>
+        <div class="highlight-hash">TX {{ short_hash(largest.tx_id) }} · {{ largest.trader }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="bottom-strip shadow-box">
+    <div class="badge"><div class="badge-dot"></div>Execution edge</div>
+    <div class="strip-cell"><div class="mini-label">Time saved</div><div class="mini-value gold">{{ duration_text(total.estimated_time_saved_sec) }}</div></div>
+    <div class="strip-cell"><div class="mini-label">Logical subswaps</div><div class="mini-value">{{ total.rapid_swap_event_count | default(0) | int }}</div></div>
+    <div class="strip-cell"><div class="mini-label">Blocks used</div><div class="mini-value">{{ blocks_used }}</div></div>
+    <div class="strip-cell"><div class="mini-label">Blocks saved</div><div class="mini-value cyan">{{ total.rapid_swap_blocks_saved | default(0) | int }}</div></div>
+    <div class="strip-cell"><div class="mini-label">Efficiency</div><div class="mini-value">{{ '%.2f' | format(total.efficiency_ratio | default(0) | float) }}x</div></div>
+    <div class="strip-cell"><div class="mini-label">Avg faster</div><div class="mini-value green">{{ '%.1f' | format(total.avg_faster_pct | default(0) | float) }}%</div></div>
+  </div>
+</div>
+
+<script>
+  const dailyRaw = {{ daily | tojson }};
+  const labels = dailyRaw.map(d => { const [, mo, day] = d.date.split('-'); return `${day}.${mo}`; });
+  const volumeData = dailyRaw.map(d => d.rapid_swap_volume_usd || 0);
+  const countData = dailyRaw.map(d => d.rapid_swap_count || 0);
+  const shareData = dailyRaw.map(d => (d.rapid_swap_share || 0) * 100);
+  const savedMinData = dailyRaw.map(d => (d.estimated_time_saved_sec || 0) / 60);
+  Chart.defaults.font.family = 'ThorFontLight, sans-serif';
+  Chart.defaults.color = '#b7c8cc';
+  const dollarLabel = v => v >= 1_000_000 ? '$' + (v / 1_000_000).toFixed(1) + 'M' : (v >= 1_000 ? '$' + (v / 1_000).toFixed(0) + 'K' : '$' + Math.round(v));
+  const minuteLabel = v => v >= 60 ? `${Math.floor(v / 60)}h ${Math.round(v % 60)}m` : `${Math.round(v)}m`;
+
+  const mainCtx = document.getElementById('rapidMainChart').getContext('2d');
+  const volGrad = mainCtx.createLinearGradient(0, 0, 0, 420); volGrad.addColorStop(0, 'rgba(245,197,24,.34)'); volGrad.addColorStop(1, 'rgba(245,197,24,.03)');
+  new Chart(mainCtx, { data: { labels, datasets: [
+    { type:'bar', label:'Volume', data:volumeData, backgroundColor:volGrad, borderColor:'rgba(245,197,24,.82)', borderWidth:1.5, borderRadius:8, barPercentage:.72, categoryPercentage:.8, yAxisID:'yVol', order:2 },
+    { type:'line', label:'Rapid batches', data:countData, borderColor:'#23DCC8', pointBackgroundColor:'#23DCC8', pointBorderColor:'#23DCC8', pointRadius:3, borderWidth:2.5, tension:.34, fill:false, yAxisID:'yCount', order:1 }
+  ]}, options: { maintainAspectRatio:false, responsive:true, animation:false, interaction:{ mode:'index', intersect:false }, plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:'rgba(10,16,21,.95)', borderColor:'rgba(245,197,24,.15)', borderWidth:1, padding:12, titleColor:'#fff', bodyColor:'#dbe6ea', callbacks:{ label: ctx => ctx.dataset.label === 'Volume' ? ` ${ctx.dataset.label}: ${dollarLabel(ctx.parsed.y)}` : ` ${ctx.dataset.label}: ${ctx.parsed.y}` } } }, scales:{ x:{ grid:{ display:false }, ticks:{ color:'#9db0b5', font:{ size:18 } } }, yVol:{ position:'left', beginAtZero:true, grid:{ color:'rgba(255,255,255,.07)' }, ticks:{ color:'rgba(245,197,24,.92)', font:{ size:18 }, callback:v => dollarLabel(v) } }, yCount:{ position:'right', beginAtZero:true, grid:{ drawOnChartArea:false }, ticks:{ color:'#6fe5db', font:{ size:18 } } } } } });
+
+  const shareCtx = document.getElementById('rapidShareChart').getContext('2d');
+  const shareGrad = shareCtx.createLinearGradient(0, 0, 0, 150); shareGrad.addColorStop(0, 'rgba(51,255,153,.30)'); shareGrad.addColorStop(1, 'rgba(51,255,153,.02)');
+  new Chart(shareCtx, { type:'line', data:{ labels, datasets:[{ data:shareData, borderColor:'#33FF99', backgroundColor:shareGrad, pointRadius:2.5, pointBackgroundColor:'#33FF99', pointBorderColor:'#33FF99', borderWidth:2.3, tension:.36, fill:true }] }, options:{ maintainAspectRatio:false, responsive:true, animation:false, plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:'rgba(10,16,21,.95)', borderColor:'rgba(51,255,153,.15)', borderWidth:1, padding:10, callbacks:{ label: ctx => ` Adoption: ${ctx.parsed.y.toFixed(1)}%` } } }, scales:{ x:{ grid:{ display:false }, ticks:{ color:'#9db0b5', font:{ size:16 } } }, y:{ beginAtZero:true, grid:{ color:'rgba(255,255,255,.05)' }, ticks:{ color:'#8fe6bc', font:{ size:16 }, callback:v => v + '%', maxTicksLimit:4 } } } } });
+
+  const savedCtx = document.getElementById('rapidSavedChart').getContext('2d');
+  const savedGrad = savedCtx.createLinearGradient(0, 0, 0, 150); savedGrad.addColorStop(0, 'rgba(255,179,71,.34)'); savedGrad.addColorStop(1, 'rgba(255,179,71,.04)');
+  new Chart(savedCtx, { type:'bar', data:{ labels, datasets:[{ data:savedMinData, backgroundColor:savedGrad, borderColor:'rgba(255,179,71,.92)', borderWidth:1.4, borderRadius:7, barPercentage:.72, categoryPercentage:.8 }] }, options:{ maintainAspectRatio:false, responsive:true, animation:false, plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:'rgba(10,16,21,.95)', borderColor:'rgba(255,179,71,.15)', borderWidth:1, padding:10, callbacks:{ label: ctx => ` Saved: ${minuteLabel(ctx.parsed.y)}` } } }, scales:{ x:{ grid:{ display:false }, ticks:{ color:'#9db0b5', font:{ size:16 } } }, y:{ beginAtZero:true, grid:{ color:'rgba(255,255,255,.05)' }, ticks:{ color:'#ffcf84', font:{ size:16 }, callback:v => `${Math.round(v)}m`, maxTicksLimit:4 } } } } });
+</script>
+{% endblock %}

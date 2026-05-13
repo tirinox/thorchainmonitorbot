@@ -1,0 +1,209 @@
+{
+  "template_name": "rapid_swap_stats.jinja2",
+  "parameters": {
+    "period_days": 7,
+    "start_date": "2026-05-07",
+    "end_date": "2026-05-13",
+    "total": {
+      "rapid_swap_count": 620,
+      "total_swap_count": 1821,
+      "unique_users": 187,
+      "rapid_swap_volume_usd": 15500000.0,
+      "rapid_swap_blocks_saved": 350,
+      "rapid_swap_event_count": 970,
+      "rapid_swap_share": 0.3405,
+      "avg_subswaps_per_tx": 1.56,
+      "avg_faster_pct": 36.1,
+      "efficiency_ratio": 1.56,
+      "estimated_time_saved_sec": 2100
+    },
+    "previous": {
+      "rapid_swap_count": 472,
+      "total_swap_count": 1710,
+      "unique_users": 149,
+      "rapid_swap_volume_usd": 11820000.0,
+      "rapid_swap_blocks_saved": 232,
+      "rapid_swap_event_count": 704,
+      "rapid_swap_share": 0.2760,
+      "avg_subswaps_per_tx": 1.49,
+      "avg_faster_pct": 33.0,
+      "efficiency_ratio": 1.49,
+      "estimated_time_saved_sec": 1392
+    },
+    "delta": {
+      "rapid_swap_count": {
+        "absolute": 148.0,
+        "pct": 31.4
+      },
+      "rapid_swap_volume_usd": {
+        "absolute": 3680000.0,
+        "pct": 31.1
+      },
+      "unique_users": {
+        "absolute": 38.0,
+        "pct": 25.5
+      },
+      "rapid_swap_share_pp": {
+        "absolute": 6.45,
+        "pct": 23.4
+      }
+    },
+    "daily": [
+      {
+        "date": "2026-05-07",
+        "rapid_swap_count": 58,
+        "total_swap_count": 201,
+        "unique_users": 31,
+        "rapid_swap_volume_usd": 1050000.0,
+        "rapid_swap_blocks_saved": 23,
+        "rapid_swap_event_count": 81,
+        "rapid_swap_share": 0.2886,
+        "avg_subswaps_per_tx": 1.40,
+        "avg_faster_pct": 28.4,
+        "estimated_time_saved_sec": 138
+      },
+      {
+        "date": "2026-05-08",
+        "rapid_swap_count": 61,
+        "total_swap_count": 213,
+        "unique_users": 34,
+        "rapid_swap_volume_usd": 1120000.0,
+        "rapid_swap_blocks_saved": 24,
+        "rapid_swap_event_count": 85,
+        "rapid_swap_share": 0.2864,
+        "avg_subswaps_per_tx": 1.39,
+        "avg_faster_pct": 28.2,
+        "estimated_time_saved_sec": 144
+      },
+      {
+        "date": "2026-05-09",
+        "rapid_swap_count": 79,
+        "total_swap_count": 244,
+        "unique_users": 41,
+        "rapid_swap_volume_usd": 1840000.0,
+        "rapid_swap_blocks_saved": 39,
+        "rapid_swap_event_count": 118,
+        "rapid_swap_share": 0.3238,
+        "avg_subswaps_per_tx": 1.49,
+        "avg_faster_pct": 33.1,
+        "estimated_time_saved_sec": 234
+      },
+      {
+        "date": "2026-05-10",
+        "rapid_swap_count": 84,
+        "total_swap_count": 257,
+        "unique_users": 47,
+        "rapid_swap_volume_usd": 2210000.0,
+        "rapid_swap_blocks_saved": 48,
+        "rapid_swap_event_count": 132,
+        "rapid_swap_share": 0.3268,
+        "avg_subswaps_per_tx": 1.57,
+        "avg_faster_pct": 36.4,
+        "estimated_time_saved_sec": 288
+      },
+      {
+        "date": "2026-05-11",
+        "rapid_swap_count": 96,
+        "total_swap_count": 271,
+        "unique_users": 55,
+        "rapid_swap_volume_usd": 2660000.0,
+        "rapid_swap_blocks_saved": 57,
+        "rapid_swap_event_count": 153,
+        "rapid_swap_share": 0.3542,
+        "avg_subswaps_per_tx": 1.59,
+        "avg_faster_pct": 37.3,
+        "estimated_time_saved_sec": 342
+      },
+      {
+        "date": "2026-05-12",
+        "rapid_swap_count": 112,
+        "total_swap_count": 302,
+        "unique_users": 63,
+        "rapid_swap_volume_usd": 3040000.0,
+        "rapid_swap_blocks_saved": 71,
+        "rapid_swap_event_count": 183,
+        "rapid_swap_share": 0.3709,
+        "avg_subswaps_per_tx": 1.63,
+        "avg_faster_pct": 38.8,
+        "estimated_time_saved_sec": 426
+      },
+      {
+        "date": "2026-05-13",
+        "rapid_swap_count": 130,
+        "total_swap_count": 333,
+        "unique_users": 71,
+        "rapid_swap_volume_usd": 3580000.0,
+        "rapid_swap_blocks_saved": 88,
+        "rapid_swap_event_count": 218,
+        "rapid_swap_share": 0.3904,
+        "avg_subswaps_per_tx": 1.68,
+        "avg_faster_pct": 40.4,
+        "estimated_time_saved_sec": 528
+      }
+    ],
+    "top_pairs": [
+      {
+        "pair_label": "BTC.BTC → ETH.ETH",
+        "rapid_swap_count": 96,
+        "rapid_swap_volume_usd": 4020000.0,
+        "avg_subswaps": 1.74,
+        "avg_faster_pct": 42.5,
+        "estimated_time_saved_sec": 582
+      },
+      {
+        "pair_label": "ETH.USDC → BTC.BTC",
+        "rapid_swap_count": 88,
+        "rapid_swap_volume_usd": 2830000.0,
+        "avg_subswaps": 1.62,
+        "avg_faster_pct": 38.2,
+        "estimated_time_saved_sec": 402
+      },
+      {
+        "pair_label": "BSC.USDT → ETH.USDC",
+        "rapid_swap_count": 74,
+        "rapid_swap_volume_usd": 2110000.0,
+        "avg_subswaps": 1.55,
+        "avg_faster_pct": 35.5,
+        "estimated_time_saved_sec": 288
+      },
+      {
+        "pair_label": "TRON.USDT → BTC.BTC",
+        "rapid_swap_count": 63,
+        "rapid_swap_volume_usd": 1940000.0,
+        "avg_subswaps": 1.69,
+        "avg_faster_pct": 40.8,
+        "estimated_time_saved_sec": 336
+      },
+      {
+        "pair_label": "ETH.ETH → THOR.RUNE",
+        "rapid_swap_count": 55,
+        "rapid_swap_volume_usd": 1470000.0,
+        "avg_subswaps": 1.31,
+        "avg_faster_pct": 23.6,
+        "estimated_time_saved_sec": 102
+      },
+      {
+        "pair_label": "BASE.USDC → BSC.TWT",
+        "rapid_swap_count": 48,
+        "rapid_swap_volume_usd": 960000.0,
+        "avg_subswaps": 1.58,
+        "avg_faster_pct": 36.8,
+        "estimated_time_saved_sec": 168
+      }
+    ],
+    "largest_swap": {
+      "when": "2026-05-12 18:42 UTC",
+      "tx_id": "56DCF88C000CB245F5EE71D1F00E3FC8ED9EDF483E8DC3F514B0D9C31F24F493",
+      "pair_label": "ETH.ETH → BTC.BTC",
+      "trader": "thor1rapidwhale...8d9",
+      "usd_volume": 1920000.0,
+      "subswaps": 318,
+      "blocks_used": 186,
+      "blocks_saved": 132,
+      "saved_time_sec": 792,
+      "faster_pct": 41.5,
+      "efficiency_ratio": 1.71
+    }
+  }
+}
+
