@@ -278,6 +278,9 @@ tx:
     min_usd_total: 50
     curve_mult: 0.3
 
+    twitter:
+      remove_links_below_usd: 1000000  # if > 0, twitter_eng omits tx tracker / explorer URLs for smaller swaps
+
     hide_arbitrage_bots: true
 
     also_trigger_when:

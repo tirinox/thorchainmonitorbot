@@ -44,6 +44,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         super().__init__(cfg)
         self.ach = AchievementsTwitterEnglishLocalization()
         self.twitter_max_len = cfg.get('twitter.max_length', TWITTER_LIMIT_CHARACTERS)
+        self.swap_twitter_remove_links_below_usd = cfg.as_float('tx.swap.twitter.remove_links_below_usd', 0.0)
 
     TEXT_DECORATION_ENABLED = False
 
@@ -64,6 +65,10 @@ class TwitterEnglishLocalization(BaseLocalization):
     def smart_split(self, parts):
         parts = twitter_intelligent_text_splitter(parts, self.twitter_max_len)
         return MESSAGE_SEPARATOR.join(parts).strip()
+
+    def _should_hide_swap_urls(self, volume_usd: float) -> bool:
+        threshold = self.swap_twitter_remove_links_below_usd
+        return threshold > 0 and volume_usd < threshold
 
     PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION = 'THORChain nodes'
 
@@ -169,9 +174,13 @@ class TwitterEnglishLocalization(BaseLocalization):
         link = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.first_input_tx_hash) \
             if tx and tx.tx_hash else ''
 
+        link_line = ''
+        if link and not (tx.is_of_type(ActionType.SWAP) and self._should_hide_swap_urls(tx.get_usd_volume(usd_per_rune))):
+            link_line = f'\nRunescan: {link}'
+
         msg = f"{heading}\n" \
-              f"{content}\n" \
-              f"Runescan: {link}"
+              f"{content}" \
+              f"{link_line}"
 
         return msg.strip()
 
@@ -185,12 +194,18 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         runescan_link = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, e.tx_id)
 
-        return (
-            f'🌊 New streaming swap\n'
-            f'{user_link}: {amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {target_asset_str}\n'
-            f'Track Tx: {tx_link}.\n'
-            f'Runescan: {runescan_link}'
-        )
+        parts = [
+            '🌊 New streaming swap',
+            f'{user_link}: {amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {target_asset_str}',
+        ]
+
+        if not self._should_hide_swap_urls(e.volume_usd):
+            parts.extend((
+                f'Track Tx: {tx_link}.',
+                f'Runescan: {runescan_link}',
+            ))
+
+        return '\n'.join(parts)
 
     def notification_text_queue_update(self, item_type, is_free, value):
         if is_free:
