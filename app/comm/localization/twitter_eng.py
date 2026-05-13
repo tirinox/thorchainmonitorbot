@@ -39,6 +39,9 @@ from .achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
 from .eng_base import BaseLocalization, URL_OUR_REF
 
 
+TWITTER_POST_URLS_ENABLED = False
+
+
 class TwitterEnglishLocalization(BaseLocalization):
     def __init__(self, cfg: Config):
         super().__init__(cfg)
@@ -69,6 +72,10 @@ class TwitterEnglishLocalization(BaseLocalization):
     def _should_hide_swap_urls(self, volume_usd: float) -> bool:
         threshold = self.swap_twitter_remove_links_below_usd
         return threshold > 0 and volume_usd < threshold
+
+    @property
+    def are_post_urls_enabled(self) -> bool:
+        return TWITTER_POST_URLS_ENABLED
 
     PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION = 'THORChain nodes'
 
@@ -175,7 +182,11 @@ class TwitterEnglishLocalization(BaseLocalization):
             if tx and tx.tx_hash else ''
 
         link_line = ''
-        if link and not (tx.is_of_type(ActionType.SWAP) and self._should_hide_swap_urls(tx.get_usd_volume(usd_per_rune))):
+        if (
+            self.are_post_urls_enabled and
+            link and
+            not (tx.is_of_type(ActionType.SWAP) and self._should_hide_swap_urls(tx.get_usd_volume(usd_per_rune)))
+        ):
             link_line = f'\nRunescan: {link}'
 
         msg = f"{heading}\n" \
@@ -199,7 +210,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'{user_link}: {amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {target_asset_str}',
         ]
 
-        if not self._should_hide_swap_urls(e.volume_usd):
+        if self.are_post_urls_enabled and not self._should_hide_swap_urls(e.volume_usd):
             parts.extend((
                 f'Track Tx: {tx_link}.',
                 f'Runescan: {runescan_link}',
@@ -224,8 +235,10 @@ class TwitterEnglishLocalization(BaseLocalization):
         price = p.market_info.pool_rune_price
 
         message += f"The price of $RUNE is now ${price:.3f} (₿{p.btc_pool_rune_price:.8f}).\n"
-        message += f'{self.TEXT_REF_CALL}\n'
-        message += f"Track it on CoinGecko: {self.COIN_GECKO_URL}"
+
+        if self.are_post_urls_enabled:
+            message += f'{self.TEXT_REF_CALL}\n'
+            message += f"Track it on CoinGecko: {self.COIN_GECKO_URL}"
 
         return message.rstrip()
 
@@ -267,7 +280,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         if pc.pools_changed:
             message += '🔄 Pools changed:\n' + '\n'.join([pool_text(*a) for a in pc.pools_changed]) + '\n'
 
-        message += 'https://thorchain.net/pools/'
+        if self.are_post_urls_enabled:
+            message += 'https://thorchain.net/pools/'
 
         return message.rstrip()
 
@@ -670,14 +684,17 @@ class TwitterEnglishLocalization(BaseLocalization):
         if t.memo:
             memo = f' (MEMO: "{shorten_text(t.memo, 21)}")'
 
-        link = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, t.tx_hash) if t and t.tx_hash else ''
-
-        return (
+        text = (
             f'💸 Large transfer{comment}: '
             f'{short_money(t.amount)} {asset} {usd_amt} '
-            f'from {from_my} ➡️ {to_my}{memo}\n'
-            f'TX: {link}'.strip()
-        )
+            f'from {from_my} ➡️ {to_my}{memo}'
+        ).strip()
+
+        if self.are_post_urls_enabled and t and t.tx_hash:
+            link = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, t.tx_hash)
+            text += f'\nTX: {link}'
+
+        return text
 
     # ----- SUPPLY ------
 
@@ -798,13 +815,17 @@ class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_trade_account_move(self, event: AlertTradeAccountAction, name_map: NameMap):
         action_str = 'deposit' if event.is_deposit else 'withdrawal'
         from_link, to_link, amt_str = self._trade_acc_from_to_links(event, name_map, formatting=False)
-        return (
+        text = (
             f"🏦 Trade account {action_str}\n"
             f"👤 From {from_link}"
             f" to {to_link}\n"
-            f"Total: {amt_str}\n"
-            f"{self.link_to_tx(event.tx_hash)}"
+            f"Total: {amt_str}"
         )
+
+        if self.are_post_urls_enabled:
+            text += f'\n{self.link_to_tx(event.tx_hash)}'
+
+        return text
 
     def notification_text_trade_account_summary(self, e: AlertTradeAccountStats):
         top_vaults_str = self._top_trade_vaults(e, 4, formatting=False)
@@ -863,13 +884,17 @@ class TwitterEnglishLocalization(BaseLocalization):
         else:
             aff_text = ''
 
-        return (
+        text = (
             f"🏦 RUNEPool {action_str}\n"
             f"{route}\n"
             f"Total: {amt_str} ({pretty_dollar(event.usd_amount)})\n"
-            f"{aff_text}"
-            f"{self.link_to_tx(event.tx_hash)}"
+            f"{aff_text}".rstrip()
         )
+
+        if self.are_post_urls_enabled:
+            text += f'\n{self.link_to_tx(event.tx_hash)}'
+
+        return text
 
     def notification_runepool_stats(self, event: AlertRunepoolStats):
         n_providers_delta, pnl_delta, rune_delta, share_delta = self._runepool_deltas(event)
@@ -914,8 +939,10 @@ class TwitterEnglishLocalization(BaseLocalization):
     @staticmethod
     def notification_rujira_merge_stats(e: AlertRujiraMergeStats):
         return (
-            f'RUJIRA Merge stats $RUJI\n'
-            f'https://rujira.network/merge/'
+            'RUJIRA Merge stats $RUJI\n'
+            'https://rujira.network/merge/'
+            if TWITTER_POST_URLS_ENABLED else
+            'RUJIRA Merge stats $RUJI'
         )
 
     @staticmethod
