@@ -533,7 +533,8 @@ class RussianLocalization(BaseLocalization):
         pr_text = f"${price:.3f}"
         message += f"Цена <b>RUNE</b> сейчас {code(pr_text)} ({btc_price}).\n"
 
-        message += f'\n{self.TEXT_REF_CALL}'
+        if self._should_include_price_ref_call(p):
+            message += f'\n{self.TEXT_REF_CALL}'
 
         return message.rstrip()
 

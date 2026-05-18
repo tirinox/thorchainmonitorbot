@@ -237,7 +237,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         message += f"The price of $RUNE is now ${price:.3f} (₿{p.btc_pool_rune_price:.8f}).\n"
 
-        if self.are_post_urls_enabled:
+        if self.are_post_urls_enabled and self._should_include_price_ref_call(p):
             message += f'{self.TEXT_REF_CALL}\n'
             message += f"Track it on CoinGecko: {self.COIN_GECKO_URL}"
 

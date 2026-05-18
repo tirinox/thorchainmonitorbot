@@ -25,9 +25,11 @@ from lib.texts import progressbar, link, pre, code, bold, ital, link_with_domain
 from lib.utils import grouper, run_once, identity
 from models.asset import Asset
 from models.cap_info import ThorCapInfo
+from models.chains import ChainInfoHolder
 from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
 from models.last_block import BlockProduceState, EventBlockSpeed
+from models.limit_swap import LimitSwapPeriodStats
 from models.lp_info import LiquidityPoolReport
 from models.memo import ActionType
 from models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption, AlertMimirVoting, \
@@ -41,6 +43,7 @@ from models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent,
 from models.pool_info import PoolInfo, PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge, PriceHolder
 from models.queue import QueueInfo
+from models.rapid_swap import RapidSwapPeriodStats
 from models.ruji import AlertRujiraMergeStats
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
@@ -48,11 +51,9 @@ from models.secured import AlertSecuredAssetSummary
 from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
-from models.wasm import WasmPeriodStats
-from models.limit_swap import LimitSwapPeriodStats
-from models.rapid_swap import RapidSwapPeriodStats
 from models.tx import ThorAction, ThorSubTx, EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
+from models.wasm import WasmPeriodStats
 from notify.channel import Messengers
 from .achievements.ach_eng import AchievementsEnglishLocalization
 
@@ -766,6 +767,15 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_PRICE_NO_DATA = 'Sorry. No price data available yet. Please try again later.'
 
+    @staticmethod
+    def _should_include_price_ref_call(price_alert: AlertPrice, max_chain_halted_allowed=1) -> bool:
+        chain_state = getattr(price_alert, 'chain_state', None) or []
+        halted_chains = sum(
+            1 for state in chain_state
+            if isinstance(state, tuple) and len(state) > 1 and state[1] == ChainInfoHolder.HALTED
+        )
+        return halted_chains <= max_chain_halted_allowed
+
     def notification_text_price_update(self, p: AlertPrice):
         title = bold('Price update') if not p.is_ath else bold('🚀 A new all-time high has been achieved!')
 
@@ -775,7 +785,8 @@ class BaseLocalization(ABC):  # == English
         btc_price = f"₿{p.btc_pool_rune_price:.8f}"
         message += f"<b>RUNE</b> price is {code(pr_text)} ({btc_price}) now.\n"
 
-        message += f'\n{self.TEXT_REF_CALL}'
+        if self._should_include_price_ref_call(p):
+            message += f'\n{self.TEXT_REF_CALL}'
 
         return message.rstrip()
 
@@ -2054,7 +2065,6 @@ class BaseLocalization(ABC):  # == English
 
     def seconds_human(self, s):
         return seconds_human(s)
-
 
     # ----- SUPPLY ------
 
