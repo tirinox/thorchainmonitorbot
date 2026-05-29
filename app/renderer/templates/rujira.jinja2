@@ -1,0 +1,597 @@
+{% set _width, _height = set_viewport_size(1440, 1020) %}
+{% extends "base.jinja2" %}
+
+{% block content %}
+	{% set chart_data = daily_chart or [] %}
+	{% set top_list = top_contracts or [] %}
+
+	<style>
+		:root {
+			--rujira-pink: #d534ea;
+			--rujira-purple: #843ef6;
+			--rujira-indigo: #5634d1;
+			--rujira-navy: #080e50;
+			--rujira-light: #ebedf3;
+		}
+
+		body {
+			background: #050713;
+		}
+
+		.container.bg {
+			background:
+				radial-gradient(circle at 16% 8%, rgba(213, 52, 234, 0.3), transparent 30%),
+				radial-gradient(circle at 78% 10%, rgba(86, 52, 209, 0.25), transparent 28%),
+				linear-gradient(180deg, #080e50 0%, #070916 42%, #04050b 100%);
+		}
+
+		.rujira-header {
+			position: absolute;
+			top: 24px;
+			left: 34px;
+			right: 520px;
+			display: flex;
+			align-items: center;
+			justify-content: flex-start;
+		}
+
+		.rujira-logo {
+			width: 280px;
+			height: auto;
+			object-fit: contain;
+			filter: drop-shadow(0 0 24px rgba(213, 52, 234, 0.28));
+		}
+
+		.period-pill {
+			position: absolute;
+			top: 39px;
+			right: 34px;
+			padding: 14px 18px;
+			border-radius: 14px;
+			background: rgba(8, 14, 80, 0.72);
+			border: 1px solid rgba(213, 52, 234, 0.26);
+			color: var(--rujira-light);
+			box-shadow: 0 0 24px rgba(86, 52, 209, 0.16);
+			font-size: 18px;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+			text-align: right;
+			min-width: 300px;
+		}
+
+		.period-main {
+			font-size: 24px;
+			font-weight: 700;
+			color: #ffffff;
+			margin-bottom: 4px;
+		}
+
+		.period-sub {
+			font-size: 16px;
+			color: #a9b1db;
+		}
+
+		.layout {
+			position: absolute;
+			top: 140px;
+			left: 30px;
+			right: 30px;
+			bottom: 52px;
+			display: flex;
+			flex-direction: column;
+			gap: 18px;
+		}
+
+		.stats-grid {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 16px;
+		}
+
+		.card {
+			padding: 18px 20px;
+			border-radius: 18px;
+			background: linear-gradient(180deg, rgba(15, 18, 47, 0.94), rgba(8, 14, 80, 0.54));
+			border: 1px solid rgba(213, 52, 234, 0.14);
+			box-shadow: 0 0 24px rgba(86, 52, 209, 0.12);
+			min-height: 142px;
+		}
+
+		.card-title {
+			color: #a9b1db;
+			font-size: 23px;
+			text-transform: uppercase;
+			letter-spacing: 0.2em;
+			margin-bottom: 14px;
+            font-weight: 400;
+		}
+
+		.card-value {
+			color: var(--rujira-light);
+			font-size: 54px;
+			font-weight: 800;
+			line-height: 1;
+			text-shadow: rgba(213, 52, 234, 0.24) 0 0 14px;
+		}
+
+		.card-value-row {
+			display: flex;
+			align-items: flex-end;
+			gap: 14px;
+			margin-bottom: 10px;
+		}
+
+		.card-meta {
+			display: flex;
+			justify-content: space-between;
+			align-items: baseline;
+			gap: 10px;
+		}
+
+		.card-note {
+			color: #c1c6e0;
+			font-size: 22px;
+		}
+
+		.delta {
+			font-size: 24px;
+			font-weight: 800;
+			letter-spacing: 0.03em;
+		}
+
+		.delta-muted {
+			color: #a9b1db;
+		}
+
+		.metric-subtitle {
+			color: #8891c7;
+			font-size: 18px;
+			margin-top: 3px;
+		}
+
+		.content-row {
+			display: grid;
+			grid-template-columns: minmax(0, 1.5fr) minmax(390px, 1fr);
+			gap: 18px;
+			min-height: 0;
+			flex: 1;
+		}
+
+		.panel {
+			border-radius: 20px;
+			padding: 18px 20px 14px;
+			background: linear-gradient(180deg, rgba(15, 18, 47, 0.97), rgba(6, 8, 22, 0.98));
+			border: 1px solid rgba(132, 62, 246, 0.14);
+			box-shadow: 0 0 28px rgba(8, 14, 80, 0.48);
+			min-height: 0;
+		}
+
+		.panel-title {
+			color: var(--rujira-light);
+			font-size: 28px;
+			font-weight: 800;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+		}
+
+		.panel-subtitle {
+			color: #a9b1db;
+			font-size: 20px;
+			margin-top: 4px;
+			margin-bottom: 12px;
+		}
+
+		.chart-shell {
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+		}
+
+		.chart-wrap {
+			position: relative;
+			flex: 1;
+			min-height: 410px;
+			margin-top: 6px;
+		}
+
+		.chart-footer {
+			display: grid;
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 10px;
+			margin-top: 14px;
+		}
+
+		.mini-stat {
+			border-radius: 14px;
+			padding: 12px 14px;
+			background: rgba(235, 237, 243, 0.04);
+			border: 1px solid rgba(132, 62, 246, 0.1);
+		}
+
+		.mini-label {
+			font-size: 18px;
+			color: #a9b1db;
+			text-transform: uppercase;
+			letter-spacing: 0.09em;
+			margin-bottom: 6px;
+		}
+
+		.mini-value {
+			font-size: 28px;
+			color: var(--rujira-light);
+			font-weight: 800;
+		}
+
+		.legend-row {
+			display: flex;
+			gap: 18px;
+			align-items: center;
+			margin-top: 8px;
+			color: #c1c6e0;
+			font-size: 15px;
+			flex-wrap: wrap;
+		}
+
+		.legend-item {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.legend-dot {
+			width: 15px;
+			height: 15px;
+			border-radius: 50%;
+		}
+
+		.legend-line {
+			width: 24px;
+			height: 4px;
+			border-radius: 2px;
+		}
+
+		.leaderboard {
+			display: flex;
+			flex-direction: column;
+			height: 100%;
+			min-height: 0;
+		}
+
+		.leaderboard-list {
+            margin-top: 10px;
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			flex: 1;
+			min-height: 0;
+			overflow: hidden;
+		}
+
+		.contract-row {
+			display: grid;
+			grid-template-columns: 43px minmax(0, 1fr) 88px 88px;
+			gap: 12px;
+			align-items: center;
+			padding: 10px 5px 5px 0;
+			border-radius: 14px;
+			background: rgba(235, 237, 243, 0.04);
+			border: 1px solid rgba(132, 62, 246, 0.08);
+		}
+
+		.rank {
+			width: 36px;
+			height: 36px;
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--rujira-light);
+			font-size: 18px;
+			font-weight: 800;
+			background: linear-gradient(180deg, var(--rujira-pink), var(--rujira-purple) 55%, var(--rujira-indigo));
+			box-shadow: 0 0 18px rgba(213, 52, 234, 0.28);
+		}
+
+		.contract-name {
+			min-width: 0;
+		}
+
+		.contract-label {
+			color: var(--rujira-light);
+			font-size: 20px;
+			font-weight: 800;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			margin-bottom: 4px;
+			letter-spacing: 0.02em;
+		}
+
+		.contract-address {
+			color: #a9b1db;
+			font-size: 20px;
+			letter-spacing: 0.04em;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.contract-metric {
+			text-align: right;
+		}
+
+		.contract-metric-label {
+			font-size: 13px;
+			color: #a9b1db;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			margin-bottom: 4px;
+		}
+
+		.contract-metric-value {
+			font-size: 26px;
+			font-weight: 800;
+			color: var(--rujira-light);
+		}
+
+		.empty-state {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: 100%;
+			color: #8891c7;
+			font-size: 22px;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+		}
+	</style>
+
+	{% macro delta_style(value) -%}
+		{% if value is number %}
+			{% if value > 0 %}
+				color:#d534ea; text-shadow: rgba(213, 52, 234, 0.28) 0 0 12px;
+			{% elif value < 0 %}
+				color:#ff7f8a; text-shadow: rgba(255, 127, 138, 0.2) 0 0 12px;
+			{% else %}
+				color:#a9b1db;
+			{% endif %}
+		{% else %}
+			color:#a9b1db;
+		{% endif %}
+	{%- endmacro %}
+
+	{% macro delta_text(value) -%}
+		{% if value is number %}
+			{% if value > 0 %}+{% endif %}{{ '%.1f' | format(value) }}%
+		{% else %}
+			n/a
+		{% endif %}
+	{%- endmacro %}
+
+		<div class="rujira-header">
+			<img class="rujira-logo" src="renderer/static/img/rujira-with-text.png?rv=1" alt="Rujira logo">
+		</div>
+
+	<div class="period-pill shadow-box">
+		<div class="period-main">Last {{ days | int }} days</div>
+		<div class="period-sub">Contracts, code growth and on-chain interactions</div>
+	</div>
+
+	<div class="layout">
+		<div class="stats-grid">
+			<div class="card shadow-box">
+				<div class="card-title">Deployed codes</div>
+				<div class="card-value-row">
+					<div class="card-value">{{ total_codes }}</div>
+					{% if new_codes %}<div class="delta delta-muted">+{{ new_codes }}</div>{% endif %}
+				</div>
+			</div>
+
+			<div class="card shadow-box">
+				<div class="card-title">Live contracts</div>
+				<div class="card-value-row">
+					<div class="card-value">{{ total_contracts }}</div>
+					{% if new_contracts %}<div class="delta delta-muted">+{{ new_contracts }}</div>{% endif %}
+				</div>
+			</div>
+
+			<div class="card shadow-box">
+				<div class="card-title">Unique users</div>
+				<div class="card-value-row">
+					<div class="card-value">{{ short_money(unique_users, integer=True) }}</div>
+					<div class="delta" style="{{ delta_style(users_change_pct) }}">{{ delta_text(users_change_pct) }}</div>
+				</div>
+			</div>
+
+			<div class="card shadow-box">
+				<div class="card-title">Contract calls</div>
+				<div class="card-value-row">
+					<div class="card-value">{{ short_money(total_calls, integer=True) }}</div>
+					<div class="delta" style="{{ delta_style(calls_change_pct) }}">{{ delta_text(calls_change_pct) }}</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="content-row">
+			<div class="panel chart-shell shadow-box">
+				<div class="panel-title">Activity chart</div>
+				<div class="panel-subtitle">Daily interactions and unique users across all contracts</div>
+
+				<div class="legend-row">
+					<div class="legend-item">
+						<div class="legend-dot" style="background:#d534ea;"></div>
+						<div>Unique users</div>
+					</div>
+					<div class="legend-item">
+						<div class="legend-line" style="background:#843ef6;"></div>
+						<div>Contract calls</div>
+					</div>
+				</div>
+
+				<div class="chart-wrap">
+					<canvas id="appLayerChart"></canvas>
+				</div>
+
+				<div class="chart-footer">
+					<div class="mini-stat">
+						<div class="mini-label">Peak day calls</div>
+						<div class="mini-value">{{ short_money((chart_data | map(attribute='calls') | max) if chart_data else 0, integer=True) }}</div>
+					</div>
+					<div class="mini-stat">
+						<div class="mini-label">Peak day users</div>
+						<div class="mini-value">{{ short_money((chart_data | map(attribute='unique_users') | max) if chart_data else 0, integer=True) }}</div>
+					</div>
+					<div class="mini-stat">
+						<div class="mini-label">Average calls / day</div>
+						<div class="mini-value">{{ short_money(((total_calls / (days or 1)) | round(0) | int) if total_calls else 0, integer=True) }}</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="panel leaderboard shadow-box">
+				<div class="panel-title">Top contracts</div>
+
+				{% if top_list %}
+					<div class="leaderboard-list">
+						{% for c in top_list[:7] %}
+							<div class="contract-row">
+								<div class="rank">{{ loop.index }}</div>
+								<div class="contract-name">
+									<div class="contract-label">{{ c.display_label or c.label or 'Unlabeled contract' }}</div>
+									<div class="contract-address">{% if c.address | length > 14 %}{{ c.address[:10] }}…{{ c.address[-4:] }}{% else %}{{ c.address }}{% endif %}</div>
+								</div>
+								<div class="contract-metric">
+									<div class="contract-metric-label">Calls</div>
+									<div class="contract-metric-value">{{ short_money(c.calls, integer=True) }}</div>
+								</div>
+								<div class="contract-metric">
+									<div class="contract-metric-label">Users</div>
+									<div class="contract-metric-value">{{ short_money(c.unique_users, integer=True) }}</div>
+								</div>
+							</div>
+						{% endfor %}
+					</div>
+				{% else %}
+					<div class="empty-state">No contract activity</div>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+
+	<script>
+		const dailyChartRaw = {{ chart_data | tojson }};
+
+		const labels = dailyChartRaw.map(item => {
+			const d = new Date(item.ts * 1000);
+			const pad = n => String(n).padStart(2, '0');
+			return `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}`;
+		});
+		const callsData = dailyChartRaw.map(item => item.calls || 0);
+		const usersData = dailyChartRaw.map(item => item.unique_users || 0);
+
+		Chart.defaults.font.family = 'ThorFontLight, sans-serif';
+		Chart.defaults.color = '#c1c6e0';
+
+		const ctx = document.getElementById('appLayerChart').getContext('2d');
+		const gradient = ctx.createLinearGradient(0, 0, 0, 420);
+		gradient.addColorStop(0, 'rgba(132, 62, 246, 0.58)');
+		gradient.addColorStop(1, 'rgba(132, 62, 246, 0.06)');
+
+		new Chart(ctx, {
+			data: {
+				labels,
+				datasets: [
+					{
+						type: 'bar',
+						label: 'Calls',
+						data: callsData,
+						backgroundColor: gradient,
+						borderColor: '#843ef6',
+						borderWidth: 1.5,
+						borderRadius: 10,
+						barPercentage: 0.68,
+						categoryPercentage: 0.74,
+						yAxisID: 'yCalls'
+					},
+					{
+						type: 'line',
+						label: 'Users',
+						data: usersData,
+						borderColor: '#d534ea',
+						backgroundColor: '#d534ea',
+						pointBackgroundColor: '#d534ea',
+						pointBorderColor: '#080e50',
+						pointRadius: 4,
+						pointHoverRadius: 5,
+						borderWidth: 3,
+						tension: 0.32,
+						fill: false,
+						yAxisID: 'yUsers'
+					}
+				]
+			},
+			options: {
+				maintainAspectRatio: false,
+				responsive: true,
+				animation: false,
+				interaction: {
+					mode: 'index',
+					intersect: false,
+				},
+				plugins: {
+					legend: {
+						display: false
+					},
+					tooltip: {
+						backgroundColor: 'rgba(8,14,80,0.95)',
+						borderColor: 'rgba(213,52,234,0.28)',
+						borderWidth: 1,
+						padding: 12,
+						titleColor: '#fff',
+						bodyColor: '#ebedf3',
+					}
+				},
+				scales: {
+					x: {
+						grid: {
+							display: false
+						},
+						ticks: {
+							color: '#a9b1db',
+							font: {
+								size: 14
+							}
+						}
+					},
+					yCalls: {
+						position: 'left',
+						beginAtZero: true,
+						grid: {
+							color: 'rgba(235,237,243,0.08)'
+						},
+						ticks: {
+							color: '#843ef6',
+							font: {
+								size: 14
+							}
+						}
+					},
+					yUsers: {
+						position: 'right',
+						beginAtZero: true,
+						grid: {
+							drawOnChartArea: false
+						},
+						ticks: {
+							color: '#d534ea',
+							font: {
+								size: 14
+							}
+						}
+					}
+				}
+			}
+		});
+	</script>
+{% endblock %}
+
