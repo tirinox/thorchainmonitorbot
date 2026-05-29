@@ -687,7 +687,7 @@ class AlertPresenter(INotified, WithLogger):
             BaseLocalization.notification_text_network_summary, data)
 
     async def render_app_layer_stats(self, loc: BaseLocalization, data: WasmPeriodStats):
-        photo = await self.renderer.render('app_layer_stats.jinja2', data.to_dict())
+        photo = await self.renderer.render('rujira.jinja2', data.to_dict())
         photo_name = 'app_layer_stats.png'
         return photo, photo_name
 
