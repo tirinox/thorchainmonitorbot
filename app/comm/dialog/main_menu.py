@@ -182,7 +182,7 @@ class MainMenuDialog(BaseDialog):
     async def cmd_tcy_info(self, message: Message):
         await self.build_metrics_dialog().show_tcy_info(message)
 
-    @message_handler(commands='applayer', state='*')
+    @message_handler(commands='applayer,rujira,ruji', state='*')
     async def cmd_app_layer_stats(self, message: Message):
         await self.build_metrics_dialog().show_app_layer_stats(message)
 
