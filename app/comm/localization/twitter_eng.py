@@ -951,7 +951,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         calls_delta = up_down_arrow(e.prev_total_calls, e.total_calls, percent_delta=True, brackets=True)
         users_delta = up_down_arrow(e.prev_unique_users, e.unique_users, int_delta=True, brackets=True)
         return (
-            f'THORChain App Layer Stats ({int(e.days)}d)\n'
+            f'Rujira Stats ({int(e.days)}d)\n'
             f'📲 {pretty_money(e.total_calls, integer=True)} calls {calls_delta}\n'
             f'👥 {pretty_money(e.unique_users, integer=True)} users {users_delta}'
         )

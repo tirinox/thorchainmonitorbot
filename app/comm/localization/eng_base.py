@@ -2508,7 +2508,7 @@ class BaseLocalization(ABC):  # == English
         calls_delta = up_down_arrow(e.prev_total_calls, e.total_calls, percent_delta=True, brackets=True)
         users_delta = up_down_arrow(e.prev_unique_users, e.unique_users, int_delta=True, brackets=True)
         return (
-            f'🤖 <b>THORChain App Layer Stats</b> ({int(e.days)}d)\n'
+            f'🤖 <b>Rujira Stats</b> ({int(e.days)}d)\n'
             f'📲 {bold(pretty_money(e.total_calls, integer=True))} calls {calls_delta}\n'
             f'👥 {bold(pretty_money(e.unique_users, integer=True))} users {users_delta}'
         )
