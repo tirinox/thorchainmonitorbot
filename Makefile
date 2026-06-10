@@ -139,6 +139,11 @@ lint: # Run linters.
 graph: # Generate a graph of the bot internal structure.
 	cd app && python graph.py
 
+
+.PHONY: mimir-add-word
+mimir-add-word: # Run the interactive Mimir naming dictionary updater.
+	cd app && PYTHONPATH="." python tools/mimir_add_word.py
+
 .PHONY: switch-db
 switch-db:	# Switch the database (see app/tools/switch-db.sh).
 	cd app/tools && ./switch-db.sh
