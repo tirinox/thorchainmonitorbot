@@ -21,6 +21,7 @@ from .node_info import NodeInfo, NetworkNodes
 ADMIN_VALUE = 1
 SUPER_MAJORITY = 0.66666667
 MIMIR_VOTING_KEY_DISPLAY_LIMIT = 24
+MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT = 30
 
 
 @dataclass
@@ -413,7 +414,7 @@ class AlertMimirVoting(NamedTuple):
         return {
             'key': self.voting.key,
             'key_display': self.display_key(self.voting.key),
-            'pretty_name': self.pretty_name,
+            'pretty_name': shorten_text(self.pretty_name, MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT),
             'current_value': self.current_constant_value,
             'active_nodes': self.voting.active_nodes_count,
             'abstained_nodes': self.voting.active_nodes_count - self.voting.total_voters,

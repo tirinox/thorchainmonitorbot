@@ -1,7 +1,8 @@
 from comm.localization.eng_base import EnglishLocalization
 from lib.config import Config
 from lib.texts import shorten_text
-from models.mimir import AlertMimirVoting, MimirVoting, MIMIR_VOTING_KEY_DISPLAY_LIMIT
+from models.mimir import AlertMimirVoting, MimirVoting, MIMIR_VOTING_KEY_DISPLAY_LIMIT, \
+    MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT
 from models.mimir import MimirHolder
 from models.mimir_naming import MimirUnits, MimirNameRules, MIMIR_DICT_FILENAME
 from typing import cast
@@ -59,13 +60,14 @@ class _DummyMimirRules:
 class _DummyHolder:
     mimir_rules = _DummyMimirRules()
 
+    pretty_name_value = None
+
     @staticmethod
     def get_entry(_key):
         return None
 
-    @staticmethod
-    def pretty_name(key):
-        return key
+    def pretty_name(self, key):
+        return self.pretty_name_value or key
 
 
 def test_alert_mimir_voting_to_dict_keeps_raw_key_and_adds_truncated_display_key():
@@ -93,5 +95,34 @@ def test_alert_mimir_voting_to_dict_does_not_change_short_display_key():
 
     assert data['key'] == key
     assert data['key_display'] == key
+
+
+def test_alert_mimir_voting_to_dict_truncates_long_pretty_name():
+    key = 'NEXTCHAIN'
+    holder = _DummyHolder()
+    holder.pretty_name_value = 'This is a very long pretty name for infographic output'
+    alert = AlertMimirVoting(
+        holder=cast(MimirHolder, cast(object, holder)),
+        voting=MimirVoting(key, {}, 100),
+    )
+
+    data = alert.to_dict(loc=None)
+
+    assert data['pretty_name'] == shorten_text(holder.pretty_name_value, MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT)
+    assert len(data['pretty_name']) == MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT
+
+
+def test_alert_mimir_voting_to_dict_keeps_short_pretty_name():
+    key = 'NEXTCHAIN'
+    holder = _DummyHolder()
+    holder.pretty_name_value = 'Short pretty name'
+    alert = AlertMimirVoting(
+        holder=cast(MimirHolder, cast(object, holder)),
+        voting=MimirVoting(key, {}, 100),
+    )
+
+    data = alert.to_dict(loc=None)
+
+    assert data['pretty_name'] == holder.pretty_name_value
 
 
