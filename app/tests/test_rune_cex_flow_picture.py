@@ -4,6 +4,8 @@ from typing import cast
 import pytest
 from PIL import Image
 
+from lib.texts import shorten_text
+from models.mimir import AlertMimirVoting, MimirHolder, MimirVoting, MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT
 from models.transfer import AlertRuneTransferStats
 from notify.alert_presenter import AlertPresenter
 from notify.broadcast import Broadcaster
@@ -25,10 +27,30 @@ class FakeBroadcaster:
         return self.last_message
 
 
+class _DummyMimirRules:
+    @staticmethod
+    def get_mimir_units(_key):
+        return None
+
+
+class _DummyMimirHolder:
+    mimir_rules = _DummyMimirRules()
+
+    def __init__(self, pretty_name):
+        self._pretty_name = pretty_name
+
+    @staticmethod
+    def get_entry(_key):
+        return None
+
+    def pretty_name(self, _key):
+        return self._pretty_name
+
+
 @pytest.mark.asyncio
 async def test_rune_transfer_stats_broadcasts_infographic(monkeypatch):
     broadcaster = FakeBroadcaster()
-    presenter = AlertPresenter.__new__(AlertPresenter)
+    presenter = cast(AlertPresenter, object.__new__(AlertPresenter))
     presenter.deps = SimpleNamespace(broadcaster=broadcaster)
     presenter.broadcaster = cast(Broadcaster, cast(object, broadcaster))
 
@@ -65,4 +87,38 @@ async def test_rune_transfer_stats_broadcasts_infographic(monkeypatch):
     assert message.photo_file_name == 'rune_transfer_stats.png'
     assert message.photo is not None
     assert 'CEX flow: 3 transfers' in message.text
+
+
+@pytest.mark.asyncio
+async def test_render_voting_chart_truncates_pretty_name_before_renderer():
+    presenter = cast(AlertPresenter, object.__new__(AlertPresenter))
+
+    class FakeRenderer:
+        def __init__(self):
+            self.calls = []
+
+        async def render(self, template, payload):
+            self.calls.append((template, payload))
+            return b'fake-image'
+
+    presenter.renderer = FakeRenderer()
+
+    long_pretty_name = 'This is a very long pretty name for the voting infographic payload'
+    event = AlertMimirVoting(
+        holder=cast(MimirHolder, cast(object, _DummyMimirHolder(long_pretty_name))),
+        voting=MimirVoting('NEXTCHAIN', {}, 100),
+    )
+    loc = SimpleNamespace(format_mimir_value=lambda key, value, units=None: value)
+
+    photo, photo_name = await presenter.render_voting_chart(loc, event)
+
+    assert photo == b'fake-image'
+    assert photo_name == 'mimir_voting.png'
+    assert presenter.renderer.calls
+
+    template, payload = presenter.renderer.calls[0]
+    assert template == 'mimir_voting.jinja2'
+    assert payload['pretty_name'] == shorten_text(long_pretty_name, MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT)
+    assert len(payload['pretty_name']) == MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT
+
 

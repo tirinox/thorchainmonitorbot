@@ -20,7 +20,7 @@ from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
 from lib.html_renderer import InfographicRendererRPC
 from lib.logs import WithLogger
-from lib.texts import shorten_text_middle
+from lib.texts import shorten_text, shorten_text_middle
 from lib.utils import namedtuple_to_dict, recursive_asdict
 from models.asset import Asset, is_ambiguous_asset
 from models.cap_info import AlertLiquidityCap
@@ -29,7 +29,7 @@ from models.key_stats_model import AlertKeyStats
 from models.last_block import EventBlockSpeed, BlockProduceState
 from models.limit_swap import LimitSwapPeriodStats
 from models.memo import THORMemo
-from models.mimir import AlertMimirChange, AlertMimirVoting
+from models.mimir import AlertMimirChange, AlertMimirVoting, MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT
 from models.net_stats import AlertNetworkStats
 from models.node_info import AlertNodeChurn
 from models.pool_info import PoolChanges, EventPools
@@ -553,6 +553,7 @@ class AlertPresenter(INotified, WithLogger):
 
     async def render_voting_chart(self, loc, data: AlertMimirVoting):
         data = data.to_dict(loc)
+        data['pretty_name'] = shorten_text(data.get('pretty_name'), MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT)
         photo = await self.renderer.render('mimir_voting.jinja2', data)
         photo_name = 'mimir_voting.png'
         return photo, photo_name
