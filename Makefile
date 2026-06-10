@@ -213,3 +213,8 @@ web-auth-add-user:
 		echo "Updating web/htpasswd-dash-logs ..."; \
 		htpasswd -b web/htpasswd-dash-logs $$USER $$PASS; \
 	fi
+
+
+.PHONY: deploy-poke  # Deploy the bot (pull, build, and restart)
+deploy-poke:
+	ssh $(DEPLOY_SSH) "cd $(DEPLOY_PATH) && git pull && make poke"
