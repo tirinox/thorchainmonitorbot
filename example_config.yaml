@@ -495,6 +495,17 @@ node_info:
     log_events: true
 
 
+upgrade_proposals:
+  enabled: true
+  fetch_period: 5m
+  new_proposal:
+    enabled: true
+  progress_update:
+    enabled: true
+    cooldown: 30m
+    minimum_progress_step_percent: 5
+
+
 constants:
   mimir_change:
     enabled: true

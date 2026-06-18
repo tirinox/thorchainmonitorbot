@@ -42,6 +42,7 @@ from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
 from models.tx import EventLargeTransaction
+from models.upgrade_proposal import AlertUpgradeProposalNew, AlertUpgradeProposalProgress
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from .achievements.ach_rus import AchievementsRussianLocalization
 from .eng_base import BaseLocalization, CREATOR_TG, URL_OUR_REF
@@ -1127,6 +1128,49 @@ class RussianLocalization(BaseLocalization):
                     active_node = ' 👈' if v == current_active_version else ''
                     msg += f"{i}. {version_and_nodes(v)} {active_node}\n"
                 msg += f"Максимальная доступная версия – {version_and_nodes(e.data.max_available_version)}\n"
+
+        return msg
+
+    @staticmethod
+    def upgrade_proposal_status_text(approved: bool):
+        return 'Одобрено' if approved else 'В ожидании'
+
+    def notification_text_upgrade_proposal_new(self, e: AlertUpgradeProposalNew):
+        p = e.proposal
+        msg = bold('🆕 Обнаружено новое предложение обновления THORChain') + '\n\n'
+        msg += f'Версия: {pre(p.name)}\n'
+        msg += f'Поддержка: {pre(f"{p.approved_percent:.2f}%")}\n'
+        msg += f'Подписантов: {pre(len(p.approvers))}\n'
+        msg += f'Валидаторов до кворума: {pre(p.validators_to_quorum)}\n'
+        msg += f'Статус: {pre(self.upgrade_proposal_status_text(p.approved))}\n'
+        msg += f'Высота: {pre(p.height)}\n'
+
+        if p.info:
+            msg += f'\nИнфо: {pre(cut_long_text(p.info, 180))}\n'
+
+        return msg
+
+    def notification_text_upgrade_proposal_progress(self, e: AlertUpgradeProposalProgress):
+        previous = e.previous
+        current = e.current
+        approval_delta = current.approved_percent - previous.approved_percent
+        approver_delta = len(current.approvers) - len(previous.approvers)
+        quorum_delta = current.validators_to_quorum - previous.validators_to_quorum
+
+        msg = bold('🗳️ Прогресс предложения обновления THORChain') + '\n\n'
+        msg += f'Версия: {pre(current.name)}\n'
+        msg += f'Поддержка: {pre(f"{current.approved_percent:.2f}%")} ({approval_delta:+.2f}%)\n'
+        msg += f'Подписантов: {pre(len(current.approvers))} ({approver_delta:+d})\n'
+        msg += f'Валидаторов до кворума: {pre(current.validators_to_quorum)} ({quorum_delta:+d})\n'
+        if previous.approved != current.approved:
+            msg += f'Статус: {pre(self.upgrade_proposal_status_text(previous.approved))} → ' \
+                   f'{pre(self.upgrade_proposal_status_text(current.approved))}\n'
+        else:
+            msg += f'Статус: {pre(self.upgrade_proposal_status_text(current.approved))}\n'
+        msg += f'Высота: {pre(current.height)}\n'
+
+        if current.info:
+            msg += f'\nИнфо: {pre(cut_long_text(current.info, 180))}\n'
 
         return msg
 

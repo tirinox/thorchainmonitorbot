@@ -45,6 +45,7 @@ from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
 from models.tx import EventLargeTransaction
+from models.upgrade_proposal import AlertUpgradeProposalNew, AlertUpgradeProposalProgress
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from models.wasm import WasmPeriodStats
 from notify.broadcast import Broadcaster
@@ -118,6 +119,10 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_version_changed(data)
         elif isinstance(data, AlertVersionUpgradeProgress):
             await self._handle_version_upgrade_progress(data)
+        elif isinstance(data, AlertUpgradeProposalNew):
+            await self._handle_upgrade_proposal_new(data)
+        elif isinstance(data, AlertUpgradeProposalProgress):
+            await self._handle_upgrade_proposal_progress(data)
         elif isinstance(data, AlertMimirVoting):
             await self._handle_mimir_voting(data)
         elif isinstance(data, AlertQueue):
@@ -549,6 +554,20 @@ class AlertPresenter(INotified, WithLogger):
         await self.deps.broadcaster.broadcast_to_all(
             "public:version:changed",
             BaseLocalization.notification_text_version_changed, data
+        )
+
+    async def _handle_upgrade_proposal_new(self, data: AlertUpgradeProposalNew):
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:upgrade_proposals:new",
+            BaseLocalization.notification_text_upgrade_proposal_new,
+            data,
+        )
+
+    async def _handle_upgrade_proposal_progress(self, data: AlertUpgradeProposalProgress):
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:upgrade_proposals:progress",
+            BaseLocalization.notification_text_upgrade_proposal_progress,
+            data,
         )
 
     async def render_voting_chart(self, loc, data: AlertMimirVoting):

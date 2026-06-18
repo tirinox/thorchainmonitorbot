@@ -31,6 +31,7 @@ from models.s_swap import AlertSwapStart
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
 from models.tx import EventLargeTransaction
+from models.upgrade_proposal import AlertUpgradeProposalNew, AlertUpgradeProposalProgress
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from models.wasm import WasmPeriodStats
 from models.limit_swap import LimitSwapPeriodStats
@@ -522,7 +523,6 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f"{emoji} Attention! Active protocol version has been {action} "
                 f"from {e.old_active_ver} to {version_and_nodes(e.new_active_ver)}\n"
             )
-
             cnt = e.data.version_counter(e.data.active_only_nodes)
             if len(cnt) == 1:
                 msg += f"All active nodes run version {current_active_version}\n"
@@ -533,6 +533,45 @@ class TwitterEnglishLocalization(BaseLocalization):
                     msg += f"{i}. {version_and_nodes(v)} {active_node}\n"
                 msg += f"Maximum version available is {version_and_nodes(e.data.max_available_version)}\n"
 
+        return msg
+
+    @staticmethod
+    def upgrade_proposal_status_text(approved: bool):
+        return 'Approved' if approved else 'Pending'
+
+    def notification_text_upgrade_proposal_new(self, e: AlertUpgradeProposalNew):
+        p = e.proposal
+        msg = '🆕 THORChain upgrade proposal detected\n'
+        msg += f'Version: {p.name}\n'
+        msg += f'Approval: {p.approved_percent:.2f}%\n'
+        msg += f'Approvers: {len(p.approvers)}\n'
+        msg += f'Validators to quorum: {p.validators_to_quorum}\n'
+        msg += f'Status: {self.upgrade_proposal_status_text(p.approved)}\n'
+        msg += f'Height: {p.height}'
+        if p.info:
+            msg += f'\nInfo: {shorten_text(p.info, 160)}'
+        return msg
+
+    def notification_text_upgrade_proposal_progress(self, e: AlertUpgradeProposalProgress):
+        previous = e.previous
+        current = e.current
+        approval_delta = current.approved_percent - previous.approved_percent
+        approver_delta = len(current.approvers) - len(previous.approvers)
+        quorum_delta = current.validators_to_quorum - previous.validators_to_quorum
+
+        msg = '🗳️ THORChain upgrade proposal progress\n'
+        msg += f'Version: {current.name}\n'
+        msg += f'Approval: {current.approved_percent:.2f}% ({approval_delta:+.2f}%)\n'
+        msg += f'Approvers: {len(current.approvers)} ({approver_delta:+d})\n'
+        msg += f'Validators to quorum: {current.validators_to_quorum} ({quorum_delta:+d})\n'
+        if previous.approved != current.approved:
+            msg += f'Status: {self.upgrade_proposal_status_text(previous.approved)} -> '
+            msg += f'{self.upgrade_proposal_status_text(current.approved)}\n'
+        else:
+            msg += f'Status: {self.upgrade_proposal_status_text(current.approved)}\n'
+        msg += f'Height: {current.height}'
+        if current.info:
+            msg += f'\nInfo: {shorten_text(current.info, 160)}'
         return msg
 
     TEXT_MIMIR_VOTING_PROGRESS_TITLE = '🏛 Node-Mimir voting update\n\n'

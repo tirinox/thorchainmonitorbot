@@ -52,6 +52,7 @@ from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
 from models.tx import ThorAction, ThorSubTx, EventLargeTransaction
+from models.upgrade_proposal import AlertUpgradeProposalNew, AlertUpgradeProposalProgress
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from models.wasm import WasmPeriodStats
 from notify.channel import Messengers
@@ -1366,6 +1367,49 @@ class BaseLocalization(ABC):  # == English
                     active_node = ' 👈' if v == current_active_version else ''
                     msg += f"{i}. {version_and_nodes(v)} {active_node}\n"
                 msg += f"Maximum version available is {version_and_nodes(e.data.max_available_version)}\n"
+
+        return msg
+
+    @staticmethod
+    def upgrade_proposal_status_text(approved: bool):
+        return 'Approved' if approved else 'Pending'
+
+    def notification_text_upgrade_proposal_new(self, e: AlertUpgradeProposalNew):
+        p = e.proposal
+        msg = bold('🆕 THORChain upgrade proposal detected') + '\n\n'
+        msg += f'Version: {pre(p.name)}\n'
+        msg += f'Approval: {pre(f"{p.approved_percent:.2f}%")}\n'
+        msg += f'Approvers: {pre(len(p.approvers))}\n'
+        msg += f'Validators to quorum: {pre(p.validators_to_quorum)}\n'
+        msg += f'Status: {pre(self.upgrade_proposal_status_text(p.approved))}\n'
+        msg += f'Height: {pre(p.height)}\n'
+
+        if p.info:
+            msg += f'\nInfo: {pre(cut_long_text(p.info, 180))}\n'
+
+        return msg
+
+    def notification_text_upgrade_proposal_progress(self, e: AlertUpgradeProposalProgress):
+        previous = e.previous
+        current = e.current
+        approval_delta = current.approved_percent - previous.approved_percent
+        approver_delta = len(current.approvers) - len(previous.approvers)
+        quorum_delta = current.validators_to_quorum - previous.validators_to_quorum
+
+        msg = bold('🗳️ THORChain upgrade proposal progress') + '\n\n'
+        msg += f'Version: {pre(current.name)}\n'
+        msg += f'Approval: {pre(f"{current.approved_percent:.2f}%")} ({approval_delta:+.2f}%)\n'
+        msg += f'Approvers: {pre(len(current.approvers))} ({approver_delta:+d})\n'
+        msg += f'Validators to quorum: {pre(current.validators_to_quorum)} ({quorum_delta:+d})\n'
+        if previous.approved != current.approved:
+            msg += f'Status: {pre(self.upgrade_proposal_status_text(previous.approved))} → ' \
+                   f'{pre(self.upgrade_proposal_status_text(current.approved))}\n'
+        else:
+            msg += f'Status: {pre(self.upgrade_proposal_status_text(current.approved))}\n'
+        msg += f'Height: {pre(current.height)}\n'
+
+        if current.info:
+            msg += f'\nInfo: {pre(cut_long_text(current.info, 180))}\n'
 
         return msg
 

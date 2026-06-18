@@ -36,6 +36,7 @@ from jobs.fetch.rune_market import RuneMarketInfoFetcher
 from jobs.fetch.stream_watchlist import StreamingSwapWatchListFetcher, StreamingSwapStartDetectorFromList
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.tx import TxFetcher
+from jobs.fetch.upgrade_proposals import UpgradeProposalsFetcher
 from jobs.limit_recorder import LimitSwapStatsRecorder
 from jobs.node_churn import NodeChurnDetector
 from jobs.pol_recorder import POLStateRecorder
@@ -97,6 +98,7 @@ from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
 from notify.public.trade_acc_notify import TradeAccTransactionNotifier
 from notify.public.transfer_notify import RuneMoveNotifier
 from notify.public.tx_notify import GenericTxNotifier, LiquidityTxNotifier, SwapTxNotifier
+from notify.public.upgrade_notify import UpgradeProposalsNotifier
 from notify.public.version_notify import VersionNotifier
 from notify.public.voting_notify import VotingNotifier
 
@@ -519,6 +521,13 @@ class App(WithLogger):
             d.fetcher_chain_state.add_subscriber(notifier_trade_halt)
             notifier_trade_halt.add_subscriber(d.alert_presenter)
             tasks.append(d.fetcher_chain_state)
+
+        if d.cfg.get('upgrade_proposals.enabled', True):
+            fetcher_upgrade_proposals = UpgradeProposalsFetcher(d)
+            notifier_upgrade_proposals = UpgradeProposalsNotifier(d)
+            fetcher_upgrade_proposals.add_subscriber(notifier_upgrade_proposals)
+            notifier_upgrade_proposals.add_subscriber(d.alert_presenter)
+            tasks.append(fetcher_upgrade_proposals)
 
         if d.cfg.get('constants.mimir_change.enabled', True):
             notifier_mimir_change = MimirChangedNotifier(d)
