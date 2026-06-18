@@ -9,13 +9,13 @@ from notify.public.upgrade_notify import UpgradeProposalsNotifier
 from tests.fakes import FakeDB
 
 
-class FakeUpgradeProposalsCfg:
+class FakeCfg:
     def __init__(self):
         self._values = {
-            'new_proposal.enabled': True,
-            'progress_update.enabled': True,
-            'progress_update.minimum_progress_step_percent': 5.0,
-            'progress_update.cooldown': '0',
+            'upgrade_proposals.new_proposal.enabled': True,
+            'upgrade_proposals.progress_update.enabled': True,
+            'upgrade_proposals.progress_update.minimum_progress_step_percent': 5.0,
+            'upgrade_proposals.progress_update.cooldown': '0',
         }
 
     def get(self, path, default=None):
@@ -24,15 +24,6 @@ class FakeUpgradeProposalsCfg:
     def as_float(self, path, default=0.0):
         return float(self._values.get(path, default))
 
-
-class FakeCfg:
-    def __init__(self):
-        self._section = FakeUpgradeProposalsCfg()
-
-    def get(self, path, default=None):
-        if path == 'upgrade_proposals':
-            return self._section
-        return default
 
 
 def make_proposal(*, name='3.19.0', approved_percent=54.35, approved=False, approvers=None,

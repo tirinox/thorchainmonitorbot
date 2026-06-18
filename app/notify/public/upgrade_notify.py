@@ -16,11 +16,13 @@ class UpgradeProposalsNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        cfg = deps.cfg.get('upgrade_proposals')
-        self.is_new_proposal_enabled = bool(cfg.get('new_proposal.enabled', True))
-        self.is_progress_update_enabled = bool(cfg.get('progress_update.enabled', True))
-        self.min_progress_step_pct = cfg.as_float('progress_update.minimum_progress_step_percent', 5.0)
-        self.progress_cd_sec = parse_timespan_to_seconds(str(cfg.get('progress_update.cooldown', '30m')))
+        cfg = deps.cfg
+        self.is_new_proposal_enabled = bool(cfg.get('upgrade_proposals.new_proposal.enabled', True))
+        self.is_progress_update_enabled = bool(cfg.get('upgrade_proposals.progress_update.enabled', True))
+        self.min_progress_step_pct = cfg.as_float('upgrade_proposals.progress_update.minimum_progress_step_percent', 5.0)
+        self.progress_cd_sec = parse_timespan_to_seconds(
+            str(cfg.get('upgrade_proposals.progress_update.cooldown', '30m'))
+        )
 
     @staticmethod
     def proposal_key(proposal: ThorUpgradeProposal) -> str:

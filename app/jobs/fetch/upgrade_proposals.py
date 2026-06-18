@@ -8,7 +8,7 @@ from lib.depcont import DepContainer
 
 class UpgradeProposalsFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
-        sleep_period = parse_timespan_to_seconds(deps.cfg.upgrade_proposals.fetch_period)
+        sleep_period = parse_timespan_to_seconds(str(deps.cfg.get('upgrade_proposals.fetch_period', '5m')))
         super().__init__(deps, sleep_period)
 
     async def fetch(self) -> List[ThorUpgradeProposal]:
