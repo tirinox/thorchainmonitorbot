@@ -261,6 +261,11 @@ class App(WithLogger):
                 await d.mimir_const_fetcher.run_once()  # get constants beforehand
                 await asyncio.sleep(sleep_step)
 
+                self.logger.info('Loading upgrade proposals...')
+                d.upgrade_proposals = await d.thor_connector.query_upgrade_proposals()
+                self.logger.info(f'Loaded {len(d.upgrade_proposals)} upgrade proposals.')
+                await asyncio.sleep(sleep_step)
+
                 # Start public notification scheduler when all is ready
                 await d.pub_scheduler.start()
 

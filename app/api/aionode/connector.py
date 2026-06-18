@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import Dict
 
 from aiohttp import ClientSession, ClientError, ServerDisconnectedError
 
@@ -72,6 +71,10 @@ class ThorConnector:
     async def query_mimir_node_accepted(self, height=None) -> dict:
         response = await self._request(self.env.path_mimir_nodes, height=height)
         return response or {}
+
+    async def query_upgrade_proposals(self, height=None) -> List[ThorUpgradeProposal]:
+        response = await self._request(self.env.path_upgrade_proposals, height=height)
+        return ThorUpgradeProposal.from_json_array(response if isinstance(response, list) else [])
 
     async def query_chain_info(self) -> Dict[str, ThorChainInfo]:
         data = await self._request(self.env.path_inbound_addresses)

@@ -1,12 +1,13 @@
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional
 
 import ujson
 from aiohttp import ClientSession, ClientTimeout
 
 from api.aionode.connector import ThorConnector
+from api.aionode.types import ThorUpgradeProposal
 from api.midgard.connector import MidgardConnector
 from api.midgard.name_service import NameService
 from comm.telegram.telegram import TelegramBot
@@ -110,6 +111,7 @@ class DepContainer:
     mimir_const_holder: Optional[MimirHolder] = None
     chain_info: ChainInfoHolder = field(default_factory=ChainInfoHolder)
     net_stats: NetworkStats = field(default_factory=NetworkStats)
+    upgrade_proposals: List[ThorUpgradeProposal] = field(default_factory=list)
 
     emergency: Optional[EmergencyReport] = None
 

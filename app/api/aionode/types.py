@@ -336,6 +336,33 @@ class ThorMimir(NamedTuple):
         return self.constants[item]
 
 
+class ThorUpgradeProposal(NamedTuple):
+    approved: bool = False
+    approved_percent: float = 0.0
+    approvers: List[str] = None
+    height: int = 0
+    info: str = ''
+    name: str = ''
+    validators_to_quorum: int = 0
+
+    @classmethod
+    def from_json(cls, j):
+        j = j or {}
+        return cls(
+            approved=bool(j.get('approved', False)),
+            approved_percent=float(j.get('approved_percent', 0.0) or 0.0),
+            approvers=j.get('approvers', []) or [],
+            height=int(j.get('height', 0) or 0),
+            info=j.get('info', '') or '',
+            name=j.get('name', '') or '',
+            validators_to_quorum=int(j.get('validators_to_quorum', 0) or 0),
+        )
+
+    @classmethod
+    def from_json_array(cls, j):
+        return [cls.from_json(item) for item in j] if j else []
+
+
 class ThorChainInfo(NamedTuple):
     chain: str = ''
     pub_key: str = ''
