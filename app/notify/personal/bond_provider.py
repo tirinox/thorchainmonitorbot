@@ -21,8 +21,27 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
     def __init__(self, deps: DepContainer):
         watcher = BondWatchlist(deps.db)
         super().__init__(deps, watcher, max_events_per_message=20)
-        self.min_bond_delta_to_react = 1e-1
+        self.min_bond_delta_to_react = deps.cfg.as_float(
+            'node_info.bond_tools.min_bond_delta_to_react_rune',
+            1e-1,
+        )
+        self.min_provider_bond_to_notify = deps.cfg.as_float(
+            'node_info.bond_tools.min_provider_bond_to_notify_rune',
+            1.0,
+        )
         self.log_events = False
+
+    def _should_notify_bond_change(self, prev_bond: float, curr_bond: float) -> bool:
+        return (
+            abs(curr_bond - prev_bond) > self.min_bond_delta_to_react and
+            (
+            prev_bond >= self.min_provider_bond_to_notify or
+            curr_bond >= self.min_provider_bond_to_notify
+            )
+        )
+
+    def _should_notify_node_status(self, rune_bond: float) -> bool:
+        return rune_bond >= self.min_provider_bond_to_notify
 
     async def on_data(self, sender, data: NodeSetChanges):
         if not data.is_empty and self.log_events:
@@ -114,7 +133,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
     async def _memorize_bond_provider_ts(self, provider: str, node: str, ts: float, rune_bond: float) -> (float, float):
         old_rune_bond, old_ts = await self.get_bond_provider_bond_and_change_ts(provider, node)
         await self.deps.db.redis.hset(
-            self.DB_KEY_HMAP_NODE_STATUS_CHANGE_TS,
+            self.DB_KEY_BOND_PROVIDER_STATUS,
             self.bond_provider_status_hash_key(provider, node),
             json.dumps({
                 "bond": rune_bond,
@@ -166,10 +185,10 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
             )
             for node, ev_type, on, status in events
             for bp in node.bond_providers
+            if self._should_notify_node_status(bp.rune_bond)
         ]
 
-        # Collect all Bond provider addresses from events
-        addresses = self._collect_provider_addresses_from_events(events)
+        addresses = {ev.data.bond_provider for ev in events}
         return addresses, events
 
     async def _handle_bond_amount_events(self, data: NodeSetChanges):
@@ -191,21 +210,20 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
             for provider in common_bp:
                 curr_bond = curr_providers[provider].rune_bond
                 prev_bond = prev_providers[provider].rune_bond
-                delta_bond = curr_bond - prev_bond
-                if abs(delta_bond) > self.min_bond_delta_to_react:
-                    addresses.add(provider)
+                _, old_ts = await self._memorize_bond_provider_ts(provider, curr_node.node_address, now, curr_bond)
+                if not self._should_notify_bond_change(prev_bond, curr_bond):
+                    continue
 
-                    old_bond, old_ts = await self._memorize_bond_provider_ts(provider, curr_node.node_address, now,
-                                                                             curr_bond)
-                    duration_sec = now - old_ts if old_ts else 0
+                addresses.add(provider)
+                duration_sec = now - old_ts if old_ts else 0
 
-                    events.append(NodeEvent.new(
-                        curr_node, NodeEventType.BOND_CHANGE,
-                        EventProviderBondChange(
-                            provider, prev_bond, curr_bond, on_churn=just_churned,
-                            duration_sec=duration_sec,
-                        )
-                    ))
+                events.append(NodeEvent.new(
+                    curr_node, NodeEventType.BOND_CHANGE,
+                    EventProviderBondChange(
+                        provider, prev_bond, curr_bond, on_churn=just_churned,
+                        duration_sec=duration_sec,
+                    )
+                ))
 
             added_bp = curr_bp_addresses - prev_bp_addresses
             for bp_address in added_bp:

@@ -493,6 +493,8 @@ node_info:
   bond_tools:
     enabled: true
     log_events: true
+    min_bond_delta_to_react_rune: 0.1
+    min_provider_bond_to_notify_rune: 1.0  # suppress bond-change/churn alerts below this; BP list join/leave still notify
 
 
 upgrade_proposals:
