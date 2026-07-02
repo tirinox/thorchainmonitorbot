@@ -211,6 +211,11 @@ fill-pool-cache:
 	docker compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/fill_pool_cache.py /config/config.yaml'
 
 
+.PHONY: migrate-pool-cache-to-keydb  # Migrate pool cache from Redis to KeyDB and optionally flush old Redis key
+migrate-pool-cache-to-keydb:
+	docker compose exec -it $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/migrate_pool_cache_redis_to_keydb.py /config/config.yaml'
+
+
 .PHOHY: web-auth-add-user  # Add new web auth user
 web-auth-add-user:
 	# ask username and password and store them in htpasswd-dash-logs
