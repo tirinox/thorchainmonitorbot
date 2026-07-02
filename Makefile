@@ -98,6 +98,11 @@ redis-cli: # Connect to the Redis CLI.
 	@redis-cli -p $(REDIS_PORT) -a $(REDIS_PASSWORD)
 
 
+.PHONY: keydb-cli
+keydb-cli: # Connect to the KeyDB CLI.
+	@docker compose exec keydb keydb-cli -p $(KEYDB_PORT) -a $(KEYDB_PASSWORD)
+
+
 .PHONY: redis-sv-loc
 redis-sv-loc: # Start the Redis server locally.
 	cd redis_data
