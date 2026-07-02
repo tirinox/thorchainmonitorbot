@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 
+from jobs.fetch.cached.pool import PoolCache
 from jobs.fetch.pool_price import PoolFetcher
 from lib.date_utils import DAY
 from tools.lib.lp_common import LpAppFramework
@@ -18,8 +19,8 @@ async def save_all_pool_data(app: LpAppFramework):
             print('Cancelled')
             return
 
-    r = await app.deps.db.get_redis()
-    pool_cache = await r.hgetall(PoolFetcher.DB_KEY_POOL_INFO_HASH)
+    r = await app.deps.keydb.get_redis()
+    pool_cache = await r.hgetall(PoolCache.DB_KEY_POOL_INFO_HASH)
     with open(TEMP_POOL_CACHE_FILE, 'w') as f:
         json.dump(pool_cache, f, indent=2)
     print(f'Saved {len(pool_cache)} pool data to {TEMP_POOL_CACHE_FILE}')
@@ -34,12 +35,12 @@ async def upload_all_pool_data(app: LpAppFramework):
         print(f'File {TEMP_POOL_CACHE_FILE} not found')
         return
 
-    r = await app.deps.db.get_redis()
-    await r.delete(PoolFetcher.DB_KEY_POOL_INFO_HASH)
+    r = await app.deps.keydb.get_redis()
+    await r.delete(PoolCache.DB_KEY_POOL_INFO_HASH)
 
     async with r.pipeline() as pipe:
         for k, v in pool_cache.items():
-            await pipe.hset(PoolFetcher.DB_KEY_POOL_INFO_HASH, k, v)
+            await pipe.hset(PoolCache.DB_KEY_POOL_INFO_HASH, k, v)
         await pipe.execute()
 
     print(f'Uploaded {len(pool_cache)} pool data to redis')

@@ -110,15 +110,21 @@ class Config(SubConfig):
     ]
 
     def _load_env(self):
-        env_file = self.DEFAULT_ENV_FILE
-        if not os.path.exists(env_file):
-            # try to locate it in the parent directory
-            env_file = f'../{env_file}'
-            if not os.path.exists(env_file):
-                logging.error(f'Cannot find env file "{env_file}"!')
-                exit(-404)
+        candidates = [
+            self.DEFAULT_ENV_FILE,
+            f'../{self.DEFAULT_ENV_FILE}',
+        ]
 
-        load_dotenv(env_file)
+        for env_file in candidates:
+            if os.path.exists(env_file):
+                load_dotenv(env_file)
+                logging.info(f'Loaded env vars from "{env_file}".')
+                return
+
+        logging.warning(
+            'Cannot find a .env file in the current or parent directory; '
+            'continuing with the existing process environment.'
+        )
 
     def __init__(self, name=None, data=None):
         logging.info(f'App path is "{get_app_path()}"')

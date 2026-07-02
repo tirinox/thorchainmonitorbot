@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: app/Dockerfile
     restart: always
+    env_file:
+      - .env
     depends_on:
       redis:
         condition: service_healthy
@@ -21,13 +23,14 @@ services:
     volumes:
       - ./app:/app
       - ./config.yaml:/config/config.yaml
-      - ./.env:/app/.env
 
   renderer:
     build:
       context: .
       dockerfile: app/renderer/Dockerfile-renderer
     restart: always
+    env_file:
+      - .env
     ports:
       - "8404:8404"
     depends_on:
@@ -47,7 +50,6 @@ services:
     volumes:
       - ./app:/app
       - ./config.yaml:/config/config.yaml
-      - ./.env:/app/.env
 
   redis:
     image: "redis:7.4.0-alpine"
@@ -133,6 +135,8 @@ services:
       context: .
       dockerfile: web/Dockerfile-api
     restart: always
+    env_file:
+      - .env
     depends_on:
       redis:
         condition: service_healthy
@@ -152,13 +156,14 @@ services:
     volumes:
       - ./app:/app
       - ./config.yaml:/config/config.yaml
-      - ./.env:/app/.env
 
   dashboard:
     build:
       context: .
       dockerfile: web/Dockerfile-dashboard
     restart: always
+    env_file:
+      - .env
     depends_on:
       redis:
         condition: service_healthy
@@ -179,7 +184,6 @@ services:
     volumes:
       - ./app:/app
       - ./config.yaml:/config/config.yaml
-      - ./.env:/app/.env
 
 
 networks:

@@ -18,8 +18,8 @@ import pprint
 import tqdm
 from redis.asyncio import Redis
 
-from jobs.fetch.pool_price import PoolFetcher
-from lib.db import DB
+from jobs.fetch.cached.pool import PoolCache
+from lib.db import KeyDB
 
 
 async def get_remote_redis() -> Redis:
@@ -46,15 +46,14 @@ async def ping_redis(redis: Redis):
 
 async def get_target_redis() -> Redis:
     # connect to the target redis
-    loop = asyncio.get_event_loop()
-    db = DB(loop)
+    db = KeyDB()
     redis = await db.get_redis()
 
     await ping_redis(redis)
     return redis
 
 
-POOL_DATA_KEY_V2 = PoolFetcher.DB_KEY_POOL_INFO_HASH
+POOL_DATA_KEY_V2 = PoolCache.DB_KEY_POOL_INFO_HASH
 POOL_DATA_KEY_V1 = 'PoolInfo:hashtable'  # ignore
 
 
@@ -68,8 +67,11 @@ async def print_sample(redis: Redis, key: str):
     if not all_keys:
         print('No keys found')
     else:
-        first_key = all_keys[0]
+        first_key = str(all_keys[0])
         value = await redis.hget(key, first_key)
+        if value is None:
+            print(f'Value of {key} / {first_key} is empty')
+            return
         try:
             j = json.loads(value)
         except:

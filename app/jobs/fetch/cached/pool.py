@@ -27,6 +27,12 @@ class PoolCache(CachedDataSource[PriceHolder]):
         self.pool_cache_max_age = parse_timespan_to_seconds(deps.cfg.price.pool_cache_max_age)
         assert self.pool_cache_max_age > 0
 
+    async def _cache_redis(self) -> Redis:
+        keydb = getattr(self.deps, 'keydb', None)
+        if keydb is not None:
+            return await keydb.get_redis()
+        return await self.deps.db.get_redis()
+
     async def get_usd_per_rune(self) -> float:
         ph = await self.deps.pool_cache.get()
         if not ph or not ph.usd_per_rune:
@@ -98,7 +104,7 @@ class PoolCache(CachedDataSource[PriceHolder]):
 
     @staticmethod
     def convert_pool_list_to_dict(pool_list: List[PoolInfo]) -> Dict[str, PoolInfo]:
-        return {p.asset: p for p in pool_list} if pool_list else None
+        return {p.asset: p for p in pool_list} if pool_list else {}
 
     async def load_historic_data(self,
                                  blocks_ago,
@@ -132,7 +138,7 @@ class PoolCache(CachedDataSource[PriceHolder]):
     DB_KEY_POOL_INFO_HASH = 'PoolInfo:hashtable_v2'
 
     async def clear(self, max_age=1000 * DAY):
-        r: Redis = await self.deps.db.get_redis()
+        r = await self._cache_redis()
 
         top_block = await self.deps.last_block_cache.get_thor_block()
         if top_block is None or top_block < 1:
@@ -160,13 +166,13 @@ class PoolCache(CachedDataSource[PriceHolder]):
             self.logger.error('Subkey is empty! Cannot save to cache!')
             return
 
-        r: Redis = await self.deps.db.get_redis()
+        r = await self._cache_redis()
         j_pools = json.dumps({key: p.to_dict() for key, p in pool_map.items()})
         await r.hset(self.DB_KEY_POOL_INFO_HASH, str(subkey), j_pools)
 
     async def _load_history_data(self, subkey) -> Optional[PoolInfoMap]:
         try:
-            r: Redis = await self.deps.db.get_redis()
+            r = await self._cache_redis()
             cached_item = await r.hget(self.DB_KEY_POOL_INFO_HASH, str(subkey))
             if cached_item:
                 raw_dict = json.loads(cached_item)
@@ -178,7 +184,7 @@ class PoolCache(CachedDataSource[PriceHolder]):
             return None
 
     async def purge(self):
-        r: Redis = await self.deps.db.get_redis()
+        r = await self._cache_redis()
         await r.delete(self.DB_KEY_POOL_INFO_HASH)
 
     async def automatic_clear(self):
@@ -191,7 +197,7 @@ class PoolCache(CachedDataSource[PriceHolder]):
             self._pool_cache_saves += 1
 
     async def scan_all_keys(self, hash_name=DB_KEY_POOL_INFO_HASH, scan_batch_size: int = 1000):
-        r = await self.deps.db.get_redis()
+        r = await self._cache_redis()
         cursor = 0
         while True:
             cursor, data = await r.hscan(name=hash_name, cursor=cursor, count=scan_batch_size)
@@ -205,7 +211,7 @@ class PoolCache(CachedDataSource[PriceHolder]):
                                 scan_batch_size: int = 10000,
                                 max_keys_to_delete: int = 10000,
                                 ) -> list[str]:
-        r = await self.deps.db.get_redis()
+        r = await self._cache_redis()
         hash_name = self.DB_KEY_POOL_INFO_HASH
 
         # 1. Stream keys via HSCAN and collect all block heights
@@ -261,7 +267,7 @@ class PoolCache(CachedDataSource[PriceHolder]):
                           backup_name: str = "",
                           scan_batch_size: int = 1000
                           ):
-        r = await self.deps.db.get_redis()
+        r = await self._cache_redis()
 
         backup_name = backup_name or f"{hash_name}__backup"
         cursor = 0
@@ -280,6 +286,6 @@ class PoolCache(CachedDataSource[PriceHolder]):
             self.logger.warning("No keys to delete.")
             return
 
-        r = await self.deps.db.get_redis()
+        r = await self._cache_redis()
         for batch in tqdm(grouper(1000, keys)):
             await r.hdel(self.DB_KEY_POOL_INFO_HASH, *batch)
