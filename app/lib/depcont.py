@@ -18,7 +18,7 @@ from jobs.fetch.cached.rujira_contract_names import RujiraContractNameCache
 from jobs.fetch.cached.swap_history import SwapHistoryFetcher
 from jobs.fetch.cached.wasm import WasmCache
 from lib.config import Config
-from lib.db import DB
+from lib.db import DB, KeyDB
 from lib.emergency import EmergencyReport
 from lib.flagship import Flagship
 from lib.http_ses import ObservableSession
@@ -38,6 +38,7 @@ from notify.pub_scheduler import PublicScheduler
 class DepContainer:
     cfg: Optional[Config] = None
     db: Optional[DB] = None
+    keydb: Optional[KeyDB] = None
     loop: Optional[asyncio.AbstractEventLoop] = None
     loc_man = None  # type: 'LocalizationManager'
     broadcaster = None  # type: 'Broadcaster'

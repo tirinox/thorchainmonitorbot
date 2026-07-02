@@ -31,7 +31,10 @@ async def demo_run_churn_sim_continuously(app: LpAppFramework):
 async def demo_all_kinds_of_messages(app: LpAppFramework):
     nodes: NetworkNodes = await app.deps.node_cache.get()
 
-    node = next(n for n in nodes.node_info_list if n.is_active and n.bond_providers)
+    node = next(
+        n for n in nodes.node_info_list if n.is_active and n.bond_providers
+        and sum(b.rune_bond for b in n.bond_providers) > 100
+    )
     bond_provider = random.choice(node.bond_providers)
     bp_address = bond_provider.address
 

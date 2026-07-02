@@ -61,7 +61,7 @@ from jobs.wasm_recorder import CosmWasmRecorder
 from lib.config import Config, SubConfig
 from lib.constants import HTTP_CLIENT_ID
 from lib.date_utils import parse_timespan_to_seconds
-from lib.db import DB
+from lib.db import DB, KeyDB
 from lib.depcont import DepContainer
 from lib.emergency import EmergencyReport
 from lib.flagship import Flagship
@@ -119,6 +119,7 @@ class App(WithLogger):
         self._init_configuration(log_level)
 
         d.db = DB()
+        d.keydb = KeyDB()
         d.flagship = Flagship(d.db)
 
         d.node_info_fetcher = NodeInfoFetcher(d)

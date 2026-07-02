@@ -11,6 +11,9 @@ logs:
 sleep_before_start: 3
 startup_step_delay: 3.0
 
+# Storage backends are configured via environment variables:
+# REDIS_* keeps the primary Redis instance, KEYDB_* points to the optional KeyDB instance.
+
 
 infographic_renderer:
   use_html_renderer: true

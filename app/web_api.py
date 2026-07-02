@@ -17,7 +17,7 @@ from comm.slack.slack_bot import SlackBot
 from jobs.user_counter import UserCounterMiddleware
 from lib.config import Config
 from lib.date_utils import parse_timespan_to_seconds, DAY
-from lib.db import DB
+from lib.db import DB, KeyDB
 from lib.depcont import DepContainer
 from lib.geo_ip import GeoIPManager
 from lib.logs import setup_logs_from_config
@@ -42,6 +42,7 @@ class AppSettingsAPI:
 
         d.loop = loop
         d.db = DB()
+        d.keydb = KeyDB()
 
         self._node_watcher = NodeWatcherStorage(d.db)
 

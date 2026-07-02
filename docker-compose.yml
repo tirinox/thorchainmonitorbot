@@ -12,6 +12,10 @@ services:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
       - REDIS_DB_INDEX=${REDIS_DB_INDEX}
+      - KEYDB_PASSWORD=${KEYDB_PASSWORD}
+      - KEYDB_HOST=${KEYDB_HOST}
+      - KEYDB_PORT=${KEYDB_PORT}
+      - KEYDB_DB_INDEX=${KEYDB_DB_INDEX}
     networks:
       - redis-net
     volumes:
@@ -34,6 +38,10 @@ services:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
       - REDIS_DB_INDEX=${REDIS_DB_INDEX}
+      - KEYDB_PASSWORD=${KEYDB_PASSWORD}
+      - KEYDB_HOST=${KEYDB_HOST}
+      - KEYDB_PORT=${KEYDB_PORT}
+      - KEYDB_DB_INDEX=${KEYDB_DB_INDEX}
     networks:
       - redis-net
     volumes:
@@ -66,6 +74,24 @@ services:
       - '--port ${REDIS_PORT}'
       - '--requirepass ${REDIS_PASSWORD}'
   #      - '--bind 0.0.0.0 --protected-mode no'
+
+  keydb:
+    image: "eqalpha/keydb:latest"
+    volumes:
+      - ./keydb_data:/data
+    networks:
+      - redis-net
+    restart: always
+    ports:
+      - "${KEYDB_PORT}:${KEYDB_PORT}"
+    expose:
+      - "${KEYDB_PORT}"
+    command:
+      - 'keydb-server'
+      - '--save 9000 1'
+      - '--save 3000 100'
+      - '--port ${KEYDB_PORT}'
+      - '--requirepass ${KEYDB_PASSWORD}'
 
   dozzle:
     container_name: dozzle
@@ -117,6 +143,10 @@ services:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
       - REDIS_DB_INDEX=${REDIS_DB_INDEX}
+      - KEYDB_PASSWORD=${KEYDB_PASSWORD}
+      - KEYDB_HOST=${KEYDB_HOST}
+      - KEYDB_PORT=${KEYDB_PORT}
+      - KEYDB_DB_INDEX=${KEYDB_DB_INDEX}
     networks:
       - redis-net
     volumes:
@@ -140,6 +170,10 @@ services:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
       - REDIS_DB_INDEX=${REDIS_DB_INDEX}
+      - KEYDB_PASSWORD=${KEYDB_PASSWORD}
+      - KEYDB_HOST=${KEYDB_HOST}
+      - KEYDB_PORT=${KEYDB_PORT}
+      - KEYDB_DB_INDEX=${KEYDB_DB_INDEX}
     networks:
       - redis-net
     volumes:
