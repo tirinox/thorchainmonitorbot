@@ -76,12 +76,12 @@
   .legend-dot, .legend-line { flex-shrink:0; }
   .legend-dot { width:13px; height:13px; border-radius:50%; }
   .legend-line { width:22px; height:4px; border-radius:2px; }
-  .chart-wrap { flex:0 0 192px; position:relative; min-height:176px; max-height:192px; }
-  .mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
+  .chart-wrap { flex:0 0 221px; position:relative; min-height:203px; max-height:221px; }
+  .mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; flex:1 1 0; }
   .mini-box, .mini-stat, .path-row, .highlight-box { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.04); }
-  .mini-box { border-radius:14px; padding:12px 14px 12px; }
+  .mini-box { border-radius:14px; padding:12px 14px 12px; display:flex; flex-direction:column; min-height:0; }
   .mini-box-title, .mini-label { color:#9eb3ba; font-size:16px; text-transform:uppercase; letter-spacing:.09em; }
-  .mini-chart-wrap { position:relative; height:132px; margin-top:10px; }
+  .mini-chart-wrap { position:relative; height:152px; min-height:152px; margin-top:10px; flex:1 1 0; }
   .footer-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:12px; }
   .mini-stat { border-radius:13px; padding:10px 14px; }
   .mini-value { color:#fff; font-size:26px; font-weight:800; margin-top:4px; }
@@ -124,7 +124,6 @@
   <div class="content-row">
     <div class="panel chart-shell shadow-box">
       <div class="panel-title">📊 Daily activity</div>
-      <div class="panel-sub">Main chart shows volume + rapid batch count. Mini charts show adoption and time saved.</div>
       <div class="legend-row">
         <div class="legend-item"><div class="legend-line" style="background:rgba(245,197,24,.90)"></div>Volume</div>
         <div class="legend-item"><div class="legend-dot" style="background:#23DCC8"></div>Rapid batches</div>
