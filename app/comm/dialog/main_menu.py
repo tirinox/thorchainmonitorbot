@@ -162,6 +162,10 @@ class MainMenuDialog(BaseDialog):
     async def cmd_weekly(self, message: Message):
         await self.build_metrics_dialog().show_weekly_stats(message)
 
+    @message_handler(commands='rapid,rapidswaps,rapidstats', state='*')
+    async def cmd_rapid_swap_stats(self, message: Message):
+        await self.build_metrics_dialog().show_rapid_swap_stats(message)
+
     @message_handler(commands='tradeacc', state='*')
     async def cmd_trade_acc_stats(self, message: Message):
         await self.build_metrics_dialog().show_trade_acc_stats(message)

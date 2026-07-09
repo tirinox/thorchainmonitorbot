@@ -166,6 +166,7 @@ class BaseLocalization(ABC):  # == English
             f"/pools – Top liquidity pools\n"
             f"/mimir – Mimir constants\n"
             f"/weekly – THORChain weekly stats\n"
+            f"/rapid – rapid swap infographic\n"
             f"<b>⚠️ All notifications are forwarded to {self.alert_channel_name} channel!</b>\n"
             f"🤗 Support and feedback: {CREATOR_TG}."
         )

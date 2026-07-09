@@ -139,6 +139,9 @@ class RapidSwapRecorder(INotified, WithLogger):
         if not counter or not timestamps:
             return [0] * len(timestamps)
 
+        if getattr(counter, 'r', None) is None:
+            await self._ensure_counters_ready()
+
         counts = []
         postfixes = []
         for ts in timestamps:
@@ -254,6 +257,8 @@ class RapidSwapRecorder(INotified, WithLogger):
         if not self.accumulator:
             return []
 
+        await self.deps.db.get_redis()
+
         end_ts = float(end_ts or now_ts())
         timestamps = self._build_daily_timestamps(days, end_ts)
         items = []
@@ -285,6 +290,9 @@ class RapidSwapRecorder(INotified, WithLogger):
     ) -> int:
         if not counter:
             return 0
+
+        if getattr(counter, 'r', None) is None:
+            await self._ensure_counters_ready()
 
         end_ts = float(end_ts or now_ts())
         postfixes = [

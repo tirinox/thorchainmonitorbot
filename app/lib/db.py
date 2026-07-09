@@ -1,4 +1,5 @@
 import os
+import socket
 import typing
 from contextlib import asynccontextmanager
 
@@ -12,6 +13,8 @@ from lib.logs import WithLogger
 class _RedisBackedDB(WithLogger):
     ENV_PREFIX = 'REDIS'
     SERVICE_NAME = 'Redis'
+    LOCALHOST_ALIASES = {'localhost', '127.0.0.1', '::1'}
+    DOCKER_SERVICE_HOSTS = {'redis', 'keydb'}
 
     def __init__(self, env_prefix: str | None = None, service_name: str | None = None):
         super().__init__()
@@ -19,12 +22,29 @@ class _RedisBackedDB(WithLogger):
         self.storage: typing.Optional[RedisStorage3] = None
         self.env_prefix = env_prefix or self.ENV_PREFIX
         self.service_name = service_name or self.SERVICE_NAME
-        self.host = os.environ.get(f'{self.env_prefix}_HOST', 'localhost')
+        self.host = self._resolve_host(os.environ.get(f'{self.env_prefix}_HOST', 'localhost'))
         self.port = os.environ.get(f'{self.env_prefix}_PORT', 6379)
         self.db_index = int(os.environ.get(f'{self.env_prefix}_DB_INDEX', 0))
         if self.db_index != 0:
             self.logger.warning(f'Using non-default {self.service_name} DB index: {self.db_index}')
         self.password = os.environ.get(f'{self.env_prefix}_PASSWORD', None)
+
+    def _resolve_host(self, host: str | None) -> str:
+        host = (host or 'localhost').strip()
+
+        if host in self.LOCALHOST_ALIASES:
+            return host
+
+        try:
+            socket.getaddrinfo(host, None)
+        except socket.gaierror:
+            if host in self.DOCKER_SERVICE_HOSTS:
+                self.logger.warning(
+                    f'{self.service_name} host "{host}" not resolvable outside Docker; using localhost.'
+                )
+                return 'localhost'
+
+        return host
 
     async def get_redis(self) -> aioredis.Redis:
         if self.redis is not None:

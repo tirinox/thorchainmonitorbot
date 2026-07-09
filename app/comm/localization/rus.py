@@ -110,6 +110,7 @@ class RussianLocalization(BaseLocalization):
             f"/pool – лучшие пулы\n"
             f"/mimir – список констант Мимир\n"
             f"/weekly – недельная статистика THORChain\n"
+            f"/rapid – инфографика по rapid swaps\n"
             f"<b>⚠️ Бот теперь уведомляет только в канале {self.alert_channel_name}!</b>\n"
             f"🤗 Отзывы и поддержка: {CREATOR_TG}."
         )
@@ -2027,4 +2028,3 @@ class RussianLocalization(BaseLocalization):
         )
 
     TEXT_RAPID_SWAP_STATS_NO_DATA = '😩 Данные по rapid swaps пока недоступны.'
-

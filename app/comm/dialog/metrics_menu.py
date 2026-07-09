@@ -11,6 +11,7 @@ from jobs.fetch.cached.wasm import WasmCache
 from jobs.fetch.top_pools import BestPoolsFetcher
 from jobs.fetch.wasm_stats import WasmStatsBuilder
 from jobs.limit_recorder import LimitSwapStatsRecorder
+from jobs.rapid_recorder import RapidSwapRecorder
 from jobs.ruji_merge import RujiMergeTracker
 from jobs.rune_burn_recorder import RuneBurnRecorder
 from jobs.transfer_recorder import RuneTransferRecorder
@@ -493,6 +494,20 @@ class MetricsDialog(BaseDialog):
 
         pic, pic_name = await self.deps.alert_presenter.render_limit_swap_stats(self.loc, data)
         text = self.loc.notification_text_limit_swap_stats(data)
+        await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
+
+    async def show_rapid_swap_stats(self, message: Message):
+        await self.start_typing(message)
+
+        recorder = RapidSwapRecorder(self.deps)
+        data = await recorder.get_infographic_data(days=7)
+
+        if not data.total.rapid_swap_count:
+            await message.answer(self.loc.TEXT_RAPID_SWAP_STATS_NO_DATA, disable_notification=True)
+            return
+
+        pic, pic_name = await self.deps.alert_presenter.render_rapid_swap_stats(self.loc, data)
+        text = self.loc.notification_text_rapid_swap_stats(data)
         await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
 
     # ---- Ask for duration (universal)

@@ -297,3 +297,19 @@ async def test_on_data_initializes_hll_counters_when_db_redis_is_not_ready_yet()
     assert day_stats['unique_users'] == 1.0
 
 
+@pytest.mark.asyncio
+async def test_get_summary_initializes_lazy_hll_counters_without_prior_on_data():
+    deps = make_lazy_db_deps()
+    recorder = RapidSwapRecorder(deps)
+
+    assert deps.db.redis is None
+
+    summary = await recorder.get_summary(days=1, end_ts=1_700_000_000)
+
+    assert deps.db.redis is not None
+    assert summary['rapid_swap_count'] == 0.0
+    assert summary['total_swap_count'] == 0.0
+    assert summary['unique_users'] == 0.0
+    assert summary['daily'][0]['cumulative_unique_users'] == 0.0
+
+
