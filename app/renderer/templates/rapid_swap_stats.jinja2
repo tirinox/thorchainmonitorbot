@@ -58,7 +58,7 @@
   .card-title { color:#8fa5ab; font-size:20px; letter-spacing:.18em; text-transform:uppercase; margin-bottom:10px; }
   .card-value-row { display:flex; align-items:flex-end; gap:14px; }
   .card-value { color:#fff; font-size:54px; font-weight:800; line-height:1; }
-  .card-sub { margin-top:7px; color:#6f8489; font-size:18px; }
+  .card-sub { margin-top:7px; color:#8aa1a7; font-size:18px; font-weight:500; }
   .delta { font-size:26px; font-weight:800; padding-bottom:4px; }
   .delta-pos { color:#33FF99; text-shadow:0 0 14px rgba(51,255,153,.22); }
   .delta-neg { color:#ff7f8a; text-shadow:0 0 14px rgba(255,127,138,.22); }
@@ -91,11 +91,11 @@
   .path-name { color:#fff; font-size:22px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .metric { text-align:right; }
   .metric-main { color:#fff; font-size:21px; font-weight:800; }
-  .metric-sub { color:#7f979d; font-size:14px; margin-top:2px; }
+  .metric-sub { color:#9cb0b6; font-size:15px; font-weight:600; margin-top:2px; }
   .highlight-box { margin-top:auto; border-radius:18px; padding:14px 16px; background: linear-gradient(180deg, rgba(245,197,24,.10), rgba(35,220,200,.05)); border-color: rgba(245,197,24,.18); }
   .highlight-kicker { color:#f5c518; font-size:16px; text-transform:uppercase; letter-spacing:.15em; font-weight:800; }
   .highlight-title { color:#fff; font-size:29px; font-weight:800; margin-top:5px; }
-  .highlight-sub { color:#9fb5ba; font-size:18px; margin-top:6px; }
+  .highlight-sub { color:#c8d8dc; font-size:18px; font-weight:600; margin-top:6px; }
   .highlight-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:12px; }
   .highlight-item { min-width:0; background:rgba(0,0,0,.18); border:1px solid rgba(255,255,255,.04); border-radius:12px; padding:8px 10px; }
   .highlight-item .mini-label { font-size:13px; letter-spacing:.08em; white-space:nowrap; }
@@ -145,7 +145,6 @@
 
     <div class="panel side-shell shadow-box">
       <div class="panel-title">🏁 Top rapid paths</div>
-      <div class="panel-sub">Most active pairings for the selected period.</div>
       <div class="paths">
         {% for p in top_pairs[:6] %}
           <div class="path-row">
