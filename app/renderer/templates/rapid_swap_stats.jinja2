@@ -195,6 +195,8 @@
   Chart.defaults.color = '#b7c8cc';
   const dollarLabel = v => v >= 1_000_000 ? '$' + (v / 1_000_000).toFixed(1) + 'M' : (v >= 1_000 ? '$' + (v / 1_000).toFixed(0) + 'K' : '$' + Math.round(v));
   const minuteLabel = v => v >= 60 ? `${Math.floor(v / 60)}h ${Math.round(v % 60)}m` : `${Math.round(v)}m`;
+  const savedAxisUsesHours = Math.max(...savedMinData, 0) > 60;
+  const savedAxisLabel = v => savedAxisUsesHours ? `${(v / 60).toFixed(1).replace(/\.0$/, '')}h` : `${Math.round(v)}m`;
 
   const mainCtx = document.getElementById('rapidMainChart').getContext('2d');
   const volGrad = mainCtx.createLinearGradient(0, 0, 0, 420); volGrad.addColorStop(0, 'rgba(245,197,24,.34)'); volGrad.addColorStop(1, 'rgba(245,197,24,.03)');
@@ -209,6 +211,6 @@
 
   const savedCtx = document.getElementById('rapidSavedChart').getContext('2d');
   const savedGrad = savedCtx.createLinearGradient(0, 0, 0, 150); savedGrad.addColorStop(0, 'rgba(255,179,71,.34)'); savedGrad.addColorStop(1, 'rgba(255,179,71,.04)');
-  new Chart(savedCtx, { type:'bar', data:{ labels, datasets:[{ data:savedMinData, backgroundColor:savedGrad, borderColor:'rgba(255,179,71,.92)', borderWidth:1.4, borderRadius:7, barPercentage:.72, categoryPercentage:.8 }] }, options:{ maintainAspectRatio:false, responsive:true, animation:false, plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:'rgba(10,16,21,.95)', borderColor:'rgba(255,179,71,.15)', borderWidth:1, padding:10, callbacks:{ label: ctx => ` Saved: ${minuteLabel(ctx.parsed.y)}` } } }, scales:{ x:{ grid:{ display:false }, ticks:{ color:'#9db0b5', font:{ size:16 } } }, y:{ beginAtZero:true, grid:{ color:'rgba(255,255,255,.05)' }, ticks:{ color:'#ffcf84', font:{ size:16 }, callback:v => `${Math.round(v)}m`, maxTicksLimit:4 } } } } });
+  new Chart(savedCtx, { type:'bar', data:{ labels, datasets:[{ data:savedMinData, backgroundColor:savedGrad, borderColor:'rgba(255,179,71,.92)', borderWidth:1.4, borderRadius:7, barPercentage:.72, categoryPercentage:.8 }] }, options:{ maintainAspectRatio:false, responsive:true, animation:false, plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:'rgba(10,16,21,.95)', borderColor:'rgba(255,179,71,.15)', borderWidth:1, padding:10, callbacks:{ label: ctx => ` Saved: ${minuteLabel(ctx.parsed.y)}` } } }, scales:{ x:{ grid:{ display:false }, ticks:{ color:'#9db0b5', font:{ size:16 } } }, y:{ beginAtZero:true, grid:{ color:'rgba(255,255,255,.05)' }, ticks:{ color:'#ffcf84', font:{ size:16 }, callback:v => savedAxisLabel(v), maxTicksLimit:4 } } } } });
 </script>
 {% endblock %}
