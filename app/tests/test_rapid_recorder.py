@@ -31,6 +31,7 @@ def make_swap_event(
     pool: str = 'BTC.BTC',
     *,
     coin: str = '100000000 BTC.BTC',
+    emit_asset: str = '1 THOR.RUNE',
     from_addr: str = 'thor1from',
     stream_count: int = 1,
     stream_quantity: int = 1,
@@ -43,7 +44,7 @@ def make_swap_event(
         'swap_slip': '0',
         'liquidity_fee': '0',
         'liquidity_fee_in_rune': '0',
-        'emit_asset': '1 THOR.RUNE',
+        'emit_asset': emit_asset,
         'streaming_swap_quantity': str(stream_quantity),
         'streaming_swap_count': str(stream_count),
         'chain': 'THOR',
@@ -104,6 +105,15 @@ def test_collect_rapid_swap_candidates_ignores_multi_hop_same_streaming_count():
     candidates = recorder.collect_rapid_swap_candidates(block)
 
     assert candidates == {}
+
+
+def test_pair_key_and_label_normalizes_asset_types_and_ignores_direction():
+    recorder = RapidSwapRecorder(DepContainer())
+
+    pair_key, pair_label = recorder._pair_key_and_label('ETH-ETH', 'BTC~BTC')
+
+    assert pair_key == 'BTC.BTC->ETH.ETH'
+    assert pair_label == 'BTC → ETH'
 
 
 @pytest.mark.asyncio
@@ -273,6 +283,79 @@ async def test_get_infographic_data_builds_typed_period_stats_with_previous_wind
     assert stats.daily[0].cumulative_unique_users == 2
     assert stats.daily[0].cumulative_estimated_time_saved_sec == THOR_BLOCK_TIME * 2
     assert stats.to_dict()['total']['rapid_swap_count'] == 2
+
+
+@pytest.mark.asyncio
+async def test_get_infographic_data_builds_directionless_top_pairs_and_largest_swap_by_volume():
+    recorder = RapidSwapRecorder(make_deps())
+
+    day1 = 1_700_000_000
+    day2 = day1 + 86_400
+
+    await recorder.on_data(None, make_block(
+        make_swap_event('rapid-path-a', 900, pool='BTC.BTC', coin='100000000 BTC.BTC', emit_asset='1 ETH-ETH', from_addr='thor1alice', stream_count=60, stream_quantity=222),
+        make_swap_event('rapid-path-a', 900, pool='ETH.ETH', coin='100000000 BTC.BTC', emit_asset='1 ETH-ETH', from_addr='thor1alice', stream_count=61, stream_quantity=222),
+        block_no=900,
+        timestamp=day1,
+    ))
+
+    await recorder.on_data(None, make_block(
+        make_swap_event('rapid-path-b', 901, pool='ETH.ETH', coin='200000000 ETH.ETH', emit_asset='1 BTC~BTC', from_addr='thor1bob', stream_count=70, stream_quantity=333),
+        make_swap_event('rapid-path-b', 901, pool='BTC.BTC', coin='200000000 ETH.ETH', emit_asset='1 BTC~BTC', from_addr='thor1bob', stream_count=71, stream_quantity=333),
+        make_swap_event('rapid-path-c', 901, pool='ETH.ETH', coin='100000000 ETH.ETH', emit_asset='1 THOR.RUNE', from_addr='thor1carol', stream_count=80, stream_quantity=444),
+        make_swap_event('rapid-path-c', 901, pool='THOR.RUNE', coin='100000000 ETH.ETH', emit_asset='1 THOR.RUNE', from_addr='thor1carol', stream_count=81, stream_quantity=444),
+        block_no=901,
+        timestamp=day2,
+    ))
+
+    stats = await recorder.get_infographic_data(days=2, end_ts=day2)
+
+    assert [pair.pair_label for pair in stats.top_pairs] == ['BTC → ETH', 'ETH → RUNE ᚱ']
+    assert stats.top_pairs[0].rapid_swap_count == 2
+    assert stats.top_pairs[0].rapid_swap_volume_usd == 68_000.0
+    assert stats.top_pairs[0].avg_subswaps == 2.0
+    assert stats.top_pairs[0].avg_faster_pct == 50.0
+    assert stats.top_pairs[0].estimated_time_saved_sec == THOR_BLOCK_TIME * 2
+    assert stats.top_pairs[1].rapid_swap_volume_usd == 4_000.0
+
+    assert stats.largest_swap.tx_id == 'rapid-path-a'
+    assert stats.largest_swap.pair_label == 'BTC → ETH'
+    assert stats.largest_swap.trader == 'thor1alice'
+    assert stats.largest_swap.usd_volume == 60_000.0
+    assert stats.largest_swap.subswaps == 2
+    assert stats.largest_swap.blocks_used == 1
+    assert stats.largest_swap.blocks_saved == 1
+    assert stats.largest_swap.saved_time_sec == THOR_BLOCK_TIME
+    assert stats.largest_swap.faster_pct == 50.0
+    assert stats.largest_swap.efficiency_ratio == 2.0
+    assert stats.to_dict()['top_pairs'][0]['pair_label'] == 'BTC → ETH'
+    assert stats.to_dict()['largest_swap']['tx_id'] == 'rapid-path-a'
+
+
+@pytest.mark.asyncio
+async def test_rapid_batch_volume_prefers_full_input_tx_amount_with_fallback():
+    recorder = RapidSwapRecorder(make_deps())
+    ts = 1_700_000_000
+
+    await recorder._event_db.write_tx_status_kw(
+        'rapid-full-volume',
+        id='rapid-full-volume',
+        in_amount=300000000,
+        in_asset='BTC.BTC',
+    )
+
+    await recorder.on_data(None, make_block(
+        make_swap_event('rapid-full-volume', 950, pool='BTC.BTC', coin='100000000 BTC.BTC', emit_asset='1 ETH.ETH', from_addr='thor1full', stream_count=60, stream_quantity=222),
+        make_swap_event('rapid-full-volume', 950, pool='ETH.ETH', coin='100000000 BTC.BTC', emit_asset='1 ETH.ETH', from_addr='thor1full', stream_count=61, stream_quantity=222),
+        block_no=950,
+        timestamp=ts,
+    ))
+
+    stats = await recorder.get_infographic_data(days=1, end_ts=ts)
+
+    assert stats.total.rapid_swap_volume_usd == 90_000.0
+    assert stats.top_pairs[0].rapid_swap_volume_usd == 90_000.0
+    assert stats.largest_swap.usd_volume == 90_000.0
 
 
 @pytest.mark.asyncio
