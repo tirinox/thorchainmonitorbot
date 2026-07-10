@@ -115,7 +115,7 @@
 
 <div class="layout">
   <div class="stats-grid">
-    <div class="card shadow-box"><div class="card-title">⚡ Rapid batches</div><div class="card-value-row"><div class="card-value">{{ total.rapid_swap_count | default(0) | int }}</div>{{ render_delta(delta.rapid_swap_count.pct) }}</div><div class="card-sub">of {{ total.total_swap_count | default(0) | int }} swap txs</div></div>
+    <div class="card shadow-box"><div class="card-title">⚡ Rapid batches</div><div class="card-value-row"><div class="card-value">{{ short_money(total.rapid_swap_count | default(0) | int, integer=True) }}</div>{{ render_delta(delta.rapid_swap_count.pct) }}</div><div class="card-sub">of {{ short_money(total.total_swap_count | default(0) | int, integer=True) }} swap txs</div></div>
     <div class="card shadow-box"><div class="card-title">💵 Volume</div><div class="card-value-row"><div class="card-value gold">{{ short_dollar(total.rapid_swap_volume_usd | default(0) | float) }}</div>{{ render_delta(delta.rapid_swap_volume_usd.pct) }}</div><div class="card-sub">rapid-executed notional</div></div>
     <div class="card shadow-box"><div class="card-title">📈 Adoption share</div><div class="card-value-row"><div class="card-value green">{{ pct01_text(total.rapid_swap_share) }}</div>{{ render_delta(delta.rapid_swap_share_pp.absolute, 'pp') }}</div><div class="card-sub">share of all swap txs</div></div>
     <div class="card shadow-box"><div class="card-title">👤 Unique users</div><div class="card-value-row"><div class="card-value cyan">{{ total.unique_users | default(0) | int }}</div>{{ render_delta(delta.unique_users.pct) }}</div><div class="card-sub">distinct rapid swappers</div></div>
