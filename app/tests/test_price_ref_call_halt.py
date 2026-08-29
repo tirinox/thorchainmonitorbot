@@ -1,6 +1,5 @@
 from types import SimpleNamespace
 
-from comm.localization import twitter_eng as twitter_eng_module
 from comm.localization.eng_base import BaseLocalization
 from comm.localization.rus import RussianLocalization
 from comm.localization.twitter_eng import TwitterEnglishLocalization
@@ -16,10 +15,11 @@ def _make_price_event(chain_state=None):
     )
 
 
-def _make_twitter_localization() -> TwitterEnglishLocalization:
+def _make_twitter_localization(post_urls_enabled: bool = False) -> TwitterEnglishLocalization:
     return TwitterEnglishLocalization(Config(data={
         'twitter': {
             'max_length': 280,
+            'post_urls_enabled': post_urls_enabled,
         },
     }))
 
@@ -57,9 +57,8 @@ def test_russian_price_update_hides_ref_call_with_two_halted_chains():
     assert 'торговать сейчас' not in text
 
 
-def test_twitter_price_update_hides_urls_with_two_halted_chains(monkeypatch):
-    monkeypatch.setattr(twitter_eng_module, 'TWITTER_POST_URLS_ENABLED', True)
-    loc = _make_twitter_localization()
+def test_twitter_price_update_hides_urls_with_two_halted_chains():
+    loc = _make_twitter_localization(post_urls_enabled=True)
 
     text = loc.notification_text_price_update(_make_price_event([
         ('BTC', 'halted'),
@@ -71,9 +70,8 @@ def test_twitter_price_update_hides_urls_with_two_halted_chains(monkeypatch):
     assert 'http' not in text
 
 
-def test_twitter_price_update_keeps_urls_with_fewer_than_two_halted_chains(monkeypatch):
-    monkeypatch.setattr(twitter_eng_module, 'TWITTER_POST_URLS_ENABLED', True)
-    loc = _make_twitter_localization()
+def test_twitter_price_update_keeps_urls_with_fewer_than_two_halted_chains():
+    loc = _make_twitter_localization(post_urls_enabled=True)
 
     text = loc.notification_text_price_update(_make_price_event([
         ('BTC', 'halted'),
@@ -83,4 +81,3 @@ def test_twitter_price_update_keeps_urls_with_fewer_than_two_halted_chains(monke
     assert 'Start trading now' in text
     assert 'CoinGecko' in text
     assert 'http' in text
-

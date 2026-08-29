@@ -115,6 +115,7 @@ slack:
 twitter:
   enabled: true
   is_mock: false
+  post_urls_enabled: false
 
   max_length: 25000  # With Twitter Premium
   #  max_length: 280  # Without Twitter Premium

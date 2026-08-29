@@ -41,14 +41,12 @@ from .achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
 from .eng_base import BaseLocalization, URL_OUR_REF
 
 
-TWITTER_POST_URLS_ENABLED = False
-
-
 class TwitterEnglishLocalization(BaseLocalization):
     def __init__(self, cfg: Config):
         super().__init__(cfg)
         self.ach = AchievementsTwitterEnglishLocalization()
         self.twitter_max_len = cfg.get('twitter.max_length', TWITTER_LIMIT_CHARACTERS)
+        self.post_urls_enabled = cfg.as_bool('twitter.post_urls_enabled', False)
         self.swap_twitter_remove_links_below_usd = cfg.as_float('tx.swap.twitter.remove_links_below_usd', 0.0)
 
     TEXT_DECORATION_ENABLED = False
@@ -77,7 +75,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     @property
     def are_post_urls_enabled(self) -> bool:
-        return TWITTER_POST_URLS_ENABLED
+        return self.post_urls_enabled
 
     PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION = 'THORChain nodes'
 
@@ -976,12 +974,11 @@ class TwitterEnglishLocalization(BaseLocalization):
         #     f"{trend} is {pretty_percent(e.deflation_percent, signed=False)}."
         # )
 
-    @staticmethod
-    def notification_rujira_merge_stats(e: AlertRujiraMergeStats):
+    def notification_rujira_merge_stats(self, e: AlertRujiraMergeStats):
         return (
             'RUJIRA Merge stats $RUJI\n'
             'https://rujira.network/merge/'
-            if TWITTER_POST_URLS_ENABLED else
+            if self.are_post_urls_enabled else
             'RUJIRA Merge stats $RUJI'
         )
 
@@ -1025,4 +1022,3 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'👤 {pretty_money(e.total.unique_users, integer=True)} users {user_delta}\n'
             f'⏱ {seconds_human(e.total.estimated_time_saved_sec)} saved'
         )
-

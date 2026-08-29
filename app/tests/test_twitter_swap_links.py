@@ -1,7 +1,6 @@
 from types import SimpleNamespace
 
 from api.midgard.name_service import NameMap
-from comm.localization import twitter_eng as twitter_eng_module
 from comm.localization.twitter_eng import TwitterEnglishLocalization
 from lib.config import Config
 from models.memo import ActionType, THORMemo
@@ -17,10 +16,11 @@ THOR_ADDR = 'thor1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq6c6n30'
 BTC_ADDR = 'bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqe36w8h'
 
 
-def _make_localization(threshold_usd: float) -> TwitterEnglishLocalization:
+def _make_localization(threshold_usd: float, post_urls_enabled: bool = False) -> TwitterEnglishLocalization:
     return TwitterEnglishLocalization(Config(data={
         'twitter': {
             'max_length': 280,
+            'post_urls_enabled': post_urls_enabled,
         },
         'tx': {
             'swap': {
@@ -30,10 +30,6 @@ def _make_localization(threshold_usd: float) -> TwitterEnglishLocalization:
             },
         },
     }))
-
-
-def _set_post_urls_enabled(monkeypatch, enabled: bool):
-    monkeypatch.setattr(twitter_eng_module, 'TWITTER_POST_URLS_ENABLED', enabled)
 
 
 def _make_swap_started(volume_usd: float) -> AlertSwapStart:
@@ -83,9 +79,8 @@ def _make_swap_finished(volume_usd: float) -> EventLargeTransaction:
     return EventLargeTransaction(transaction=tx, usd_per_rune=usd_per_rune)
 
 
-def test_small_streaming_swap_started_hides_urls(monkeypatch):
-    _set_post_urls_enabled(monkeypatch, True)
-    text = _make_localization(1_000).notification_text_streaming_swap_started(
+def test_small_streaming_swap_started_hides_urls():
+    text = _make_localization(1_000, post_urls_enabled=True).notification_text_streaming_swap_started(
         _make_swap_started(999),
         NameMap.empty(),
     )
@@ -94,9 +89,8 @@ def test_small_streaming_swap_started_hides_urls(monkeypatch):
     assert 'Runescan:' not in text
 
 
-def test_large_streaming_swap_started_keeps_urls(monkeypatch):
-    _set_post_urls_enabled(monkeypatch, True)
-    text = _make_localization(1_000).notification_text_streaming_swap_started(
+def test_large_streaming_swap_started_keeps_urls():
+    text = _make_localization(1_000, post_urls_enabled=True).notification_text_streaming_swap_started(
         _make_swap_started(1_000),
         NameMap.empty(),
     )
@@ -105,9 +99,8 @@ def test_large_streaming_swap_started_keeps_urls(monkeypatch):
     assert 'Runescan:' in text
 
 
-def test_small_streaming_swap_finished_hides_urls(monkeypatch):
-    _set_post_urls_enabled(monkeypatch, True)
-    text = _make_localization(1_000).notification_text_large_single_tx(
+def test_small_streaming_swap_finished_hides_urls():
+    text = _make_localization(1_000, post_urls_enabled=True).notification_text_large_single_tx(
         _make_swap_finished(999),
         NameMap.empty(),
     )
@@ -115,9 +108,8 @@ def test_small_streaming_swap_finished_hides_urls(monkeypatch):
     assert 'Runescan:' not in text
 
 
-def test_large_streaming_swap_finished_keeps_urls(monkeypatch):
-    _set_post_urls_enabled(monkeypatch, True)
-    text = _make_localization(1_000).notification_text_large_single_tx(
+def test_large_streaming_swap_finished_keeps_urls():
+    text = _make_localization(1_000, post_urls_enabled=True).notification_text_large_single_tx(
         _make_swap_finished(1_000),
         NameMap.empty(),
     )
@@ -138,9 +130,8 @@ def test_price_update_has_no_urls_by_default():
     assert 'Start trading now' not in text
 
 
-def test_price_update_restores_urls_when_enabled(monkeypatch):
-    _set_post_urls_enabled(monkeypatch, True)
-    loc = _make_localization(0)
+def test_price_update_restores_urls_when_enabled():
+    loc = _make_localization(0, post_urls_enabled=True)
     text = loc.notification_text_price_update(SimpleNamespace(
         is_ath=True,
         market_info=SimpleNamespace(pool_rune_price=1.234),
@@ -164,9 +155,8 @@ def test_pool_churn_has_no_urls_by_default():
     assert 'thorchain.net/pools' not in text
 
 
-def test_pool_churn_restores_url_when_enabled(monkeypatch):
-    _set_post_urls_enabled(monkeypatch, True)
-    loc = _make_localization(0)
+def test_pool_churn_restores_url_when_enabled():
+    loc = _make_localization(0, post_urls_enabled=True)
     text = loc.notification_text_pool_churn(SimpleNamespace(
         pools_added=[('BTC.BTC', 'staged', 'available')],
         pools_removed=[],
@@ -196,9 +186,8 @@ def test_public_rune_transfer_has_no_tx_url_by_default():
     assert 'TX:' not in text
 
 
-def test_public_rune_transfer_restores_tx_url_when_enabled(monkeypatch):
-    _set_post_urls_enabled(monkeypatch, True)
-    loc = _make_localization(0)
+def test_public_rune_transfer_restores_tx_url_when_enabled():
+    loc = _make_localization(0, post_urls_enabled=True)
     text = loc.notification_text_rune_transfer_public(
         NativeTokenTransfer(
             from_addr=THOR_ADDR,
@@ -237,9 +226,8 @@ def test_trade_account_move_has_no_tx_url_by_default():
     assert 'TX:' not in text
 
 
-def test_trade_account_move_restores_tx_url_when_enabled(monkeypatch):
-    _set_post_urls_enabled(monkeypatch, True)
-    loc = _make_localization(0)
+def test_trade_account_move_restores_tx_url_when_enabled():
+    loc = _make_localization(0, post_urls_enabled=True)
     text = loc.notification_text_trade_account_move(
         AlertTradeAccountAction(
             tx_hash=TX_ID,
@@ -278,9 +266,8 @@ def test_runepool_action_has_no_tx_url_by_default():
     assert 'TX:' not in text
 
 
-def test_runepool_action_restores_tx_url_when_enabled(monkeypatch):
-    _set_post_urls_enabled(monkeypatch, True)
-    loc = _make_localization(0)
+def test_runepool_action_restores_tx_url_when_enabled():
+    loc = _make_localization(0, post_urls_enabled=True)
     text = loc.notification_runepool_action(
         AlertRunePoolAction(
             tx_hash=TX_ID,
@@ -306,11 +293,8 @@ def test_rujira_merge_stats_has_no_url_by_default():
     assert 'http' not in text
 
 
-def test_rujira_merge_stats_restores_url_when_enabled(monkeypatch):
-    _set_post_urls_enabled(monkeypatch, True)
-    text = _make_localization(0).notification_rujira_merge_stats(SimpleNamespace())
+def test_rujira_merge_stats_restores_url_when_enabled():
+    text = _make_localization(0, post_urls_enabled=True).notification_rujira_merge_stats(SimpleNamespace())
 
     assert 'RUJIRA Merge stats $RUJI' in text
     assert 'https://rujira.network/merge/' in text
-
-
