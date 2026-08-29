@@ -11,7 +11,7 @@ from lib.constants import bp_to_float
 from lib.date_utils import format_time_ago, now_ts
 from lib.delegates import INotified, WithDelegates
 from lib.logs import WithLogger
-from lib.texts import split_by_camel_case, shorten_text
+from lib.texts import shorten_text
 from .base import BaseModelMixin
 from .mimir_naming import MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, MimirNameRules, EXTRA_AUTO_SOLVENCY_MIMIRS, \
     MIMIR_PAUSE_GLOBAL
@@ -297,8 +297,9 @@ class MimirHolder(INotified, WithLogger, WithDelegates):
                          f'@ block {data.thor_height} [{format_time_ago(now_ts() - data.ts)} ago]')
 
         hard_coded_constants = {n.upper(): v for n, v in data.constants.constants.items()}
+        self.mimir_rules.learn_canonical_names(data.constants.constants.keys())
         self.hard_coded_pretty_names = {
-            n.upper(): split_by_camel_case(n)
+            n.upper(): self.mimir_rules.name_to_human(n)
             for n in data.constants.constants.keys()
         }
         mimir_constants = {n.upper(): v for n, v in data.mimir.constants.items()}
