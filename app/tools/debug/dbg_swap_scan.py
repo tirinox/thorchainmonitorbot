@@ -171,8 +171,8 @@ async def run():
 
         await debug_full_pipeline(
             app,
-            single_block=True,
-            tx_id="819974DE3F88E2FDD0F1F85E210CE08BCE900A65B11B52B10AAF706A3A8016DE",
+            single_block=False,
+            tx_id="10CA4EDF385B34974922F2B7FDC3EFF8E474D3DB05685568EC3A985E574DC151",
             no_alert=False,
         )
 

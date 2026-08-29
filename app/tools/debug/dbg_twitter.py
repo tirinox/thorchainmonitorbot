@@ -84,9 +84,9 @@ async def main():
 
         # await asyncio.sleep(10)
         # await twitter_post_supply(app)
-        await twitter_bot.post('I want to make sure everything works.')
+        # await twitter_bot.post('I want to make sure everything works.')
 
-        # await twitter_post_price(app)
+        await twitter_post_price(app)
 
         await asyncio.sleep(10)
 
