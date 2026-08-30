@@ -32,6 +32,12 @@ def _make_localization(threshold_usd: float, post_urls_enabled: bool = False) ->
     }))
 
 
+def test_post_urls_are_disabled_when_setting_is_missing():
+    loc = TwitterEnglishLocalization(Config(data={}))
+
+    assert loc.are_post_urls_enabled is False
+
+
 def _make_swap_started(volume_usd: float) -> AlertSwapStart:
     return AlertSwapStart(
         tx_id=TX_ID,

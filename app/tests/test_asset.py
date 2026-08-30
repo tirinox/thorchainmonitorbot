@@ -97,6 +97,8 @@ def test_gas_asset():
     assert Asset.from_string('THOR.RUNE').is_gas_asset
     assert Asset.from_string('GAIA.ATOM').is_gas_asset
     assert Asset.from_string('BSC.BNB').is_gas_asset
+    assert Asset.from_string('XMR.XMR').is_gas_asset
+    assert Asset.from_string('ZEC.ZEC').is_gas_asset
 
     assert not Asset.from_string('BSC.BUSD').is_gas_asset
     assert not Asset.from_string('BSC.BNB-0x123').is_gas_asset
@@ -123,7 +125,9 @@ def test_ambiguous_name():
     ('DOGE.DOGE', 'DOGE'),
     ('GAIA.ATOM', 'GAIA'),
     ('BSC.BNB', 'BSC'),
-    ('XRP.XRP', 'XRP')
+    ('XRP.XRP', 'XRP'),
+    ('XMR.XMR', 'XMR'),
+    ('ZEC.ZEC', 'ZEC'),
 ])
 def test_l1_asset_vs_gas_asset(asset_name, chain):
     # assert Chains.l1_asset(chain) == asset_name

@@ -45,6 +45,11 @@ class CryptoLogoDownloader:
         Chains.ATOM: 'cosmos',
         Chains.BSC: 'smartchain',
         Chains.BASE: 'base',
+        Chains.ZEC: 'zcash',
+    }
+
+    CHAIN_TO_LOGO_URL = {
+        Chains.XMR: 'https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/xmr.png',
     }
 
     # Mapping: Chain to the asset name of the logo of this chain
@@ -85,6 +90,8 @@ class CryptoLogoDownloader:
             chain_name = cls.CHAIN_TO_NAME.get(a.chain)
 
         if a.is_gas_asset:  # e.g. BNB.BNB, BTC.BTC, GAIA.ATOM
+            if logo_url := cls.CHAIN_TO_LOGO_URL.get(a.chain):
+                return logo_url
             path = f'{chain_name}/info/logo.png'
         else:
             if a.chain != Chains.BNB:

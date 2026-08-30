@@ -1,4 +1,4 @@
-from lib.explorers import get_explorer_url_to_address, NetworkIdents, Chains
+from lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx, NetworkIdents, Chains
 from lib.texts import link_with_domain_text
 
 
@@ -12,6 +12,15 @@ def test_expl1():
     assert get_explorer_url_to_address(NetworkIdents.TESTNET_MULTICHAIN, Chains.BNB,
                                        'tbnb12ld7svh7wrwgvf0ll97xjnzp0qpeky97aqkpwc') == \
            'https://testnet-explorer.binance.org/address/tbnb12ld7svh7wrwgvf0ll97xjnzp0qpeky97aqkpwc'
+
+    assert get_explorer_url_to_address(NetworkIdents.MAINNET, Chains.XMR, 'xmr-address') == \
+           'https://xmrchain.net/search?value=xmr-address'
+    assert get_explorer_url_to_address(NetworkIdents.MAINNET, Chains.ZEC, 'zec-address') == \
+           'https://zcashblockexplorer.com/address/zec-address'
+    assert get_explorer_url_to_tx(NetworkIdents.MAINNET, Chains.XMR, 'xmr-tx') == \
+           'https://xmrchain.net/search?value=xmr-tx'
+    assert get_explorer_url_to_tx(NetworkIdents.MAINNET, Chains.ZEC, 'zec-tx') == \
+           'https://zcashblockexplorer.com/tx/zec-tx'
 
 
 def uri_parse():

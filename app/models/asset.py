@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Iterable, Union
 
-from lib.constants import RUNE_DENOM, Chains, NATIVE_RUNE_SYMBOL
+from lib.constants import RUNE_DENOM, Chains, NATIVE_RUNE_SYMBOL, XMR_SYMBOL, ZEC_SYMBOL
 
 
 class Delimiter:
@@ -316,6 +316,7 @@ class Asset:
 
     ABBREVIATE_GAS_ASSETS = {
         'ETH.ETH', 'BTC.BTC', 'LTC.LTC', 'AVAX.AVAX', 'DOGE.DOGE', 'GAIA.ATOM', 'BSC.BNB', 'BCH.BCH', 'XRP.XRP',
+        XMR_SYMBOL, ZEC_SYMBOL,
     }
 
     GAS_ASSETS = {
@@ -324,6 +325,8 @@ class Asset:
         Chains.BSC: 'BNB',
         Chains.BASE: 'ETH',
         Chains.TRON: 'TRX',
+        Chains.XMR: 'XMR',
+        Chains.ZEC: 'ZEC',
         # to be continued...
     }
 

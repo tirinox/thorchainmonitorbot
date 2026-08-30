@@ -35,6 +35,10 @@ TRON_USDT_SYMBOL = 'TRON.USDT-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
 
 DOGE_SYMBOL = 'DOGE.DOGE'
 
+XMR_SYMBOL = 'XMR.XMR'
+
+ZEC_SYMBOL = 'ZEC.ZEC'
+
 TRX_SYMBOL = 'TRON.TRX'
 
 RUNE_IDEAL_SUPPLY = 500_000_000
@@ -88,10 +92,12 @@ class Chains:
     XRP = 'XRP'
     TRON = 'TRON'
     SOL = 'SOL'
+    XMR = 'XMR'
+    ZEC = 'ZEC'
 
     ALL_EVM = (ETH, BSC, BASE, AVAX)
 
-    META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM, BSC, BASE, XRP, TRON, SOL)
+    META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM, BSC, BASE, XRP, TRON, SOL, XMR, ZEC)
 
     @staticmethod
     def detect_chain(orig_address: str) -> str:
@@ -106,10 +112,14 @@ class Chains:
             return Chains.ATOM
         elif orig_address.startswith('D'):
             return Chains.DOGE
-        elif address.startswith('T'):
+        elif orig_address.startswith('T'):
             return Chains.TRON
         elif address.startswith('r'):
             return Chains.XRP
+        elif Chains.is_monero_address(orig_address):
+            return Chains.XMR
+        elif Chains.is_zcash_address(orig_address):
+            return Chains.ZEC
         elif Chains.is_solana_address(orig_address):
             return Chains.SOL
         return ''
@@ -142,6 +152,10 @@ class Chains:
             return 3.0
         elif chain == Chains.SOL:
             return 0.4
+        elif chain == Chains.XMR:
+            return 2 * MINUTE
+        elif chain == Chains.ZEC:
+            return 75.0
         return 0.01
 
     @staticmethod
@@ -165,6 +179,21 @@ class Chains:
             return len(decoded) == 32
         except Exception:
             return False
+
+    @staticmethod
+    def is_monero_address(s: str) -> bool:
+        return (
+            len(s) in (95, 106)
+            and s[0] in '45879aA'
+            and re.fullmatch(r'[1-9A-HJ-NP-Za-km-z]{95,106}', s) is not None
+        )
+
+    @staticmethod
+    def is_zcash_address(s: str) -> bool:
+        return (
+            re.fullmatch(r't(?:1|3|m)[a-zA-Z0-9]{33}', s) is not None
+            or s.startswith(('zs', 'ztestsapling', 'u1'))
+        )
 
 
 class NetworkIdents:
