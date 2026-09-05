@@ -1,4 +1,3 @@
-import asyncio
 from typing import List
 
 from redis.asyncio import Redis
@@ -53,23 +52,26 @@ class ManyToManySet:
         r = await self._redis()
         return await r.sismember(self.right_key(right_one), left_one)
 
-    @staticmethod
-    async def all_items_for_many_other_side(inputs, getter: callable, flatten=True):
-        inputs = set(inputs)
-        # fixme: use MGET?
-        groups = await asyncio.gather(
-            *(getter(item) for item in inputs)
-        )
+    async def all_items_for_many_other_side(self, inputs, key_gen: callable, flatten=True):
+        inputs = list(dict.fromkeys(inputs))
+        if not inputs:
+            return set() if flatten else {}
+
+        r = await self._redis()
+        async with r.pipeline(transaction=False) as pipe:
+            for item in inputs:
+                pipe.smembers(key_gen(item))
+            groups = [set(group) for group in await pipe.execute()]
+
         if flatten:
             return set(item for group in groups for item in group)
-        else:
-            return {name: group for name, group in zip(inputs, groups)}
+        return dict(zip(inputs, groups))
 
     async def all_lefts_for_many_rights(self, rights: iter, flatten=True):
-        return await self.all_items_for_many_other_side(rights, self.all_lefts_for_right_one, flatten)
+        return await self.all_items_for_many_other_side(rights, self.right_key, flatten)
 
     async def all_rights_for_many_lefts(self, lefts: iter, flatten=True):
-        return await self.all_items_for_many_other_side(lefts, self.all_rights_for_left_one, flatten)
+        return await self.all_items_for_many_other_side(lefts, self.left_key, flatten)
 
     async def all_rights_for_left_one(self, left_one: str):
         r = await self._redis()

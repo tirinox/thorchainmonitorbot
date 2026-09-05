@@ -54,12 +54,27 @@ class NodeChangePersonalNotifier(INotified, WithLogger):
         )
         self._cable_disconnected = False
         self._tick = 0
+        self._background_tasks = set()
+
+    def _create_background_task(self, coroutine, *, name: str):
+        task = asyncio.create_task(coroutine, name=name)
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_task_done)
+        return task
+
+    def _background_task_done(self, task: asyncio.Task):
+        self._background_tasks.discard(task)
+        try:
+            task.result()
+        except asyncio.CancelledError:
+            return
+        except Exception:
+            self.logger.exception(f'Background task "{task.get_name()}" failed.')
 
     async def prepare(self):
         if self._watchdog_enabled:
             self.logger.info(f'Starting watchdog timer: timeout = {self._disconnected_cable_timeout} sec')
-            # noinspection PyAsyncCall
-            asyncio.create_task(self._watchdog_timer())
+            self._create_background_task(self._watchdog_timer(), name='node-op-watchdog')
 
     async def _watchdog_timer(self):
         while True:
@@ -87,8 +102,10 @@ class NodeChangePersonalNotifier(INotified, WithLogger):
     async def on_data(self, sender, data):
         self._last_signal_ts = now_ts()
         if isinstance(data, NodeSetChanges):  # from Churn Fetcher
-            # noinspection PyAsyncCall
-            asyncio.create_task(self._handle_node_churn_bg_job(data))  # long-running job goes to the background!
+            self._create_background_task(
+                self._handle_node_churn_bg_job(data),
+                name='node-op-churn',
+            )
 
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
         self._tick += 1
@@ -203,8 +220,7 @@ class NodeChangePersonalNotifier(INotified, WithLogger):
                             BoardMessage(text, msg_type='personal:node_op_change'),
                             disable_web_page_preview=True
                         )
-                        # noinspection PyAsyncCall
-                        asyncio.create_task(task)
+                        self._create_background_task(task, name='node-op-message')
 
     @staticmethod
     async def _filter_events(event_list: List[NodeEvent], user_id, settings: dict) -> List[NodeEvent]:

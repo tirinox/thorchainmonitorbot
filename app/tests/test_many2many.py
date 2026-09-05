@@ -1,29 +1,109 @@
-import asyncio
+from collections import defaultdict
+from fnmatch import fnmatch
 
 import pytest
 
-from lib.db import DB
 from lib.db_many2many import ManyToManySet
 
 
-@pytest.fixture(scope='session')
-async def many2many_example():
-    loop = asyncio.get_event_loop()
-    db = DB(loop)
+class MemoryPipeline:
+    def __init__(self, redis, transaction):
+        self.redis = redis
+        self.transaction = transaction
+        self.commands = []
 
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        return False
+
+    def smembers(self, name):
+        self.commands.append(name)
+        return self
+
+    async def execute(self):
+        self.redis.pipeline_executions += 1
+        self.redis.last_pipeline_transaction = self.transaction
+        self.redis.last_pipeline_size = len(self.commands)
+        return [set(self.redis.sets[name]) for name in self.commands]
+
+
+class MemoryRedis:
+    def __init__(self):
+        self.sets = defaultdict(set)
+        self.pipeline_executions = 0
+        self.last_pipeline_transaction = None
+        self.last_pipeline_size = 0
+        self.direct_smembers_calls = 0
+
+    def pipeline(self, transaction=True):
+        return MemoryPipeline(self, transaction)
+
+    async def keys(self, pattern):
+        return [key for key in self.sets if fnmatch(key, pattern)]
+
+    async def delete(self, *keys):
+        for key in keys:
+            self.sets.pop(key, None)
+
+    async def sadd(self, key, *values):
+        self.sets[key].update(values)
+
+    async def smembers(self, key):
+        self.direct_smembers_calls += 1
+        return set(self.sets[key])
+
+    async def sismember(self, key, value):
+        return value in self.sets[key]
+
+    async def srem(self, key, *values):
+        self.sets[key].difference_update(values)
+        if not self.sets[key]:
+            del self.sets[key]
+
+
+class MemoryDB:
+    def __init__(self):
+        self.redis = MemoryRedis()
+
+    async def get_redis(self):
+        return self.redis
+
+
+@pytest.fixture
+def many2many_example():
+    db = MemoryDB()
     many2many = ManyToManySet(db, 'left', 'right')
-
-    await many2many.clear()
-    await many2many.associate('A', 'G1')
-    await many2many.associate_many(['B'], ['G1', 'G2'])
-    await many2many.associate_many(['C'], ['G3', 'G2'])
-
+    db.redis.sets[many2many.left_key('A')].add('G1')
+    db.redis.sets[many2many.left_key('B')].update(['G1', 'G2'])
+    db.redis.sets[many2many.left_key('C')].update(['G2', 'G3'])
+    db.redis.sets[many2many.right_key('G1')].update(['A', 'B'])
+    db.redis.sets[many2many.right_key('G2')].update(['B', 'C'])
+    db.redis.sets[many2many.right_key('G3')].add('C')
     return many2many
 
 
 @pytest.mark.asyncio
+async def test_get_many_uses_one_pipeline_for_large_batch():
+    db = MemoryDB()
+    mm = ManyToManySet(db, 'left', 'right')
+    rights = [f'G{i}' for i in range(178)]
+    for index, right in enumerate(rights):
+        db.redis.sets[mm.right_key(right)].add(f'U{index}')
+
+    result = await mm.all_lefts_for_many_rights(rights, flatten=False)
+
+    assert result == {right: {f'U{index}'} for index, right in enumerate(rights)}
+    assert db.redis.pipeline_executions == 1
+    assert db.redis.last_pipeline_transaction is False
+    assert db.redis.last_pipeline_size == 178
+    assert db.redis.direct_smembers_calls == 0
+
+
+@pytest.mark.asyncio
 async def test_has(many2many_example):
-    mm = await many2many_example
+    mm = many2many_example
 
     assert await mm.has_left('A', 'G1')
     assert await mm.has_left('B', 'G1')
@@ -48,7 +128,7 @@ async def test_has(many2many_example):
 
 @pytest.mark.asyncio
 async def test_get_many_from_many(many2many_example):
-    mm = await many2many_example
+    mm = many2many_example
     assert await mm.all_lefts_for_many_rights(['G1', 'G3', 'G2']) == {'A', 'B', 'C'}
     assert await mm.all_lefts_for_many_rights(['G1']) == {'A', 'B'}
     assert await mm.all_lefts_for_many_rights(['G3', 'G2']) == {'C', 'B'}
@@ -67,7 +147,7 @@ async def test_get_many_from_many(many2many_example):
 
 @pytest.mark.asyncio
 async def test_clear(many2many_example):
-    mm = await many2many_example
+    mm = many2many_example
 
     await mm.clear()
 
@@ -81,7 +161,7 @@ async def test_clear(many2many_example):
 
 @pytest.mark.asyncio
 async def test_add1(many2many_example):
-    mm = await many2many_example
+    mm = many2many_example
 
     await mm.clear()
 
@@ -115,7 +195,7 @@ async def test_add1(many2many_example):
 
 @pytest.mark.asyncio
 async def test_remove_side(many2many_example):
-    mm = await many2many_example
+    mm = many2many_example
 
     await mm.remove_all_rights('C')
 
@@ -135,7 +215,7 @@ async def test_remove_side(many2many_example):
 
 @pytest.mark.asyncio
 async def test_remove_1(many2many_example):
-    mm = await many2many_example
+    mm = many2many_example
 
     await mm.associate('A', 'G1')
     await mm.associate_many(['B'], ['G1', 'G2'])
@@ -164,7 +244,7 @@ async def test_remove_1(many2many_example):
 
 @pytest.mark.asyncio
 async def test_all_one_side(many2many_example):
-    mm = await many2many_example
+    mm = many2many_example
 
     assert await mm.all_lefts() == {'A', 'B', 'C'}
     assert await mm.all_rights() == {'G1', 'G2', 'G3'}

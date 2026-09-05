@@ -4,6 +4,7 @@ temp/*
 config.yaml
 config_live.yaml
 redis_data/
+keydb_data/
 datavar/
 dump.rdb
 app/data/slack_db/
