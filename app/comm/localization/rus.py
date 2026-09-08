@@ -8,7 +8,7 @@ from api.midgard.name_service import NameMap
 from api.w3.dex_analytics import DexReportEntry, DexReport
 from jobs.fetch.chain_id import AlertChainIdChange
 from lib.config import Config
-from lib.constants import Chains, ThorRealms
+from lib.constants import Chains, THOR_BLOCK_TIME, ThorRealms
 from lib.date_utils import format_time_ago, seconds_human, now_ts
 from lib.explorers import get_explorer_url_to_address, get_ip_info_link, get_thoryield_address
 from lib.money import pretty_dollar, pretty_money, short_address, short_money, short_dollar, format_percent, \
@@ -1941,7 +1941,16 @@ class RussianLocalization(BaseLocalization):
         else:
             return ''
 
-    def text_bond_provision(self, bonds: List[Tuple[NodeInfo, BondProvider]], usd_per_rune: float, name_map=None):
+    def node_status_text(self, node: NodeInfo, current_block_height=None):
+        status = 'активна' if node.is_active else 'неактивна'
+        if not current_block_height or not node.status_since:
+            return f'{status} (возраст статуса неизвестен)'
+
+        status_age = max(0, current_block_height - node.status_since) * THOR_BLOCK_TIME
+        return f'{status} ≈ {self.seconds_human(status_age)}'
+
+    def text_bond_provision(self, bonds: List[Tuple[NodeInfo, BondProvider]], usd_per_rune: float,
+                            name_map=None, current_block_height=None):
         if not bonds:
             return ''
 
@@ -1952,7 +1961,10 @@ class RussianLocalization(BaseLocalization):
         for i, (node, bp) in enumerate(bonds, start=1):
             node_op_text = ' [Оператор]' if bp.is_node_operator else ''
             emoji = '🌩️' if node.is_active else '⏱️'
-            node_link = f'{emoji} нода {self.link_to_address(node.node_address, name_map)}'
+            node_link = (
+                f'{emoji} нода {self.link_to_address(node.node_address, name_map)} '
+                f'({self.node_status_text(node, current_block_height)})'
+            )
 
             if bp.rune_bond > 0:
                 if bp.bond_share > 0.1:

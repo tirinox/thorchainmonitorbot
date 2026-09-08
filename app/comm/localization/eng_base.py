@@ -427,18 +427,23 @@ class BaseLocalization(ABC):  # == English
     def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain,
                                     thor_name: Optional[ThorName], local_name, clout: Optional[ThorSwapperClout],
                                     bond_prov: List[Tuple[NodeInfo, BondProvider]],
-                                    price_holder: PriceHolder):
+                                    price_holder: PriceHolder, current_block_height=None):
         acc_caption = ''
         if thor_name:
             acc_caption += f' | THORName: {pre(add_thor_suffix(thor_name))}'
         if local_name:
             acc_caption += f' | {self.TEXT_LOCAL_NAME}: {pre(local_name)}'
 
+        bond_provision_text = self.text_bond_provision(
+            bond_prov,
+            price_holder.usd_per_rune,
+            current_block_height=current_block_height,
+        )
         return (
             f'🛳️ Account "{code(address)}"{acc_caption}\n'
             f'{self.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS if not pools else ""}'
             f'{self.text_balances(balances, self.TEXT_BALANCE_TITTLE, price_holder)}'
-            f'{self.text_bond_provision(bond_prov, price_holder.usd_per_rune)}'
+            f'{bond_provision_text}'
             f'{self.text_swapper_clout(clout)}'
             f'{self.text_track_limit(min_limit)}'
             f'{self.text_address_explorer_details(address, chain)}'
@@ -2693,7 +2698,16 @@ class BaseLocalization(ABC):  # == English
         else:
             return ''
 
-    def text_bond_provision(self, bonds: List[Tuple[NodeInfo, BondProvider]], usd_per_rune: float, name_map=None):
+    def node_status_text(self, node: NodeInfo, current_block_height=None):
+        status = 'active' if node.is_active else 'inactive'
+        if not current_block_height or not node.status_since:
+            return f'{status} (state age unavailable)'
+
+        status_age = max(0, current_block_height - node.status_since) * THOR_BLOCK_TIME
+        return f'{status} for ≈ {self.seconds_human(status_age)}'
+
+    def text_bond_provision(self, bonds: List[Tuple[NodeInfo, BondProvider]], usd_per_rune: float,
+                            name_map=None, current_block_height=None):
         if not bonds:
             return ''
 
@@ -2704,7 +2718,10 @@ class BaseLocalization(ABC):  # == English
         for i, (node, bp) in enumerate(bonds, start=1):
             node_op_text = ' [NodeOp]' if bp.is_node_operator else ''
             emoji = '🌩️' if node.is_active else '⏱️'
-            node_link = f'{emoji} node {self.link_to_address(node.node_address, name_map)}'
+            node_link = (
+                f'{emoji} node {self.link_to_address(node.node_address, name_map)} '
+                f'({self.node_status_text(node, current_block_height)})'
+            )
 
             if bp.rune_bond > 0:
                 if bp.bond_share > 0.1:

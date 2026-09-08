@@ -265,6 +265,10 @@ class MyWalletsMenu(DialogWithSettings):
             self.get_name_service(message).get_wallet_local_name(address),
             self.get_clout(address)
         )
+        current_block_height = (
+            await self.deps.last_block_cache.get_thor_block()
+            if bond_prov else None
+        )
 
         ph = await self.deps.pool_cache.get()
 
@@ -272,7 +276,8 @@ class MyWalletsMenu(DialogWithSettings):
                                                     min_limit if track_balance else None,
                                                     chain, thor_name, local_name,
                                                     clout, bond_prov,
-                                                    price_holder=ph)
+                                                    price_holder=ph,
+                                                    current_block_height=current_block_height)
         inline_kbd = self._keyboard_inside_wallet_menu().keyboard()
         if edit:
             await message.edit_text(text=text,
