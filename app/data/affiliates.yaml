@@ -266,3 +266,7 @@ affiliates:
   - name: HyperPay
     logo: hyperpay.png
     codes: [hyperpay]
+
+  - name: THORDEX
+    logo: thordex.png
+    codes: [tdex]
