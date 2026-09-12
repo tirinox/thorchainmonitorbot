@@ -1,0 +1,438 @@
+{
+  "template_name": "chain_halt.jinja2",
+  "parameters": {
+    "columns": [
+      {
+        "key": "scanning",
+        "title": "Scanning"
+      },
+      {
+        "key": "trading",
+        "title": "Trading"
+      },
+      {
+        "key": "lp",
+        "title": "LP"
+      },
+      {
+        "key": "signing",
+        "title": "Signing"
+      }
+    ],
+    "chains": [
+      {
+        "chain": "AVAX",
+        "logo": "AVAX.AVAX",
+        "changed": false,
+        "paused": false,
+        "unstable": false,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      },
+      {
+        "chain": "BASE",
+        "logo": "BASE",
+        "changed": false,
+        "paused": false,
+        "unstable": false,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      },
+      {
+        "chain": "BCH",
+        "logo": "BCH.BCH",
+        "changed": false,
+        "paused": false,
+        "unstable": false,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      },
+      {
+        "chain": "BSC",
+        "logo": "BSC.BNB",
+        "changed": false,
+        "paused": false,
+        "unstable": false,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      },
+      {
+        "chain": "BTC",
+        "logo": "BTC.BTC",
+        "changed": false,
+        "paused": false,
+        "unstable": false,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      },
+      {
+        "chain": "DOGE",
+        "logo": "DOGE.DOGE",
+        "changed": false,
+        "paused": false,
+        "unstable": true,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": true,
+            "incident_ago": 480
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      },
+      {
+        "chain": "ETH",
+        "logo": "ETH.ETH",
+        "changed": false,
+        "paused": false,
+        "unstable": false,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      },
+      {
+        "chain": "GAIA",
+        "logo": "GAIA.ATOM",
+        "changed": false,
+        "paused": false,
+        "unstable": false,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      },
+      {
+        "chain": "LTC",
+        "logo": "LTC.LTC",
+        "changed": false,
+        "paused": false,
+        "unstable": false,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      },
+      {
+        "chain": "SOL",
+        "logo": "SOL.SOL",
+        "changed": false,
+        "paused": false,
+        "unstable": false,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      },
+      {
+        "chain": "TRON",
+        "logo": "TRON.TRX",
+        "changed": false,
+        "paused": false,
+        "unstable": false,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      },
+      {
+        "chain": "XMR",
+        "logo": "XMR.XMR",
+        "changed": false,
+        "paused": false,
+        "unstable": false,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      },
+      {
+        "chain": "XRP",
+        "logo": "XRP.XRP",
+        "changed": false,
+        "paused": false,
+        "unstable": false,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      },
+      {
+        "chain": "ZEC",
+        "logo": "ZEC.ZEC",
+        "changed": false,
+        "paused": false,
+        "unstable": false,
+        "aspects": {
+          "scanning": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "trading": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "lp": {
+            "state": "available",
+            "unstable": false,
+            "incident_ago": null
+          },
+          "signing": {
+            "state": "unknown",
+            "unstable": false,
+            "incident_ago": null
+          }
+        }
+      }
+    ],
+    "total_chains": 14,
+    "paused_chains": [],
+    "unstable_chains": [
+      "DOGE"
+    ],
+    "overall_status": "unstable",
+    "recent_window_sec": 7200
+  }
+}

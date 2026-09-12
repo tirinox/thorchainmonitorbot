@@ -532,6 +532,8 @@ chain_halt_state:
   fetch_period: 67s
   cooldown: 1h
   max_hits_before_cd: 5
+  # How long a halt is remembered and shown as a yellow "recent incident" mark on the infographic
+  recent_incident_window: 2h
 
 
 best_pools:

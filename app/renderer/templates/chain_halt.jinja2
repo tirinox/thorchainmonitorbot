@@ -1,0 +1,328 @@
+{% set _width, _height = set_viewport_size(1280, 326 + (chains | length) * 68) %}
+{% extends "base.jinja2" %}
+
+{% block content %}
+    <style>
+        /* the default title is too wide to live next to the status pill; extra specificity beats the header's own rule */
+        .container .page-title {
+            font-family: ThorFontLight, sans-serif;
+            font-size: 38px;
+        }
+
+        /* ── overall status pill ─────────────────────────────── */
+        .status-pill {
+            position: absolute;
+            top: 39px;
+            right: 34px;
+            padding: 13px 22px;
+            border-radius: 14px;
+            text-align: right;
+            min-width: 280px;
+        }
+
+        .status-main {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+        }
+
+        .status-sub {
+            font-size: 18px;
+            color: #97b8b0;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .status-degraded {
+            background: rgba(50, 18, 20, .85);
+            border: 1px solid rgba(239, 83, 80, .35);
+        }
+
+        .status-degraded .status-main {
+            color: #ef5350;
+            text-shadow: 0 0 16px rgba(239, 83, 80, .35);
+        }
+
+        .status-unstable {
+            background: rgba(44, 34, 12, .85);
+            border: 1px solid rgba(255, 165, 0, .32);
+        }
+
+        .status-unstable .status-main {
+            color: #FFA500;
+            text-shadow: 0 0 16px rgba(255, 165, 0, .3);
+        }
+
+        .status-operational {
+            background: rgba(18, 34, 37, .85);
+            border: 1px solid rgba(55, 255, 173, .16);
+        }
+
+        .status-operational .status-main {
+            color: #33FF99;
+            text-shadow: 0 0 16px rgba(51, 255, 153, .25);
+        }
+
+        /* ── main layout ─────────────────────────────────────── */
+        .layout {
+            position: absolute;
+            top: 148px;
+            left: 30px;
+            right: 30px;
+            bottom: 44px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .panel {
+            border-radius: 20px;
+            padding: 14px 22px 12px;
+            background: linear-gradient(180deg, rgba(15, 24, 30, .97), rgba(9, 14, 19, .98));
+            border: 1px solid rgba(255, 255, 255, .05);
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── table ───────────────────────────────────────────── */
+        .row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .table-head {
+            color: #91a3a9;
+            font-size: 20px;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: .14em;
+            padding: 4px 10px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, .10);
+        }
+
+        .chain-row {
+            height: 68px;
+            border-bottom: 1px solid rgba(255, 255, 255, .05);
+            padding: 0 10px;
+            border-left: 3px solid transparent;
+        }
+
+        .chain-row:last-child {
+            border-bottom: none;
+        }
+
+        /* the chain that has just changed its state — the reason of this alert */
+        .chain-row-changed {
+            border-left: 3px solid #23DCC8;
+            background: linear-gradient(90deg, rgba(35, 220, 200, .10), rgba(35, 220, 200, 0));
+        }
+
+        .cell-chain {
+            flex: 0 0 250px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 14px;
+            font-size: 30px;
+            font-weight: 500;
+            color: #fff;
+            letter-spacing: .02em;
+        }
+
+        .chain-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            filter: drop-shadow(0 0 5px rgba(0, 170, 255, .55));
+        }
+
+        .cell {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .th {
+            flex: 1;
+            text-align: center;
+        }
+
+        .th-chain {
+            flex: 0 0 250px;
+            text-align: left;
+        }
+
+        /* ── status badges ───────────────────────────────────── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 6px 16px;
+            border-radius: 999px;
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: .03em;
+        }
+
+        .badge-available {
+            color: #33FF99;
+            background: rgba(38, 166, 154, .14);
+            border: 1px solid rgba(51, 255, 153, .22);
+        }
+
+        .badge-paused {
+            color: #ef5350;
+            background: rgba(239, 83, 80, .14);
+            border: 1px solid rgba(239, 83, 80, .35);
+            text-shadow: 0 0 12px rgba(239, 83, 80, .45);
+        }
+
+        .badge-unknown {
+            color: #6d7f86;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid rgba(255, 255, 255, .07);
+        }
+
+        /* available now, but it was paused recently */
+        .badge-unstable {
+            border-color: rgba(255, 165, 0, .55);
+            background: rgba(255, 165, 0, .10);
+        }
+
+        .dot {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .dot-warning {
+            background-color: #FFA500;
+            box-shadow: 0 0 9px rgba(255, 165, 0, .85);
+        }
+
+        .cell-note {
+            font-size: 17px;
+            color: #b98f3c;
+            letter-spacing: .02em;
+        }
+
+        /* ── legend ──────────────────────────────────────────── */
+        .legend {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            gap: 34px;
+            font-size: 19px;
+            color: #7a9099;
+        }
+
+        .legend-item {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 9px;
+        }
+    </style>
+
+    {% with title="NETWORK STATUS" %}
+        {% include "components/header.jinja2" %}
+    {% endwith %}
+
+    {% set n_paused = paused_chains | length %}
+    {% set n_unstable = unstable_chains | length %}
+
+    <div class="status-pill shadow-box status-{{ overall_status }}">
+        <div class="status-main">
+            {%- if overall_status == 'degraded' -%}
+                Degraded
+            {%- elif overall_status == 'unstable' -%}
+                Unstable
+            {%- else -%}
+                Operational
+            {%- endif -%}
+        </div>
+        <div class="status-sub">
+            {%- if n_paused -%}
+                {{ n_paused }} of {{ total_chains }} chains affected
+            {%- elif n_unstable -%}
+                {{ n_unstable }} of {{ total_chains }} chains recovered
+            {%- else -%}
+                All {{ total_chains }} chains available
+            {%- endif -%}
+        </div>
+    </div>
+
+    <div class="layout">
+        <div class="panel shadow-box">
+
+            <div class="row table-head">
+                <div class="th th-chain">Chain</div>
+                {% for column in columns %}
+                    <div class="th">{{ column.title }}</div>
+                {% endfor %}
+            </div>
+
+            {% for c in chains %}
+                <div class="row chain-row {{ 'chain-row-changed' if c.changed else '' }}">
+
+                    <div class="cell-chain">
+                        <img class="chain-logo"
+                             src="renderer/logo/{{ c.logo }}.png"
+                             alt="{{ c.chain }}"
+                             onerror="console.error('{{ c.logo }}: no logo!'); this.src='renderer/logo/unknown.png';">
+                        <span>{{ c.chain }}</span>
+                    </div>
+
+                    {% for column in columns %}
+                        {% set a = c.aspects[column.key] %}
+                        <div class="cell">
+                            <div class="badge badge-{{ a.state }} {{ 'badge-unstable' if a.unstable else '' }}">
+                                {% if a.unstable %}
+                                    <div class="dot dot-warning"></div>
+                                {% endif %}
+                                {%- if a.state == 'paused' -%}
+                                    Paused
+                                {%- elif a.state == 'available' -%}
+                                    Available
+                                {%- else -%}
+                                    No data
+                                {%- endif -%}
+                            </div>
+                            {% if a.unstable %}
+                                <div class="cell-note">{{ seconds_human(a.incident_ago) }} ago</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                </div>
+            {% endfor %}
+
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="dot" style="background-color: #33FF99;"></div>
+                Available
+            </div>
+            <div class="legend-item">
+                <div class="dot" style="background-color: #ef5350;"></div>
+                Paused by Mimir
+            </div>
+            <div class="legend-item">
+                <div class="dot dot-warning"></div>
+                Incident within the last {{ seconds_human(recent_window_sec) }}
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

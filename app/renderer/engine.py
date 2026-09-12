@@ -5,6 +5,7 @@ from typing import NamedTuple
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from playwright.async_api import async_playwright, Page, ConsoleMessage
 
+from lib.date_utils import seconds_human
 from lib.money import short_rune, short_dollar, short_money, pretty_money
 from lib.texts import shorten_text, shorten_text_middle
 
@@ -202,6 +203,7 @@ class RendererEngine:
             'pretty_money': pretty_money,
             'shorten_text': shorten_text,
             'shorten_text_middle': shorten_text_middle,
+            'seconds_human': seconds_human,
             'int': int,
             'float': float,
             'round': round,

@@ -48,9 +48,9 @@ restart: # Restart containers.
 
 
 .PHONY: poke
-poke: # Restart only the bot container, API server and dashboard without restarting the database server.
+poke: # Restart only the bot container, API server, renderer and dashboard without restarting the database server.
 	git pull
-	@docker compose restart $(BOTNAME) api dashboard nginx
+	@docker compose restart $(BOTNAME) api renderer dashboard nginx
 	@make -s logs
 
 
@@ -181,8 +181,14 @@ renderer-up: # Launch the HTML renderer image
 
 
 .PHONY: renderer-dev
-renderer-dev: # Launch the HTML renderer image in development mode
-	cd app && uvicorn renderer.worker:app --port 8404 --reload
+renderer-dev: # Launch the HTML renderer locally in development mode
+	cd app && PYTHONPATH=. uvicorn renderer.main_renderer:app --port 8404 --reload
+
+
+.PHONY: renderer-restart
+renderer-restart: # Restart the renderer container to pick up template and engine changes
+	@docker compose restart renderer
+	@docker compose logs -f --tail 100 renderer
 
 
 .PHONY: auth-twitter

@@ -465,11 +465,23 @@ class AlertPresenter(INotified, WithLogger):
             "public:rune_price",
             price_graph_gen)
 
+    async def render_chain_halt(self, loc: BaseLocalization, data: AlertChainHalt):
+        photo = await self.renderer.render('chain_halt.jinja2', data.status_table.to_dict())
+        photo_name = 'chain_halt.png'
+        return photo, photo_name
+
     async def _handle_chain_halt(self, event: AlertChainHalt):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_trading_halted_multi(event.changed_chains)
+            if self.use_renderer and event.status_table:
+                photo, photo_name = await self.render_chain_halt(loc, event)
+                if photo is not None:
+                    return BoardMessage.make_photo(photo, text, photo_name)
+            return text
+
         await self.broadcaster.broadcast_to_all(
             "public:chain_halt",
-            BaseLocalization.notification_text_trading_halted_multi,
-            event.changed_chains
+            message_gen
         )
 
     async def _handle_mimir(self, data: AlertMimirChange):
