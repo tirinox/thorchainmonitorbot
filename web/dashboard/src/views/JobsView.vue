@@ -1,28 +1,31 @@
 <script setup>
-import {computed, reactive, ref} from 'vue'
+import {computed, reactive, ref, watch} from 'vue'
 import {useRouter} from 'vue-router'
 import {useToast} from 'primevue/usetoast'
 import {useConfirm} from 'primevue/useconfirm'
 import {api} from '../api.js'
 import {usePolling} from '../composables/usePolling.js'
-import {durationHuman, formatPercent, shortJson, timeAgo, timeUntil} from '../format.js'
+import {durationHuman, formatPercent, shortJson} from '../format.js'
 import {channelIcon, channelLabel, channelTitle} from '../channels.js'
 import PollStatus from '../components/PollStatus.vue'
 import RunNowDialog from '../components/RunNowDialog.vue'
 import {activeRunForJob, startJobRun} from '../runs.js'
-import {useNow} from '../composables/useNow.js'
+import {displayTz, tzShortName} from '../timezone.js'
+import RelTime from '../components/RelTime.vue'
+import ScheduleText from '../components/ScheduleText.vue'
 
 const router = useRouter()
 const toast = useToast()
 const confirm = useConfirm()
 
 // scheduler actions and job runs are all logged, and each log line arrives as a `log` event
-const {data, error, loading, updatedAt, refresh} = usePolling(api.jobs, {
+const {data, error, loading, updatedAt, refresh} = usePolling(() => api.jobs(displayTz.value), {
   interval: 30000,
   refreshOn: ['log', 'run'],
   eventFilter: (e) => e.type === 'run' || e.source === 'PublicScheduler',
 })
-const now = useNow()
+// fixed cron times are also shown in the display timezone, which the server converts to
+watch(displayTz, () => refresh())
 
 const rows = computed(() => (data.value?.jobs || []).map(j => {
   const {channels: _, ...args} = j.config.args || {}
@@ -137,6 +140,10 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
     </div>
 
     <div class="stack">
+      <p v-if="data" class="muted small" style="margin: 0">
+        <i class="pi pi-globe"/> The bot evaluates cron and one-off schedules in <strong>{{ data.scheduler_tz }}</strong>.
+        Times below are shown in {{ tzShortName(displayTz) }}; hover a relative time for the exact moment.
+      </p>
       <Message v-if="data?.is_dirty" severity="warn">
         <div class="row" style="justify-content: space-between; width: 100%">
           <span>The scheduler configuration has unapplied changes.</span>
@@ -194,11 +201,11 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
           </template>
         </Column>
 
-        <Column header="Schedule">
+        <Column header="Schedule" style="min-width: 14rem">
           <template #body="{data: job}">
-            <div class="stack" style="gap: .3rem">
-              <span class="row"><i :class="VARIANT_ICONS[job.config.variant]"/> <strong>{{ job.config.variant }}</strong></span>
-              <span class="small">{{ job.schedule }}</span>
+            <div class="schedule-cell">
+              <i :class="VARIANT_ICONS[job.config.variant]" class="muted" v-tooltip.top="job.config.variant"/>
+              <ScheduleText :schedule="job.schedule"/>
             </div>
           </template>
         </Column>
@@ -224,12 +231,12 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
               <span class="muted">errors</span>
               <span :class="{err: job.stats.error_count}">{{ job.stats.error_count }} · {{ successRate(job.stats) }} ok</span>
               <span class="muted">last</span>
-              <span>{{ timeAgo(job.stats.last_ts, now) }}
+              <span><RelTime :ts="job.stats.last_ts" mode="ago" empty="never"/>
                 <template v-if="job.stats.last_elapsed"> · took {{ durationHuman(job.stats.last_elapsed) }}</template>
               </span>
               <span class="muted">avg</span><span>{{ durationHuman(job.stats.avg_elapsed) }}</span>
               <template v-if="job.stats.next_run_ts && job.config.enabled">
-                <span class="muted">next</span><span>{{ timeUntil(job.stats.next_run_ts, now) }}</span>
+                <span class="muted">next</span><span><RelTime :ts="job.stats.next_run_ts" mode="until"/></span>
               </template>
             </div>
             <div v-if="job.stats.last_status === 'error' && job.stats.last_error" class="err small break" style="margin-top: .35rem">
@@ -282,6 +289,16 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
 
 .dim {
   opacity: .6;
+}
+
+.schedule-cell {
+  display: flex;
+  gap: .5rem;
+  align-items: flex-start;
+}
+
+.schedule-cell > .pi {
+  margin-top: .2rem;
 }
 
 .expansion {

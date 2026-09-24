@@ -27,6 +27,18 @@ http://localhost:8501/dashboard/.
 - Job changes are saved to Redis and marked dirty; the bot picks them up after "Apply"
   (`POST /api/scheduler/reload`).
 
+## Schedules and time
+
+- The bot evaluates cron and one-off schedules in its scheduler timezone (UTC in Docker). On start it stores
+  that zone in Redis (`PublicScheduler:Timezone`); the dashboard reads it, so previews match the bot even
+  when the dashboard runs on a machine in another zone.
+- `app/dashboard/services/schedule.py` builds APScheduler triggers to describe schedules in plain English
+  ("At 09:00 and 18:00, on weekdays"), to list the next runs, and to validate jobs on save (an invalid
+  trigger would make the bot's Apply fail). `POST /api/schedule/preview` powers the live preview in the job
+  form; `GET /api/jobs?tz=<IANA zone>` adds the viewer's local equivalents of fixed cron times.
+- The UI shows absolute times in the browser's zone or in UTC (toggle in the sidebar, remembered per
+  browser). Every relative time ("5 min ago") shows the exact moment on hover.
+
 ## Status page and activity log
 
 - `GET /api/summary` runs the health checks shown on the home page (`app/dashboard/services/summary.py`):

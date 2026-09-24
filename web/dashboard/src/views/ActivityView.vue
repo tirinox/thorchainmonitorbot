@@ -3,15 +3,14 @@ import {computed, reactive, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {api} from '../api.js'
 import {usePolling} from '../composables/usePolling.js'
-import {useNow} from '../composables/useNow.js'
-import {formatDate, formatNumber, timeAgo} from '../format.js'
+import {formatDate, formatNumber} from '../format.js'
 import {actionInfo} from '../audit.js'
 import PollStatus from '../components/PollStatus.vue'
 import AuditDetails from '../components/AuditDetails.vue'
+import RelTime from '../components/RelTime.vue'
 
 const route = useRoute()
 const router = useRouter()
-const now = useNow()
 
 const FILTER_KEYS = ['actor', 'action', 'q']
 const filters = reactive(Object.fromEntries(FILTER_KEYS.map(k => [k, route.query[k] || null])))
@@ -85,7 +84,7 @@ const rowClass = (e) => e.level === 'warning' ? 'row-warning' : ''
         <Column header="When" style="width: 1%">
           <template #body="{data: e}">
             <div class="nowrap">{{ formatDate(e.ts) }}</div>
-            <div class="muted small nowrap">{{ timeAgo(e.ts, now) }}</div>
+            <div class="muted small nowrap"><RelTime :ts="e.ts" mode="ago"/></div>
           </template>
         </Column>
         <Column header="Who" style="width: 1%">

@@ -2,6 +2,7 @@
 import {computed, onMounted, ref} from 'vue'
 import {useToast} from 'primevue/usetoast'
 import {isDark, toggleTheme} from './theme.js'
+import {displayMode, displayTz, toggleDisplayTz, tzShortName} from './timezone.js'
 import {connectEvents, liveStatus, onEvent} from './events.js'
 import {activeRuns, runLabel, trackRuns} from './runs.js'
 import {durationHuman} from './format.js'
@@ -90,6 +91,12 @@ const live = computed(() => LIVE[liveStatus.value] || LIVE.connecting)
           <span class="live-label">{{ live.label }}</span>
         </span>
         <Button
+            :label="tzShortName(displayTz)" icon="pi pi-globe" text size="small" severity="secondary"
+            class="tz-toggle"
+            v-tooltip.top="displayMode === 'utc' ? 'Showing times in UTC. Click for your local time' : `Showing your local time (${displayTz}). Click for UTC`"
+            @click="toggleDisplayTz"
+        />
+        <Button
             :icon="isDark ? 'pi pi-sun' : 'pi pi-moon'"
             text rounded severity="secondary"
             :aria-label="isDark ? 'Light mode' : 'Dark mode'"
@@ -134,6 +141,11 @@ const live = computed(() => LIVE[liveStatus.value] || LIVE.connecting)
 
 .nav-badge {
   margin-left: auto;
+}
+
+.tz-toggle {
+  margin-left: auto;
+  padding-inline: .4rem;
 }
 
 .whoami {

@@ -3,10 +3,11 @@ import {computed} from 'vue'
 import {api} from '../api.js'
 import {usePolling} from '../composables/usePolling.js'
 import {useNow} from '../composables/useNow.js'
-import {durationHuman, timeAgo} from '../format.js'
+import {durationHuman} from '../format.js'
 import {actionInfo, auditSummary} from '../audit.js'
 import {activeRuns, runLabel} from '../runs.js'
 import PollStatus from '../components/PollStatus.vue'
+import RelTime from '../components/RelTime.vue'
 
 const now = useNow()
 
@@ -97,7 +98,7 @@ const banner = computed(() => {
               <div>
                 <div><strong>{{ e.actor }}</strong> {{ actionInfo(e.action).label.toLowerCase() }}
                   <span class="mono">{{ e.target }}</span></div>
-                <div class="muted small">{{ timeAgo(e.ts, now) }}<template v-if="auditSummary(e)"> · {{ auditSummary(e) }}</template></div>
+                <div class="muted small"><RelTime :ts="e.ts" mode="ago"/><template v-if="auditSummary(e)"> · {{ auditSummary(e) }}</template></div>
               </div>
             </li>
           </ul>

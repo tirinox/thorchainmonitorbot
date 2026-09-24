@@ -5,16 +5,14 @@ import {useToast} from 'primevue/usetoast'
 import {useConfirm} from 'primevue/useconfirm'
 import {api} from '../api.js'
 import {usePolling} from '../composables/usePolling.js'
-import {timeAgo} from '../format.js'
 import PollStatus from '../components/PollStatus.vue'
-import {useNow} from '../composables/useNow.js'
+import RelTime from '../components/RelTime.vue'
 
 const toast = useToast()
 const confirm = useConfirm()
 
 // `flags` events come from dashboard edits; the bot may also create flags on its own, hence the slow poll
 const {data, error, loading, updatedAt, refresh} = usePolling(api.flags, {interval: 60000, refreshOn: 'flags'})
-const now = useNow()
 
 const route = useRoute()
 // the Status page links here with ?show=off, the Activity page with ?q=<flag path>
@@ -178,7 +176,8 @@ function deleteFlag(flag) {
         <Column header="Changed / accessed">
           <template #body="{node}">
             <span v-if="node.data.flag" class="muted small nowrap">
-              {{ timeAgo(node.data.flag.last_changed_ts, now) }} · {{ timeAgo(node.data.flag.last_access_ts, now) }}
+              changed <RelTime :ts="node.data.flag.last_changed_ts" mode="ago"/> ·
+              used <RelTime :ts="node.data.flag.last_access_ts" mode="ago"/>
             </span>
           </template>
         </Column>

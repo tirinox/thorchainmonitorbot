@@ -133,6 +133,7 @@ class PublicScheduler(WithLogger):
     ANY_JOB_SPECIAL_ID = '__any_job_check__'
 
     DB_KEY_COMM_CHAN = f'{DB_KEY_PREFIX}:CommunicationChannel'
+    DB_KEY_TIMEZONE = f'{DB_KEY_PREFIX}:Timezone'  # cron/date triggers are evaluated in this timezone
 
     def __init__(self, cfg: Config, db: DB, loop: asyncio.AbstractEventLoop = None):
         super().__init__()
@@ -383,6 +384,8 @@ class PublicScheduler(WithLogger):
             return
         await self.load_config_from_db()
         self.scheduler.start()
+        # the dashboard runs elsewhere and needs this to show and preview schedules correctly
+        await self.db.redis.set(self.DB_KEY_TIMEZONE, str(self.scheduler.timezone))
         await self.apply_scheduler_configuration()
         await self._rpc.run_as_server(self._on_control_message)
         self.logger.info("Scheduler started.")

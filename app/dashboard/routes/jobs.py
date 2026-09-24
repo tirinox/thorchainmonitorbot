@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -9,6 +9,7 @@ from dashboard.audit import get_actor
 from dashboard.context import DashboardContext
 from dashboard.routes.deps import get_ctx
 from dashboard.services import jobs
+from dashboard.services.schedule import get_scheduler_timezone, preview_schedule
 from dashboard.runs import RunConflict
 from dashboard.services.jobs import JobPayload, JobNotFound
 
@@ -47,9 +48,25 @@ async def _handle(coro):
         raise HTTPException(502, str(e))
 
 
+class SchedulePreviewBody(BaseModel):
+    variant: str
+    interval: Optional[dict[str, Any]] = None
+    cron: Optional[dict[str, Any]] = None
+    date: Optional[dict[str, Any]] = None
+    tz: Optional[str] = None  # the viewer's timezone, for local equivalents of fixed times
+    count: int = Field(5, ge=1, le=20)
+
+
 @router.get('/jobs')
-async def list_jobs(ctx: DashboardContext = Depends(get_ctx)):
-    return await jobs.list_jobs(ctx)
+async def list_jobs(tz: Optional[str] = None, ctx: DashboardContext = Depends(get_ctx)):
+    return await jobs.list_jobs(ctx, viewer_tz=tz)
+
+
+@router.post('/schedule/preview')
+async def schedule_preview(body: SchedulePreviewBody, ctx: DashboardContext = Depends(get_ctx)):
+    """Describes a schedule and lists its next runs, exactly as the bot's APScheduler would compute them."""
+    scheduler_tz = await get_scheduler_timezone(ctx.deps.db)
+    return preview_schedule(body.variant, body.interval, body.cron, body.date, scheduler_tz, body.tz, body.count)
 
 
 @router.post('/jobs')

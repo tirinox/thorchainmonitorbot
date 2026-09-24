@@ -2,9 +2,10 @@
 import {computed} from 'vue'
 import {api} from '../../api.js'
 import {usePolling} from '../../composables/usePolling.js'
-import {formatDate, formatNumber, formatPercent, timeAgo} from '../../format.js'
+import {formatDate, formatNumber, formatPercent} from '../../format.js'
 import PollStatus from '../PollStatus.vue'
 import {useNow} from '../../composables/useNow.js'
+import RelTime from '../RelTime.vue'
 
 const {data, error, loading, updatedAt} = usePolling(() => api.overview('scanner'), {
   interval: 30000,
@@ -51,7 +52,7 @@ const s = computed(() => {
           <div class="value">{{ formatNumber(s.last_scanned_block) }}</div>
           <div class="hint" :class="{err: s.scanIsOld}">
             <i v-if="s.scanIsOld" class="pi pi-exclamation-triangle"/>
-            {{ timeAgo(s.last_scanned_at_ts, s.now) }}
+            <RelTime :ts="s.last_scanned_at_ts" mode="ago"/>
           </div>
         </div>
         <div class="metric">
@@ -77,13 +78,13 @@ const s = computed(() => {
           <tr>
             <th>Last scanned at</th>
             <td>
-              {{ formatDate(s.last_scanned_at_ts) }} · {{ timeAgo(s.last_scanned_at_ts, s.now) }}
+              {{ formatDate(s.last_scanned_at_ts) }} · <RelTime :ts="s.last_scanned_at_ts" mode="ago"/>
               <i v-if="s.scanIsVeryOld" class="pi pi-exclamation-circle err"/>
             </td>
           </tr>
           <tr>
             <th>Scanner started at</th>
-            <td>{{ formatDate(s.started_at_ts) }} · {{ timeAgo(s.started_at_ts, s.now) }}</td>
+            <td>{{ formatDate(s.started_at_ts) }} · <RelTime :ts="s.started_at_ts" mode="ago"/></td>
           </tr>
           <tr>
             <th>Scanning time</th>

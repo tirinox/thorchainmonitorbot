@@ -78,7 +78,7 @@ async def ctx():
     return SimpleNamespace(
         scheduler=sched,
         sched_lock=asyncio.Lock(),
-        deps=SimpleNamespace(broadcaster=SimpleNamespace(channels=channels)),
+        deps=SimpleNamespace(broadcaster=SimpleNamespace(channels=channels), db=db),
         audit=AuditLog(db),
     )
 
@@ -96,7 +96,8 @@ async def test_create_edit_toggle_delete_job(ctx):
     listing = await jobs.list_jobs(ctx)
     assert len(listing['jobs']) == 1
     item = listing['jobs'][0]
-    assert item['schedule'] == '2 hour'
+    assert item['schedule']['text'] == 'Every 2 hours'
+    assert listing['scheduler_tz']
     assert item['channels']['resolved'][0]['selector'] == 'telegram-@chan'
     assert listing['is_dirty'] is True
     assert listing['distribution'] == {SOME_FUNC: 1}
@@ -143,6 +144,11 @@ async def test_save_job_rejects_unknown_function_and_invalid_config(ctx):
     with pytest.raises(ValidationError):
         # variant=date requires the date block
         await jobs.save_job(ctx, JobPayload(func=SOME_FUNC, variant='date'))
+
+    # APScheduler would reject it, and the bot's Apply would then skip every job after this one
+    with pytest.raises(ValueError, match='Invalid schedule'):
+        await jobs.save_job(ctx, JobPayload(func=SOME_FUNC, variant='cron', cron={'minute': '*/70'}))
+    assert (await jobs.list_jobs(ctx))['jobs'] == []
 
 
 # ---------- middlewares ----------

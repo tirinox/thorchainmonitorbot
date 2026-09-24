@@ -3,11 +3,11 @@ import {computed, reactive, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
 import {api} from '../api.js'
 import {usePolling} from '../composables/usePolling.js'
-import {formatDate, formatNumber, timeAgo} from '../format.js'
+import {formatDate, formatNumber} from '../format.js'
 import PollStatus from '../components/PollStatus.vue'
 import {isDark} from '../theme.js'
-import {useNow} from '../composables/useNow.js'
 import {liveStatus} from '../events.js'
+import RelTime from '../components/RelTime.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -44,7 +44,6 @@ const {data, error, loading, updatedAt, refresh} = usePolling(
       eventDelay: 1000,
     },
 )
-const now = useNow()
 
 const hasFilters = computed(() => FILTER_KEYS.some(k => filters[k]))
 
@@ -145,7 +144,7 @@ const chartOptions = computed(() => {
         <Column header="Time" style="width: 1%">
           <template #body="{data: r}">
             <div class="nowrap">{{ formatDate(r.ts) }}</div>
-            <div class="muted small nowrap">{{ timeAgo(r.ts, now) }}</div>
+            <div class="muted small nowrap"><RelTime :ts="r.ts" mode="ago"/></div>
           </template>
         </Column>
         <Column field="action" header="Action"/>

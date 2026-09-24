@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from dashboard.audit import AuditAction, LOCAL_ACTOR, diff_dicts
 from dashboard.channels import channel_to_dict, resolve_job_channels, format_unknown_channel
 from dashboard.context import DashboardContext
+from dashboard.services.schedule import get_scheduler_timezone, job_schedule_info, validate_job_schedule
 from models.sched import SchedJobCfg, IntervalCfg, CronCfg, DateCfg, SchedVariant
 from notify.pub_configure import PublicAlertJobExecutor
 from notify.pub_scheduler import PublicScheduler, JobStatsModel
@@ -33,23 +34,15 @@ class JobPayload(BaseModel):
     misfire_grace_time: Optional[int] = Field(None, ge=0, le=3600)
 
 
-def schedule_human_readable(job: SchedJobCfg) -> str:
-    if job.variant == SchedVariant.INTERVAL and job.interval:
-        return job.interval.human_readable
-    if job.variant == SchedVariant.CRON and job.cron:
-        return job.cron.human_readable
-    if job.variant == SchedVariant.DATE and job.date:
-        return job.date.human_readable
-    return ''
-
-
 def _stats_to_dict(stats: JobStatsModel) -> dict:
     return {**stats.model_dump(), 'avg_elapsed': stats.avg_elapsed}
 
 
-async def list_jobs(ctx: DashboardContext) -> dict:
+async def list_jobs(ctx: DashboardContext, viewer_tz: Optional[str] = None) -> dict:
+    """`viewer_tz` (IANA name) adds the viewer's local equivalents of fixed cron times."""
     sched = ctx.scheduler
     jobs: list[SchedJobCfg] = await sched.load_config_from_db(silent=True)
+    scheduler_tz = await get_scheduler_timezone(ctx.deps.db)
     configured_channels = list(ctx.deps.broadcaster.channels)
 
     all_stats = await asyncio.gather(
@@ -64,7 +57,7 @@ async def list_jobs(ctx: DashboardContext) -> dict:
         items.append({
             'config': job.model_dump(mode='json'),
             'stats': _stats_to_dict(stats),
-            'schedule': schedule_human_readable(job),
+            'schedule': job_schedule_info(job, scheduler_tz, viewer_tz),
             'channels': {
                 'resolved': [channel_to_dict(c) for c in resolved],
                 'unknown': [format_unknown_channel(c) for c in unknown],
@@ -74,6 +67,7 @@ async def list_jobs(ctx: DashboardContext) -> dict:
     distribution = dict(sched.job_distribution(jobs))
     return {
         'now': time.time(),
+        'scheduler_tz': scheduler_tz,
         'jobs': items,
         'is_dirty': any_job_stats.is_dirty or any(s.is_dirty for s in job_stats),
         'distribution': distribution,
@@ -87,8 +81,9 @@ async def save_job(ctx: DashboardContext, payload: JobPayload, job_id: Optional[
                    actor: str = LOCAL_ACTOR) -> SchedJobCfg:
     """
     Creates a new job (job_id is None) or replaces an existing one.
-    Raises pydantic.ValidationError if the resulting config is invalid.
+    Raises pydantic.ValidationError if the resulting config is invalid, ValueError if APScheduler would reject it.
     """
+    scheduler_tz = await get_scheduler_timezone(ctx.deps.db)
     async with ctx.sched_lock:
         sched = ctx.scheduler
         await sched.load_config_from_db(silent=True)
@@ -124,6 +119,8 @@ async def save_job(ctx: DashboardContext, payload: JobPayload, job_id: Optional[
             coalesce=payload.coalesce,
             misfire_grace_time=payload.misfire_grace_time,
         )
+        # an invalid trigger would make the bot's "Apply" fail on this job and skip the rest
+        validate_job_schedule(job_cfg, scheduler_tz)
         await sched.add_new_job(job_cfg, allow_replace=is_edit)
 
     if existing:
@@ -131,7 +128,7 @@ async def save_job(ctx: DashboardContext, payload: JobPayload, job_id: Optional[
         await ctx.audit.record(AuditAction.JOB_UPDATE, actor, job_id, func=func, changes=changes)
     else:
         await ctx.audit.record(AuditAction.JOB_CREATE, actor, job_id, func=func, variant=job_cfg.variant,
-                               schedule=schedule_human_readable(job_cfg), enabled=job_cfg.enabled)
+                               schedule=job_schedule_info(job_cfg, scheduler_tz)['text'], enabled=job_cfg.enabled)
     return job_cfg
 
 

@@ -70,7 +70,9 @@ const enc = encodeURIComponent
 export const api = {
     overview: (section) => request('GET', `/overview/${section}`),
 
-    jobs: () => request('GET', '/jobs'),
+    // tz: the viewer's timezone, to get local equivalents of fixed cron times
+    jobs: (tz) => request('GET', '/jobs', {query: {tz}}),
+    previewSchedule: (schedule) => request('POST', '/schedule/preview', {body: schedule}),
     createJob: (job) => request('POST', '/jobs', {body: job}),
     updateJob: (id, job) => request('PUT', `/jobs/${enc(id)}`, {body: job}),
     deleteJob: (id) => request('DELETE', `/jobs/${enc(id)}`),

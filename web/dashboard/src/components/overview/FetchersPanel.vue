@@ -1,9 +1,10 @@
 <script setup>
 import {api} from '../../api.js'
 import {usePolling} from '../../composables/usePolling.js'
-import {durationHuman, formatNumber, formatPercent, timeAgo} from '../../format.js'
+import {durationHuman, formatNumber, formatPercent} from '../../format.js'
 import PollStatus from '../PollStatus.vue'
 import {useNow} from '../../composables/useNow.js'
+import RelTime from '../RelTime.vue'
 
 const STALE_AFTER_SEC = 10 * 60
 
@@ -41,7 +42,7 @@ const isStale = (f, now) => now - f.last_timestamp > STALE_AFTER_SEC
         <template #body="{data: f}">
           <span :class="{err: isStale(f, now)}" class="nowrap">
             <i v-if="isStale(f, now)" class="pi pi-exclamation-triangle"/>
-            {{ timeAgo(f.last_timestamp, now) }}
+            <RelTime :ts="f.last_timestamp" mode="ago" empty="never"/>
           </span>
         </template>
       </Column>

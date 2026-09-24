@@ -1,9 +1,13 @@
 <script setup>
-import {computed, onMounted, reactive, ref} from 'vue'
+import {computed, onMounted, reactive, ref, watch} from 'vue'
 import {useRouter} from 'vue-router'
 import {useToast} from 'primevue/usetoast'
 import {api} from '../api.js'
 import {channelIcon, channelLabel} from '../channels.js'
+import {formatRunTime} from '../format.js'
+import {browserTz, displayTz, sameOffset} from '../timezone.js'
+import RelTime from '../components/RelTime.vue'
+import ScheduleText from '../components/ScheduleText.vue'
 
 const props = defineProps({
   id: {type: String, default: null},  // set when editing
@@ -99,6 +103,45 @@ onMounted(async () => {
   }
 })
 
+// just the trigger part of the payload; also what the live preview sends
+function schedulePart() {
+  const part = {variant: form.variant}
+  if (form.variant === 'interval') {
+    part.interval = Object.fromEntries(INTERVAL_FIELDS.map(f => [f, form.interval[f] || null]))
+  } else if (form.variant === 'cron') {
+    part.cron = Object.fromEntries(CRON_FIELDS.map(f => [f, String(form.cron[f] ?? '').trim() || null]))
+  } else if (form.variant === 'date') {
+    part.date = form.date ? {run_date: form.date.toISOString()} : null
+  }
+  return part
+}
+
+// ---- live preview: description + next runs, computed by the server with the bot's own APScheduler rules
+const preview = ref(null)
+const previewLoading = ref(false)
+let previewTimer = null
+let previewSeq = 0
+
+async function loadPreview() {
+  const seq = ++previewSeq
+  previewLoading.value = true
+  try {
+    const result = await api.previewSchedule({...schedulePart(), tz: displayTz.value, count: 5})
+    if (seq === previewSeq) preview.value = result
+  } catch (e) {
+    if (seq === previewSeq) preview.value = {ok: false, error: e.message}
+  } finally {
+    if (seq === previewSeq) previewLoading.value = false
+  }
+}
+
+watch(() => JSON.stringify(schedulePart()) + displayTz.value, () => {
+  clearTimeout(previewTimer)
+  previewTimer = setTimeout(loadPreview, 350)
+}, {immediate: true})
+
+const showSchedulerTz = computed(() => preview.value?.ok && !sameOffset(preview.value.timezone, displayTz.value))
+
 function buildPayload() {
   let args
   try {
@@ -110,23 +153,16 @@ function buildPayload() {
     throw new Error('Job arguments must be a JSON object.')
   }
 
+  if (form.variant === 'date' && !form.date) throw new Error('Pick a run date.')
   const payload = {
+    ...schedulePart(),
     func: form.func,
     enabled: form.enabled,
-    variant: form.variant,
     args,
     channels: form.channels,
     max_instances: form.max_instances,
     coalesce: form.coalesce,
     misfire_grace_time: form.misfire_grace_time || null,
-  }
-  if (form.variant === 'interval') {
-    payload.interval = Object.fromEntries(INTERVAL_FIELDS.map(f => [f, form.interval[f] || null]))
-  } else if (form.variant === 'cron') {
-    payload.cron = Object.fromEntries(CRON_FIELDS.map(f => [f, String(form.cron[f] ?? '').trim() || null]))
-  } else if (form.variant === 'date') {
-    if (!form.date) throw new Error('Pick a run date.')
-    payload.date = {run_date: form.date.toISOString()}
   }
   return payload
 }
@@ -221,14 +257,35 @@ async function save() {
             </div>
           </div>
           <span class="help muted small">
-            APScheduler cron fields; empty means “any”. Examples: minute <code>*/10</code>, day_of_week <code>mon-fri</code>, hour <code>9,18</code>.
+            APScheduler cron fields. Empty fields larger than the smallest one you fill mean “any”; smaller ones
+            mean 0 (so hour <code>9</code> alone is 09:00:00). Examples: minute <code>*/10</code>,
+            day_of_week <code>mon-fri</code>, hour <code>9,18</code>. Check the preview below.
           </span>
         </template>
 
         <div v-else class="field">
-          <label for="job-date">Run at (your local time)</label>
+          <label for="job-date">Run at (your browser's time, {{ browserTz }})</label>
           <DatePicker input-id="job-date" v-model="form.date" show-time hour-format="24" show-seconds show-icon/>
           <span class="help">Stored in UTC: {{ form.date ? form.date.toISOString() : '—' }}</span>
+        </div>
+
+        <div class="preview" :class="{stale: previewLoading}">
+          <div v-if="!preview" class="muted small">Preview…</div>
+          <div v-else-if="!preview.ok" class="err small"><i class="pi pi-times-circle"/> {{ preview.error }}</div>
+          <template v-else>
+            <ScheduleText :schedule="preview.schedule"/>
+            <div class="small muted" style="margin-top: .5rem">Next runs</div>
+            <ol class="runs small">
+              <li v-for="ts in preview.next_runs" :key="ts">
+                <span>{{ formatRunTime(ts) }}</span>
+                <span v-if="showSchedulerTz" class="muted"> · {{ formatRunTime(ts, {tz: preview.timezone}) }} {{ preview.timezone }}</span>
+                <span class="muted"> · <RelTime :ts="ts"/></span>
+              </li>
+            </ol>
+            <Message v-if="preview.warning" severity="secondary" size="small" :closable="false">
+              {{ preview.warning }}
+            </Message>
+          </template>
         </div>
       </div>
 
@@ -277,9 +334,27 @@ async function save() {
 
       <div class="row">
         <Button type="submit" :label="isEdit ? 'Save job' : 'Create job'" icon="pi pi-check" :loading="saving"
-                :disabled="!form.func"/>
+                :disabled="!form.func || preview?.ok === false"/>
         <Button label="Cancel" severity="secondary" text @click="router.push({name: 'jobs'})"/>
       </div>
     </form>
   </div>
 </template>
+
+<style scoped>
+.preview {
+  border-top: 1px dashed var(--app-border);
+  padding-top: .75rem;
+  transition: opacity .15s;
+}
+
+.preview.stale {
+  opacity: .6;
+}
+
+.runs {
+  margin: .35rem 0 .5rem;
+  padding-left: 1.4rem;
+  font-variant-numeric: tabular-nums;
+}
+</style>
