@@ -18,6 +18,7 @@ from lib.date_utils import DAY
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.prev_state import PrevStateDB
+from lib.run_context import current_run, RunMode
 from models.circ_supply import RuneCirculatingSupply
 from models.key_stats_model import AlertKeyStats
 from models.net_stats import AlertNetworkStats
@@ -26,6 +27,7 @@ from models.price import RuneMarketInfo
 from models.runepool import AlertRunepoolStats, POLState, AlertPOLState, RunepoolState
 from models.trade_acc import AlertTradeAccountStats
 from models.transfer import AlertRuneTransferStats
+from notify.alert_preview import AlertPreviewStore
 from notify.pub_scheduler import PublicScheduler
 from notify.public.price_notify import PriceChangeNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
@@ -72,8 +74,39 @@ class PublicAlertJobExecutor(WithLogger):
         if not data:
             raise Exception(f"No data for {alert_type}")
 
-        with self.deps.broadcaster.override_channels(self._get_broadcast_channels(job_args)):
+        run = current_run()
+        broadcaster = self.deps.broadcaster
+
+        if run.mode == RunMode.PREVIEW:
+            # build the messages exactly as a real run would, but keep them for the dashboard instead of sending
+            with broadcaster.capture() as captured:
+                await self.deps.alert_presenter.handle_data(data)
+            if not captured:
+                raise Exception(f"{alert_type} produced no messages")
+            await AlertPreviewStore(self.deps.db).save(run.run_id, captured)
+            return
+
+        if run.mode == RunMode.TEST:
+            if not broadcaster.test_channels:
+                raise Exception("No test channels: add broadcasting.test_channels to the config")
+            channels = broadcaster.test_channels
+        else:
+            channels = self._get_broadcast_channels(job_args)
+
+        with broadcaster.override_channels(channels):
             await self.deps.alert_presenter.handle_data(data)
+
+    async def _save_state(self, what: str, save):
+        """
+        Saves the "previous" snapshot the next alert compares against — but only after a real post.
+        A preview or a test send must not move it, or the next real alert would diff against the wrong moment.
+        `save` is a zero-argument callable returning an awaitable.
+        """
+        run = current_run()
+        if run.is_real:
+            await save()
+        else:
+            self.logger.info(f'{what}: not saved after a {run.mode} run')
 
     async def job_tcy_summary(self, **job_args):
         data = await self.tcy_info_fetcher.fetch()
@@ -93,7 +126,7 @@ class PublicAlertJobExecutor(WithLogger):
 
         await self._send_alert(data, "POL summary alert", job_args)
 
-        await pvdb.set(data.current)
+        await self._save_state('POL state', lambda: pvdb.set(data.current))
 
     async def job_runepool_summary(self, **job_args):
         data = await self.pol_fetcher.fetch()
@@ -110,7 +143,7 @@ class PublicAlertJobExecutor(WithLogger):
 
         await self._send_alert(runepool_event, "runepool summary alert", job_args)
 
-        await pvdb.set(data.runepool)
+        await self._save_state('RUNEPool state', lambda: pvdb.set(data.runepool))
 
     async def job_key_metrics(self, **job_args):
         data: AlertKeyStats = await self.key_stats_fetcher.fetch()
@@ -126,7 +159,7 @@ class PublicAlertJobExecutor(WithLogger):
         fetcher = BestPoolsFetcher(self.deps)
         event_pools, pool_map_struct = await fetcher.get_top_pools()
         await self._send_alert(event_pools, "top pools alert", job_args)
-        await fetcher.save_prev_pool_map(pool_map_struct)
+        await self._save_state('top pools map', lambda: fetcher.save_prev_pool_map(pool_map_struct))
 
     async def job_supply_chart(self, **job_args):
         market_info: RuneMarketInfo = await self.deps.market_info_cache.get()
@@ -141,7 +174,7 @@ class PublicAlertJobExecutor(WithLogger):
         market_info.prev_supply_info = await pvdb.get()
 
         await self._send_alert(market_info, "circulating supply alert", job_args)
-        await pvdb.set(market_info.supply_info)
+        await self._save_state('supply info', lambda: pvdb.set(market_info.supply_info))
 
     async def job_rune_burn_chart(self, **job_args):
         recorder = RuneBurnRecorder(self.deps)

@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
@@ -27,6 +27,8 @@ class RestoreBody(BaseModel):
 class RunJobBody(BaseModel):
     # how long the dashboard waits for the bot's answer; the HTTP request itself returns at once
     timeout: float = Field(3600.0, ge=5, le=6 * 3600)
+    # normal: a real post; preview: build the messages only (see GET /previews/{run_id}); test: test channels only
+    mode: Literal['normal', 'preview', 'test'] = 'normal'
 
 
 class RunFunctionBody(RunJobBody):
@@ -108,12 +110,13 @@ async def set_enabled(job_id: str, body: ToggleBody, ctx: DashboardContext = Dep
 @router.post('/jobs/{job_id}/run', status_code=202)
 async def run_job(job_id: str, body: RunJobBody, ctx: DashboardContext = Depends(get_ctx), actor: str = Depends(get_actor)):
     """Starts the job in the bot and returns immediately; progress comes as `run` events."""
-    return await _handle(jobs.start_job_run(ctx, job_id, body.timeout, actor=actor))
+    return await _handle(jobs.start_job_run(ctx, job_id, body.timeout, actor=actor, mode=body.mode))
 
 
 @router.post('/run-now', status_code=202)
 async def run_function(body: RunFunctionBody, ctx: DashboardContext = Depends(get_ctx), actor: str = Depends(get_actor)):
-    return await _handle(jobs.start_function_run(ctx, body.func, body.args, body.timeout, actor=actor))
+    return await _handle(jobs.start_function_run(ctx, body.func, body.args, body.timeout, actor=actor,
+                                                 mode=body.mode))
 
 
 @router.get('/runs')

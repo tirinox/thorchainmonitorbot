@@ -16,6 +16,7 @@ from lib.db import DB
 from lib.interchan import SimpleRPC
 from lib.log_db import CircularLog
 from lib.logs import WithLogger
+from lib.run_context import RunMode, run_context
 from models.sched import SchedJobCfg
 
 
@@ -123,6 +124,19 @@ class JobStats(WithLogger):
         await self.db.redis.delete(self.key)
 
 
+class _DiscardedStats:
+    """Stands in for JobStats during previews and test sends: they are not real runs."""
+
+    async def set_is_running(self, is_running: bool):
+        pass
+
+    async def record_success(self, elapsed: float, ts: Optional[float] = None):
+        pass
+
+    async def record_error(self, elapsed: float, error_message: Optional[str] = None, ts: Optional[float] = None):
+        pass
+
+
 class PublicScheduler(WithLogger):
     DB_KEY_PREFIX = 'PublicScheduler'
     DB_KEY_CONFIG = f'{DB_KEY_PREFIX}:Config'
@@ -199,13 +213,18 @@ class PublicScheduler(WithLogger):
             job_id = payload.get('job_id')
             run_args = payload.get('args')
             run_id = payload.get('run_id')  # set by the dashboard to correlate log entries with its request
+            mode = payload.get('mode') or RunMode.NORMAL  # "preview" / "test" runs come from the dashboard
+            if mode not in RunMode.ALL:
+                return f'unknown run mode: {mode}'
             run_tag = {'run_id': run_id} if run_id else {}
+            if mode != RunMode.NORMAL:
+                run_tag['mode'] = mode
             if job_id:
                 await self.db_log.warning('job_scheduled_now', job_id=job_id, **run_tag)
-                return await self.run_job_now_by_id(job_id, args=run_args, run_id=run_id)
+                return await self.run_job_now_by_id(job_id, args=run_args, run_id=run_id, mode=mode)
             elif func := payload.get('func'):
                 await self.db_log.warning('job_scheduled_now', func=func, **run_tag)
-                return await self.run_job_by_function(func, args=run_args, run_id=run_id)
+                return await self.run_job_by_function(func, args=run_args, run_id=run_id, mode=mode)
             else:
                 await self.logger.error(f'Cannot run {command} with parameters {payload}')
                 return None
@@ -229,7 +248,8 @@ class PublicScheduler(WithLogger):
         merged_args.update(self._normalize_job_args(override_args))
         return merged_args
 
-    async def run_job_now_by_id(self, job_id, args: Optional[dict[str, Any]] = None, run_id: Optional[str] = None):
+    async def run_job_now_by_id(self, job_id, args: Optional[dict[str, Any]] = None, run_id: Optional[str] = None,
+                                mode: str = RunMode.NORMAL):
         job_cfg = self.find_job_by_id(job_id)
         if not job_cfg:
             raise RuntimeError(f'Job with id {job_id} not found; cannot run now.')
@@ -245,15 +265,16 @@ class PublicScheduler(WithLogger):
             'enabled': True,
             'args': self._merge_job_args(job_cfg.args, args),
         })
-        return await coro(one_time_cfg, with_retries=False, run_id=run_id)
+        return await coro(one_time_cfg, with_retries=False, run_id=run_id, mode=mode)
 
     async def run_job_by_function(self, func_name: str, args: Optional[dict[str, Any]] = None,
-                                  run_id: Optional[str] = None):
+                                  run_id: Optional[str] = None, mode: str = RunMode.NORMAL):
         self.logger.info(f'Function {func_name} is run by name')
         coro = self._registered_jobs.get(func_name)
         if not coro:
             raise RuntimeError(f'Job function {func_name} is not registered; cannot run by function name.')
-        return await coro(None, with_retries=False, override_args=self._normalize_job_args(args), run_id=run_id)
+        return await coro(None, with_retries=False, override_args=self._normalize_job_args(args), run_id=run_id,
+                          mode=mode)
 
     async def post_command(self, command: str, timeout=15.0, **kwargs):
         return await self._rpc({
@@ -319,13 +340,18 @@ class PublicScheduler(WithLogger):
                 with_retries=True,
                 override_args: Optional[dict[str, Any]] = None,
                 run_id: Optional[str] = None,
+                mode: str = RunMode.NORMAL,
         ):
             current_delay = self.retry_delay
-            stats = JobStats(self.db, key=desc.id if desc else f'_direct_{func_name}')
-            self.logger.info(f"Starting job with retry logic: {func_name}.")
+            # previews and test sends are not real runs: they must not touch the job's stats and schedule,
+            # and are logged under their own action so they stay out of the run history
+            real_run = mode == RunMode.NORMAL
+            stats = JobStats(self.db, key=desc.id if desc else f'_direct_{func_name}') if real_run else _DiscardedStats()
+            action = 'run' if real_run else f'{mode}_run'
+            self.logger.info(f"Starting job with retry logic: {func_name} ({mode}).")
             run_tag = {'run_id': run_id} if run_id else {}
-            await self.db_log.info('run', phase='start', job=func_name, **run_tag)
-            if desc:
+            await self.db_log.info(action, phase='start', job=func_name, **run_tag)
+            if desc and real_run:
                 await self._refresh_next_run_ts(desc.id, stats)
             start_time = time.monotonic()
             job_id = desc.id if desc else 0
@@ -337,15 +363,16 @@ class PublicScheduler(WithLogger):
                         # fixme: possible bug, are we sure the "desc" is the latest state?
                         self.logger.warning(f'{func_name}: job disabled during run; skipping execution.')
                         await stats.set_is_running(False)
-                        await self.db_log.warning('run', phase='skipped',
+                        await self.db_log.warning(action, phase='skipped',
                                                   job=func_name, job_id=job_id,
                                                   comment='job disabled during run', **run_tag)
                         return None
 
                     await stats.set_is_running(True)
-                    result = await func(**job_args) if job_args else await func()
+                    with run_context(mode, run_id):
+                        result = await func(**job_args) if job_args else await func()
                     elapsed = time.monotonic() - start_time
-                    await self.db_log.info('run', phase='complete',
+                    await self.db_log.info(action, phase='complete',
                                            job=func_name, job_id=job_id, elapsed=elapsed, **run_tag)
                     self.logger.info(
                         f'{func_name}: completed successfully in {elapsed:.2f} seconds on attempt {attempt}.')
@@ -363,13 +390,13 @@ class PublicScheduler(WithLogger):
                     await stats.set_is_running(False)
 
                     if attempt < retry_count:
-                        await self.db_log.error('run', phase='retry',
+                        await self.db_log.error(action, phase='retry',
                                                 job=func_name, job_id=job_id,
                                                 attempt=attempt, error=error_msg, **run_tag)
                         await asyncio.sleep(current_delay)
                         current_delay = current_delay * self.retry_delay
                     else:
-                        await self.db_log.error('run', phase='failed',
+                        await self.db_log.error(action, phase='failed',
                                                 job=func_name, job_id=job_id,
                                                 error=error_msg, **run_tag)
                         self.logger.error(f'{func_name}: all {retry_count} attempts failed.')

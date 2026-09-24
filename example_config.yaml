@@ -156,6 +156,13 @@ broadcasting:
       lang: eng-tw
       name: "twitter-default"
 
+  # Optional: private channels for "Send to test channel" in the dashboard. A test send posts only here,
+  # ignores the Flagship gate flags and the startup delay, and never updates any "previous state".
+  # test_channels:
+  #   - type: telegram
+  #     name: "-1001234567890"  # a private chat/group id the bot can post to
+  #     lang: eng
+
 
 node_op_tools:
   enabled: true

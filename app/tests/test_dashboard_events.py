@@ -116,7 +116,8 @@ async def _run_to_end(outcome, **start_kwargs):
 async def test_run_success_publishes_start_and_finish():
     run, sched, redis, _ = await _run_to_end('success', job_id='job1', timeout=100)
     assert run.status == RunStatus.SUCCESS and run.finished_ts
-    assert sched.calls == [{'command': 'run_now', 'timeout': 100, 'run_id': run.run_id, 'job_id': 'job1'}]
+    assert sched.calls == [{'command': 'run_now', 'timeout': 100, 'run_id': run.run_id, 'mode': 'normal',
+                            'job_id': 'job1'}]
     statuses = [e['run']['status'] for e in redis.events(EventType.RUN)]
     assert statuses == ['running', 'success']
 

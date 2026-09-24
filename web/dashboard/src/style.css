@@ -315,3 +315,9 @@ pre.json {
 .num-h .p-datatable-column-header-content {
     justify-content: flex-end;
 }
+
+/* destructive items in popup menus */
+.p-menu .menu-danger .p-menu-item-link,
+.p-menu .menu-danger .p-menu-item-icon {
+    color: var(--app-err);
+}

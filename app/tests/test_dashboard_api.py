@@ -78,7 +78,7 @@ async def ctx():
     return SimpleNamespace(
         scheduler=sched,
         sched_lock=asyncio.Lock(),
-        deps=SimpleNamespace(broadcaster=SimpleNamespace(channels=channels), db=db),
+        deps=SimpleNamespace(broadcaster=SimpleNamespace(channels=channels, test_channels=[]), db=db),
         audit=AuditLog(db),
     )
 

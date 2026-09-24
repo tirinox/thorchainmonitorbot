@@ -46,14 +46,14 @@ export async function loadRuns() {
     }
 }
 
-export async function startJobRun(jobId) {
-    const run = await api.runJob(jobId)
+export async function startJobRun(jobId, mode = 'normal') {
+    const run = await api.runJob(jobId, mode)
     apply(run)
     return run
 }
 
-export async function startFunctionRun(func, args, timeout) {
-    const run = await api.runFunction(func, args, timeout)
+export async function startFunctionRun(func, args, timeout, mode = 'normal') {
+    const run = await api.runFunction(func, args, timeout, mode)
     apply(run)
     return run
 }

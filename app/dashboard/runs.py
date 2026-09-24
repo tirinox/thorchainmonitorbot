@@ -7,6 +7,7 @@ from typing import Any, Optional
 
 from lib.db import DB
 from lib.events import publish_event, EventType
+from lib.run_context import RunMode
 from notify.pub_scheduler import PublicScheduler
 
 
@@ -30,6 +31,7 @@ class RunInfo:
     job_id: Optional[str]
     func: Optional[str]
     actor: Optional[str] = None
+    mode: str = RunMode.NORMAL  # normal / preview (build messages only) / test (send to test channels)
     args: dict[str, Any] = field(default_factory=dict)
     timeout: float = 0.0
     status: str = RunStatus.RUNNING
@@ -66,12 +68,15 @@ class RunManager:
         return self._runs.get(run_id)
 
     def start(self, *, job_id: Optional[str] = None, func: Optional[str] = None,
-              args: Optional[dict] = None, timeout: float = 3600.0, actor: Optional[str] = None) -> RunInfo:
+              args: Optional[dict] = None, timeout: float = 3600.0, actor: Optional[str] = None,
+              mode: str = RunMode.NORMAL) -> RunInfo:
+        if mode not in RunMode.ALL:
+            raise ValueError(f'Unknown run mode: {mode!r}')
         if job_id and any(r.is_active and r.job_id == job_id for r in self._runs.values()):
             raise RunConflict(f'Job {job_id!r} is already running')
 
         run = RunInfo(run_id=uuid.uuid4().hex[:12], job_id=job_id, func=func, args=dict(args or {}),
-                      timeout=timeout, actor=actor)
+                      timeout=timeout, actor=actor, mode=mode)
         self._runs[run.run_id] = run
         self._prune()
 
@@ -89,7 +94,7 @@ class RunManager:
         target = {'job_id': run.job_id} if run.job_id else {'func': run.func, 'args': run.args}
         try:
             result = await sched.post_command(sched.COMMAND_RUN_NOW, timeout=run.timeout,
-                                              run_id=run.run_id, **target)
+                                              run_id=run.run_id, mode=run.mode, **target)
             run.result = result
             run.status = RunStatus.SUCCESS if result == 'success' else RunStatus.FAILED
         except asyncio.TimeoutError:

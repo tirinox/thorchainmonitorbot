@@ -74,12 +74,18 @@ const RUN_TOASTS = {
   timeout: {severity: 'warn', summary: 'No answer from the bot'},
   error: {severity: 'error', summary: 'Run error'},
 }
+const MODE_SUCCESS = {
+  preview: 'Preview ready',
+  test: 'Sent to the test channel',
+}
 
 trackRuns((run) => {
   const took = run.finished_ts ? ` · ${durationHuman(run.finished_ts - run.started_ts)}` : ''
   const ok = run.status === 'success'
+  const base = RUN_TOASTS[run.status] || RUN_TOASTS.error
   toast.add({
-    ...(RUN_TOASTS[run.status] || RUN_TOASTS.error),
+    ...base,
+    summary: ok && MODE_SUCCESS[run.mode] ? MODE_SUCCESS[run.mode] : base.summary,
     detail: ok ? `${runLabel(run)}${took}` : `${runLabel(run)}: ${run.result}`,
     life: ok ? 5000 : 15000,
   })

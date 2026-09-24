@@ -79,8 +79,11 @@ export const api = {
     restoreJob: (config) => request('POST', '/jobs/restore', {body: {config}}),
     setJobEnabled: (id, enabled) => request('POST', `/jobs/${enc(id)}/enabled`, {body: {enabled}}),
     // both return a run record at once (202); progress arrives as `run` events
-    runJob: (id, timeout) => request('POST', `/jobs/${enc(id)}/run`, {body: timeout ? {timeout} : {}}),
-    runFunction: (func, args, timeout) => request('POST', '/run-now', {body: {func, args, timeout}}),
+    // mode: 'normal' (a real post), 'preview' (build messages only), 'test' (send to the test channels)
+    runJob: (id, mode = 'normal', timeout) => request('POST', `/jobs/${enc(id)}/run`, {body: {mode, ...(timeout ? {timeout} : {})}}),
+    runFunction: (func, args, timeout, mode = 'normal') => request('POST', '/run-now', {body: {func, args, timeout, mode}}),
+    preview: (runId) => request('GET', `/previews/${enc(runId)}`),
+    previewImageUrl: (runId, index) => `${API_BASE}/previews/${enc(runId)}/images/${index}`,
     runs: () => request('GET', '/runs'),
     reloadScheduler: () => request('POST', '/scheduler/reload'),
 

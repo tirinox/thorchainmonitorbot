@@ -2,7 +2,7 @@ import asyncio
 import random
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, NamedTuple, Optional
 
 from comm.localization.eng_base import BaseLocalization
 from comm.localization.manager import LocalizationManager
@@ -10,8 +10,16 @@ from lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.rate_limit import RateLimitCooldown
+from lib.run_context import current_run, RunMode
 from lib.texts import shorten_text
 from notify.channel import Messengers, ChannelDescriptor, CHANNEL_INACTIVE, BoardMessage
+
+
+class CapturedMessage(NamedTuple):
+    """A message that would have been sent, recorded instead of sending (alert previews)."""
+    channel: ChannelDescriptor
+    message: BoardMessage
+    blocked_by_flag: Optional[str] = None  # the Flagship flag that would stop it, if it is off
 
 
 class Broadcaster(WithLogger):
@@ -26,9 +34,15 @@ class Broadcaster(WithLogger):
         self._rate_limit_lock = asyncio.Lock()
         self._rng = random.Random(now_ts())
         self._public_channel_scope: ContextVar[Any] = ContextVar('public_broadcast_channels', default=self._ALL_CHANNELS)
+        # set while previewing: messages are collected here instead of being sent
+        self._capture: ContextVar[Optional[list]] = ContextVar('broadcast_capture', default=None)
 
         # public channels
         self.channels = list(ChannelDescriptor.from_json(j) for j in d.cfg.get_pure('broadcasting.channels'))
+        # private channels for trying alerts out from the dashboard ("send to test channel"); optional.
+        # (not `default=None`: Config treats None as "no default" and raises on a missing key)
+        self.test_channels = list(
+            ChannelDescriptor.from_json(j) for j in (d.cfg.get_pure('broadcasting.test_channels', []) or []))
 
         startup_delay = parse_timespan_to_seconds(d.cfg.as_str('broadcasting.startup_delay', 0))
         assert DAY > startup_delay >= 0
@@ -56,6 +70,10 @@ class Broadcaster(WithLogger):
 
         normalized = []
         for item in raw_items:
+            if isinstance(item, ChannelDescriptor):
+                normalized.append(item)  # an explicit channel, not necessarily a configured one (test channels)
+                continue
+
             if isinstance(item, tuple) and len(item) == 2:
                 channel_type = str(item[0]).strip().lower()
                 channel_name = str(item[1]).strip()
@@ -96,6 +114,12 @@ class Broadcaster(WithLogger):
         missing = []
 
         for selector in normalized:
+            if isinstance(selector, ChannelDescriptor):
+                if selector.short_coded not in selected_codes:
+                    selected.append(selector)
+                    selected_codes.add(selector.short_coded)
+                continue
+
             matches = [channel for channel in self.channels if self._channel_matches_selector(channel, selector)]
             if not matches:
                 missing.append(selector)
@@ -113,6 +137,16 @@ class Broadcaster(WithLogger):
         return selected
 
     @contextmanager
+    def capture(self):
+        """Collects CapturedMessage-s instead of sending anything (for alert previews)."""
+        captured: list[CapturedMessage] = []
+        token = self._capture.set(captured)
+        try:
+            yield captured
+        finally:
+            self._capture.reset(token)
+
+    @contextmanager
     def override_channels(self, channels):
         token = self._public_channel_scope.set(self._normalize_channel_selection(channels))
         try:
@@ -126,7 +160,9 @@ class Broadcaster(WithLogger):
     async def broadcast_to_all(self, msg_type, f, *args, channels=None, **kwargs):
         requested_channels = self._public_channel_scope.get() if channels is None else self._normalize_channel_selection(channels)
         public_channels = self._select_public_channels(requested_channels)
-        subscribed_channels = [] if requested_channels is not self._ALL_CHANNELS else await self.get_subscribed_channels()
+        # a preview shows the public channels only; private subscribers are not enumerated
+        with_subscribers = requested_channels is self._ALL_CHANNELS and self._capture.get() is None
+        subscribed_channels = await self.get_subscribed_channels() if with_subscribers else []
         all_channels = public_channels + subscribed_channels
 
         self.logger.info(f'Total channels: {len(all_channels)}: '
@@ -264,8 +300,26 @@ class Broadcaster(WithLogger):
         else:
             raise ValueError(f'Unsupported message data source: {data_source!r}')
 
+    async def _capture_messages(self, captured: list, channels: List[ChannelDescriptor], message, msg_type,
+                                **kwargs) -> int:
+        for channel_info in channels:
+            b_message = await self._form_message(message, channel_info, msg_type, **kwargs)
+            if b_message.is_empty:
+                continue
+            flag_name = f"{msg_type}:broadcast:{channel_info.type}"
+            flag = await self.deps.flagship.get_flag_object(flag_name)  # read only: a preview is not an access
+            blocked = flag_name if flag is not None and not flag.value else None
+            captured.append(CapturedMessage(channel_info, b_message, blocked))
+        return len(captured)
+
     async def _broadcast_to(self, channels: List[ChannelDescriptor], message, msg_type, delay=0.075, **kwargs) -> int:
-        if now_ts() < self._skip_all_before:
+        if (captured := self._capture.get()) is not None:
+            return await self._capture_messages(captured, channels, message, msg_type, **kwargs)
+
+        # an explicit test send from the dashboard is not a flood after restart and ignores the gate flags
+        is_test_send = current_run().mode == RunMode.TEST
+
+        if not is_test_send and now_ts() < self._skip_all_before:
             self.logger.warning('Skip message.')
             return 0
 
@@ -279,7 +333,8 @@ class Broadcaster(WithLogger):
                     if b_message.is_empty:
                         continue
 
-                    if not await self.deps.flagship.is_flag_set(f"{msg_type}:broadcast:{channel_info.type}"):
+                    if not is_test_send and \
+                            not await self.deps.flagship.is_flag_set(f"{msg_type}:broadcast:{channel_info.type}"):
                         self.logger.warning(
                             f"Flag is not set for broadcasting {msg_type} to "
                             f"{channel_info.type} ({channel_info.short_coded})! Skipping.")

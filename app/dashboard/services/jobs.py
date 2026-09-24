@@ -8,6 +8,7 @@ from dashboard.audit import AuditAction, LOCAL_ACTOR, diff_dicts
 from dashboard.channels import channel_to_dict, resolve_job_channels, format_unknown_channel
 from dashboard.context import DashboardContext
 from dashboard.services.logs import MAX_LOG_LINES
+from lib.run_context import RunMode
 from dashboard.services.schedule import get_scheduler_timezone, job_schedule_info, validate_job_schedule
 from models.sched import SchedJobCfg, IntervalCfg, CronCfg, DateCfg, SchedVariant
 from notify.pub_configure import PublicAlertJobExecutor
@@ -116,6 +117,7 @@ async def list_jobs(ctx: DashboardContext, viewer_tz: Optional[str] = None) -> d
         'available_types': list(PublicAlertJobExecutor.AVAILABLE_TYPES.keys()),
         'absent_types': PublicAlertJobExecutor.get_function_that_are_absent(list(distribution.keys())),
         'channels': [channel_to_dict(c) for c in configured_channels],
+        'test_channels': [channel_to_dict(c) for c in ctx.deps.broadcaster.test_channels],
     }
 
 
@@ -219,21 +221,31 @@ def ensure_known_function(func: str):
         raise ValueError(f'Unknown job function: {func!r}')
 
 
-async def start_job_run(ctx: DashboardContext, job_id: str, timeout: float, actor: str = LOCAL_ACTOR) -> dict:
+def _check_run_mode(ctx: DashboardContext, mode: str):
+    if mode not in RunMode.ALL:
+        raise ValueError(f'Unknown run mode: {mode!r}')
+    if mode == RunMode.TEST and not ctx.deps.broadcaster.test_channels:
+        raise ValueError('No test channels configured: add broadcasting.test_channels to config.yaml')
+
+
+async def start_job_run(ctx: DashboardContext, job_id: str, timeout: float, actor: str = LOCAL_ACTOR,
+                        mode: str = RunMode.NORMAL) -> dict:
+    _check_run_mode(ctx, mode)
     await ctx.scheduler.load_config_from_db(silent=True)
     job = ctx.scheduler.find_job_by_id(job_id)
     if not job:
         raise JobNotFound(job_id)
-    run = ctx.runs.start(job_id=job_id, timeout=timeout, actor=actor)
-    await ctx.audit.record(AuditAction.JOB_RUN, actor, job_id, func=job.func, run_id=run.run_id)
+    run = ctx.runs.start(job_id=job_id, timeout=timeout, actor=actor, mode=mode)
+    await ctx.audit.record(AuditAction.JOB_RUN, actor, job_id, func=job.func, run_id=run.run_id, mode=mode)
     return run.to_dict()
 
 
 async def start_function_run(ctx: DashboardContext, func: str, args: dict, timeout: float,
-                             actor: str = LOCAL_ACTOR) -> dict:
+                             actor: str = LOCAL_ACTOR, mode: str = RunMode.NORMAL) -> dict:
+    _check_run_mode(ctx, mode)
     ensure_known_function(func)
-    run = ctx.runs.start(func=func, args=args, timeout=timeout, actor=actor)
-    await ctx.audit.record(AuditAction.FUNCTION_RUN, actor, func, args=args, run_id=run.run_id)
+    run = ctx.runs.start(func=func, args=args, timeout=timeout, actor=actor, mode=mode)
+    await ctx.audit.record(AuditAction.FUNCTION_RUN, actor, func, args=args, run_id=run.run_id, mode=mode)
     return run.to_dict()
 
 

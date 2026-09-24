@@ -59,6 +59,17 @@ http://localhost:8501/dashboard/.
   log; runs do not count). Flag changes can be reverted from Activity; that is a normal, audited change.
 - `/jobs/new?from=<job id>` opens the job form pre-filled with a copy (it starts disabled).
 
+## Alert preview and test channel
+
+- Jobs can run in three modes (`app/lib/run_context.py`, carried in a ContextVar through the whole run):
+  `normal` (a real post), `preview` (the Broadcaster captures the messages instead of sending; they are stored
+  in Redis for an hour by `notify/alert_preview.py` and shown via `GET /api/previews/{run_id}`), and `test`
+  (posts only to `broadcasting.test_channels`, bypassing gate flags and the startup delay).
+- Previews and test sends never update job stats, run history or the "previous state" snapshots that the
+  next real alert compares against (`PublicAlertJobExecutor._save_state`).
+- `POST /api/jobs/{id}/run` and `POST /api/run-now` take `mode`; the Jobs page has Preview (eye icon) and
+  "Send to test channel" (row menu); Run function defaults to Preview.
+
 ## Live updates
 
 - `GET /api/events` is a Server-Sent Events stream. The bot publishes small JSON events to the Redis

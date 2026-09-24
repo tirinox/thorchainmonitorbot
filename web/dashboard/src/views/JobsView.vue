@@ -15,6 +15,7 @@ import RelTime from '../components/RelTime.vue'
 import ScheduleText from '../components/ScheduleText.vue'
 import RunHistory from '../components/RunHistory.vue'
 import LastChange from '../components/LastChange.vue'
+import PreviewDialog from '../components/PreviewDialog.vue'
 
 const router = useRouter()
 const toast = useToast()
@@ -192,6 +193,58 @@ const editJob = (job) => router.push({name: 'job-edit', params: {id: job.id}})
 const cloneJob = (job) => router.push({name: 'job-new', query: {from: job.id}})
 const viewLogs = (job) => router.push({name: 'logs', query: {q: job.id}})
 
+// ---- alert preview and test sends
+const testChannels = computed(() => data.value?.test_channels || [])
+const previewJob = ref(null)
+const previewVisible = ref(false)
+
+function openPreview(job) {
+  previewJob.value = job
+  previewVisible.value = true
+}
+
+function testSend(job) {
+  const targets = testChannels.value.map(channelLabel).join(', ')
+  confirm.require({
+    header: 'Send to test channel',
+    message: `Post "${job.id}" (${job.config.func}) to ${targets}? Public channels are not touched.`,
+    icon: 'pi pi-send',
+    acceptProps: {label: 'Send'},
+    rejectProps: {label: 'Cancel', severity: 'secondary', text: true},
+    accept: async () => {
+      try {
+        await startJobRun(job.id, 'test')
+        toast.add({severity: 'info', summary: 'Sending to the test channel…', detail: job.id, life: 3000})
+      } catch (e) {
+        notifyError(e, 'Test send failed')
+      }
+    },
+  })
+}
+
+// ---- the "⋯" menu with the less frequent row actions
+const rowMenu = ref(null)
+const menuJob = ref(null)
+const menuItems = computed(() => {
+  const job = menuJob.value
+  if (!job) return []
+  return [
+    {
+      label: 'Send to test channel', icon: 'pi pi-send', disabled: !testChannels.value.length,
+      command: () => testSend(job),
+    },
+    {label: 'Copy', icon: 'pi pi-copy', command: () => cloneJob(job)},
+    {label: 'Logs', icon: 'pi pi-history', command: () => viewLogs(job)},
+    {separator: true},
+    {label: 'Delete', icon: 'pi pi-trash', class: 'menu-danger', command: () => deleteJob(job)},
+  ]
+})
+
+function openRowMenu(event, job) {
+  menuJob.value = job
+  rowMenu.value.toggle(event)
+}
+
 const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_count, s.run_count) : '—'
 </script>
 
@@ -335,17 +388,15 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
         <Column header="" style="width: 1%">
           <template #body="{data: job}">
             <div class="row nowrap" style="flex-wrap: nowrap; gap: .15rem">
-              <Button icon="pi pi-play" text rounded v-tooltip.top="'Run now'" aria-label="Run now"
+              <Button icon="pi pi-eye" text rounded severity="secondary" v-tooltip.top="'Preview (sends nothing)'"
+                      aria-label="Preview" :disabled="!!activeRunForJob(job.id)" @click="openPreview(job)"/>
+              <Button icon="pi pi-play" text rounded v-tooltip.top="'Run now (real post)'" aria-label="Run now"
                       :loading="!!activeRunForJob(job.id)" :disabled="!!busy[job.id] || !!activeRunForJob(job.id)"
                       @click="runJob(job)"/>
-              <Button icon="pi pi-copy" text rounded severity="secondary" v-tooltip.top="'Copy'" aria-label="Copy"
-                      @click="cloneJob(job)"/>
               <Button icon="pi pi-pencil" text rounded v-tooltip.top="'Edit'" aria-label="Edit"
                       @click="editJob(job)"/>
-              <Button icon="pi pi-history" text rounded severity="secondary" v-tooltip.top="'Logs'" aria-label="Logs"
-                      @click="viewLogs(job)"/>
-              <Button icon="pi pi-trash" text rounded severity="danger" v-tooltip.top="'Delete'" aria-label="Delete"
-                      :loading="busy[job.id] === 'delete'" :disabled="!!busy[job.id]" @click="deleteJob(job)"/>
+              <Button icon="pi pi-ellipsis-v" text rounded severity="secondary" aria-label="More actions"
+                      :loading="busy[job.id] === 'delete'" @click="openRowMenu($event, job)"/>
             </div>
           </template>
         </Column>
@@ -365,7 +416,10 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
       </DataTable>
     </div>
 
-    <RunNowDialog v-model:visible="runNowVisible" :functions="data?.available_types || []"/>
+    <RunNowDialog v-model:visible="runNowVisible" :functions="data?.available_types || []"
+                  :test-channels="testChannels"/>
+    <PreviewDialog v-model:visible="previewVisible" :job="previewJob" :test-channels="testChannels"/>
+    <Menu ref="rowMenu" :model="menuItems" popup/>
   </div>
 </template>
 

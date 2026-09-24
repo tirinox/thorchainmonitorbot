@@ -4,10 +4,27 @@ import {isFinished, runs, startFunctionRun} from '../runs.js'
 import {useNow} from '../composables/useNow.js'
 import {durationHuman} from '../format.js'
 import {parseJsonObject} from '../jsonArgs.js'
+import {channelLabel} from '../channels.js'
+import PreviewResult from './PreviewResult.vue'
 
 const props = defineProps({
   functions: {type: Array, default: () => []},
+  testChannels: {type: Array, default: () => []},
 })
+
+const MODES = computed(() => [
+  {value: 'preview', label: 'Preview', icon: 'pi pi-eye', help: 'Builds the messages and shows them here. Nothing is sent.'},
+  {
+    value: 'test', label: 'Test channel', icon: 'pi pi-send', disabled: !props.testChannels.length,
+    help: props.testChannels.length
+        ? `Posts only to ${props.testChannels.map(channelLabel).join(', ')}.`
+        : 'Add broadcasting.test_channels to config.yaml to use this.',
+  },
+  {value: 'normal', label: 'Real run', icon: 'pi pi-play', help: 'Posts to all public channels, like a scheduled run.'},
+])
+const mode = ref('preview')
+const modeHelp = computed(() => MODES.value.find(m => m.value === mode.value)?.help)
+const START_LABELS = {preview: 'Build preview', test: 'Send to test channel', normal: 'Run now'}
 const visible = defineModel('visible', {type: Boolean, default: false})
 
 const func = ref(null)
@@ -53,7 +70,7 @@ async function start() {
   if (error) return
   starting.value = true
   try {
-    runId.value = (await startFunctionRun(func.value, args, timeout.value)).run_id
+    runId.value = (await startFunctionRun(func.value, args, timeout.value, mode.value)).run_id
   } catch (e) {
     formError.value = e.message
   } finally {
@@ -63,12 +80,20 @@ async function start() {
 </script>
 
 <template>
-  <Dialog v-model:visible="visible" modal header="Run a job function now" :style="{width: '36rem'}"
-          :breakpoints="{'640px': '95vw'}">
+  <Dialog v-model:visible="visible" modal header="Run a job function now" :style="{width: '44rem'}"
+          :breakpoints="{'760px': '96vw'}">
     <div class="stack">
       <div class="field">
         <label for="rn-func">Function</label>
         <Select id="rn-func" v-model="func" :options="functions" filter placeholder="Select a function"/>
+      </div>
+      <div class="field">
+        <label>Mode</label>
+        <SelectButton v-model="mode" :options="MODES" option-label="label" option-value="value"
+                      option-disabled="disabled" :allow-empty="false">
+          <template #option="{option}"><i :class="option.icon"/> <span>{{ option.label }}</span></template>
+        </SelectButton>
+        <span class="help">{{ modeHelp }}</span>
       </div>
       <div class="field">
         <label for="rn-args">Arguments (JSON object)</label>
@@ -82,13 +107,15 @@ async function start() {
         <span class="help">The job keeps running in the bot even if nobody waits for it.</span>
       </div>
       <Message v-if="formError" severity="error">{{ formError }}</Message>
-      <Message v-if="status" :severity="status.severity">
+      <PreviewResult v-if="run?.mode === 'preview'" :key="runId" :run-id="runId"/>
+      <Message v-else-if="status" :severity="status.severity">
         <span class="row"><i v-if="run?.status === 'running'" class="pi pi-spin pi-spinner"/> {{ status.text }}</span>
       </Message>
     </div>
     <template #footer>
       <Button label="Close" text severity="secondary" @click="visible = false"/>
-      <Button label="Run now" icon="pi pi-play" :loading="starting"
+      <Button :label="START_LABELS[mode]" :icon="MODES.find(m => m.value === mode)?.icon" :loading="starting"
+              :severity="mode === 'normal' ? 'danger' : undefined"
               :disabled="!func || run?.status === 'running' || !!argsCheck.error"
               @click="start"/>
     </template>

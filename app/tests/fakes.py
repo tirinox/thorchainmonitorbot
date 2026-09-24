@@ -50,8 +50,10 @@ class FakeRedis:
                 deleted += 1
         return deleted
 
-    async def set(self, name, value):
+    async def set(self, name, value, ex=None):
         self.strings[name] = value
+        if ex is not None:
+            self.expirations[name] = int(ex)
         return True
 
     async def get(self, name):
