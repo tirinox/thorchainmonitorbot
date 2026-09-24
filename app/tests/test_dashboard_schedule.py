@@ -37,6 +37,15 @@ NOW = datetime(2026, 9, 23, 10, 0, tzinfo=timezone.utc)
     # second is the least significant field set, so minute stays "*": every minute of hour 9
     ({'hour': '9', 'second': '15'}, 'Every minute at second 15 between 09:00 and 09:59'),
     ({'minute': '*/5', 'hour': '9,18'}, 'Every 5 minutes during hours 9 and 18'),
+    ({'minute': '*/10', 'hour': '*/2'}, 'Every 10 minutes during every 2nd hour'),
+    # more than once a minute, limited to some minutes / hours
+    ({'second': '*/30', 'minute': '20-40'}, 'Every 30 seconds during minutes 20–40 of every hour'),
+    ({'second': '*/30', 'hour': '9'}, 'Every 30 seconds between 09:00 and 09:59'),
+    ({'second': '*/15', 'minute': '20-40', 'hour': '9-17'},
+     'Every 15 seconds during minutes 20–40, between 09:00 and 17:59'),
+    ({'second': '*/10', 'minute': '0'}, 'Every 10 seconds during minute :00 of every hour'),
+    ({'second': '0,30'}, 'Every minute at seconds 0 and 30'),
+    ({'second': '*'}, 'Every second'),
 ])
 def test_describe_cron(cron, text):
     assert describe_cron(cron)[0] == text

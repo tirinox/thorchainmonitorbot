@@ -143,14 +143,64 @@ def _numbers(expr: str, max_items=24) -> Optional[list[int]]:
     return sorted(set(values))
 
 
+def _hour_scope(hour: str) -> Optional[str]:
+    """'' for every hour, a phrase limiting the hours, or None if we cannot describe it."""
+    if hour == '*':
+        return ''
+    if m := _RANGE.match(hour):
+        return f'between {int(m.group(1)):02d}:00 and {int(m.group(2)):02d}:59'
+    if (n := _step(hour)) is not None:
+        return f'during every {_ordinal(n)} hour' if n > 1 else ''
+    hours = _numbers(hour)
+    if hours is None:
+        return None
+    if len(hours) == 1:
+        return f'between {hours[0]:02d}:00 and {hours[0]:02d}:59'
+    return f"during hours {_join([str(h) for h in hours])}"
+
+
+def _minute_scope(minute: str) -> Optional[str]:
+    """'' for every minute, a phrase limiting the minutes, or None if we cannot describe it."""
+    if minute == '*':
+        return ''
+    if m := _RANGE.match(minute):
+        return f'during minutes {m.group(1)}–{m.group(2)}'
+    if (n := _step(minute)) is not None:
+        return f'during every {_ordinal(n)} minute' if n > 1 else ''
+    minutes = _numbers(minute, max_items=60)
+    if minutes is None:
+        return None
+    return f"during minute{'s' if len(minutes) > 1 else ''} {_join([f':{m:02d}' for m in minutes])}"
+
+
+def _describe_subminute(second: str, minute: str, hour: str) -> str:
+    """Schedules firing more than once a minute (second is '*', a step, a list or a range)."""
+    fallback = f'At second {second}, minute {minute}, hour {hour}'
+    if second == '*':
+        base = 'Every second'
+    elif (n := _step(second)) is not None:
+        base = 'Every second' if n == 1 else f'Every {n} seconds'
+    elif (seconds := _numbers(second, max_items=60)) is not None:
+        base = f"Every minute at second{'s' if len(seconds) > 1 else ''} {_join([str(x) for x in seconds])}"
+    else:
+        return fallback
+
+    minute_scope, hour_scope = _minute_scope(minute), _hour_scope(hour)
+    if minute_scope is None or hour_scope is None:
+        return fallback
+    text = base
+    if minute_scope:
+        text += f' {minute_scope}'
+        text += f', {hour_scope}' if hour_scope else ' of every hour'
+    elif hour_scope:
+        text += f' {hour_scope}'
+    return text
+
+
 def _describe_time(second: str, minute: str, hour: str) -> tuple[str, Optional[list[str]]]:
     """Returns (text, fixed times like ['09:00'] or None)."""
     if not second.isdigit():
-        if (n := _step(second)) and minute == '*' and hour == '*':
-            return ('Every second' if n == 1 else f'Every {n} seconds'), None
-        if second == '*' and minute == '*' and hour == '*':
-            return 'Every second', None
-        return f'At second {second}, minute {minute}, hour {hour}', None
+        return _describe_subminute(second, minute, hour), None
 
     sec = int(second)
     sec_suffix = f':{sec:02d}' if sec else ''
@@ -181,16 +231,10 @@ def _describe_time(second: str, minute: str, hour: str) -> tuple[str, Optional[l
         return f'At {at_minutes} during hours {hour}', None
 
     # every minute / every N minutes, possibly limited to some hours
-    if hour == '*':
-        return base, None
-    if hour_range:
-        lo, hi = int(hour_range.group(1)), int(hour_range.group(2))
-        return f'{base} between {lo:02d}:00 and {hi:02d}:59', None
-    if hours is not None and len(hours) == 1:
-        return f'{base} between {hours[0]:02d}:00 and {hours[0]:02d}:59', None
-    if hours is not None:
-        return f"{base} during hours {_join([str(h) for h in hours])}", None
-    return f'{base} (hours {hour})', None
+    scope = _hour_scope(hour)
+    if scope is None:
+        return f'{base} (hours {hour})', None
+    return (f'{base} {scope}' if scope else base), None
 
 
 def _dow_index(token: str) -> Optional[int]:
