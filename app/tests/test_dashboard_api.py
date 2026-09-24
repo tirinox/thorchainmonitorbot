@@ -17,7 +17,8 @@ from dashboard.services.logs import filter_logs, normalize_level
 from notify.channel import ChannelDescriptor
 from notify.pub_configure import PublicAlertJobExecutor
 from notify.pub_scheduler import PublicScheduler
-from tests.fakes import FakeRedis, FakeDB
+from dashboard.audit import AuditLog
+from tests.fakes import FakeDB, FakePubSubRedis
 
 SOME_FUNC = next(iter(PublicAlertJobExecutor.AVAILABLE_TYPES))
 
@@ -69,23 +70,16 @@ def test_filter_logs_filters_facets_and_histogram():
 
 # ---------- jobs ----------
 
-class _Redis(FakeRedis):
-    async def hincrby(self, name, key, value):
-        return await self.hincrbyfloat(name, key, value)
-
-    def pipeline(self):
-        raise RuntimeError('not supported in tests')  # CircularLog swallows it
-
-
 @pytest_asyncio.fixture
 async def ctx():
-    db = FakeDB(_Redis())
+    db = FakeDB(FakePubSubRedis())
     sched = PublicScheduler(cfg=None, db=db, loop=asyncio.get_running_loop())
     channels = [ChannelDescriptor('telegram', '@chan', 'eng')]
     return SimpleNamespace(
         scheduler=sched,
         sched_lock=asyncio.Lock(),
         deps=SimpleNamespace(broadcaster=SimpleNamespace(channels=channels)),
+        audit=AuditLog(db),
     )
 
 
@@ -95,7 +89,7 @@ async def test_create_edit_toggle_delete_job(ctx):
         func=SOME_FUNC, enabled=True, variant='interval',
         interval={'hours': 2}, args={'foo': 1, 'channels': ['stale']}, channels=['telegram-@chan'],
     )
-    created = await jobs.save_job(ctx, payload)
+    created = await jobs.save_job(ctx, payload, actor='alice')
     assert created.id.startswith(f'{SOME_FUNC}_job_')
     assert created.args == {'foo': 1, 'channels': ['telegram-@chan']}
 
@@ -110,17 +104,32 @@ async def test_create_edit_toggle_delete_job(ctx):
 
     # edit: function cannot change, channels cleared, switched to cron
     edit = JobPayload(func='whatever', variant='cron', cron={'hour': '12'}, interval={'hours': 1})
-    edited = await jobs.save_job(ctx, edit, job_id=created.id)
+    edited = await jobs.save_job(ctx, edit, job_id=created.id, actor='bob')
     assert edited.func == SOME_FUNC
     assert edited.interval is None
     assert edited.args == {}
 
-    await jobs.set_job_enabled(ctx, created.id, True)
+    await jobs.set_job_enabled(ctx, created.id, True)  # the edit above disabled it
+    await jobs.set_job_enabled(ctx, created.id, True)  # no change: no audit entry
     stored = json.loads(await ctx.scheduler.db.redis.get(PublicScheduler.DB_KEY_CONFIG))
     assert stored[0]['enabled'] is True and stored[0]['variant'] == 'cron'
 
-    await jobs.delete_job(ctx, created.id)
+    await jobs.set_job_enabled(ctx, created.id, False, actor='bob')
+    await jobs.delete_job(ctx, created.id, actor='alice')
     assert (await jobs.list_jobs(ctx))['jobs'] == []
+
+    audit = (await ctx.audit.list())['items']  # newest first
+    assert [(e['action'], e['actor']) for e in audit] == [
+        ('job.delete', 'alice'), ('job.disable', 'bob'), ('job.enable', 'local'),
+        ('job.update', 'bob'), ('job.create', 'alice'),
+    ]
+    update = audit[3]
+    assert update['target'] == created.id
+    changes = update['details']['changes']
+    assert changes['variant'] == ['interval', 'cron']
+    assert changes['cron.hour'] == [None, '12']
+    assert changes['args.channels'] == [['telegram-@chan'], None]
+    assert audit[0]['level'] == 'warning'  # destructive
 
     with pytest.raises(JobNotFound):
         await jobs.delete_job(ctx, created.id)

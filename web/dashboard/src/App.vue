@@ -1,19 +1,32 @@
 <script setup>
-import {computed} from 'vue'
+import {computed, onMounted, ref} from 'vue'
 import {useToast} from 'primevue/usetoast'
 import {isDark, toggleTheme} from './theme.js'
 import {connectEvents, liveStatus, onEvent} from './events.js'
 import {activeRuns, runLabel, trackRuns} from './runs.js'
 import {durationHuman} from './format.js'
+import {api} from './api.js'
 
 const toast = useToast()
 
 const nav = [
+  {to: '/', label: 'Status', icon: 'pi pi-home'},
   {to: '/overview', label: 'Overview', icon: 'pi pi-chart-bar'},
   {to: '/jobs', label: 'Jobs', icon: 'pi pi-calendar'},
   {to: '/logs', label: 'Logs', icon: 'pi pi-history'},
+  {to: '/activity', label: 'Activity', icon: 'pi pi-user-edit'},
   {to: '/flags', label: 'Settings', icon: 'pi pi-sliders-h'},
 ]
+
+// the basic-auth user as the server sees it (recorded in the activity log)
+const me = ref(null)
+onMounted(async () => {
+  try {
+    me.value = (await api.whoami()).actor
+  } catch {
+    // only cosmetic
+  }
+})
 
 connectEvents()
 
@@ -68,6 +81,9 @@ const live = computed(() => LIVE[liveStatus.value] || LIVE.connecting)
                  class="nav-badge" v-tooltip.right="`${activeRuns.length} manual run(s) in progress`"/>
         </RouterLink>
       </nav>
+      <div v-if="me" class="whoami small muted" v-tooltip.right="'Your actions are recorded in Activity'">
+        <i class="pi pi-user"/> <span>{{ me }}</span>
+      </div>
       <div class="sidebar-footer">
         <span class="live" :class="live.cls" v-tooltip.top="live.tip">
           <i class="live-dot" :class="{pulse: liveStatus !== 'live'}"/>
@@ -120,8 +136,16 @@ const live = computed(() => LIVE[liveStatus.value] || LIVE.connecting)
   margin-left: auto;
 }
 
+.whoami {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: 0 1.25rem;
+  word-break: break-all;
+}
+
 @media (max-width: 800px) {
-  .live-label {
+  .live-label, .whoami {
     display: none;
   }
 }

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
+from dashboard.audit import get_actor
 from dashboard.context import DashboardContext
 from dashboard.routes.deps import get_ctx
 from dashboard.services import flags
@@ -19,12 +20,14 @@ async def list_flags(ctx: DashboardContext = Depends(get_ctx)):
 
 
 @router.put('')
-async def set_flag(body: FlagBody, ctx: DashboardContext = Depends(get_ctx)):
-    await flags.set_flag(ctx, body.path, body.value)
+async def set_flag(body: FlagBody, ctx: DashboardContext = Depends(get_ctx), actor: str = Depends(get_actor)):
+    await flags.set_flag(ctx, body.path, body.value, actor=actor)
     return {'ok': True}
 
 
 @router.delete('')
-async def delete_flag(path: str = Query(min_length=1), ctx: DashboardContext = Depends(get_ctx)):
-    await flags.delete_flag(ctx, path)
+async def delete_flag(path: str = Query(min_length=1),
+                      ctx: DashboardContext = Depends(get_ctx),
+                      actor: str = Depends(get_actor)):
+    await flags.delete_flag(ctx, path, actor=actor)
     return {'ok': True}

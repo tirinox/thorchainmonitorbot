@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field, ValidationError
 
+from dashboard.audit import get_actor
 from dashboard.context import DashboardContext
 from dashboard.routes.deps import get_ctx
 from dashboard.services import jobs
@@ -52,38 +53,38 @@ async def list_jobs(ctx: DashboardContext = Depends(get_ctx)):
 
 
 @router.post('/jobs')
-async def create_job(payload: JobPayload, ctx: DashboardContext = Depends(get_ctx)):
-    job = await _handle(jobs.save_job(ctx, payload))
+async def create_job(payload: JobPayload, ctx: DashboardContext = Depends(get_ctx), actor: str = Depends(get_actor)):
+    job = await _handle(jobs.save_job(ctx, payload, actor=actor))
     return job.model_dump(mode='json')
 
 
 @router.put('/jobs/{job_id}')
-async def update_job(job_id: str, payload: JobPayload, ctx: DashboardContext = Depends(get_ctx)):
-    job = await _handle(jobs.save_job(ctx, payload, job_id=job_id))
+async def update_job(job_id: str, payload: JobPayload, ctx: DashboardContext = Depends(get_ctx), actor: str = Depends(get_actor)):
+    job = await _handle(jobs.save_job(ctx, payload, job_id=job_id, actor=actor))
     return job.model_dump(mode='json')
 
 
 @router.delete('/jobs/{job_id}')
-async def delete_job(job_id: str, ctx: DashboardContext = Depends(get_ctx)):
-    await _handle(jobs.delete_job(ctx, job_id))
+async def delete_job(job_id: str, ctx: DashboardContext = Depends(get_ctx), actor: str = Depends(get_actor)):
+    await _handle(jobs.delete_job(ctx, job_id, actor=actor))
     return {'ok': True}
 
 
 @router.post('/jobs/{job_id}/enabled')
-async def set_enabled(job_id: str, body: ToggleBody, ctx: DashboardContext = Depends(get_ctx)):
-    await _handle(jobs.set_job_enabled(ctx, job_id, body.enabled))
+async def set_enabled(job_id: str, body: ToggleBody, ctx: DashboardContext = Depends(get_ctx), actor: str = Depends(get_actor)):
+    await _handle(jobs.set_job_enabled(ctx, job_id, body.enabled, actor=actor))
     return {'ok': True}
 
 
 @router.post('/jobs/{job_id}/run', status_code=202)
-async def run_job(job_id: str, body: RunJobBody, ctx: DashboardContext = Depends(get_ctx)):
+async def run_job(job_id: str, body: RunJobBody, ctx: DashboardContext = Depends(get_ctx), actor: str = Depends(get_actor)):
     """Starts the job in the bot and returns immediately; progress comes as `run` events."""
-    return await _handle(jobs.start_job_run(ctx, job_id, body.timeout))
+    return await _handle(jobs.start_job_run(ctx, job_id, body.timeout, actor=actor))
 
 
 @router.post('/run-now', status_code=202)
-async def run_function(body: RunFunctionBody, ctx: DashboardContext = Depends(get_ctx)):
-    return await _handle(jobs.start_function_run(ctx, body.func, body.args, body.timeout))
+async def run_function(body: RunFunctionBody, ctx: DashboardContext = Depends(get_ctx), actor: str = Depends(get_actor)):
+    return await _handle(jobs.start_function_run(ctx, body.func, body.args, body.timeout, actor=actor))
 
 
 @router.get('/runs')
@@ -93,5 +94,5 @@ async def list_runs(ctx: DashboardContext = Depends(get_ctx)):
 
 
 @router.post('/scheduler/reload')
-async def reload_scheduler(ctx: DashboardContext = Depends(get_ctx)):
-    return await _handle(jobs.reload_scheduler(ctx))
+async def reload_scheduler(ctx: DashboardContext = Depends(get_ctx), actor: str = Depends(get_actor)):
+    return await _handle(jobs.reload_scheduler(ctx, actor=actor))

@@ -29,6 +29,7 @@ class RunInfo:
     run_id: str
     job_id: Optional[str]
     func: Optional[str]
+    actor: Optional[str] = None
     args: dict[str, Any] = field(default_factory=dict)
     timeout: float = 0.0
     status: str = RunStatus.RUNNING
@@ -65,12 +66,12 @@ class RunManager:
         return self._runs.get(run_id)
 
     def start(self, *, job_id: Optional[str] = None, func: Optional[str] = None,
-              args: Optional[dict] = None, timeout: float = 3600.0) -> RunInfo:
+              args: Optional[dict] = None, timeout: float = 3600.0, actor: Optional[str] = None) -> RunInfo:
         if job_id and any(r.is_active and r.job_id == job_id for r in self._runs.values()):
             raise RunConflict(f'Job {job_id!r} is already running')
 
         run = RunInfo(run_id=uuid.uuid4().hex[:12], job_id=job_id, func=func, args=dict(args or {}),
-                      timeout=timeout)
+                      timeout=timeout, actor=actor)
         self._runs[run.run_id] = run
         self._prune()
 

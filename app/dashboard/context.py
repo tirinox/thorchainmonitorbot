@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+from dashboard.audit import AuditLog
 from dashboard.events import EventHub
 from dashboard.runs import RunManager
 from lib.depcont import DepContainer
@@ -39,6 +40,7 @@ class DashboardContext:
 
         self.events = EventHub(d.db)
         self.runs = RunManager(d.pub_scheduler, d.db)
+        self.audit = AuditLog(d.db)
 
     @property
     def deps(self) -> DepContainer:

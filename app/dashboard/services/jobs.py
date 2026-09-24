@@ -4,6 +4,7 @@ from typing import Any, Optional, Literal
 
 from pydantic import BaseModel, Field
 
+from dashboard.audit import AuditAction, LOCAL_ACTOR, diff_dicts
 from dashboard.channels import channel_to_dict, resolve_job_channels, format_unknown_channel
 from dashboard.context import DashboardContext
 from models.sched import SchedJobCfg, IntervalCfg, CronCfg, DateCfg, SchedVariant
@@ -82,7 +83,8 @@ async def list_jobs(ctx: DashboardContext) -> dict:
     }
 
 
-async def save_job(ctx: DashboardContext, payload: JobPayload, job_id: Optional[str] = None) -> SchedJobCfg:
+async def save_job(ctx: DashboardContext, payload: JobPayload, job_id: Optional[str] = None,
+                   actor: str = LOCAL_ACTOR) -> SchedJobCfg:
     """
     Creates a new job (job_id is None) or replaces an existing one.
     Raises pydantic.ValidationError if the resulting config is invalid.
@@ -92,6 +94,7 @@ async def save_job(ctx: DashboardContext, payload: JobPayload, job_id: Optional[
         await sched.load_config_from_db(silent=True)
 
         is_edit = job_id is not None
+        existing = None
         if is_edit:
             existing = sched.find_job_by_id(job_id)
             if not existing:
@@ -122,25 +125,39 @@ async def save_job(ctx: DashboardContext, payload: JobPayload, job_id: Optional[
             misfire_grace_time=payload.misfire_grace_time,
         )
         await sched.add_new_job(job_cfg, allow_replace=is_edit)
-        return job_cfg
+
+    if existing:
+        changes = diff_dicts(existing.model_dump(mode='json'), job_cfg.model_dump(mode='json'))
+        await ctx.audit.record(AuditAction.JOB_UPDATE, actor, job_id, func=func, changes=changes)
+    else:
+        await ctx.audit.record(AuditAction.JOB_CREATE, actor, job_id, func=func, variant=job_cfg.variant,
+                               schedule=schedule_human_readable(job_cfg), enabled=job_cfg.enabled)
+    return job_cfg
 
 
-async def delete_job(ctx: DashboardContext, job_id: str):
+async def delete_job(ctx: DashboardContext, job_id: str, actor: str = LOCAL_ACTOR):
     async with ctx.sched_lock:
         sched = ctx.scheduler
         await sched.load_config_from_db(silent=True)
-        if not sched.find_job_by_id(job_id):
+        job = sched.find_job_by_id(job_id)
+        if not job:
             raise JobNotFound(job_id)
         await sched.delete_job(job_id)
+    await ctx.audit.record(AuditAction.JOB_DELETE, actor, job_id, func=job.func, config=job.model_dump(mode='json'))
 
 
-async def set_job_enabled(ctx: DashboardContext, job_id: str, enabled: bool):
+async def set_job_enabled(ctx: DashboardContext, job_id: str, enabled: bool, actor: str = LOCAL_ACTOR):
     async with ctx.sched_lock:
         sched = ctx.scheduler
         await sched.load_config_from_db(silent=True)
-        if not sched.find_job_by_id(job_id):
+        job = sched.find_job_by_id(job_id)
+        if not job:
             raise JobNotFound(job_id)
+        was_enabled = job.enabled
         await sched.toggle_job_enabled(job_id, enabled)
+    if was_enabled != enabled:
+        action = AuditAction.JOB_ENABLE if enabled else AuditAction.JOB_DISABLE
+        await ctx.audit.record(action, actor, job_id, func=job.func)
 
 
 def ensure_known_function(func: str):
@@ -148,19 +165,27 @@ def ensure_known_function(func: str):
         raise ValueError(f'Unknown job function: {func!r}')
 
 
-async def start_job_run(ctx: DashboardContext, job_id: str, timeout: float) -> dict:
+async def start_job_run(ctx: DashboardContext, job_id: str, timeout: float, actor: str = LOCAL_ACTOR) -> dict:
     await ctx.scheduler.load_config_from_db(silent=True)
-    if not ctx.scheduler.find_job_by_id(job_id):
+    job = ctx.scheduler.find_job_by_id(job_id)
+    if not job:
         raise JobNotFound(job_id)
-    return ctx.runs.start(job_id=job_id, timeout=timeout).to_dict()
+    run = ctx.runs.start(job_id=job_id, timeout=timeout, actor=actor)
+    await ctx.audit.record(AuditAction.JOB_RUN, actor, job_id, func=job.func, run_id=run.run_id)
+    return run.to_dict()
 
 
-async def start_function_run(ctx: DashboardContext, func: str, args: dict, timeout: float) -> dict:
+async def start_function_run(ctx: DashboardContext, func: str, args: dict, timeout: float,
+                             actor: str = LOCAL_ACTOR) -> dict:
     ensure_known_function(func)
-    return ctx.runs.start(func=func, args=args, timeout=timeout).to_dict()
+    run = ctx.runs.start(func=func, args=args, timeout=timeout, actor=actor)
+    await ctx.audit.record(AuditAction.FUNCTION_RUN, actor, func, args=args, run_id=run.run_id)
+    return run.to_dict()
 
 
-async def reload_scheduler(ctx: DashboardContext) -> dict:
+async def reload_scheduler(ctx: DashboardContext, actor: str = LOCAL_ACTOR) -> dict:
     sched = ctx.scheduler
     result = await sched.post_command(sched.COMMAND_RELOAD)
-    return {'ok': result == 'reloaded', 'result': result}
+    ok = result == 'reloaded'
+    await ctx.audit.record(AuditAction.SCHEDULER_APPLY, actor, ok=ok, result=result)
+    return {'ok': ok, 'result': result}

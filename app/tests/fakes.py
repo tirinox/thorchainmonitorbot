@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 from fnmatch import fnmatch
 
@@ -88,6 +89,47 @@ class FakeRedis:
         for name in names:
             combined.update(self.hll.get(name, set()))
         return len(combined)
+
+
+class FakePubSubRedis(FakeRedis):
+    """FakeRedis plus what the dashboard and CircularLog need: lists (rpush/ltrim/lrange via pipeline),
+    hincrby and a recording `publish`."""
+
+    def __init__(self):
+        super().__init__()
+        self.published = []
+        self.lists = defaultdict(list)
+
+    async def publish(self, channel, message):
+        self.published.append((channel, json.loads(message)))
+        return 1
+
+    async def hincrby(self, name, key, value):
+        return await self.hincrbyfloat(name, key, value)
+
+    async def lrange(self, name, start, end):
+        items = self.lists.get(name, [])
+        return items[start:] if end == -1 else items[start:end + 1]
+
+    def pipeline(self):
+        redis = self
+
+        class Pipe:
+            async def rpush(self, key, value):
+                redis.lists[key].append(value)
+
+            async def ltrim(self, key, start, end):
+                items = redis.lists[key]
+                redis.lists[key] = items[start:] if end == -1 else items[start:end + 1]
+
+            async def execute(self):
+                return []
+
+        return Pipe()
+
+    def events(self, event_type=None, channel=None):
+        return [m for ch, m in self.published
+                if (channel is None or ch == channel) and (event_type is None or m['type'] == event_type)]
 
 
 class FakeDB:

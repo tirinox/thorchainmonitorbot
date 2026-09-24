@@ -1,7 +1,8 @@
 # Bot dashboard
 
-Admin UI for the bot: overview (block scanner, fetchers, dedup, curve, RUNE transfers, users),
-scheduled jobs (list / create / edit / run now / apply), scheduler logs and feature flags.
+Admin UI for the bot: a status page with health checks, overview (block scanner, fetchers, dedup, curve,
+RUNE transfers, users), scheduled jobs (list / create / edit / run now / apply), scheduler logs, an activity
+log of who changed what, and feature flags.
 
 - Frontend: Vue 3 + PrimeVue 4 (MIT, pinned `<5`: PrimeVue 5 needs a commercial license key) + Vite, plain JS.
 - Backend: FastAPI app in `app/dashboard/`, entry point `app/dashboard_api.py`. It serves `/api/*` and the built SPA.
@@ -25,6 +26,17 @@ http://localhost:8501/dashboard/.
   since basic auth credentials are attached to cross-site requests too). `src/api.js` does it.
 - Job changes are saved to Redis and marked dirty; the bot picks them up after "Apply"
   (`POST /api/scheduler/reload`).
+
+## Status page and activity log
+
+- `GET /api/summary` runs the health checks shown on the home page (`app/dashboard/services/summary.py`):
+  scanner lag, stale / failing fetchers, failing or overdue jobs, unapplied config, scheduler errors in the
+  last 24 h, disabled flags. Each check is a pure `evaluate_*` function with its thresholds as constants.
+- Every change made through the dashboard is recorded in the `DashboardAudit` circular log (5000 entries,
+  `app/dashboard/audit.py`) with the acting user and details (job edits store a field-by-field diff,
+  flag changes store the old value). `GET /api/audit` reads it; the Activity page shows it.
+- The user comes from nginx basic auth: nginx sets `X-Remote-User: $remote_user`. Without nginx the user is
+  `local`.
 
 ## Live updates
 

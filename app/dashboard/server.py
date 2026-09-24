@@ -8,7 +8,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.staticfiles import StaticFiles
 
 from dashboard.context import DashboardContext
-from dashboard.routes import overview, jobs, logs, flags, events
+from dashboard.routes import overview, jobs, logs, flags, events, audit, summary
 
 URL_PREFIX = '/dashboard'  # nginx serves the dashboard under this prefix
 CSRF_HEADER = 'x-dashboard-request'
@@ -87,7 +87,7 @@ def create_app() -> FastAPI:
     )
 
     api = APIRouter(prefix='/api')
-    for module in (overview, jobs, logs, flags, events):
+    for module in (overview, jobs, logs, flags, events, audit, summary):
         api.include_router(module.router)
     app.include_router(api)
 

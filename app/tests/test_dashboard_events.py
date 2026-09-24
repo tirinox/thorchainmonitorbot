@@ -10,42 +10,12 @@ from jobs.scanner.scanner_state import ScannerStateDB, ScannerState
 from lib.events import publish_event, EventType, EventThrottle, DASHBOARD_EVENTS_CHANNEL
 from lib.log_db import CircularLog
 from notify.pub_scheduler import PublicScheduler, JobStats
-from tests.fakes import FakeRedis, FakeDB
+from tests.fakes import FakeRedis, FakeDB, FakePubSubRedis
 
 
-class PubRedis(FakeRedis):
-    """FakeRedis that records pub/sub messages and supports the CircularLog pipeline."""
-
-    def __init__(self):
-        super().__init__()
-        self.published = []
-        self.lists = {}
-
-    async def publish(self, channel, message):
-        self.published.append((channel, json.loads(message)))
-        return 1
-
-    async def hincrby(self, name, key, value):
-        return await self.hincrbyfloat(name, key, value)
-
-    def pipeline(self):
-        redis = self
-
-        class Pipe:
-            async def rpush(self, key, value):
-                redis.lists.setdefault(key, []).append(value)
-
-            async def ltrim(self, key, start, end):
-                pass
-
-            async def execute(self):
-                return []
-
-        return Pipe()
-
-    def events(self, event_type=None):
-        return [m for ch, m in self.published
-                if ch == DASHBOARD_EVENTS_CHANNEL and (event_type is None or m['type'] == event_type)]
+class PubRedis(FakePubSubRedis):
+    def events(self, event_type=None, channel=DASHBOARD_EVENTS_CHANNEL):
+        return super().events(event_type, channel)
 
 
 class BrokenRedis(FakeRedis):

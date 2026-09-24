@@ -83,6 +83,10 @@ export const api = {
 
     logs: (filters) => request('GET', '/logs', {query: filters}),
 
+    summary: () => request('GET', '/summary'),
+    audit: (filters) => request('GET', '/audit', {query: filters}),
+    whoami: () => request('GET', '/whoami'),
+
     flags: () => request('GET', '/flags'),
     setFlag: (path, value) => request('PUT', '/flags', {body: {path, value}}),
     deleteFlag: (path) => request('DELETE', '/flags', {query: {path}}),

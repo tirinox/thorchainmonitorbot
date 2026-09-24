@@ -1,5 +1,6 @@
 <script setup>
 import {computed, reactive, ref, watch} from 'vue'
+import {useRoute} from 'vue-router'
 import {useToast} from 'primevue/usetoast'
 import {useConfirm} from 'primevue/useconfirm'
 import {api} from '../api.js'
@@ -15,7 +16,10 @@ const confirm = useConfirm()
 const {data, error, loading, updatedAt, refresh} = usePolling(api.flags, {interval: 60000, refreshOn: 'flags'})
 const now = useNow()
 
-const search = ref('')
+const route = useRoute()
+// the Status page links here with ?show=off, the Activity page with ?q=<flag path>
+const search = ref(route.query.q || '')
+const onlyOff = ref(route.query.show === 'off')
 const pending = reactive({})  // path -> optimistic value while the request is in flight
 const expandedKeys = ref({})
 
@@ -25,7 +29,7 @@ const flags = computed(() => (data.value || []).map(f => (
 
 const visibleFlags = computed(() => {
   const q = search.value.trim().toLowerCase()
-  return q ? flags.value.filter(f => f.path.toLowerCase().includes(q)) : flags.value
+  return flags.value.filter(f => (!q || f.path.toLowerCase().includes(q)) && (!onlyOff.value || !f.value))
 })
 
 const countOn = (list) => list.filter(f => f.value).length
@@ -76,7 +80,7 @@ watch(nodes, (n) => {
     expandAll()
   }
 })
-watch(search, (q) => q && expandAll())
+watch([search, onlyOff], ([q, off]) => (q || off) && expandAll())
 
 async function setFlag(flag, value) {
   pending[flag.path] = value
@@ -143,6 +147,10 @@ function deleteFlag(flag) {
           <InputIcon class="pi pi-search"/>
           <InputText v-model="search" placeholder="Filter by path…" fluid/>
         </IconField>
+        <span class="row">
+          <ToggleSwitch input-id="only-off" v-model="onlyOff"/>
+          <label for="only-off" class="small">Only disabled</label>
+        </span>
         <Button label="Expand all" icon="pi pi-plus" text severity="secondary" @click="expandAll"/>
         <Button label="Collapse all" icon="pi pi-minus" text severity="secondary" @click="collapseAll"/>
       </div>
