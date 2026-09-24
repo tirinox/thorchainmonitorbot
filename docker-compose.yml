@@ -169,7 +169,8 @@ services:
         condition: service_healthy
 
     ports:
-      - "8501:8501"
+      # localhost only: the public entry point is nginx /dashboard/ (basic auth)
+      - "127.0.0.1:8501:8501"
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}

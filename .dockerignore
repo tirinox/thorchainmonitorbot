@@ -8,3 +8,6 @@ docs/misc/
 venv/
 art/
 web/
+!web/dashboard/
+web/dashboard/node_modules/
+web/dashboard/dist/

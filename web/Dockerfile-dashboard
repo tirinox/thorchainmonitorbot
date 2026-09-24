@@ -1,38 +1,31 @@
-FROM python:3.11-slim as production
+# ---- 1. Build the Vue frontend ----
+FROM node:22-alpine AS frontend
+
+WORKDIR /build
+COPY web/dashboard/package.json web/dashboard/package-lock.json ./
+RUN npm ci
+COPY web/dashboard/ ./
+RUN npm run build
+
+# ---- 2. Python API that also serves the built frontend ----
+FROM python:3.12-slim AS production
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/app \
+    DASHBOARD_STATIC_DIR=/dashboard-static
 
 WORKDIR /app
 
-# Copy only requirements first for better layer caching
-# (Adjust path to where your file actually is)
-COPY app/requirements.txt /app/requirements.txt
+COPY app/requirements.txt ./requirements.txt
+RUN pip install -r requirements.txt \
+ && pip install discord.py --no-dependencies
 
-# Newer pip/setuptools/wheel avoid many build issues on 3.11
-RUN python -m pip install --upgrade pip setuptools wheel packaging
-
-# Optional: strip any accidental "distutils" line from requirements
-# (safe no-op if not present)
-RUN awk 'tolower($0)!="distutils"' requirements.txt > /tmp/reqs.txt
-
-# Install your deps
-RUN pip install -r /tmp/reqs.txt
-
-# If you want Streamlit regardless of requirements.txt, keep this;
-# otherwise add it to requirements.txt and remove this line.
-RUN pip install streamlit streamlit_autorefresh
-
-# Copy the rest of the app
 COPY app/ /app/
+# outside /app, because docker-compose mounts ./app over it
+COPY --from=frontend /build/dist /dashboard-static
 
 EXPOSE 8501
 
-ENV PYTHONPATH=/app
-
-CMD ["streamlit", "run", "tools/dashboard/Dashboard.py", \
-     "--server.port=8501", \
-     "--server.enableCORS=false", \
-     "--server.address=0.0.0.0", \
-     "--", "/config/config.yaml"]
+CMD ["python", "dashboard_api.py", "/config/config.yaml"]

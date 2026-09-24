@@ -11,6 +11,7 @@
 - Public scheduled alerts are configured in one place: `app/notify/pub_configure.py` (`PublicAlertJobExecutor.AVAILABLE_TYPES`).
 - Two scheduling domains exist: personal scheduler (`PrivateScheduler` in `app/main.py`) and public scheduler (`PublicScheduler` via `configure_jobs`).
 - API server is separate from bot process: `app/web_api.py` (Starlette + Uvicorn) reuses Redis/config and exposes settings/stats/name/slack endpoints.
+- Admin dashboard is another separate process: `app/dashboard_api.py` (FastAPI, package `app/dashboard/`) serves a JSON API under `/api` plus the Vue 3 + PrimeVue 4 SPA from `web/dashboard/` (built to `dist/`). It talks to the bot only via Redis (scheduler config/stats, `Flagship` flags, RPC `PublicScheduler.post_command`). nginx exposes it at `/dashboard/` behind basic auth; mutating requests must send the `X-Dashboard-Request: 1` header (CSRF guard).
 
 ## Key data and integration boundaries
 - THORChain data comes from thornode + Midgard connectors (`api/aionode`, `api/midgard`), initialized in `create_thor_node_connector`.
@@ -21,7 +22,7 @@
 
 ## Productive local workflows
 - First-time setup follows `README.md`: copy `example.env` + `example_config.yaml`, then `make start`.
-- Main ops commands are in `Makefile`: `make start|stop|restart|logs|attach|test|graph|dashboard-dev|renderer-dev|redis-analysis`.
+- Main ops commands are in `Makefile`: `make start|stop|restart|logs|attach|test|graph|dashboard-dev|dashboard-front-dev|dashboard-build|renderer-dev|redis-analysis`.
 - Test suite runs from app root: `cd app && python -m pytest tests` (same as `make test`).
 - For one-off maintenance against live Redis, follow README caveat commands using `PYTHONPATH="/app"` in container.
 - When running scripts locally, prefer `PYTHONPATH=.` from `app/` (pattern used across `Makefile` tools).

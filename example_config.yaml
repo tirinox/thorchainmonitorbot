@@ -137,6 +137,10 @@ web:
   #  public_url: https://test-settings.thornode.org
   serve_front_end: false  # false on production, this is work for nginx
 
+dashboard:  # admin dashboard (app/dashboard_api.py): FastAPI + Vue, behind nginx /dashboard/ with basic auth
+  host: 0.0.0.0
+  port: 8501
+
 
 broadcasting:
   startup_delay: 10s  # skip all messages during this period of time until flood settles down

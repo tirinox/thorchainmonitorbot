@@ -160,12 +160,20 @@ backup-db: # Backup the database Redis
 
 
 .PHONY: dashboard-dev
-dashboard-dev:  # Run the Streamlit dashboard in development mode (with hot reload)
-	@echo "Stopping Streamlit Dashboard if it's running..."
-	docker compose down dashboard
-	@echo "Starting Streamlit Dashboard..."
-	cd $(PROJECT_ROOT)/app && PYTHONPATH="." streamlit run tools/dashboard/Dashboard.py
-	#cd $(PROJECT_ROOT)/app && PYTHONPATH="." streamlit run tools/dashboard/Dashboard.py --server.fileWatcherType=all
+dashboard-dev:  # Run the dashboard API locally with auto-reload (pair with dashboard-front-dev)
+	@echo "Stopping the dashboard container if it's running..."
+	docker compose stop dashboard
+	cd $(PROJECT_ROOT)/app && PYTHONPATH="." python dashboard_api.py ../config.yaml --reload
+
+
+.PHONY: dashboard-front-dev
+dashboard-front-dev:  # Run the dashboard Vue frontend with hot reload at http://localhost:5173/dashboard/
+	cd $(PROJECT_ROOT)/web/dashboard && npm install && npm run dev
+
+
+.PHONY: dashboard-build
+dashboard-build:  # Build the dashboard frontend into web/dashboard/dist (served by dashboard_api.py)
+	cd $(PROJECT_ROOT)/web/dashboard && npm ci && npm run build
 
 
 .PHONY: redis-analysis

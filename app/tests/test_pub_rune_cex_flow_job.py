@@ -4,7 +4,7 @@ import pytest
 
 from models.transfer import AlertRuneTransferStats
 from notify.pub_configure import PublicAlertJobExecutor
-from tools.dashboard.components.cex_flow import rune_transfer_stats_dashboard_info_async
+from dashboard.services.overview import rune_transfer_stats
 
 
 @pytest.mark.asyncio
@@ -103,7 +103,7 @@ async def test_job_rune_transfer_stats_allows_days_override(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_rune_transfer_stats_dashboard_info_async_uses_summary(monkeypatch):
+async def test_dashboard_rune_transfer_stats_uses_summary(monkeypatch):
     captured = {}
 
     class FakeRecorder:
@@ -129,18 +129,17 @@ async def test_rune_transfer_stats_dashboard_info_async_uses_summary(monkeypatch
     async def fake_get_usd_per_rune():
         return 3.5
 
-    monkeypatch.setattr('tools.dashboard.components.cex_flow.RuneTransferRecorder', FakeRecorder)
+    monkeypatch.setattr('dashboard.services.overview.RuneTransferRecorder', FakeRecorder)
 
-    app = SimpleNamespace(
+    ctx = SimpleNamespace(
         deps=SimpleNamespace(
             pool_cache=SimpleNamespace(get_usd_per_rune=fake_get_usd_per_rune),
         )
     )
 
-    data = await rune_transfer_stats_dashboard_info_async(app)
+    data = await rune_transfer_stats(ctx)
 
     assert captured['days'] == PublicAlertJobExecutor.RUNE_TRANSFER_STATS_SUMMARY_DAYS
-    assert isinstance(data, AlertRuneTransferStats)
-    assert data.period_days == PublicAlertJobExecutor.RUNE_TRANSFER_STATS_SUMMARY_DAYS
-    assert data.cex_inflow_rune == 12_345.0
-    assert data.usd_per_rune == 3.5
+    assert data['period_days'] == PublicAlertJobExecutor.RUNE_TRANSFER_STATS_SUMMARY_DAYS
+    assert data['cex_inflow_rune'] == 12_345.0
+    assert data['usd_per_rune'] == 3.5

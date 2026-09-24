@@ -1,6 +1,6 @@
 from notify.channel import ChannelDescriptor
-from tools.dashboard.channel_args import (
-    configured_channel_rows,
+from dashboard.channels import (
+    channel_to_dict,
     resolve_job_channels,
     selected_channel_short_codes,
     format_unknown_channel,
@@ -14,13 +14,13 @@ CONFIGURED_CHANNELS = [
 ]
 
 
-def test_configured_channel_rows_include_selector_and_lang():
-    rows = configured_channel_rows(CONFIGURED_CHANNELS)
-
-    assert rows[0]['Type'].startswith('✈️ Telegram')
-    assert rows[0]['Channel'] == '@thorchain_alert'
-    assert rows[0]['Lang'] == 'eng'
-    assert rows[0]['Selector'] == 'telegram-@thorchain_alert'
+def test_channel_to_dict_include_selector_and_lang():
+    assert channel_to_dict(CONFIGURED_CHANNELS[0]) == {
+        'type': 'telegram',
+        'channel': '@thorchain_alert',
+        'lang': 'eng',
+        'selector': 'telegram-@thorchain_alert',
+    }
 
 
 def test_resolve_job_channels_supports_short_codes_and_object_selectors():
