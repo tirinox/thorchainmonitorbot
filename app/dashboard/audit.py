@@ -24,6 +24,9 @@ class AuditAction:
     FLAG_DELETE = 'flag.delete'
 
     DESTRUCTIVE = {JOB_DELETE, FLAG_DELETE}
+    # what counts as "changed" for the "last changed by" hints (runs are not changes)
+    JOB_CHANGES = {JOB_CREATE, JOB_UPDATE, JOB_ENABLE, JOB_DISABLE, JOB_RESTORE}
+    FLAG_CHANGES = {FLAG_SET, FLAG_DELETE}
 
 
 def get_actor(request: Request) -> str:
@@ -67,6 +70,15 @@ class AuditLog:
     async def record(self, action: str, actor: str, target: Optional[str] = None, **details):
         level = 'warning' if action in AuditAction.DESTRUCTIVE else 'info'
         await self._log.add_log_safe(action, level, actor=actor, target=target, **details)
+
+    async def latest_by_target(self, actions: set[str]) -> dict[str, dict]:
+        """{target: {'actor', 'action', 'ts'}} of the newest entry per target among `actions`."""
+        latest = {}
+        for raw in await self._log.get_last_logs(MAX_AUDIT_LINES):  # newest first
+            target = raw.get('target')
+            if target and target not in latest and raw.get('action') in actions:
+                latest[target] = {'actor': raw.get('actor'), 'action': raw.get('action'), 'ts': raw.get('_ts')}
+        return latest
 
     async def list(self, limit: int = 200, actor: Optional[str] = None, action: Optional[str] = None,
                    q: Optional[str] = None) -> dict:

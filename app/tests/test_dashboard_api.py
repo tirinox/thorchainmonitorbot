@@ -107,6 +107,9 @@ async def test_create_edit_toggle_delete_job(ctx):
     edit = JobPayload(func='whatever', variant='cron', cron={'hour': '12'}, interval={'hours': 1})
     edited = await jobs.save_job(ctx, edit, job_id=created.id, actor='bob')
     assert edited.func == SOME_FUNC
+    await ctx.audit.record('job.run', 'carol', created.id)  # a run is not a change
+    last = (await jobs.list_jobs(ctx))['jobs'][0]['last_change']
+    assert last['actor'] == 'bob' and last['action'] == 'job.update' and last['ts']
     assert edited.interval is None
     assert edited.args == {}
 
@@ -122,9 +125,9 @@ async def test_create_edit_toggle_delete_job(ctx):
     audit = (await ctx.audit.list())['items']  # newest first
     assert [(e['action'], e['actor']) for e in audit] == [
         ('job.delete', 'alice'), ('job.disable', 'bob'), ('job.enable', 'local'),
-        ('job.update', 'bob'), ('job.create', 'alice'),
+        ('job.run', 'carol'), ('job.update', 'bob'), ('job.create', 'alice'),
     ]
-    update = audit[3]
+    update = audit[4]
     assert update['target'] == created.id
     changes = update['details']['changes']
     assert changes['variant'] == ['interval', 'cron']

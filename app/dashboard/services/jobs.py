@@ -74,8 +74,9 @@ async def list_jobs(ctx: DashboardContext, viewer_tz: Optional[str] = None) -> d
     scheduler_tz = await get_scheduler_timezone(ctx.deps.db)
     configured_channels = list(ctx.deps.broadcaster.channels)
 
-    raw_logs, *all_stats = await asyncio.gather(
+    raw_logs, last_changes, *all_stats = await asyncio.gather(
         sched.db_log.get_last_logs(MAX_LOG_LINES),
+        ctx.audit.latest_by_target(AuditAction.JOB_CHANGES),
         sched.get_job_stats(PublicScheduler.ANY_JOB_SPECIAL_ID),
         *(sched.get_job_stats(job.id) for job in jobs),
     )
@@ -90,6 +91,7 @@ async def list_jobs(ctx: DashboardContext, viewer_tz: Optional[str] = None) -> d
             'stats': _stats_to_dict(stats),
             'schedule': job_schedule_info(job, scheduler_tz, viewer_tz),
             'history': history[job.id],
+            'last_change': last_changes.get(job.id),
             'channels': {
                 'resolved': [channel_to_dict(c) for c in resolved],
                 'unknown': [format_unknown_channel(c) for c in unknown],

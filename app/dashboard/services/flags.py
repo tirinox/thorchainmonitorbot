@@ -10,13 +10,17 @@ async def list_flags(ctx: DashboardContext) -> list[dict]:
     flagship: Flagship = ctx.deps.flagship
     keys = await flagship.db.redis.keys(f'{Flagship.DB_KEY_PREFIX}*')
     paths = sorted(key.removeprefix(Flagship.DB_KEY_PREFIX) for key in keys)
-    flags = await asyncio.gather(*(flagship.get_flag_object(path) for path in paths))
+    flags, last_changes = await asyncio.gather(
+        asyncio.gather(*(flagship.get_flag_object(path) for path in paths)),
+        ctx.audit.latest_by_target(AuditAction.FLAG_CHANGES),
+    )
     return [
         {
             'path': path,
             'value': flag.value,
             'last_changed_ts': flag.last_changed_ts,
             'last_access_ts': flag.last_access_ts,
+            'last_change': last_changes.get(path),  # who changed it from the dashboard, if anyone
         }
         for path, flag in zip(paths, flags)
         if flag is not None

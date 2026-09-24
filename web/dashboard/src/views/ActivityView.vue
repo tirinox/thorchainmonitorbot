@@ -59,6 +59,35 @@ const restoring = ref(null)
 
 const canRestore = (e) => e.action === 'job.delete' && !!e.details?.config
 
+// ---- put a flag back to the value it had before this entry (a normal change, so it is audited too)
+const hasOldFlagValue = (e) => typeof e.details?.old === 'boolean'
+const canRevertFlag = (e) => (e.action === 'flag.set' || e.action === 'flag.delete') && hasOldFlagValue(e)
+const revertLabel = (e) => e.action === 'flag.delete'
+    ? `Recreate as ${e.details.old ? 'on' : 'off'}`
+    : `Revert to ${e.details.old ? 'on' : 'off'}`
+
+function revertFlag(entry) {
+  const {old} = entry.details
+  confirm.require({
+    header: entry.action === 'flag.delete' ? 'Recreate flag' : 'Revert flag',
+    message: `Set "${entry.target}" back to ${old ? 'ON' : 'OFF'}?`,
+    icon: 'pi pi-undo',
+    acceptProps: {label: old ? 'Turn on' : 'Turn off', severity: old ? undefined : 'warn'},
+    rejectProps: {label: 'Cancel', severity: 'secondary', text: true},
+    accept: async () => {
+      restoring.value = entry
+      try {
+        await api.setFlag(entry.target, old)
+        toast.add({severity: 'success', summary: `${entry.target} = ${old}`, life: 4000})
+      } catch (e) {
+        toast.add({severity: 'error', summary: 'Revert failed', detail: e.message, life: 10000})
+      } finally {
+        restoring.value = null
+      }
+    },
+  })
+}
+
 function restore(entry) {
   const config = entry.details.config
   confirm.require({
@@ -142,6 +171,8 @@ function restore(entry) {
             <AuditDetails :entry="e"/>
             <Button v-if="canRestore(e)" label="Restore job" icon="pi pi-replay" size="small" text
                     class="restore" :loading="restoring === e" @click="restore(e)"/>
+            <Button v-if="canRevertFlag(e)" :label="revertLabel(e)" icon="pi pi-undo" size="small" text
+                    class="restore" :loading="restoring === e" @click="revertFlag(e)"/>
           </template>
         </Column>
       </DataTable>

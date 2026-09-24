@@ -1,6 +1,6 @@
 <script setup>
 import {computed, onMounted, reactive, ref, watch} from 'vue'
-import {useRouter} from 'vue-router'
+import {useRoute, useRouter} from 'vue-router'
 import {useToast} from 'primevue/usetoast'
 import {api} from '../api.js'
 import {channelIcon, channelLabel} from '../channels.js'
@@ -8,12 +8,16 @@ import {formatRunTime} from '../format.js'
 import {browserTz, displayTz, sameOffset} from '../timezone.js'
 import RelTime from '../components/RelTime.vue'
 import ScheduleText from '../components/ScheduleText.vue'
+import {parseJsonObject} from '../jsonArgs.js'
 
 const props = defineProps({
   id: {type: String, default: null},  // set when editing
 })
 
 const router = useRouter()
+const route = useRoute()
+// /jobs/new?from=<job id> opens the form pre-filled with a copy of that job
+const cloneOf = computed(() => (!props.id && route.query.from) || null)
 const toast = useToast()
 
 const isEdit = computed(() => !!props.id)
@@ -95,6 +99,14 @@ onMounted(async () => {
         return
       }
       fillFromJob(existing.value)
+    } else if (cloneOf.value) {
+      const source = meta.value.jobs.find(j => j.config.id === cloneOf.value)
+      if (!source) {
+        loadError.value = `Job "${cloneOf.value}" to copy was not found.`
+        return
+      }
+      fillFromJob(source)
+      form.enabled = false  // a copy starts disabled so it does not double-post alerts by accident
     } else {
       form.func = functionOptions.value[0]?.func ?? null
     }
@@ -142,16 +154,39 @@ watch(() => JSON.stringify(schedulePart()) + displayTz.value, () => {
 
 const showSchedulerTz = computed(() => preview.value?.ok && !sameOffset(preview.value.timezone, displayTz.value))
 
+// ---- job arguments, checked while typing
+const argsCheck = computed(() => parseJsonObject(form.argsText))
+const argsHasChannels = computed(() => argsCheck.value.value && 'channels' in argsCheck.value.value)
+
+// ---- schedule presets (times are in the scheduler's timezone, the preview shows them in yours)
+const CRON_PRESETS = [
+  {label: 'Every 10 min', cron: {minute: '*/10'}},
+  {label: 'Hourly', cron: {minute: '0'}},
+  {label: 'Every 6 hours', cron: {minute: '0', hour: '*/6'}},
+  {label: 'Daily 09:00', cron: {minute: '0', hour: '9'}},
+  {label: 'Weekdays 09:00', cron: {minute: '0', hour: '9', day_of_week: 'mon-fri'}},
+  {label: 'Mondays 09:00', cron: {minute: '0', hour: '9', day_of_week: 'mon'}},
+  {label: 'Monthly, 1st 00:00', cron: {minute: '0', hour: '0', day: '1'}},
+]
+const INTERVAL_PRESETS = [
+  {label: '15 min', interval: {minutes: 15}},
+  {label: '1 hour', interval: {hours: 1}},
+  {label: '6 hours', interval: {hours: 6}},
+  {label: '1 day', interval: {days: 1}},
+  {label: '1 week', interval: {weeks: 1}},
+]
+
+function applyPreset(preset) {
+  if (preset.cron) {
+    form.cron = Object.fromEntries(CRON_FIELDS.map(f => [f, preset.cron[f] ?? '']))
+  } else {
+    form.interval = Object.fromEntries(INTERVAL_FIELDS.map(f => [f, preset.interval[f] ?? 0]))
+  }
+}
+
 function buildPayload() {
-  let args
-  try {
-    args = JSON.parse(form.argsText.trim() || '{}')
-  } catch (e) {
-    throw new Error(`Job arguments are not valid JSON: ${e.message}`)
-  }
-  if (!args || typeof args !== 'object' || Array.isArray(args)) {
-    throw new Error('Job arguments must be a JSON object.')
-  }
+  const {value: args, error: argsError} = argsCheck.value
+  if (argsError) throw new Error(`Job arguments: ${argsError}`)
 
   if (form.variant === 'date' && !form.date) throw new Error('Pick a run date.')
   const payload = {
@@ -198,9 +233,10 @@ async function save() {
 <template>
   <div style="max-width: 900px">
     <div class="page-header">
-      <h1>{{ isEdit ? 'Edit job' : 'New job' }}</h1>
+      <h1>{{ isEdit ? 'Edit job' : cloneOf ? 'Copy job' : 'New job' }}</h1>
       <div class="actions">
         <span v-if="isEdit" class="mono muted">{{ id }}</span>
+        <span v-else-if="cloneOf" class="muted small">from <span class="mono">{{ cloneOf }}</span> · starts disabled</span>
       </div>
     </div>
 
@@ -240,6 +276,12 @@ async function save() {
               <i :class="option.icon"/> <span>{{ option.label }}</span>
             </template>
           </SelectButton>
+        </div>
+
+        <div v-if="form.variant !== 'date'" class="presets">
+          <span class="muted small">Presets:</span>
+          <Button v-for="p in (form.variant === 'cron' ? CRON_PRESETS : INTERVAL_PRESETS)" :key="p.label"
+                  :label="p.label" size="small" severity="secondary" outlined @click="applyPreset(p)"/>
         </div>
 
         <div v-if="form.variant === 'interval'" class="form-grid">
@@ -307,7 +349,12 @@ async function save() {
 
         <div class="field">
           <label for="job-args">Job arguments (JSON object)</label>
-          <Textarea id="job-args" v-model="form.argsText" rows="6" auto-resize class="mono"/>
+          <Textarea id="job-args" v-model="form.argsText" rows="6" auto-resize class="mono"
+                    :invalid="!!argsCheck.error"/>
+          <span v-if="argsCheck.error" class="err small"><i class="pi pi-times-circle"/> {{ argsCheck.error }}</span>
+          <span v-else-if="argsHasChannels" class="warn small">
+            <i class="pi pi-exclamation-triangle"/> "channels" here is replaced by the channel picker above.
+          </span>
           <span class="help">Passed as kwargs to the job function on every run.</span>
         </div>
       </div>
@@ -334,7 +381,7 @@ async function save() {
 
       <div class="row">
         <Button type="submit" :label="isEdit ? 'Save job' : 'Create job'" icon="pi pi-check" :loading="saving"
-                :disabled="!form.func || preview?.ok === false"/>
+                :disabled="!form.func || preview?.ok === false || !!argsCheck.error"/>
         <Button label="Cancel" severity="secondary" text @click="router.push({name: 'jobs'})"/>
       </div>
     </form>
@@ -350,6 +397,13 @@ async function save() {
 
 .preview.stale {
   opacity: .6;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  align-items: center;
 }
 
 .runs {

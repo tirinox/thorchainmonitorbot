@@ -7,6 +7,7 @@ import {api} from '../api.js'
 import {usePolling} from '../composables/usePolling.js'
 import PollStatus from '../components/PollStatus.vue'
 import RelTime from '../components/RelTime.vue'
+import LastChange from '../components/LastChange.vue'
 
 const toast = useToast()
 const confirm = useConfirm()
@@ -175,10 +176,13 @@ function deleteFlag(flag) {
         </Column>
         <Column header="Changed / accessed">
           <template #body="{node}">
-            <span v-if="node.data.flag" class="muted small nowrap">
-              changed <RelTime :ts="node.data.flag.last_changed_ts" mode="ago"/> ·
-              used <RelTime :ts="node.data.flag.last_access_ts" mode="ago"/>
-            </span>
+            <template v-if="node.data.flag">
+              <span class="muted small nowrap">
+                changed <RelTime :ts="node.data.flag.last_changed_ts" mode="ago"/> ·
+                used <RelTime :ts="node.data.flag.last_access_ts" mode="ago"/>
+              </span>
+              <div><LastChange :change="node.data.flag.last_change"/></div>
+            </template>
           </template>
         </Column>
         <Column style="width: 1%">

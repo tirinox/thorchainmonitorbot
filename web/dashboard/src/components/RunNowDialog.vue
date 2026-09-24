@@ -3,6 +3,7 @@ import {computed, ref, watch} from 'vue'
 import {isFinished, runs, startFunctionRun} from '../runs.js'
 import {useNow} from '../composables/useNow.js'
 import {durationHuman} from '../format.js'
+import {parseJsonObject} from '../jsonArgs.js'
 
 const props = defineProps({
   functions: {type: Array, default: () => []},
@@ -44,23 +45,12 @@ watch(visible, (v) => {
   }
 })
 
-function parseArgs() {
-  const parsed = JSON.parse(argsText.value.trim() || '{}')
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('Arguments must be a JSON object')
-  }
-  return parsed
-}
+const argsCheck = computed(() => parseJsonObject(argsText.value))
 
 async function start() {
   formError.value = null
-  let args
-  try {
-    args = parseArgs()
-  } catch (e) {
-    formError.value = `Invalid arguments: ${e.message}`
-    return
-  }
+  const {value: args, error} = argsCheck.value
+  if (error) return
   starting.value = true
   try {
     runId.value = (await startFunctionRun(func.value, args, timeout.value)).run_id
@@ -82,7 +72,8 @@ async function start() {
       </div>
       <div class="field">
         <label for="rn-args">Arguments (JSON object)</label>
-        <Textarea id="rn-args" v-model="argsText" rows="6" class="mono" auto-resize/>
+        <Textarea id="rn-args" v-model="argsText" rows="6" class="mono" auto-resize :invalid="!!argsCheck.error"/>
+        <span v-if="argsCheck.error" class="err small"><i class="pi pi-times-circle"/> {{ argsCheck.error }}</span>
         <span class="help">Passed only to this one-off run.</span>
       </div>
       <div class="field">
@@ -97,7 +88,8 @@ async function start() {
     </div>
     <template #footer>
       <Button label="Close" text severity="secondary" @click="visible = false"/>
-      <Button label="Run now" icon="pi pi-play" :loading="starting" :disabled="!func || run?.status === 'running'"
+      <Button label="Run now" icon="pi pi-play" :loading="starting"
+              :disabled="!func || run?.status === 'running' || !!argsCheck.error"
               @click="start"/>
     </template>
   </Dialog>

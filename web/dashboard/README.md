@@ -55,6 +55,9 @@ http://localhost:8501/dashboard/.
   checks needing attention and the favicon gets a status dot.
 - `GET /api/jobs` also returns each job's last 10 finished runs (from the scheduler log) and its own
   `is_dirty` flag (saved but not applied).
+- Jobs and flags carry `last_change` (who changed them last through the dashboard and when, from the activity
+  log; runs do not count). Flag changes can be reverted from Activity; that is a normal, audited change.
+- `/jobs/new?from=<job id>` opens the job form pre-filled with a copy (it starts disabled).
 
 ## Live updates
 

@@ -1,6 +1,6 @@
 <script setup>
 import {computed, reactive, ref, watch} from 'vue'
-import {useRouter} from 'vue-router'
+import {useRoute, useRouter} from 'vue-router'
 import {useToast} from 'primevue/usetoast'
 import {useConfirm} from 'primevue/useconfirm'
 import {api} from '../api.js'
@@ -14,6 +14,7 @@ import {displayTz, tzShortName} from '../timezone.js'
 import RelTime from '../components/RelTime.vue'
 import ScheduleText from '../components/ScheduleText.vue'
 import RunHistory from '../components/RunHistory.vue'
+import LastChange from '../components/LastChange.vue'
 
 const router = useRouter()
 const toast = useToast()
@@ -32,6 +33,71 @@ const rows = computed(() => (data.value?.jobs || []).map(j => {
   const {channels: _, ...args} = j.config.args || {}
   return {...j, id: j.config.id, extraArgs: args}
 }))
+
+// ---- search / filter / sort; kept in the URL so a view can be shared or reloaded
+const route = useRoute()
+const FILTERS = [
+  {value: 'all', label: 'All'},
+  {value: 'enabled', label: 'Enabled'},
+  {value: 'disabled', label: 'Disabled'},
+  {value: 'failing', label: 'Failing'},
+  {value: 'dirty', label: 'Not applied'},
+]
+const SORTS = [
+  {value: 'name', label: 'Name'},
+  {value: 'next', label: 'Next run'},
+  {value: 'last', label: 'Last run'},
+  {value: 'errors', label: 'Most errors'},
+  {value: 'changed', label: 'Recently changed'},
+]
+const view = reactive({
+  q: route.query.q || '',
+  show: FILTERS.some(f => f.value === route.query.show) ? route.query.show : 'all',
+  sort: SORTS.some(s => s.value === route.query.sort) ? route.query.sort : 'name',
+})
+watch(view, () => {
+  const query = {...route.query, q: view.q || undefined, show: view.show !== 'all' ? view.show : undefined,
+    sort: view.sort !== 'name' ? view.sort : undefined}
+  router.replace({query})
+})
+
+const FILTER_FN = {
+  all: () => true,
+  enabled: (j) => j.config.enabled,
+  disabled: (j) => !j.config.enabled,
+  failing: (j) => j.stats.last_status === 'error',
+  dirty: (j) => j.stats.is_dirty,
+}
+
+function matchesSearch(job, q) {
+  if (!q) return true
+  const haystack = [
+    job.id, job.config.func, job.schedule.text, JSON.stringify(job.config.args),
+    ...job.channels.resolved.map(c => c.channel), job.last_change?.actor,
+  ].join(' ').toLowerCase()
+  return q.toLowerCase().split(/\s+/).every(word => haystack.includes(word))
+}
+
+const SORT_KEY = {
+  name: (j) => [j.config.func, j.id],
+  // disabled jobs never run: put them last
+  next: (j) => [j.config.enabled && j.stats.next_run_ts ? j.stats.next_run_ts : Infinity],
+  last: (j) => [-(j.stats.last_ts || 0)],
+  errors: (j) => [-(j.stats.error_count || 0), j.config.func],
+  changed: (j) => [-(j.last_change?.ts || 0)],
+}
+
+function compareKeys(a, b) {
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] < b[i]) return -1
+    if (a[i] > b[i]) return 1
+  }
+  return 0
+}
+
+const visibleRows = computed(() => rows.value
+    .filter(j => FILTER_FN[view.show](j) && matchesSearch(j, view.q.trim()))
+    .sort((a, b) => compareKeys(SORT_KEY[view.sort](a), SORT_KEY[view.sort](b))))
 
 const distribution = computed(() => {
   const d = data.value
@@ -123,6 +189,7 @@ async function applyConfig() {
 }
 
 const editJob = (job) => router.push({name: 'job-edit', params: {id: job.id}})
+const cloneJob = (job) => router.push({name: 'job-new', query: {from: job.id}})
 const viewLogs = (job) => router.push({name: 'logs', query: {q: job.id}})
 
 const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_count, s.run_count) : '—'
@@ -175,9 +242,24 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
         <p v-else class="muted">No channels are configured in <code>broadcasting.channels</code>.</p>
       </Panel>
 
-      <DataTable :value="rows" data-key="id" v-model:expanded-rows="expandedRows" :loading="!data && !error"
+      <div class="toolbar">
+        <IconField class="search">
+          <InputIcon class="pi pi-search"/>
+          <InputText v-model="view.q" placeholder="Search jobs, functions, channels, args…" fluid/>
+        </IconField>
+        <SelectButton v-model="view.show" :options="FILTERS" option-label="label" option-value="value"
+                      :allow-empty="false" size="small"/>
+        <Select v-model="view.sort" :options="SORTS" option-label="label" option-value="value" size="small">
+          <template #value="{value}">
+            <span class="small"><i class="pi pi-sort-alt"/> {{ SORTS.find(s => s.value === value)?.label }}</span>
+          </template>
+        </Select>
+        <span v-if="data" class="muted small">{{ visibleRows.length }} of {{ rows.length }}</span>
+      </div>
+
+      <DataTable :value="visibleRows" data-key="id" v-model:expanded-rows="expandedRows" :loading="!data && !error"
                  scrollable class="jobs-table">
-        <template #empty>No jobs configured yet.</template>
+        <template #empty>{{ rows.length ? 'No jobs match the search or filter.' : 'No jobs configured yet.' }}</template>
         <Column expander style="width: 3rem"/>
 
         <Column header="Job" style="min-width: 16rem">
@@ -185,6 +267,7 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
             <div class="stack" style="gap: .3rem">
               <strong>{{ job.config.func }}</strong>
               <span class="mono muted">{{ job.id }}</span>
+              <LastChange :change="job.last_change"/>
               <div class="row small" style="gap: .35rem">
                 <template v-if="job.channels.resolved.length || job.channels.unknown.length">
                   <Tag v-for="c in job.channels.resolved" :key="c.selector" severity="secondary" v-tooltip="channelLabel(c)">
@@ -255,6 +338,8 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
               <Button icon="pi pi-play" text rounded v-tooltip.top="'Run now'" aria-label="Run now"
                       :loading="!!activeRunForJob(job.id)" :disabled="!!busy[job.id] || !!activeRunForJob(job.id)"
                       @click="runJob(job)"/>
+              <Button icon="pi pi-copy" text rounded severity="secondary" v-tooltip.top="'Copy'" aria-label="Copy"
+                      @click="cloneJob(job)"/>
               <Button icon="pi pi-pencil" text rounded v-tooltip.top="'Edit'" aria-label="Edit"
                       @click="editJob(job)"/>
               <Button icon="pi pi-history" text rounded severity="secondary" v-tooltip.top="'Logs'" aria-label="Logs"
@@ -293,6 +378,17 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
 
 .dim {
   opacity: .6;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+}
+
+.toolbar .search {
+  flex: 1 1 260px;
 }
 
 .schedule-cell {

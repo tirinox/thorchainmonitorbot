@@ -63,7 +63,12 @@ async def test_flag_changes_are_audited_with_old_value():
     await flag_service.set_flag(ctx, 'x:y', True, actor='bob')
     await flag_service.delete_flag(ctx, 'x:y', actor='bob')
 
-    items = (await ctx.audit.list())['items']
+    await flag_service.set_flag(ctx, 'other', True, actor='carol')
+    listed = {f['path']: f for f in await flag_service.list_flags(ctx)}
+    assert listed['other']['last_change']['actor'] == 'carol'
+    assert 'x:y' not in listed  # deleted
+
+    items = (await ctx.audit.list(action=None, q='x:y'))['items']
     assert [(e['action'], e['actor'], e['details']) for e in items] == [
         ('flag.delete', 'bob', {'old': True}),
         ('flag.set', 'bob', {'old': False, 'new': True}),
@@ -160,3 +165,4 @@ def test_worst_status():
     assert Status.worst([Status.OK, Status.WARN, Status.UNKNOWN]) == Status.WARN
     assert Status.worst([Status.OK, Status.ERROR]) == Status.ERROR
     assert Status.worst([]) == Status.OK
+
