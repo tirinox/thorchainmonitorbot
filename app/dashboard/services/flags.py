@@ -1,17 +1,32 @@
 import asyncio
+import logging
 
 from dashboard.audit import AuditAction, LOCAL_ACTOR
 from dashboard.context import DashboardContext
 from lib.events import publish_event, EventType
-from lib.flagship import Flagship
+from lib.flagship import Flagship, FlagDescriptor
+
+
+async def _load_flags(flagship: Flagship) -> list[tuple[str, FlagDescriptor]]:
+    # one MGET instead of a GET per flag: there are 100+ flags, and firing them all at once exhausts
+    # the Redis connection pool (redis-py 8 caps it at 100 by default)
+    redis = flagship.db.redis
+    keys = sorted(await redis.keys(f'{Flagship.DB_KEY_PREFIX}*'))
+    values = await redis.mget(keys) if keys else []
+    flags = []
+    for key, raw in zip(keys, values):
+        if not raw:
+            continue
+        try:
+            flags.append((key.removeprefix(Flagship.DB_KEY_PREFIX), FlagDescriptor.model_validate_json(raw)))
+        except ValueError as e:
+            logging.warning(f'Skipping unreadable flag {key!r}: {e}')
+    return flags
 
 
 async def list_flags(ctx: DashboardContext) -> list[dict]:
-    flagship: Flagship = ctx.deps.flagship
-    keys = await flagship.db.redis.keys(f'{Flagship.DB_KEY_PREFIX}*')
-    paths = sorted(key.removeprefix(Flagship.DB_KEY_PREFIX) for key in keys)
     flags, last_changes = await asyncio.gather(
-        asyncio.gather(*(flagship.get_flag_object(path) for path in paths)),
+        _load_flags(ctx.deps.flagship),
         ctx.audit.latest_by_target(AuditAction.FLAG_CHANGES),
     )
     return [
@@ -22,8 +37,7 @@ async def list_flags(ctx: DashboardContext) -> list[dict]:
             'last_access_ts': flag.last_access_ts,
             'last_change': last_changes.get(path),  # who changed it from the dashboard, if anyone
         }
-        for path, flag in zip(paths, flags)
-        if flag is not None
+        for path, flag in flags
     ]
 
 

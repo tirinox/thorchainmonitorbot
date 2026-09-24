@@ -11,7 +11,7 @@ from dashboard.services.logs import MAX_LOG_LINES
 from dashboard.services.schedule import get_scheduler_timezone, job_schedule_info, validate_job_schedule
 from models.sched import SchedJobCfg, IntervalCfg, CronCfg, DateCfg, SchedVariant
 from notify.pub_configure import PublicAlertJobExecutor
-from notify.pub_scheduler import PublicScheduler, JobStatsModel
+from notify.pub_scheduler import PublicScheduler, JobStatsModel, JobStats
 
 
 class JobNotFound(LookupError):
@@ -37,6 +37,15 @@ class JobPayload(BaseModel):
     max_instances: int = Field(1, ge=1, le=100)
     coalesce: bool = True
     misfire_grace_time: Optional[int] = Field(None, ge=0, le=3600)
+
+
+async def read_job_stats(sched: PublicScheduler, job_ids: list[str]) -> list[JobStatsModel]:
+    """All jobs' stats in one pipelined round trip (a request per job could exhaust the connection pool)."""
+    pipe = sched.db.redis.pipeline(transaction=False)
+    for job_id in job_ids:
+        pipe.hgetall(JobStats(sched.db, key=job_id).key)
+    rows = await pipe.execute()
+    return [JobStatsModel(**row) if row else JobStatsModel() for row in rows]
 
 
 def _stats_to_dict(stats: JobStatsModel) -> dict:
@@ -74,11 +83,10 @@ async def list_jobs(ctx: DashboardContext, viewer_tz: Optional[str] = None) -> d
     scheduler_tz = await get_scheduler_timezone(ctx.deps.db)
     configured_channels = list(ctx.deps.broadcaster.channels)
 
-    raw_logs, last_changes, *all_stats = await asyncio.gather(
+    raw_logs, last_changes, all_stats = await asyncio.gather(
         sched.db_log.get_last_logs(MAX_LOG_LINES),
         ctx.audit.latest_by_target(AuditAction.JOB_CHANGES),
-        sched.get_job_stats(PublicScheduler.ANY_JOB_SPECIAL_ID),
-        *(sched.get_job_stats(job.id) for job in jobs),
+        read_job_stats(sched, [PublicScheduler.ANY_JOB_SPECIAL_ID] + [job.id for job in jobs]),
     )
     any_job_stats, job_stats = all_stats[0], all_stats[1:]
     history = run_history(raw_logs, [job.id for job in jobs])

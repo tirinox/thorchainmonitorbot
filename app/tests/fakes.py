@@ -57,6 +57,9 @@ class FakeRedis:
     async def get(self, name):
         return self.strings.get(name)
 
+    async def mget(self, keys):
+        return [self.strings.get(k) for k in keys]
+
     async def expire(self, name, seconds):
         self.expirations[name] = int(seconds)
         return 1
@@ -111,25 +114,51 @@ class FakePubSubRedis(FakeRedis):
         items = self.lists.get(name, [])
         return items[start:] if end == -1 else items[start:end + 1]
 
-    def pipeline(self):
-        redis = self
-
-        class Pipe:
-            async def rpush(self, key, value):
-                redis.lists[key].append(value)
-
-            async def ltrim(self, key, start, end):
-                items = redis.lists[key]
-                redis.lists[key] = items[start:] if end == -1 else items[start:end + 1]
-
-            async def execute(self):
-                return []
-
-        return Pipe()
+    def pipeline(self, transaction=True):
+        return _FakePipeline(self)
 
     def events(self, event_type=None, channel=None):
         return [m for ch, m in self.published
                 if (channel is None or ch == channel) and (event_type is None or m['type'] == event_type)]
+
+
+class _FakePipeline:
+    """Queues commands like redis-py's asyncio pipeline; `await pipe.cmd()` works too, as in the real one."""
+
+    def __init__(self, redis):
+        self._redis = redis
+        self._ops = []
+
+    def __await__(self):
+        async def itself():
+            return self
+        return itself().__await__()
+
+    def _queue(self, op):
+        self._ops.append(op)
+        return self
+
+    def rpush(self, key, value):
+        return self._queue(lambda: self._redis.lists[key].append(value))
+
+    def ltrim(self, key, start, end):
+        def op():
+            items = self._redis.lists[key]
+            self._redis.lists[key] = items[start:] if end == -1 else items[start:end + 1]
+        return self._queue(op)
+
+    def hgetall(self, name):
+        return self._queue(lambda: self._redis.hgetall(name))
+
+    async def execute(self):
+        results = []
+        for op in self._ops:
+            result = op()
+            if hasattr(result, '__await__'):
+                result = await result
+            results.append(result)
+        self._ops = []
+        return results
 
 
 class FakeDB:

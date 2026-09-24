@@ -166,3 +166,21 @@ def test_worst_status():
     assert Status.worst([Status.OK, Status.ERROR]) == Status.ERROR
     assert Status.worst([]) == Status.OK
 
+
+@pytest.mark.asyncio
+async def test_list_flags_reads_all_flags_in_one_request():
+    class OneShotRedis(FakePubSubRedis):
+        async def get(self, name):
+            raise AssertionError('flags must be read with one MGET, not a GET per flag')
+
+    db = FakeDB(OneShotRedis())
+    for i in range(150):
+        await db.redis.set(f'Flagship:group:flag{i:03d}', f'{{"value": {"true" if i % 2 else "false"}, '
+                                                          f'"last_changed_ts": 1, "last_access_ts": 2}}')
+    await db.redis.set('Flagship:broken', 'not json')
+    ctx = SimpleNamespace(deps=SimpleNamespace(flagship=Flagship(db), db=db), audit=AuditLog(db))
+
+    flags = await flag_service.list_flags(ctx)
+    assert len(flags) == 150  # the unreadable one is skipped
+    assert flags[0]['path'] == 'group:flag000' and flags[0]['value'] is False
+    assert flags[1]['value'] is True and flags[1]['last_access_ts'] == 2
