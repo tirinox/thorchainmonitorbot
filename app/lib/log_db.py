@@ -2,6 +2,7 @@ import datetime
 import json
 
 from lib.db import DB
+from lib.events import publish_event, EventType
 from lib.logs import WithLogger
 
 
@@ -25,6 +26,7 @@ class CircularLog(WithLogger):
         # keep last max_lines elements
         await pipe.ltrim(self.db_key, -self.max_lines, -1)
         await pipe.execute()
+        await publish_event(self.db, EventType.LOG, source=self.prefix, entry=data)
 
     async def get_last_logs(self, count=100):
         entries = await self.db.redis.lrange(self.db_key, -count, -1)

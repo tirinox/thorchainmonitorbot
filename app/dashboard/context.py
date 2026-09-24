@@ -1,6 +1,8 @@
 import asyncio
 import logging
 
+from dashboard.events import EventHub
+from dashboard.runs import RunManager
 from lib.depcont import DepContainer
 from lib.money import DepthCurve
 from notify.dup_stop import TxDeduplicator
@@ -35,6 +37,9 @@ class DashboardContext:
         # serializes read-modify-write operations on the scheduler config
         self.sched_lock = asyncio.Lock()
 
+        self.events = EventHub(d.db)
+        self.runs = RunManager(d.pub_scheduler, d.db)
+
     @property
     def deps(self) -> DepContainer:
         return self.app.deps
@@ -58,8 +63,13 @@ class DashboardContext:
 
         await app.prepare()
         await d.pub_scheduler.start_rpc_client()
+
+        ctx = cls(app)
+        ctx.events.start()
         logging.info('Dashboard context initialized')
-        return cls(app)
+        return ctx
 
     async def close(self):
+        await self.runs.close()
+        await self.events.stop()
         await self.app.close()

@@ -75,8 +75,10 @@ export const api = {
     updateJob: (id, job) => request('PUT', `/jobs/${enc(id)}`, {body: job}),
     deleteJob: (id) => request('DELETE', `/jobs/${enc(id)}`),
     setJobEnabled: (id, enabled) => request('POST', `/jobs/${enc(id)}/enabled`, {body: {enabled}}),
-    runJob: (id, timeout = 60) => request('POST', `/jobs/${enc(id)}/run`, {body: {timeout}}),
+    // both return a run record at once (202); progress arrives as `run` events
+    runJob: (id, timeout) => request('POST', `/jobs/${enc(id)}/run`, {body: timeout ? {timeout} : {}}),
     runFunction: (func, args, timeout) => request('POST', '/run-now', {body: {func, args, timeout}}),
+    runs: () => request('GET', '/runs'),
     reloadScheduler: () => request('POST', '/scheduler/reload'),
 
     logs: (filters) => request('GET', '/logs', {query: filters}),

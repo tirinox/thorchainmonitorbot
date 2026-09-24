@@ -9,12 +9,20 @@ import {durationHuman, formatPercent, shortJson, timeAgo, timeUntil} from '../fo
 import {channelIcon, channelLabel, channelTitle} from '../channels.js'
 import PollStatus from '../components/PollStatus.vue'
 import RunNowDialog from '../components/RunNowDialog.vue'
+import {activeRunForJob, startJobRun} from '../runs.js'
+import {useNow} from '../composables/useNow.js'
 
 const router = useRouter()
 const toast = useToast()
 const confirm = useConfirm()
 
-const {data, error, loading, updatedAt, refresh} = usePolling(api.jobs, {interval: 2000})
+// scheduler actions and job runs are all logged, and each log line arrives as a `log` event
+const {data, error, loading, updatedAt, refresh} = usePolling(api.jobs, {
+  interval: 30000,
+  refreshOn: ['log', 'run'],
+  eventFilter: (e) => e.type === 'run' || e.source === 'PublicScheduler',
+})
+const now = useNow()
 
 const rows = computed(() => (data.value?.jobs || []).map(j => {
   const {channels: _, ...args} = j.config.args || {}
@@ -66,16 +74,14 @@ function runJob(job) {
     icon: 'pi pi-play',
     acceptProps: {label: 'Run it'},
     rejectProps: {label: 'Cancel', severity: 'secondary', text: true},
-    accept: () => withBusy(job.id, 'run', async () => {
+    accept: async () => {
       try {
-        const r = await api.runJob(job.id, 120)
-        toast.add(r.ok
-            ? {severity: 'success', summary: 'Job finished', detail: job.id, life: 4000}
-            : {severity: 'error', summary: 'Job failed', detail: `${job.id}: ${r.result}`, life: 10000})
+        await startJobRun(job.id)
+        toast.add({severity: 'info', summary: 'Started', detail: `${job.id} — you will be notified when it ends.`, life: 3000})
       } catch (e) {
-        notifyError(e, 'Run failed')
+        notifyError(e, 'Could not start the job')
       }
-    }),
+    },
   })
 }
 
@@ -205,7 +211,7 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
                               @update:model-value="v => setEnabled(job, v)"/>
                 <span :class="job.config.enabled ? 'ok' : 'muted'">{{ job.config.enabled ? 'ON' : 'OFF' }}</span>
               </div>
-              <Tag v-if="job.stats.is_running" severity="info" value="RUNNING" class="pulse"/>
+              <Tag v-if="job.stats.is_running || activeRunForJob(job.id)" severity="info" value="RUNNING" class="pulse"/>
               <Tag v-else severity="secondary" value="idle"/>
             </div>
           </template>
@@ -218,12 +224,12 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
               <span class="muted">errors</span>
               <span :class="{err: job.stats.error_count}">{{ job.stats.error_count }} · {{ successRate(job.stats) }} ok</span>
               <span class="muted">last</span>
-              <span>{{ timeAgo(job.stats.last_ts, data.now) }}
+              <span>{{ timeAgo(job.stats.last_ts, now) }}
                 <template v-if="job.stats.last_elapsed"> · took {{ durationHuman(job.stats.last_elapsed) }}</template>
               </span>
               <span class="muted">avg</span><span>{{ durationHuman(job.stats.avg_elapsed) }}</span>
               <template v-if="job.stats.next_run_ts && job.config.enabled">
-                <span class="muted">next</span><span>{{ timeUntil(job.stats.next_run_ts, data.now) }}</span>
+                <span class="muted">next</span><span>{{ timeUntil(job.stats.next_run_ts, now) }}</span>
               </template>
             </div>
             <div v-if="job.stats.last_status === 'error' && job.stats.last_error" class="err small break" style="margin-top: .35rem">
@@ -236,7 +242,8 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
           <template #body="{data: job}">
             <div class="row nowrap" style="flex-wrap: nowrap; gap: .15rem">
               <Button icon="pi pi-play" text rounded v-tooltip.top="'Run now'" aria-label="Run now"
-                      :loading="busy[job.id] === 'run'" :disabled="!!busy[job.id]" @click="runJob(job)"/>
+                      :loading="!!activeRunForJob(job.id)" :disabled="!!busy[job.id] || !!activeRunForJob(job.id)"
+                      @click="runJob(job)"/>
               <Button icon="pi pi-pencil" text rounded v-tooltip.top="'Edit'" aria-label="Edit"
                       @click="editJob(job)"/>
               <Button icon="pi pi-history" text rounded severity="secondary" v-tooltip.top="'Logs'" aria-label="Logs"

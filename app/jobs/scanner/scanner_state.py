@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from lib.date_utils import now_ts
 from lib.db import DB
+from lib.events import publish_event, EventType, EventThrottle
 from lib.logs import WithLogger
 
 
@@ -47,10 +48,14 @@ class ScannerState(BaseModel):
 
 
 class ScannerStateDB(WithLogger):
+    # state is saved several times per block; the dashboard only needs a nudge now and then
+    EVENT_MIN_INTERVAL = 0.5
+
     def __init__(self, db: DB, role: str):
         super().__init__()
         self.db = db
         self.role = role
+        self._event_throttle = EventThrottle(self.EVENT_MIN_INTERVAL)
 
     @property
     def db_key(self) -> str:
@@ -69,6 +74,8 @@ class ScannerStateDB(WithLogger):
         r = await self.db.get_redis()
         data = state.model_dump()
         await r.set(self.db_key, json.dumps(data))
+        if self._event_throttle.allow():
+            await publish_event(self.db, EventType.SCANNER, role=self.role)
 
     async def register(self):
         try:

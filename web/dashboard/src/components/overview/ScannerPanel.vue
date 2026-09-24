@@ -4,15 +4,23 @@ import {api} from '../../api.js'
 import {usePolling} from '../../composables/usePolling.js'
 import {formatDate, formatNumber, formatPercent, timeAgo} from '../../format.js'
 import PollStatus from '../PollStatus.vue'
+import {useNow} from '../../composables/useNow.js'
 
-const {data, error, loading, updatedAt} = usePolling(() => api.overview('scanner'), {interval: 1000})
+const {data, error, loading, updatedAt} = usePolling(() => api.overview('scanner'), {
+  interval: 30000,
+  refreshOn: 'scanner',
+  eventFilter: (e) => e.role === 'main',
+  eventDelay: 250,
+})
+const now = useNow()
 
 const s = computed(() => {
   const d = data.value
   if (!d) return null
-  const sinceScan = d.now - d.last_scanned_at_ts
+  const sinceScan = now.value - d.last_scanned_at_ts
   return {
     ...d,
+    now: now.value,
     sinceScan,
     scanIsOld: sinceScan > 30,
     scanIsVeryOld: sinceScan > 5 * 60,

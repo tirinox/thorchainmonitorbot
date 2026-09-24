@@ -33,6 +33,8 @@ def main():
         reload=args.reload,
         reload_dirs=['.'] if args.reload else None,
         log_level='info',
+        # open SSE streams never finish by themselves; without this a restart would hang on them
+        timeout_graceful_shutdown=3,
     )
 
 

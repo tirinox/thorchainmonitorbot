@@ -12,6 +12,7 @@ from redis import BusyLoadingError
 from lib.date_utils import now_ts, MINUTE
 from lib.db import DB
 from lib.delegates import WithDelegates
+from lib.events import publish_event, EventType
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 
@@ -108,6 +109,7 @@ class DataController(WithLogger):
         }
         self.logger.info(f'Saving stats of {len(data["trackers"])} fetchers')
         await db.redis.set(self.DB_KEY, json.dumps(data))
+        await publish_event(db, EventType.FETCHERS)
 
     async def load_stats(self, db: DB):
         data = await db.redis.get(self.DB_KEY)

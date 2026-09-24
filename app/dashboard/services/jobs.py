@@ -99,8 +99,7 @@ async def save_job(ctx: DashboardContext, payload: JobPayload, job_id: Optional[
             func = existing.func
         else:
             func = payload.func
-            if func not in PublicAlertJobExecutor.AVAILABLE_TYPES:
-                raise ValueError(f'Unknown job function: {func!r}')
+            ensure_known_function(func)
             job_id = f"{func}_job_{int(time.time())}"
 
         args = dict(payload.args)
@@ -144,25 +143,24 @@ async def set_job_enabled(ctx: DashboardContext, job_id: str, enabled: bool):
         await sched.toggle_job_enabled(job_id, enabled)
 
 
-def _command_result(result) -> dict:
-    return {'ok': result in ('success', 'reloaded'), 'result': result}
-
-
-async def run_job_now(ctx: DashboardContext, job_id: str, timeout: float) -> dict:
-    sched = ctx.scheduler
-    result = await sched.post_command(sched.COMMAND_RUN_NOW, job_id=job_id, timeout=timeout)
-    return _command_result(result)
-
-
-async def run_function_now(ctx: DashboardContext, func: str, args: dict, timeout: float) -> dict:
+def ensure_known_function(func: str):
     if func not in PublicAlertJobExecutor.AVAILABLE_TYPES:
         raise ValueError(f'Unknown job function: {func!r}')
-    sched = ctx.scheduler
-    result = await sched.post_command(sched.COMMAND_RUN_NOW, func=func, args=args, timeout=timeout)
-    return _command_result(result)
+
+
+async def start_job_run(ctx: DashboardContext, job_id: str, timeout: float) -> dict:
+    await ctx.scheduler.load_config_from_db(silent=True)
+    if not ctx.scheduler.find_job_by_id(job_id):
+        raise JobNotFound(job_id)
+    return ctx.runs.start(job_id=job_id, timeout=timeout).to_dict()
+
+
+async def start_function_run(ctx: DashboardContext, func: str, args: dict, timeout: float) -> dict:
+    ensure_known_function(func)
+    return ctx.runs.start(func=func, args=args, timeout=timeout).to_dict()
 
 
 async def reload_scheduler(ctx: DashboardContext) -> dict:
     sched = ctx.scheduler
     result = await sched.post_command(sched.COMMAND_RELOAD)
-    return _command_result(result)
+    return {'ok': result == 'reloaded', 'result': result}

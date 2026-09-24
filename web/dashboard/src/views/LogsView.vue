@@ -6,6 +6,8 @@ import {usePolling} from '../composables/usePolling.js'
 import {formatDate, formatNumber, timeAgo} from '../format.js'
 import PollStatus from '../components/PollStatus.vue'
 import {isDark} from '../theme.js'
+import {useNow} from '../composables/useNow.js'
+import {liveStatus} from '../events.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,10 +34,17 @@ watch(filters, () => {
 })
 watch(() => search.limit, () => refresh())
 
+// every scheduler log line is announced with a `log` event; reload at most once a second
 const {data, error, loading, updatedAt, refresh} = usePolling(
     () => api.logs({...filters, limit: search.limit}),
-    {interval: 5000},
+    {
+      interval: 60000,
+      refreshOn: 'log',
+      eventFilter: (e) => e.source === 'PublicScheduler',
+      eventDelay: 1000,
+    },
 )
+const now = useNow()
 
 const hasFilters = computed(() => FILTER_KEYS.some(k => filters[k]))
 
@@ -92,6 +101,7 @@ const chartOptions = computed(() => {
     <div class="page-header">
       <h1>Scheduler logs</h1>
       <div class="actions">
+        <Tag v-if="liveStatus === 'live'" severity="success" value="live tail" icon="pi pi-circle-fill" class="small"/>
         <PollStatus :updated-at="updatedAt" :error="error" :loading="loading"/>
       </div>
     </div>
@@ -135,7 +145,7 @@ const chartOptions = computed(() => {
         <Column header="Time" style="width: 1%">
           <template #body="{data: r}">
             <div class="nowrap">{{ formatDate(r.ts) }}</div>
-            <div class="muted small nowrap">{{ timeAgo(r.ts) }}</div>
+            <div class="muted small nowrap">{{ timeAgo(r.ts, now) }}</div>
           </template>
         </Column>
         <Column field="action" header="Action"/>

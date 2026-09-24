@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, ValidationError
 from dashboard.context import DashboardContext
 from dashboard.routes.deps import get_ctx
 from dashboard.services import jobs
+from dashboard.runs import RunConflict
 from dashboard.services.jobs import JobPayload, JobNotFound
 
 router = APIRouter(tags=['scheduler'])
@@ -18,7 +19,8 @@ class ToggleBody(BaseModel):
 
 
 class RunJobBody(BaseModel):
-    timeout: float = Field(30.0, ge=5, le=3600)
+    # how long the dashboard waits for the bot's answer; the HTTP request itself returns at once
+    timeout: float = Field(3600.0, ge=5, le=6 * 3600)
 
 
 class RunFunctionBody(RunJobBody):
@@ -30,6 +32,8 @@ async def _handle(coro):
     """Maps service/RPC exceptions to HTTP errors."""
     try:
         return await coro
+    except RunConflict as e:
+        raise HTTPException(409, str(e))
     except JobNotFound as e:
         raise HTTPException(404, f'Job {e.args[0]!r} not found')
     except ValidationError as e:
@@ -71,14 +75,21 @@ async def set_enabled(job_id: str, body: ToggleBody, ctx: DashboardContext = Dep
     return {'ok': True}
 
 
-@router.post('/jobs/{job_id}/run')
+@router.post('/jobs/{job_id}/run', status_code=202)
 async def run_job(job_id: str, body: RunJobBody, ctx: DashboardContext = Depends(get_ctx)):
-    return await _handle(jobs.run_job_now(ctx, job_id, body.timeout))
+    """Starts the job in the bot and returns immediately; progress comes as `run` events."""
+    return await _handle(jobs.start_job_run(ctx, job_id, body.timeout))
 
 
-@router.post('/run-now')
+@router.post('/run-now', status_code=202)
 async def run_function(body: RunFunctionBody, ctx: DashboardContext = Depends(get_ctx)):
-    return await _handle(jobs.run_function_now(ctx, body.func, body.args, body.timeout))
+    return await _handle(jobs.start_function_run(ctx, body.func, body.args, body.timeout))
+
+
+@router.get('/runs')
+async def list_runs(ctx: DashboardContext = Depends(get_ctx)):
+    """Manual runs started from this dashboard process (active and recently finished)."""
+    return ctx.runs.list()
 
 
 @router.post('/scheduler/reload')

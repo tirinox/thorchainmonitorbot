@@ -3,10 +3,16 @@ import {api} from '../../api.js'
 import {usePolling} from '../../composables/usePolling.js'
 import {durationHuman, formatNumber, formatPercent, timeAgo} from '../../format.js'
 import PollStatus from '../PollStatus.vue'
+import {useNow} from '../../composables/useNow.js'
 
 const STALE_AFTER_SEC = 10 * 60
 
-const {data, error, loading, updatedAt} = usePolling(() => api.overview('fetchers'), {interval: 2000})
+// the bot saves fetcher stats every ~20 s and announces it with a `fetchers` event
+const {data, error, loading, updatedAt} = usePolling(() => api.overview('fetchers'), {
+  interval: 60000,
+  refreshOn: 'fetchers',
+})
+const now = useNow()
 
 function health(f) {
   if (f.success_rate < 90) return {severity: 'danger', label: `${f.error_counter} errors`}
@@ -33,9 +39,9 @@ const isStale = (f, now) => now - f.last_timestamp > STALE_AFTER_SEC
       </Column>
       <Column field="last_timestamp" header="Last run" sortable>
         <template #body="{data: f}">
-          <span :class="{err: isStale(f, data.now)}" class="nowrap">
-            <i v-if="isStale(f, data.now)" class="pi pi-exclamation-triangle"/>
-            {{ timeAgo(f.last_timestamp, data.now) }}
+          <span :class="{err: isStale(f, now)}" class="nowrap">
+            <i v-if="isStale(f, now)" class="pi pi-exclamation-triangle"/>
+            {{ timeAgo(f.last_timestamp, now) }}
           </span>
         </template>
       </Column>

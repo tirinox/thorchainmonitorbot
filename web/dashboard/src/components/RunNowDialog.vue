@@ -1,6 +1,8 @@
 <script setup>
-import {ref, watch} from 'vue'
-import {api} from '../api.js'
+import {computed, ref, watch} from 'vue'
+import {isFinished, runs, startFunctionRun} from '../runs.js'
+import {useNow} from '../composables/useNow.js'
+import {durationHuman} from '../format.js'
 
 const props = defineProps({
   functions: {type: Array, default: () => []},
@@ -9,13 +11,35 @@ const visible = defineModel('visible', {type: Boolean, default: false})
 
 const func = ref(null)
 const argsText = ref('{}')
-const timeout = ref(30)
-const running = ref(false)
-const result = ref(null)  // {severity, text}
+const timeout = ref(3600)
+const starting = ref(false)
+const formError = ref(null)
+const runId = ref(null)
+const now = useNow()
+
+// the run started from this dialog, kept live by `run` events
+const run = computed(() => runId.value ? runs[runId.value] : null)
+
+const status = computed(() => {
+  const r = run.value
+  if (!r) return null
+  const elapsed = durationHuman((r.finished_ts || now.value) - r.started_ts)
+  switch (r.status) {
+    case 'running':
+      return {severity: 'info', text: `${r.func} is running… ${elapsed}. You can close this dialog; you will be notified.`}
+    case 'success':
+      return {severity: 'success', text: `${r.func} finished in ${elapsed}.`}
+    case 'timeout':
+      return {severity: 'warn', text: r.result}
+    default:
+      return {severity: 'error', text: `${r.func}: ${r.result}`}
+  }
+})
 
 watch(visible, (v) => {
   if (v) {
-    result.value = null
+    formError.value = null
+    if (isFinished(run.value)) runId.value = null
     if (!func.value && props.functions.length) func.value = props.functions[0]
   }
 })
@@ -28,25 +52,22 @@ function parseArgs() {
   return parsed
 }
 
-async function run() {
+async function start() {
+  formError.value = null
   let args
   try {
     args = parseArgs()
   } catch (e) {
-    result.value = {severity: 'error', text: `Invalid arguments: ${e.message}`}
+    formError.value = `Invalid arguments: ${e.message}`
     return
   }
-  running.value = true
-  result.value = null
+  starting.value = true
   try {
-    const r = await api.runFunction(func.value, args, timeout.value)
-    result.value = r.ok
-        ? {severity: 'success', text: `${func.value} executed successfully.`}
-        : {severity: 'error', text: `${func.value}: ${r.result}`}
+    runId.value = (await startFunctionRun(func.value, args, timeout.value)).run_id
   } catch (e) {
-    result.value = {severity: 'error', text: e.message}
+    formError.value = e.message
   } finally {
-    running.value = false
+    starting.value = false
   }
 }
 </script>
@@ -65,14 +86,19 @@ async function run() {
         <span class="help">Passed only to this one-off run.</span>
       </div>
       <div class="field">
-        <label for="rn-timeout">Timeout, seconds</label>
-        <InputNumber input-id="rn-timeout" v-model="timeout" :min="5" :max="3600" :step="5" show-buttons/>
+        <label for="rn-timeout">Wait for the result up to, seconds</label>
+        <InputNumber input-id="rn-timeout" v-model="timeout" :min="5" :max="21600" :step="60" show-buttons/>
+        <span class="help">The job keeps running in the bot even if nobody waits for it.</span>
       </div>
-      <Message v-if="result" :severity="result.severity">{{ result.text }}</Message>
+      <Message v-if="formError" severity="error">{{ formError }}</Message>
+      <Message v-if="status" :severity="status.severity">
+        <span class="row"><i v-if="run?.status === 'running'" class="pi pi-spin pi-spinner"/> {{ status.text }}</span>
+      </Message>
     </div>
     <template #footer>
       <Button label="Close" text severity="secondary" @click="visible = false"/>
-      <Button label="Run now" icon="pi pi-play" :loading="running" :disabled="!func" @click="run"/>
+      <Button label="Run now" icon="pi pi-play" :loading="starting" :disabled="!func || run?.status === 'running'"
+              @click="start"/>
     </template>
   </Dialog>
 </template>

@@ -6,11 +6,14 @@ import {api} from '../api.js'
 import {usePolling} from '../composables/usePolling.js'
 import {timeAgo} from '../format.js'
 import PollStatus from '../components/PollStatus.vue'
+import {useNow} from '../composables/useNow.js'
 
 const toast = useToast()
 const confirm = useConfirm()
 
-const {data, error, loading, updatedAt, refresh} = usePolling(api.flags, {interval: 5000})
+// `flags` events come from dashboard edits; the bot may also create flags on its own, hence the slow poll
+const {data, error, loading, updatedAt, refresh} = usePolling(api.flags, {interval: 60000, refreshOn: 'flags'})
+const now = useNow()
 
 const search = ref('')
 const pending = reactive({})  // path -> optimistic value while the request is in flight
@@ -167,7 +170,7 @@ function deleteFlag(flag) {
         <Column header="Changed / accessed">
           <template #body="{node}">
             <span v-if="node.data.flag" class="muted small nowrap">
-              {{ timeAgo(node.data.flag.last_changed_ts) }} · {{ timeAgo(node.data.flag.last_access_ts) }}
+              {{ timeAgo(node.data.flag.last_changed_ts, now) }} · {{ timeAgo(node.data.flag.last_access_ts, now) }}
             </span>
           </template>
         </Column>

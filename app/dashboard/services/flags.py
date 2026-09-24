@@ -1,6 +1,7 @@
 import asyncio
 
 from dashboard.context import DashboardContext
+from lib.events import publish_event, EventType
 from lib.flagship import Flagship
 
 
@@ -23,7 +24,9 @@ async def list_flags(ctx: DashboardContext) -> list[dict]:
 
 async def set_flag(ctx: DashboardContext, path: str, value: bool):
     await ctx.deps.flagship.set_flag(path, value)
+    await publish_event(ctx.deps.db, EventType.FLAGS, path=path, value=value)
 
 
 async def delete_flag(ctx: DashboardContext, path: str):
     await ctx.deps.flagship.delete_flag(path)
+    await publish_event(ctx.deps.db, EventType.FLAGS, path=path, deleted=True)

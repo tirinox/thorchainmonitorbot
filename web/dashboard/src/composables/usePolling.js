@@ -1,17 +1,31 @@
 import {onBeforeUnmount, onMounted, ref, shallowRef} from 'vue'
+import {onEvent} from '../events.js'
 
 /**
- * Calls `fetcher` now and then every `interval` ms while the page is visible.
+ * Loads data with `fetcher` and keeps it fresh.
+ *
+ * - `refreshOn`: event types (see events.js) that trigger a reload; bursts are coalesced into one reload
+ *   per `eventDelay` ms. A "resync" (after an SSE reconnect) always reloads.
+ * - `eventFilter(event)`: optional, return false to ignore an event.
+ * - `interval`: plain polling period in ms. With `refreshOn` it is only a safety net, so keep it long.
+ *
  * Requests never overlap; a failed request keeps the last good data and exposes `error`.
  * `refresh()` during a request schedules one more request right after it (e.g. filters changed).
  */
-export function usePolling(fetcher, {interval = 2000, immediate = true} = {}) {
+export function usePolling(fetcher, {
+    interval = 2000,
+    immediate = true,
+    refreshOn = null,
+    eventFilter = null,
+    eventDelay = 300,
+} = {}) {
     const data = shallowRef(null)
     const error = ref(null)
     const loading = ref(false)
     const updatedAt = ref(null)
 
     let timer = null
+    let eventTimer = null
     let stopped = false
     let inFlight = null
     let again = false
@@ -52,6 +66,22 @@ export function usePolling(fetcher, {interval = 2000, immediate = true} = {}) {
         }, interval)
     }
 
+    // throttle with a trailing call: the first event arms a timer, later ones ride along
+    function refreshSoon() {
+        if (eventTimer || stopped) return
+        eventTimer = setTimeout(() => {
+            eventTimer = null
+            if (!document.hidden) refresh()
+        }, eventDelay)
+    }
+
+    if (refreshOn) {
+        onEvent(refreshOn, (event) => {
+            if (!eventFilter || eventFilter(event)) refreshSoon()
+        })
+        onEvent('resync', refreshSoon)
+    }
+
     function onVisibility() {
         if (!document.hidden) refresh()
     }
@@ -65,6 +95,7 @@ export function usePolling(fetcher, {interval = 2000, immediate = true} = {}) {
     onBeforeUnmount(() => {
         stopped = true
         clearTimeout(timer)
+        clearTimeout(eventTimer)
         document.removeEventListener('visibilitychange', onVisibility)
     })
 

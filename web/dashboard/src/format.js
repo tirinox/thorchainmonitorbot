@@ -20,7 +20,7 @@ export function durationHuman(seconds) {
 
 export function timeAgo(ts, now = nowSec()) {
     if (!ts) return 'never'
-    return `${durationHuman(now - ts)} ago`
+    return now - ts < 1 ? 'just now' : `${durationHuman(now - ts)} ago`
 }
 
 export function timeUntil(ts, now = nowSec()) {
