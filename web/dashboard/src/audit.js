@@ -4,6 +4,7 @@ const ACTIONS = {
     'job.create': {label: 'Created job', icon: 'pi pi-plus', severity: 'success'},
     'job.update': {label: 'Edited job', icon: 'pi pi-pencil', severity: 'info'},
     'job.delete': {label: 'Deleted job', icon: 'pi pi-trash', severity: 'danger'},
+    'job.restore': {label: 'Restored job', icon: 'pi pi-replay', severity: 'success'},
     'job.enable': {label: 'Enabled job', icon: 'pi pi-check', severity: 'success'},
     'job.disable': {label: 'Disabled job', icon: 'pi pi-ban', severity: 'warn'},
     'job.run': {label: 'Ran job', icon: 'pi pi-play', severity: 'secondary'},

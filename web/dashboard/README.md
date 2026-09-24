@@ -49,6 +49,12 @@ http://localhost:8501/dashboard/.
   flag changes store the old value). `GET /api/audit` reads it; the Activity page shows it.
 - The user comes from nginx basic auth: nginx sets `X-Remote-User: $remote_user`. Without nginx the user is
   `local`.
+- A deleted job can be restored from its Activity entry (`POST /api/jobs/restore` with the saved config); it
+  is validated like a new job and needs Apply.
+- The summary is polled once for the whole app, also in background tabs: the tab title shows the number of
+  checks needing attention and the favicon gets a status dot.
+- `GET /api/jobs` also returns each job's last 10 finished runs (from the scheduler log) and its own
+  `is_dirty` flag (saved but not applied).
 
 ## Live updates
 

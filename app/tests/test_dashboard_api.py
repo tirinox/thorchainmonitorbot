@@ -179,3 +179,43 @@ def test_csrf_header_required_for_mutations():
     assert client.post('/api/thing').status_code == 403
     assert client.post('/dashboard/api/thing').status_code == 403
     assert client.post('/api/thing', headers={CSRF_HEADER: '1'}).status_code == 200
+
+
+# ---------- run history and restore ----------
+
+def test_run_history_takes_finished_runs_per_job_oldest_first():
+    raw = [  # newest first, as CircularLog returns them
+        {'action': 'run', 'phase': 'failed', 'job_id': 'a', '_ts': 50, 'error': 'boom'},
+        {'action': 'run', 'phase': 'start', 'job': 'f', '_ts': 49},  # starts carry no job_id
+        {'action': 'run', 'phase': 'complete', 'job_id': 'a', '_ts': 40, 'elapsed': 1.5, 'run_id': 'r1'},
+        {'action': 'run', 'phase': 'complete', 'job_id': 'other', '_ts': 30},
+        {'action': 'job_toggle_enabled', 'job_id': 'a', '_ts': 25},
+        {'action': 'run', 'phase': 'skipped', 'job_id': 'a', '_ts': 20},
+        {'action': 'run', 'phase': 'complete', 'job_id': 'a', '_ts': 10},
+    ]
+    history = jobs.run_history(raw, ['a', 'b'], limit=3)
+    assert history['b'] == []
+    assert [(r['ts'], r['status']) for r in history['a']] == [(20, 'skipped'), (40, 'ok'), (50, 'error')]
+    assert history['a'][1]['manual'] and history['a'][1]['elapsed'] == 1.5
+    assert history['a'][2]['error'] == 'boom'
+
+
+@pytest.mark.asyncio
+async def test_restore_deleted_job_from_audit(ctx):
+    created = await jobs.save_job(ctx, JobPayload(func=SOME_FUNC, enabled=True, variant='interval',
+                                                  interval={'hours': 3}, args={'x': 1}), actor='alice')
+    await jobs.delete_job(ctx, created.id, actor='alice')
+    deleted = (await ctx.audit.list(action='job.delete'))['items'][0]
+
+    restored = await jobs.restore_job(ctx, deleted['details']['config'], actor='bob')
+    assert restored.model_dump() == created.model_dump()
+    listing = await jobs.list_jobs(ctx)
+    assert [j['config']['id'] for j in listing['jobs']] == [created.id]
+    assert listing['jobs'][0]['history'] == []
+    assert (await ctx.audit.list())['items'][0]['action'] == 'job.restore'
+
+    with pytest.raises(jobs.JobConflict):
+        await jobs.restore_job(ctx, deleted['details']['config'], actor='bob')
+
+    with pytest.raises(ValueError, match='Unknown job function'):
+        await jobs.restore_job(ctx, {**deleted['details']['config'], 'id': 'x', 'func': 'gone'}, actor='bob')

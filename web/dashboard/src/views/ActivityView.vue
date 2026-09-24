@@ -1,6 +1,8 @@
 <script setup>
-import {computed, reactive, watch} from 'vue'
+import {computed, reactive, ref, watch} from 'vue'
 import {useRoute, useRouter} from 'vue-router'
+import {useToast} from 'primevue/usetoast'
+import {useConfirm} from 'primevue/useconfirm'
 import {api} from '../api.js'
 import {usePolling} from '../composables/usePolling.js'
 import {formatDate, formatNumber} from '../format.js'
@@ -49,6 +51,36 @@ function targetLink(entry) {
 }
 
 const rowClass = (e) => e.level === 'warning' ? 'row-warning' : ''
+
+// ---- restore a deleted job from the config saved with its job.delete entry
+const toast = useToast()
+const confirm = useConfirm()
+const restoring = ref(null)
+
+const canRestore = (e) => e.action === 'job.delete' && !!e.details?.config
+
+function restore(entry) {
+  const config = entry.details.config
+  confirm.require({
+    header: 'Restore job',
+    message: `Restore "${config.id}" (${config.func}) as it was when deleted? ` +
+        `It comes back ${config.enabled ? 'enabled' : 'disabled'} and needs Apply on the Jobs page.`,
+    icon: 'pi pi-replay',
+    acceptProps: {label: 'Restore'},
+    rejectProps: {label: 'Cancel', severity: 'secondary', text: true},
+    accept: async () => {
+      restoring.value = entry
+      try {
+        await api.restoreJob(config)
+        toast.add({severity: 'success', summary: 'Job restored', detail: `${config.id} — press Apply on the Jobs page.`, life: 6000})
+      } catch (e) {
+        toast.add({severity: 'error', summary: 'Restore failed', detail: e.message, life: 10000})
+      } finally {
+        restoring.value = null
+      }
+    },
+  })
+}
 </script>
 
 <template>
@@ -108,6 +140,8 @@ const rowClass = (e) => e.level === 'warning' ? 'row-warning' : ''
         <Column header="Details" style="min-width: 20rem">
           <template #body="{data: e}">
             <AuditDetails :entry="e"/>
+            <Button v-if="canRestore(e)" label="Restore job" icon="pi pi-replay" size="small" text
+                    class="restore" :loading="restoring === e" @click="restore(e)"/>
           </template>
         </Column>
       </DataTable>
@@ -126,5 +160,9 @@ const rowClass = (e) => e.level === 'warning' ? 'row-warning' : ''
 
 .filters .search {
   flex: 1 1 240px;
+}
+
+.restore {
+  margin: .25rem 0 0 -.5rem;
 }
 </style>

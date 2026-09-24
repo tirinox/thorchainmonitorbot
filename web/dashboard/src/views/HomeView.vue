@@ -1,5 +1,5 @@
 <script setup>
-import {computed} from 'vue'
+import {computed, inject} from 'vue'
 import {api} from '../api.js'
 import {usePolling} from '../composables/usePolling.js'
 import {useNow} from '../composables/useNow.js'
@@ -19,12 +19,8 @@ const STATUS = {
 }
 const ITEMS_SHOWN = 4
 
-// almost anything the bot or the dashboard does can change a check; coalesce into one reload per 2 s
-const {data, error, loading, updatedAt} = usePolling(api.summary, {
-  interval: 60000,
-  refreshOn: ['scanner', 'fetchers', 'log', 'flags', 'run'],
-  eventDelay: 2000,
-})
+// polled once for the whole app by App.vue (it also feeds the tab title and icon)
+const {data, error, loading, updatedAt} = inject('summary')
 
 const {data: activity} = usePolling(() => api.audit({limit: 8}), {
   interval: 60000,

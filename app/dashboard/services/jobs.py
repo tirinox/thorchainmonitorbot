@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from dashboard.audit import AuditAction, LOCAL_ACTOR, diff_dicts
 from dashboard.channels import channel_to_dict, resolve_job_channels, format_unknown_channel
 from dashboard.context import DashboardContext
+from dashboard.services.logs import MAX_LOG_LINES
 from dashboard.services.schedule import get_scheduler_timezone, job_schedule_info, validate_job_schedule
 from models.sched import SchedJobCfg, IntervalCfg, CronCfg, DateCfg, SchedVariant
 from notify.pub_configure import PublicAlertJobExecutor
@@ -15,6 +16,10 @@ from notify.pub_scheduler import PublicScheduler, JobStatsModel
 
 class JobNotFound(LookupError):
     pass
+
+
+class JobConflict(Exception):
+    """A job with this id already exists."""
 
 
 class JobPayload(BaseModel):
@@ -38,6 +43,30 @@ def _stats_to_dict(stats: JobStatsModel) -> dict:
     return {**stats.model_dump(), 'avg_elapsed': stats.avg_elapsed}
 
 
+RUN_HISTORY_LEN = 10
+_RUN_OUTCOMES = {'complete': 'ok', 'failed': 'error', 'skipped': 'skipped'}
+
+
+def run_history(raw_logs: list[dict], job_ids, limit: int = RUN_HISTORY_LEN) -> dict[str, list[dict]]:
+    """Newest-first scheduler log -> {job_id: last `limit` finished runs, oldest first}."""
+    history = {job_id: [] for job_id in job_ids}
+    for entry in raw_logs:
+        if entry.get('action') != 'run':
+            continue
+        outcome = _RUN_OUTCOMES.get(entry.get('phase'))
+        runs = history.get(entry.get('job_id'))
+        if outcome is None or runs is None or len(runs) >= limit:
+            continue
+        runs.append({
+            'ts': entry.get('_ts'),
+            'status': outcome,
+            'elapsed': entry.get('elapsed'),
+            'error': entry.get('error'),
+            'manual': bool(entry.get('run_id')),  # started from the dashboard
+        })
+    return {job_id: runs[::-1] for job_id, runs in history.items()}
+
+
 async def list_jobs(ctx: DashboardContext, viewer_tz: Optional[str] = None) -> dict:
     """`viewer_tz` (IANA name) adds the viewer's local equivalents of fixed cron times."""
     sched = ctx.scheduler
@@ -45,11 +74,13 @@ async def list_jobs(ctx: DashboardContext, viewer_tz: Optional[str] = None) -> d
     scheduler_tz = await get_scheduler_timezone(ctx.deps.db)
     configured_channels = list(ctx.deps.broadcaster.channels)
 
-    all_stats = await asyncio.gather(
+    raw_logs, *all_stats = await asyncio.gather(
+        sched.db_log.get_last_logs(MAX_LOG_LINES),
         sched.get_job_stats(PublicScheduler.ANY_JOB_SPECIAL_ID),
         *(sched.get_job_stats(job.id) for job in jobs),
     )
     any_job_stats, job_stats = all_stats[0], all_stats[1:]
+    history = run_history(raw_logs, [job.id for job in jobs])
 
     items = []
     for job, stats in zip(jobs, job_stats):
@@ -58,6 +89,7 @@ async def list_jobs(ctx: DashboardContext, viewer_tz: Optional[str] = None) -> d
             'config': job.model_dump(mode='json'),
             'stats': _stats_to_dict(stats),
             'schedule': job_schedule_info(job, scheduler_tz, viewer_tz),
+            'history': history[job.id],
             'channels': {
                 'resolved': [channel_to_dict(c) for c in resolved],
                 'unknown': [format_unknown_channel(c) for c in unknown],
@@ -129,6 +161,21 @@ async def save_job(ctx: DashboardContext, payload: JobPayload, job_id: Optional[
     else:
         await ctx.audit.record(AuditAction.JOB_CREATE, actor, job_id, func=func, variant=job_cfg.variant,
                                schedule=job_schedule_info(job_cfg, scheduler_tz)['text'], enabled=job_cfg.enabled)
+    return job_cfg
+
+
+async def restore_job(ctx: DashboardContext, config: dict, actor: str = LOCAL_ACTOR) -> SchedJobCfg:
+    """Re-creates a deleted job from the config saved in its `job.delete` audit entry."""
+    job_cfg = SchedJobCfg(**config)  # pydantic.ValidationError if the saved config no longer fits the model
+    ensure_known_function(job_cfg.func)
+    validate_job_schedule(job_cfg, await get_scheduler_timezone(ctx.deps.db))
+    async with ctx.sched_lock:
+        sched = ctx.scheduler
+        await sched.load_config_from_db(silent=True)
+        if sched.find_job_by_id(job_cfg.id):
+            raise JobConflict(job_cfg.id)
+        await sched.add_new_job(job_cfg)
+    await ctx.audit.record(AuditAction.JOB_RESTORE, actor, job_cfg.id, func=job_cfg.func, enabled=job_cfg.enabled)
     return job_cfg
 
 

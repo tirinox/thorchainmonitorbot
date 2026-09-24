@@ -11,13 +11,17 @@ from dashboard.routes.deps import get_ctx
 from dashboard.services import jobs
 from dashboard.services.schedule import get_scheduler_timezone, preview_schedule
 from dashboard.runs import RunConflict
-from dashboard.services.jobs import JobPayload, JobNotFound
+from dashboard.services.jobs import JobPayload, JobNotFound, JobConflict
 
 router = APIRouter(tags=['scheduler'])
 
 
 class ToggleBody(BaseModel):
     enabled: bool
+
+
+class RestoreBody(BaseModel):
+    config: dict[str, Any]  # as saved in the job.delete audit entry
 
 
 class RunJobBody(BaseModel):
@@ -36,6 +40,8 @@ async def _handle(coro):
         return await coro
     except RunConflict as e:
         raise HTTPException(409, str(e))
+    except JobConflict as e:
+        raise HTTPException(409, f'A job with id {e.args[0]!r} already exists')
     except JobNotFound as e:
         raise HTTPException(404, f'Job {e.args[0]!r} not found')
     except ValidationError as e:
@@ -72,6 +78,12 @@ async def schedule_preview(body: SchedulePreviewBody, ctx: DashboardContext = De
 @router.post('/jobs')
 async def create_job(payload: JobPayload, ctx: DashboardContext = Depends(get_ctx), actor: str = Depends(get_actor)):
     job = await _handle(jobs.save_job(ctx, payload, actor=actor))
+    return job.model_dump(mode='json')
+
+
+@router.post('/jobs/restore')
+async def restore_job(body: RestoreBody, ctx: DashboardContext = Depends(get_ctx), actor: str = Depends(get_actor)):
+    job = await _handle(jobs.restore_job(ctx, body.config, actor=actor))
     return job.model_dump(mode='json')
 
 

@@ -8,6 +8,7 @@ import {onEvent} from '../events.js'
  *   per `eventDelay` ms. A "resync" (after an SSE reconnect) always reloads.
  * - `eventFilter(event)`: optional, return false to ignore an event.
  * - `interval`: plain polling period in ms. With `refreshOn` it is only a safety net, so keep it long.
+ * - `pauseWhenHidden`: skip reloads while the tab is in the background (default); catch up when shown.
  *
  * Requests never overlap; a failed request keeps the last good data and exposes `error`.
  * `refresh()` during a request schedules one more request right after it (e.g. filters changed).
@@ -18,6 +19,7 @@ export function usePolling(fetcher, {
     refreshOn = null,
     eventFilter = null,
     eventDelay = 300,
+    pauseWhenHidden = true,
 } = {}) {
     const data = shallowRef(null)
     const error = ref(null)
@@ -61,7 +63,7 @@ export function usePolling(fetcher, {
         clearTimeout(timer)
         if (stopped || !interval) return
         timer = setTimeout(async () => {
-            if (!document.hidden) await refresh()
+            if (!pauseWhenHidden || !document.hidden) await refresh()
             schedule()
         }, interval)
     }
@@ -71,7 +73,7 @@ export function usePolling(fetcher, {
         if (eventTimer || stopped) return
         eventTimer = setTimeout(() => {
             eventTimer = null
-            if (!document.hidden) refresh()
+            if (!pauseWhenHidden || !document.hidden) refresh()
         }, eventDelay)
     }
 

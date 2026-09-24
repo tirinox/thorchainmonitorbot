@@ -1,5 +1,6 @@
 <script setup>
-import {computed, onMounted, ref} from 'vue'
+import {computed, onMounted, provide, ref, watchEffect} from 'vue'
+import {useRoute} from 'vue-router'
 import {useToast} from 'primevue/usetoast'
 import {isDark, toggleTheme} from './theme.js'
 import {displayMode, displayTz, toggleDisplayTz, tzShortName} from './timezone.js'
@@ -7,6 +8,7 @@ import {connectEvents, liveStatus, onEvent} from './events.js'
 import {activeRuns, runLabel, trackRuns} from './runs.js'
 import {durationHuman} from './format.js'
 import {api} from './api.js'
+import {usePolling} from './composables/usePolling.js'
 
 const toast = useToast()
 
@@ -18,6 +20,41 @@ const nav = [
   {to: '/activity', label: 'Activity', icon: 'pi pi-user-edit'},
   {to: '/flags', label: 'Settings', icon: 'pi pi-sliders-h'},
 ]
+
+// ---- health summary: polled once for the whole app, even in a background tab, so the tab title and
+// icon can tell you something is wrong while you look elsewhere; the Status page reads the same data
+const summary = usePolling(api.summary, {
+  interval: 60000,
+  refreshOn: ['scanner', 'fetchers', 'log', 'flags', 'run'],
+  eventDelay: 2000,
+  pauseWhenHidden: false,
+})
+provide('summary', summary)
+
+const problemCount = computed(() =>
+    (summary.data.value?.checks || []).filter(c => c.status === 'warn' || c.status === 'error').length)
+
+const route = useRoute()
+watchEffect(() => {
+  const page = route.meta.title ? `${route.meta.title} · Bot Dashboard` : 'Bot Dashboard'
+  document.title = problemCount.value ? `(${problemCount.value}) ${page}` : page
+})
+
+const FAVICON_COLORS = {ok: '#10b981', warn: '#f59e0b', error: '#ef4444', unknown: '#9ca3af'}
+watchEffect(() => {
+  const status = summary.data.value?.status
+  const dot = status
+      ? `<circle cx='76' cy='76' r='22' fill='${FAVICON_COLORS[status] || FAVICON_COLORS.unknown}' stroke='white' stroke-width='6'/>`
+      : ''
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text>${dot}</svg>`
+  let link = document.querySelector("link[rel='icon']")
+  if (!link) {
+    link = document.createElement('link')
+    link.rel = 'icon'
+    document.head.appendChild(link)
+  }
+  link.href = `data:image/svg+xml,${encodeURIComponent(svg)}`
+})
 
 // the basic-auth user as the server sees it (recorded in the activity log)
 const me = ref(null)
@@ -80,6 +117,9 @@ const live = computed(() => LIVE[liveStatus.value] || LIVE.connecting)
           <span>{{ item.label }}</span>
           <Badge v-if="item.to === '/jobs' && activeRuns.length" :value="activeRuns.length" severity="info"
                  class="nav-badge" v-tooltip.right="`${activeRuns.length} manual run(s) in progress`"/>
+          <Badge v-if="item.to === '/' && problemCount" :value="problemCount"
+                 :severity="summary.data.value?.status === 'error' ? 'danger' : 'warn'"
+                 class="nav-badge" v-tooltip.right="`${problemCount} check(s) need attention`"/>
         </RouterLink>
       </nav>
       <div v-if="me" class="whoami small muted" v-tooltip.right="'Your actions are recorded in Activity'">

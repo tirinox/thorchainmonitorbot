@@ -14,6 +14,7 @@ class AuditAction:
     JOB_CREATE = 'job.create'
     JOB_UPDATE = 'job.update'
     JOB_DELETE = 'job.delete'
+    JOB_RESTORE = 'job.restore'
     JOB_ENABLE = 'job.enable'
     JOB_DISABLE = 'job.disable'
     JOB_RUN = 'job.run'

@@ -13,6 +13,7 @@ import {activeRunForJob, startJobRun} from '../runs.js'
 import {displayTz, tzShortName} from '../timezone.js'
 import RelTime from '../components/RelTime.vue'
 import ScheduleText from '../components/ScheduleText.vue'
+import RunHistory from '../components/RunHistory.vue'
 
 const router = useRouter()
 const toast = useToast()
@@ -218,6 +219,8 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
                               @update:model-value="v => setEnabled(job, v)"/>
                 <span :class="job.config.enabled ? 'ok' : 'muted'">{{ job.config.enabled ? 'ON' : 'OFF' }}</span>
               </div>
+              <Tag v-if="job.stats.is_dirty" severity="warn" value="not applied" class="nowrap"
+                   v-tooltip.top="'Saved, but the bot still runs the old version. Press Apply.'"/>
               <Tag v-if="job.stats.is_running || activeRunForJob(job.id)" severity="info" value="RUNNING" class="pulse"/>
               <Tag v-else severity="secondary" value="idle"/>
             </div>
@@ -226,6 +229,7 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
 
         <Column header="Stats" style="min-width: 15rem">
           <template #body="{data: job}">
+            <RunHistory :runs="job.history"/>
             <div class="stats small">
               <span class="muted">runs</span><span>{{ job.stats.run_count }}</span>
               <span class="muted">errors</span>
