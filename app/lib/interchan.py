@@ -68,8 +68,17 @@ class SimpleRPC(WithLogger):
         self._receiver_callback = None
         self._mode = ''
         self._response_collection = {}
+        self._call_tasks: set[asyncio.Task] = set()
 
     async def _call_callback(self, _, data):
+        # The pub/sub listener delivers messages one by one and waits for this callback. A call can take long
+        # (e.g. "run this job now"), so handle each one in its own task; otherwise every other command would
+        # queue up behind it (and be lost if the process restarts meanwhile).
+        task = asyncio.create_task(self._handle_call(data))
+        self._call_tasks.add(task)
+        task.add_done_callback(self._call_tasks.discard)
+
+    async def _handle_call(self, data):
         call_id = data.get('__call_id')
         if not call_id:
             self.logger.error('No call id!')
