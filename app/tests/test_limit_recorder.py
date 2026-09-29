@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from typing import cast
 
@@ -8,7 +9,7 @@ from jobs.scanner.limit_detector import LimitSwapBlockUpdate, ClosedLimitSwap, O
 from jobs.scanner.tx import ThorEvent
 from lib.db import DB
 from lib.depcont import DepContainer
-from tests.fakes import FakeDB, FakePoolCache, make_price_holder
+from tests.fakes import FakeDB, FakePoolCache, FakeRedis, make_price_holder
 
 
 class FakeDedup:
@@ -427,6 +428,59 @@ async def test_get_infographic_data_sorts_top_pairs_by_volume(monkeypatch):
     payload = stats.to_dict()
     assert payload['top_pairs'][0]['pair_label'] == 'BTC ⇄ RUNE ᚱ'
     assert payload['top_pairs'][1]['pair_label'] == 'ETH ⇄ RUNE ᚱ'
+
+
+class PoolLimitedRedis(FakeRedis):
+    """Fails like redis-py's exhausted connection pool when too many commands are in flight at once."""
+    MAX_CONNECTIONS = 10
+
+    def __init__(self):
+        super().__init__()
+        self.in_flight = 0
+
+    async def pfcount(self, *names):
+        self.in_flight += 1
+        try:
+            if self.in_flight > self.MAX_CONNECTIONS:
+                raise ConnectionError('Too many connections')
+            await asyncio.sleep(0)
+            return await super().pfcount(*names)
+        finally:
+            self.in_flight -= 1
+
+
+@pytest.mark.asyncio
+async def test_infographic_and_summary_with_many_pairs_do_not_exhaust_connection_pool(monkeypatch):
+    import jobs.limit_recorder as limit_recorder_module
+
+    monkeypatch.setattr(limit_recorder_module, 'EventDbTxDeduplicator', FakeDedup)
+
+    deps = DepContainer()
+    deps.db = cast(DB, cast(object, FakeDB(PoolLimitedRedis())))
+    deps.pool_cache = FakePoolCache(make_price_holder())
+
+    recorder = LimitSwapStatsRecorder(deps)
+
+    day1 = 1_700_000_000
+    pair_count = 150  # more than redis-py's default pool size (100)
+    for i in range(pair_count):
+        pair = f'BTC.BTC->ETH.TKN{i:03}'
+        await recorder.accumulator.add(day1, opened_count=1, opened_usd=10.0 + i, **{
+            f'pair:{pair}:opened_count': 1,
+            f'pair:{pair}:opened_usd': 10.0 + i,
+        })
+        traders = [f'thor1trader{i}', 'thor1common'] if i % 2 else [f'thor1trader{i}']
+        await recorder._get_pair_trader_counter(pair).hit(users=traders, now=float(day1))
+
+    stats = await recorder.get_infographic_data(days=1, end_ts=day1)
+    assert len(stats.top_pairs) == pair_count
+    by_pair = {p.pair: p.unique_traders for p in stats.top_pairs}
+    assert by_pair['BTC.BTC->ETH.TKN000'] == 1
+    assert by_pair['BTC.BTC->ETH.TKN001'] == 2
+
+    summary = await recorder.get_summary(days=1, end_ts=day1)
+    assert len(summary['pairs']) == pair_count
+    assert summary['pairs']['BTC.BTC->ETH.TKN001']['unique_traders'] == 2
 
 
 @pytest.mark.asyncio

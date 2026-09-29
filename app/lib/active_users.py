@@ -22,12 +22,14 @@ class ActiveUserCounter:
             key = self._key(self.key_postfix(now))
             await self.r.pfadd(key, *users)
 
+    def keys(self, key_postfixes) -> tuple[str, ...]:
+        return tuple(map(self._key, key_postfixes))
+
     async def get_count(self, key_postfixes):
         """
         Sums all the counters for the given postfixes.
         """
-        keys = map(self._key, key_postfixes)
-        keys = tuple(keys)
+        keys = self.keys(key_postfixes)
         if not keys:
             return 0
         return await self.r.pfcount(*keys)

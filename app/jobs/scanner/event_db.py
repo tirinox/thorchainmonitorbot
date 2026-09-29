@@ -1,4 +1,3 @@
-import asyncio
 import json
 import re
 from typing import Optional
@@ -61,6 +60,18 @@ class EventDatabase(WithLogger):
         flag_name = self.normalize_flag_name(flag_name)
         value = await r.hget(self.key_to_tx(tx_id), flag_name)
         return self._as_bool(value)
+
+    async def has_tx_flag_batch(self, tx_ids: list[str], flag_name: str) -> list[bool]:
+        """has_tx_flag for many txs in one pipelined round trip (a request per tx could exhaust the pool)."""
+        if not tx_ids:
+            return []
+        r: Redis = await self.db.get_redis()
+        flag_name = self.normalize_flag_name(flag_name)
+        pipe = r.pipeline(transaction=False)
+        for tx_id in tx_ids:
+            pipe.hget(self.key_to_tx(tx_id), flag_name)
+        values = await pipe.execute()
+        return [bool(tx_id) and self._as_bool(value) for tx_id, value in zip(tx_ids, values)]
 
     async def set_tx_flag(self, tx_id, flag_name: str, value=True):
         if not tx_id:
@@ -177,7 +188,9 @@ class EventDbTxDeduplicator:
                 await self.mark_as_seen(tx.tx_hash)
 
     async def batch_ever_seen_hashes(self, txs: list[str]):
-        return await asyncio.gather(*[self.have_ever_seen_hash(tx_hash) for tx_hash in txs])
+        if self.ignore_all_checks:
+            return [False] * len(txs)
+        return await self.event_db.has_tx_flag_batch(txs, self.flag_name)
 
     async def only_hashes_having_certain_flag(self, txs: list[str], desired_flag) -> list[str]:
         flags = await self.batch_ever_seen_hashes(txs)
