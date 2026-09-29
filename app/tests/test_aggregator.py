@@ -103,9 +103,8 @@ async def test_decode_input_swap_in(w3_helper):
     assert args.from_token == '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
     assert args.amount == 23151348
 
-    with pytest.raises(ValueError):
-        # error, incorrect contract
-        aggc.decode_input(SWAP_OUT_EXAMPLE_INPUT)
+    # incorrect contract
+    assert aggc.decode_input(SWAP_OUT_EXAMPLE_INPUT) is None
 
 
 @pytest.mark.asyncio
@@ -121,8 +120,7 @@ async def test_decode_input_swap_out(w3_helper):
     assert args.to_address == '0x1e240F76bcf08219E70B2c3C20F20f5EC4b43585'
     assert args.amount_out_min == 17596390360380000000000
 
-    with pytest.raises(ValueError):
-        aggc.decode_input('0xbeef4039fd4b0000000000000000000000000f2cd5d')
+    assert aggc.decode_input('0xbeef4039fd4b0000000000000000000000000f2cd5d') is None
 
 
 def test_str_to_hex():

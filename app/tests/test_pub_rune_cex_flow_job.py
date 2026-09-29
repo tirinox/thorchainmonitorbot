@@ -1,3 +1,4 @@
+from contextlib import nullcontext
 from types import SimpleNamespace
 
 import pytest
@@ -5,6 +6,10 @@ import pytest
 from models.transfer import AlertRuneTransferStats
 from notify.pub_configure import PublicAlertJobExecutor
 from dashboard.services.overview import rune_transfer_stats
+
+
+def fake_broadcaster():
+    return SimpleNamespace(override_channels=lambda channels: nullcontext())
 
 
 @pytest.mark.asyncio
@@ -39,6 +44,7 @@ async def test_job_rune_transfer_stats_uses_rune_transfer_recorder(monkeypatch):
     executor = PublicAlertJobExecutor.__new__(PublicAlertJobExecutor)
     executor.deps = SimpleNamespace(
         alert_presenter=SimpleNamespace(handle_data=fake_handle_data),
+        broadcaster=fake_broadcaster(),
         pool_cache=SimpleNamespace(get_usd_per_rune=lambda: None),
     )
 
@@ -91,6 +97,7 @@ async def test_job_rune_transfer_stats_allows_days_override(monkeypatch):
     executor = PublicAlertJobExecutor.__new__(PublicAlertJobExecutor)
     executor.deps = SimpleNamespace(
         alert_presenter=SimpleNamespace(handle_data=fake_handle_data),
+        broadcaster=fake_broadcaster(),
         pool_cache=SimpleNamespace(get_usd_per_rune=fake_get_usd_per_rune),
     )
 
