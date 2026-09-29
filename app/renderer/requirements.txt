@@ -1,5 +1,5 @@
 redis>=4.5.5
-playwright>=1.40.0
+playwright>=1.40.0  # the Docker image pins the exact version: PLAYWRIGHT_VERSION in Dockerfile-renderer
 jinja2
 fastapi
 uvicorn[standard]

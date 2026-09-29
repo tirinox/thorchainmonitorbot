@@ -1,5 +1,11 @@
-# Use official Playwright image (Ubuntu Noble, Playwright 1.55.0, Python preinstalled)
-FROM mcr.microsoft.com/playwright/python:v1.55.0-noble
+# Playwright's Python package and the browsers baked into the base image must be the very same version,
+# otherwise Chromium fails to launch ("Executable doesn't exist ... Please update docker image").
+# Bump it here only: both the base image tag and the pip install below use this value.
+ARG PLAYWRIGHT_VERSION=1.55.0
+
+# Use official Playwright image (Ubuntu Noble, Python preinstalled)
+FROM mcr.microsoft.com/playwright/python:v${PLAYWRIGHT_VERSION}-noble
+ARG PLAYWRIGHT_VERSION
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
@@ -8,9 +14,9 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 # Set working directory
 WORKDIR /app
 
-# Copy requirements and install
+# Copy requirements and install; the explicit pin keeps pip from upgrading playwright past the image's browsers
 COPY app/renderer/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt "playwright==${PLAYWRIGHT_VERSION}"
 
 # Copy the rest of the application
 COPY app/renderer/ /app/
