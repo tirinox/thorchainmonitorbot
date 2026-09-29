@@ -208,6 +208,28 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         ]
         return int(await counter.get_count(postfixes))
 
+    async def get_pairs_unique_traders(
+        self,
+        pair_canonical_names: list[str],
+        days: int = 14,
+        end_ts: int | None = None,
+    ) -> dict[str, int]:
+        """
+        get_pair_unique_traders for many pairs in one pipelined round trip:
+        a request per pair fired at once exhausts the Redis connection pool (there are hundreds of pairs).
+        """
+        if not pair_canonical_names:
+            return {}
+        end_ts = int(end_ts or now_ts())
+        timestamps = [end_ts - offset * DAY for offset in range(days - 1, -1, -1)]
+        r = await self.deps.db.get_redis()
+        pipe = r.pipeline(transaction=False)
+        for pair_name in pair_canonical_names:
+            counter = self._get_pair_trader_counter(pair_name)
+            pipe.pfcount(*counter.keys(counter.key_postfix(ts) for ts in timestamps))
+        counts = await pipe.execute()
+        return {pair_name: int(count) for pair_name, count in zip(pair_canonical_names, counts)}
+
     async def get_summary(self, days: int = 14, end_ts: int | None = None):
         end_ts = int(end_ts or now_ts())
         daily = await self.get_daily_data(days=days, end_ts=end_ts)
@@ -242,10 +264,9 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         all_pair_names = set()
         for day in daily:
             all_pair_names.update(day.get('pairs', {}).keys())
-        for pair_name in all_pair_names:
-            pair_summary[pair_name]['unique_traders'] = await self.get_pair_unique_traders(
-                pair_name, days=days, end_ts=end_ts
-            )
+        pair_unique = await self.get_pairs_unique_traders(sorted(all_pair_names), days=days, end_ts=end_ts)
+        for pair_name, unique_traders in pair_unique.items():
+            pair_summary[pair_name]['unique_traders'] = unique_traders
 
         return {
             'days': days,
@@ -323,11 +344,7 @@ class LimitSwapStatsRecorder(WithLogger, INotified):
         ]
 
         # ── top pairs ─────────────────────────────────────────────────────
-        pair_names = list(curr_pair_totals.keys())
-        pair_unique_list = await asyncio.gather(
-            *[self.get_pair_unique_traders(p, days=days, end_ts=end_ts) for p in pair_names]
-        ) if pair_names else []
-        pair_unique = dict(zip(pair_names, pair_unique_list))
+        pair_unique = await self.get_pairs_unique_traders(list(curr_pair_totals.keys()), days=days, end_ts=end_ts)
 
         top_pairs = sorted(
             [

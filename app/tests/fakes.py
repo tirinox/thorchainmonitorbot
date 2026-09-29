@@ -95,6 +95,9 @@ class FakeRedis:
             combined.update(self.hll.get(name, set()))
         return len(combined)
 
+    def pipeline(self, transaction=True):
+        return _FakePipeline(self)
+
 
 class FakePubSubRedis(FakeRedis):
     """FakeRedis plus what the dashboard and CircularLog need: lists (rpush/ltrim/lrange via pipeline),
@@ -115,9 +118,6 @@ class FakePubSubRedis(FakeRedis):
     async def lrange(self, name, start, end):
         items = self.lists.get(name, [])
         return items[start:] if end == -1 else items[start:end + 1]
-
-    def pipeline(self, transaction=True):
-        return _FakePipeline(self)
 
     def events(self, event_type=None, channel=None):
         return [m for ch, m in self.published
@@ -151,6 +151,12 @@ class _FakePipeline:
 
     def hgetall(self, name):
         return self._queue(lambda: self._redis.hgetall(name))
+
+    def hget(self, name, field):
+        return self._queue(lambda: self._redis.hget(name, field))
+
+    def pfcount(self, *names):
+        return self._queue(lambda: self._redis.pfcount(*names))
 
     async def execute(self):
         results = []
