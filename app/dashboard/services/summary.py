@@ -86,6 +86,10 @@ def evaluate_fetchers(stats: Optional[dict], now: float) -> dict:
                           'No fetcher stats. Is the bot running?', link)
 
     active = [t for t in trackers if t.get('total_ticks')]  # never-started fetchers are just not used
+    if not active:
+        # right after a bot restart nobody has finished a run yet: that is not "all fine"
+        return make_check('fetchers', 'Fetchers', Status.UNKNOWN, 'starting',
+                          f'None of {len(trackers)} fetchers has finished a run yet. Did the bot just start?', link)
     stale = [t for t in active if now - t['last_timestamp'] > fetcher_stale_after(t.get('sleep_period'))]
     failing = [t for t in active if t not in stale and t.get('success_rate', 100) < FETCHER_MIN_SUCCESS_RATE]
 

@@ -104,6 +104,9 @@ def test_evaluate_fetchers():
     assert evaluate_fetchers(None, NOW)['status'] == Status.UNKNOWN
     assert evaluate_fetchers({'trackers': []}, NOW)['status'] == Status.UNKNOWN
 
+    starting = evaluate_fetchers({'trackers': [tracker('a', 10 ** 6, ticks=0), tracker('b', 10 ** 6, ticks=0)]}, NOW)
+    assert starting['status'] == Status.UNKNOWN and starting['value'] == 'starting'
+
     ok = evaluate_fetchers({'trackers': [tracker('a', 30), tracker('never', 10 ** 6, ticks=0)]}, NOW)
     assert ok['status'] == Status.OK and ok['value'] == '1/1 fresh'
 
