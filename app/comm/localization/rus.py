@@ -1353,11 +1353,19 @@ class RussianLocalization(BaseLocalization):
                 )
                 if change.entry.automatic and change.non_zero_value:
                     text += f' (на блоке #{ital(change.non_zero_value)}).'
+            if change.muted_until:
+                text += self.text_mimir_change_muted(change.muted_until)
             text += '\n\n'
 
         text += link("https://docs.thorchain.org/how-it-works/governance#mimir", "Что такое Mimir?")
 
         return text
+
+    def text_mimir_change_muted(self, muted_until: float):
+        return (
+            f'\n⚠️ Эта настройка меняется слишком часто. '
+            f'О её следующих изменениях не будем сообщать ещё {ital(self.seconds_human(muted_until - now_ts()))}.'
+        )
 
     # ------- NODE OP TOOLS -------
 

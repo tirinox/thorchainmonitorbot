@@ -528,6 +528,7 @@ constants:
     enabled: true
     cooldown: 20m
     max_hits_before_cd: 5
+    max_per_day: 10  # max alerts per Mimir key in any 24h (e.g. a flapping halt); 0 = unlimited
   fetch_period: 130s
 
   voting:

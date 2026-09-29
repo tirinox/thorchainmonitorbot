@@ -7,7 +7,7 @@ from comm.twitter.text_length import twitter_intelligent_text_splitter, TWITTER_
 from jobs.fetch.chain_id import AlertChainIdChange
 from lib.config import Config
 from lib.constants import Chains, BTC_SYMBOL, ETH_SYMBOL
-from lib.date_utils import seconds_human
+from lib.date_utils import seconds_human, now_ts
 from lib.explorers import get_explorer_url_to_tx
 from lib.money import short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
     short_address, short_money, short_rune, \
@@ -653,9 +653,14 @@ class TwitterEnglishLocalization(BaseLocalization):
                 )
                 if change.entry.automatic and change.non_zero_value:
                     text += f' at block #{change.new_value}.'
+            if change.muted_until:
+                text += self.text_mimir_change_muted(change.muted_until)
             text += '\n'
 
         return text.strip()
+
+    def text_mimir_change_muted(self, muted_until: float):
+        return f'\n⚠️ Changes too often, muted for {self.seconds_human(muted_until - now_ts())}.'
 
     def format_pool_top(self, attr_name, pd: EventPools, title, no_pool_text, n_pools):
         top_pools = pd.get_top_pools(attr_name, n=n_pools)

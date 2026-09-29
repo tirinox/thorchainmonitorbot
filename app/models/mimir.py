@@ -177,6 +177,7 @@ class MimirChange(BaseModelMixin):
     new_value: str
     entry: MimirEntry
     timestamp: float
+    muted_until: float = 0.0  # set when this alert hits the daily limit: next changes are muted until this ts
 
     VALUE_CHANGE = '~'
     ADDED_MIMIR = '+'

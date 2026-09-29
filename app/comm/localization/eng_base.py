@@ -1806,11 +1806,19 @@ class BaseLocalization(ABC):  # == English
                 )
                 if change.entry.automatic and change.non_zero_value:
                     text += f' at block #{ital(change.non_zero_value)}.'
+            if change.muted_until:
+                text += self.text_mimir_change_muted(change.muted_until)
             text += '\n\n'
 
         text += link(self.MIMIR_DOC_LINK, "What is Mimir?")
 
         return text
+
+    def text_mimir_change_muted(self, muted_until: float):
+        return (
+            f'\n⚠️ This setting changes too often. '
+            f'Its next changes will not be reported for {ital(self.seconds_human(muted_until - now_ts()))}.'
+        )
 
     def joiner(self, fun: callable, items, glue='\n\n'):
         my_fun = getattr(self, fun.__name__)

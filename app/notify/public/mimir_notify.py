@@ -4,10 +4,11 @@ from contextlib import suppress
 from api.aionode.types import ThorMimir
 from jobs.fetch.mimir import ConstMimirFetcher, MimirTuple
 from lib.cooldown import Cooldown
-from lib.date_utils import now_ts
+from lib.date_utils import now_ts, DAY
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
+from lib.rate_limit import SlidingWindowLimiter
 from models.mimir import MimirChange, AlertMimirChange
 from models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY
 
@@ -24,6 +25,8 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
         self.deps = deps
         self.cd_sec_change = deps.cfg.as_interval('constants.mimir_change.cooldown')
         self.max_hits_before_cd = deps.cfg.as_int('constants.mimir_change.max_hits_before_cd')
+        # strict cap per Mimir key in any rolling 24h, so a flapping halt can't spam all day; 0 = no cap
+        self.max_per_day = deps.cfg.as_int('constants.mimir_change.max_per_day', 10)
 
     @staticmethod
     def mimir_last_modification_key(name):
@@ -150,11 +153,23 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
         if c.name in self.MIMIR_IGNORE_CHANGES:
             return False
 
+        daily_limiter = SlidingWindowLimiter(self.deps.db, f"MimirChange:Daily:{c.entry.name}",
+                                             self.max_per_day, DAY)
+        if await daily_limiter.free_at(c.timestamp) > c.timestamp:
+            self.logger.warning(f'Mimir {c.entry.name!r} hit the daily limit of {self.max_per_day} alerts! Ignore.')
+            return False
+
         cd = Cooldown(self.deps.db, f"MimirChange:{c.entry.name}", self.cd_sec_change,
                       max_times=self.max_hits_before_cd)
-        if await cd.can_do():
-            await cd.do()
-            return True
-        else:
+        if not await cd.can_do():
             self.logger.warning(f'Mimir {c.entry.name!r} changes too often! Ignore.')
             return False
+
+        await cd.do()
+        await daily_limiter.hit(c.timestamp)
+
+        # this alert used the last slot: tell readers that the next changes will be muted for a while
+        free_at = await daily_limiter.free_at(c.timestamp)
+        if free_at > c.timestamp:
+            c.muted_until = free_at
+        return True
