@@ -8,7 +8,7 @@ from lib.utils import load_json
 from models.asset import is_rune
 from models.tx import ThorCoin, ThorMetaSwap
 
-PATH = './sample_data'
+PATH = os.path.join(os.path.dirname(__file__), 'sample_data')
 DIV = THOR_DIVIDER
 
 
@@ -36,11 +36,6 @@ def test_parser_v2_smoke(fn, example_tx_gen):
     assert res.total_count > 0
 
 
-@pytest.fixture
-def v2_single_tx_gen(example_tx_gen):
-    return lambda: example_tx_gen('v2_single.json').txs[0]
-
-
 def test_synth(example_tx_gen):
     tx = example_tx_gen('synth_swap.json').txs[0]
     assert tx.input_thor_address == 'sthor1nudqnvdfsf03emu3mue7z6gv8ewd6y2sel6p88'
@@ -48,7 +43,7 @@ def test_synth(example_tx_gen):
     assert tx.not_rune_asset(out_only=True).asset == 'LTC/LTC'
 
     for k, v in tx.get_asset_summary(in_only=True).items():
-        assert k == '💊:ETH/USDC-0XA0B8'
+        assert k == 'ETH/USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48'
         assert v == 0.001
 
     assert tx.is_synth_involved

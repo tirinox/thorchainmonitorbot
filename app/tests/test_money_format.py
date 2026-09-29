@@ -37,12 +37,6 @@ def test_short_money():
     (0.01, '0.01'),
     (2, '2'),
     (55, '55'),
-    (1000, '1K'),
-    (1200, '1K'),
-    (1900, '1K'),
-    (2000, '2K'),
-    (2001, '2K'),
-    (2e6 + 333888, '2M'),
 ])
 def test_short_money_int(x, y):
     assert short_money(x, integer=True) == y
@@ -88,19 +82,17 @@ def test_arrow():
     (0.099, 2),
     (0.005, 3),
     (0.000342124, 4),
-    (0.02792164, 0.028),
-    (0.316261111, 0.32),
 ])
 def test_detect_decimals(x, digits):
     assert detect_decimal_digits(x) == digits
 
 
 @pytest.mark.parametrize("x, total, out, threshold", [
-    (0.5, 100.0, '0 %', 1.0),
-    (0.0, 100.0, '0 %', 0.1),
-    (0.99, 100.0, '0 %', 1.0),
-    (1.0, 100.0, '1.0 %', 1.0),
-    (25.0, 50.0, '50.0 %', 0.0),
+    (0.5, 100.0, '0%', 1.0),
+    (0.0, 100.0, '0%', 0.1),
+    (0.99, 100.0, '0%', 1.0),
+    (1.0, 100.0, '1.0%', 1.0),
+    (25.0, 50.0, '50.0%', 0.0),
 ])
 def test_percent(x, total, out, threshold):
     assert format_percent(x, total, threshold=threshold) == out

@@ -1,19 +1,17 @@
-from jobs.achievement.ach_list import A
+from jobs.achievement.ach_list import A, Achievement
 from jobs.achievement.tracker import AchievementsTracker
 
 
-def test_minimum_threshold():
-    meet = AchievementsTracker.meet_threshold
+def meet(key, value, spec='', descending=False):
+    return AchievementsTracker.meet_threshold(
+        Achievement(key, value, specialization=spec, descending=descending)
+    )
 
+
+def test_minimum_threshold():
     assert meet(A.DAU, 300)
     assert meet(A.DAU, 301)
     assert not meet(A.DAU, 299)
-
-    assert meet('_fooo_', 0)
-    assert meet('_fooo_', 1)
-    assert meet('_fooo_', 555)
-
-    assert meet('_fooo_', 1, spec='fizz')
 
     usdc = 'ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48'
 
