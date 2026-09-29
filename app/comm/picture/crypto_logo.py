@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 def convert_eth_address_to_case_checksum(eth_address: str) -> str:
     eth_address = eth_address[2:].lower()  # strip 0x and lower case
 
-    address_hash = web3.Web3.keccak(eth_address.encode('utf-8')).hex()[2:]
+    # plain bytes.hex() never has the '0x' prefix (HexBytes.hex() has it only before hexbytes 1.0)
+    address_hash = bytes(web3.Web3.keccak(eth_address.encode('utf-8'))).hex()
 
     new_address = ''
     for hash_symbol, symbol in zip(address_hash, eth_address):

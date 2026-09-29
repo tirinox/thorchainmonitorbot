@@ -29,7 +29,7 @@ class TCRouterContract:
         if func.fn_name == 'transferOutAndCall':
             return SwapOutArgs(
                 fn_name=func.fn_name,
-                tc_aggregator=args_dic.get('aggregator'),
+                tc_aggregator=args_dic.get('target'),
                 target_token=args_dic.get('finalToken'),
                 to_address=args_dic.get('to'),
                 amount_out_min=args_dic.get('amountOutMin'),
