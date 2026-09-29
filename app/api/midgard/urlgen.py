@@ -89,5 +89,11 @@ class MidgardURLGenV2:
     def url_pool_depth_history(self, pool: str, count=30, interval='day') -> str:
         return f'{self.base_url}/v2/history/depths/{pool}?count={count}&interval={interval}'
 
+    def url_pool_depth_at(self, pool: str, ts) -> str:
+        # a 1-second range returns the single 5-min interval that contains ts;
+        # without "interval" Midgard reports end-of-day depths instead
+        ts = int(ts)
+        return f'{self.base_url}/v2/history/depths/{pool}?interval=5min&from={ts}&to={ts + 1}'
+
 
 free_url_gen = MidgardURLGenV2('')

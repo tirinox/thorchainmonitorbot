@@ -213,7 +213,10 @@ class PoolInfoHistoricEntry:
             self.rune_depth,
             self.liquidity_units,
             PoolInfo.DEPRECATED_ENABLED,
-            units=self.liquidity_units,
+            usd_per_asset=self.asset_price_usd,
+            synth_supply=self.synth_supply,
+            synth_units=self.synth_units,
+            units=self.units or self.liquidity_units,  # LP + synth units, like THORNode's pool_units
             original=None,
         )
 

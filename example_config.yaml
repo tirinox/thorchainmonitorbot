@@ -46,7 +46,8 @@ thor:
 #    backup_node_url: "https://thornode-archive.ninerealms.com"
     node_url: "https://gateway.liquify.com/chain/thorchain_api/"
     rpc_node_url: "https://gateway.liquify.com/chain/thorchain_rpc/"
-    backup_node_url: "https://thornode-archive.ninerealms.com"
+    # archive for pruned heights (current chain only, >= 17562001); older ones are rebuilt from Midgard
+    backup_node_url: "https://gateway.liquify.com/chain/thorchain_api/"
 
   midgard:
     tries: 3

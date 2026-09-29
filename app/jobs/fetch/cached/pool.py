@@ -1,7 +1,7 @@
 import json
 from contextlib import suppress
 from json import JSONDecodeError
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Iterable
 
 from redis.asyncio import Redis
 from tqdm import tqdm
@@ -83,6 +83,34 @@ class PoolCache(CachedDataSource[PriceHolder]):
                     await self._save_historic_data(height, pool_map)
         else:
             pool_map = await self._fetch_pool_data_from_thornode(height)
+        return pool_map
+
+    async def load_pools_at(self, height, ts, pools: Iterable[str]) -> PoolInfoMap:
+        """
+        Historical pool states. THORNodes keep only recent state (about a month), so when none of them
+        can serve the height, the given pools are rebuilt from Midgard as of the moment ts.
+        """
+        try:
+            return await self.load_pools(height=height, caching=True)
+        except RuntimeError as e:
+            self.logger.warning(f'{e} Rebuilding pools {sorted(pools)} from Midgard at {ts = }...')
+            pool_map = await self.load_pools_from_midgard(ts, pools)
+            if not pool_map:
+                raise
+            return pool_map
+
+    async def load_pools_from_midgard(self, ts, pools: Iterable[str]) -> PoolInfoMap:
+        """
+        Partial pool map from Midgard's depth history: only the given pools, each with Midgard's USD price
+        (there are no stable coin pools to price RUNE). It is the state at the end of the 5-min interval
+        that contains ts. Not cached: other readers of the height cache expect complete maps.
+        """
+        pool_map = {}
+        for name in pools:  # one by one: Midgard stalls on bursts of parallel requests
+            entry = await self.deps.midgard_connector.query_pool_depth_at(name, ts)
+            # a pool that did not exist at that moment comes back with zero depths
+            if entry and entry.asset_depth and entry.rune_depth:
+                pool_map[name] = entry.to_pool_info(name)
         return pool_map
 
     async def _fetch_pool_data_from_thornode(self, height=None) -> PoolInfoMap:

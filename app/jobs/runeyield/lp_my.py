@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 import operator
 from collections import defaultdict, Counter
@@ -12,7 +11,7 @@ from jobs.runeyield.date2block import DateToBlockMapper
 from lib.constants import thor_to_float, Chains
 from lib.date_utils import days_ago_noon, now_ts
 from lib.depcont import DepContainer
-from lib.utils import pairwise
+from lib.utils import pairwise, parallel_run_in_groups
 from models.asset import Asset
 from models.lp_info import LiquidityPoolReport, LiquidityInOutSummary, FeeReport, ReturnMetrics, \
     LPDailyGraphPoint, LPDailyChartByPoolDict, LPPosition
@@ -36,6 +35,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         self.block_mapper = DateToBlockMapper(deps)
         self.withdraw_fee_rune = 2.0
         self.last_block = 0
+        self.max_parallel_pool_loads = 4  # Midgard (the fallback source) stalls on bigger bursts
 
     async def generate_yield_summary(self, address, pools: List[str]) -> YieldSummary:
         self.update_fees()
@@ -214,9 +214,20 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return txs
 
     async def _fetch_historical_pool_states(self, txs: List[ThorAction]) -> HeightToAllPools:
-        heights = list(set(tx.height for tx in txs))
-        tasks = [self.deps.pool_cache.load_pools(h, caching=True) for h in heights]
-        pool_states = await asyncio.gather(*tasks)
+        txs_by_height = defaultdict(list)
+        for tx in txs:
+            txs_by_height[tx.height].append(tx)
+
+        async def load_pools(height, txs_at_height: List[ThorAction]):
+            # the moment and the pools are used only if the THORNodes have pruned this height
+            pools = {Asset.to_L1_pool_name(tx.first_pool) for tx in txs_at_height if tx.first_pool}
+            return await self.deps.pool_cache.load_pools_at(height, txs_at_height[0].date_timestamp, pools)
+
+        heights = list(txs_by_height)
+        pool_states = await parallel_run_in_groups(
+            [load_pools(h, txs_by_height[h]) for h in heights],
+            concurrency=self.max_parallel_pool_loads,
+        )
         return dict(zip(heights, pool_states))
 
     def _get_liquidity_in_out_summary(self, txs: List[ThorAction],
@@ -307,6 +318,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     def _calculate_weighted_rune_price_in_usd(self, pool_map: PoolInfoMap) -> Optional[float]:
         ph = PriceHolder(self.deps.pool_cache.stable_coins)
         price = ph.calculate_rune_price_here(pool_map)
+        if not price:
+            # pools rebuilt from Midgard have no stable coin pools, but carry their own USD prices
+            price = next((p.usd_per_rune for p in pool_map.values() if p.balance_rune and p.usd_per_asset), None)
         if not price:
             raise ValueError('No USD price can be extracted. Perhaps USD pools are missing at that point')
         return price
@@ -469,7 +483,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             for day, ts, units in day_to_units:
                 that_day = now - datetime.timedelta(days=day)
                 height = await self.block_mapper.get_block_height_by_date(that_day.date(), self.last_block)
-                pools_at_height = await self.deps.pool_cache.load_pools(height, caching=True)
+                pools_at_height = await self.deps.pool_cache.load_pools_at(height, ts, [pool])
                 pool_info = pools_at_height.get(pool, None)
 
                 if pool_info:

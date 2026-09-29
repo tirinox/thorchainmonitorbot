@@ -9,7 +9,7 @@ from api.midgard.urlgen import free_url_gen
 from lib.constants import HTTP_CLIENT_ID
 from lib.logs import WithLogger
 from models.earnings_history import EarningHistoryResponse
-from models.pool_info import PoolInfoMap, PoolInfo
+from models.pool_info import PoolInfoMap, PoolInfo, PoolInfoHistoricEntry
 from models.pool_member import PoolMemberDetails
 from models.swap_history import SwapHistoryResponse
 
@@ -133,3 +133,12 @@ class MidgardConnector(WithLogger):
         )
         if j and j != self.ERROR_RESPONSE:
             return self.parser.parse_pool_depth_history(j)
+
+    async def query_pool_depth_at(self, pool: str, ts) -> Optional[PoolInfoHistoricEntry]:
+        """
+        Pool depths at the end of the 5-min interval that contains ts (Midgard's finest resolution).
+        """
+        j = await self.request(self.urlgen.url_pool_depth_at(pool, ts))
+        if isinstance(j, dict):
+            intervals = self.parser.parse_pool_depth_history(j).intervals
+            return intervals[-1] if intervals else None
