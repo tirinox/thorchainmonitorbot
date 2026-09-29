@@ -30,10 +30,17 @@ class BestPoolsFetcher(WithLogger):
         if not usd_per_rune:
             raise ValueError("Rune price is not available!")
 
-        prev_pool_map = await self.pvdb.get()
+        # No previous state on the first run (or after the key is lost): go on without deltas,
+        # otherwise the job fails before saving and never gets a previous state at all.
+        prev_pool_map_struct = await self.pvdb.get()
+        if prev_pool_map_struct:
+            prev_pool_map = prev_pool_map_struct.pool_map
+        else:
+            self.logger.warning('No previous pool map! Go on without changes.')
+            prev_pool_map = {}
 
         event_pools = EventPools(
-            pool_map_struct.pool_map, prev_pool_map.pool_map,
+            pool_map_struct.pool_map, prev_pool_map,
             earnings,
             usd_per_rune=usd_per_rune
         )

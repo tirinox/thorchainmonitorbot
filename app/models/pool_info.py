@@ -297,7 +297,9 @@ class PoolMapStruct(NamedTuple):
 
     @classmethod
     def from_json(cls, j):
-        pool_map = {p['asset']: PoolInfo.from_midgard_json(p) for p in j.get('pools', [])}
+        # reads back what to_dict wrote (PoolInfo field names), not a raw Midgard response
+        pools = (PoolInfo.from_dict_brief(p) for p in j.get('pools', []))
+        pool_map = {p.asset: p for p in pools if p}
         timestamp = int(j.get('timestamp', 0))
         return cls(pool_map, timestamp)
 
@@ -394,7 +396,11 @@ class EventPools(NamedTuple):
 
     def get_difference_percent(self, pool_name, attr_name):
         curr_value = self.get_value(pool_name, attr_name)
-        prev_value = self.get_value(pool_name, attr_name, is_previous=True)
+        try:
+            prev_value = self.get_value(pool_name, attr_name, is_previous=True)
+        except KeyError:
+            # a new pool or no previous state at all
+            return None
         if prev_value == 0.0:
             return None
 
