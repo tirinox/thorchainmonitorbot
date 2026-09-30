@@ -16,7 +16,7 @@ async def dbg_run_all_jobs(app: LpAppFramework):
 
 async def dbg_run_one_job(app: LpAppFramework):
     ex: PublicAlertJobExecutor = app.deps.pub_alert_executor
-    # await ex.job_pol_summary()
+    # await ex.job_pol_summary_adr024()
     # await ex.job_runepool_summary()
     # await ex.job_top_pools()
     # await ex.job_supply_chart()
@@ -32,7 +32,7 @@ async def dbg_run_one_job(app: LpAppFramework):
 async def dbg_test_command(app: LpAppFramework):
     sched: PublicScheduler = app.deps.pub_scheduler
     await sched.start_rpc_client()
-    result = await sched.post_command(sched.COMMAND_RUN_NOW, func='pol_summary')
+    result = await sched.post_command(sched.COMMAND_RUN_NOW, func='pol_summary_adr024')
     print(f'Command result: {result}')
 
 

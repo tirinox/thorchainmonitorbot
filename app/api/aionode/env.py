@@ -33,6 +33,7 @@ class ThorEnvironment:
     path_vault_yggdrasil: str = "/thorchain/vaults/yggdrasil"
     path_vault_asgard: str = "/thorchain/vaults/asgard"
     path_balance: str = '/cosmos/bank/v1beta1/balances/{address}'
+    path_module_balance: str = '/thorchain/balance/module/{name}'
     path_block_by_height: str = '/block'
     path_thorchain_block_by_height: str = '/thorchain/block'
     path_tx_by_hash: str = '/cosmos/tx/v1beta1/txs/{hash}'

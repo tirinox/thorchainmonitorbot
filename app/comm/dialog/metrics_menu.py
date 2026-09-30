@@ -333,11 +333,16 @@ class MetricsDialog(BaseDialog):
         await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
 
     async def show_pol_state(self, message: Message):
-        event = self.deps.pol_recorder.last_event
-        if not event:
-            await message.answer(self.loc.TEXT_POL_NO_DATA, disable_notification=True)
-        else:
-            await message.answer(self.loc.notification_text_pol_stats(event), disable_notification=True)
+        await self.start_typing(message)
+
+        event = await self._get_pub_job_data('pol_reserve_fetcher')
+        if not event or event.current.is_zero:
+            await message.answer(self.loc.TEXT_POL_RESERVE_NO_DATA, disable_notification=True)
+            return
+
+        pic, pic_name = await self.deps.alert_presenter.render_pol_reserve_stats(self.loc, event)
+        text = self.loc.notification_text_pol_reserve_stats(event)
+        await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
 
     async def show_cex_flow(self, message: Message, period=DAY):
         await self.start_typing(message)

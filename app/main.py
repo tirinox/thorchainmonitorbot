@@ -39,7 +39,6 @@ from jobs.fetch.tx import TxFetcher
 from jobs.fetch.upgrade_proposals import UpgradeProposalsFetcher
 from jobs.limit_recorder import LimitSwapStatsRecorder
 from jobs.node_churn import NodeChurnDetector
-from jobs.pol_recorder import POLStateRecorder
 from jobs.price_recorder import PriceRecorder
 from jobs.rapid_recorder import RapidSwapRecorder
 from jobs.ref_memo_cache import RefMemoCache
@@ -595,9 +594,6 @@ class App(WithLogger):
         tasks.append(pol_fetcher)
         if achievements_enabled:
             pol_fetcher.add_subscriber(achievements)
-
-        d.pol_recorder = POLStateRecorder(d)
-        pol_fetcher.add_subscriber(d.pol_recorder)
 
         if d.cfg.get('chain_id.enabled', True):
             chain_id_job = ChainIdFetcher(d)

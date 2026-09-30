@@ -247,6 +247,10 @@ class ThorPool(NamedTuple):
     derived_depth_bps: int = 0
     asset_tor_price: int = 0
 
+    # cumulative RUNE the pol_reserve module (ADR-024) has deployed into this pool
+    pol_reserve_rune_deposited: int = 0
+    rolling_pool_liquidity_fee_rune: int = 0
+
     STATUS_AVAILABLE = 'Available'
     STATUS_BOOTSTRAP = 'Bootstrap'
     STATUS_ENABLED = 'Enabled'
@@ -283,6 +287,8 @@ class ThorPool(NamedTuple):
             loan_cr=int(j.get('loan_cr', 0)),
             derived_depth_bps=int(j.get('derived_depth_bps', 0)),
             asset_tor_price=int(j.get('asset_tor_price', 0) or 0),  # usd price of asset (TOR)
+            pol_reserve_rune_deposited=int(j.get('pol_reserve_rune_deposited', 0) or 0),
+            rolling_pool_liquidity_fee_rune=int(j.get('rolling_pool_liquidity_fee_rune', 0) or 0),
         )
 
     @property
@@ -586,6 +592,27 @@ class ThorTradeAccount(NamedTuple):
             usd_value = price_holder.convert_to_usd(self.value_float, self.asset)
             return self._replace(usd_value=usd_value)
         return self
+
+
+class ThorModuleBalance(NamedTuple):
+    name: str
+    address: str
+    coins: Dict[str, int]  # denom -> amount
+
+    @property
+    def runes(self) -> int:
+        return self.coins.get('rune', 0)
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            name=j.get('name', ''),
+            address=j.get('address', ''),
+            coins={
+                str(c.get('denom', '')).lower(): int(c.get('amount', 0))
+                for c in j.get('coins') or []
+            },
+        )
 
 
 class ThorLiquidityProvider(NamedTuple):

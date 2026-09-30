@@ -4,6 +4,7 @@ from jobs.fetch.cached.wasm import WasmCache
 from jobs.fetch.key_stats import KeyStatsFetcher
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from jobs.fetch.pol import POLAndRunePoolFetcher
+from jobs.fetch.pol_reserve import PolReserveFetcher
 from jobs.fetch.secured_asset import SecuredAssetAssetFetcher
 from jobs.fetch.tcy import TCYInfoFetcher
 from jobs.fetch.top_pools import BestPoolsFetcher
@@ -23,8 +24,9 @@ from models.circ_supply import RuneCirculatingSupply
 from models.key_stats_model import AlertKeyStats
 from models.net_stats import AlertNetworkStats
 from models.node_info import NetworkNodes
+from models.pol_reserve import AlertPolReserveStats, PolReserveSnapshot
 from models.price import RuneMarketInfo
-from models.runepool import AlertRunepoolStats, POLState, AlertPOLState, RunepoolState
+from models.runepool import AlertRunepoolStats, RunepoolState
 from models.trade_acc import AlertTradeAccountStats
 from models.transfer import AlertRuneTransferStats
 from notify.alert_preview import AlertPreviewStore
@@ -36,7 +38,7 @@ from notify.public.stats_notify import NetworkStatsNotifier
 class PubAlertJobNames:
     SECURED_ASSET_SUMMARY = "secured_asset_summary"
     TCY_SUMMARY = "tcy_summary"
-    POL_SUMMARY = "pol_summary"
+    POL_SUMMARY_ADR024 = "pol_summary_adr024"
     RUNE_POOL_SUMMARY = "runepool_summary"
     KEY_METRICS = "key_metrics"
     TOP_POOLS = "top_pools"
@@ -61,6 +63,7 @@ class PublicAlertJobExecutor(WithLogger):
         self.tcy_info_fetcher = TCYInfoFetcher(deps)
         self.secured_asset_fetcher = SecuredAssetAssetFetcher(deps)
         self.pol_fetcher = POLAndRunePoolFetcher(deps)
+        self.pol_reserve_fetcher = PolReserveFetcher(deps)
         self.key_stats_fetcher = KeyStatsFetcher(deps)
         self.trade_acc_fetcher = TradeAccountFetcher(deps)
 
@@ -116,17 +119,17 @@ class PublicAlertJobExecutor(WithLogger):
         data = await self.secured_asset_fetcher.fetch_and_remember()
         await self._send_alert(data, "secured asset summary alert", job_args)
 
-    async def job_pol_summary(self, **job_args):
-        pvdb = PrevStateDB(self.deps.db, POLState)
-        previous: Optional[POLState] = await pvdb.get()
+    async def job_pol_summary_adr024(self, **job_args):
+        data: AlertPolReserveStats = await self.pol_reserve_fetcher.fetch_and_remember()
+        if data.current.is_zero:
+            raise ValueError("No POL reserve positions yet!")
 
-        data: AlertPOLState = await self.pol_fetcher.fetch()
+        pvdb = PrevStateDB(self.deps.db, PolReserveSnapshot)
+        data.previous = await pvdb.get()
 
-        data = data._replace(previous=previous if previous else None)
+        await self._send_alert(data, "POL (ADR-024) summary infographic", job_args)
 
-        await self._send_alert(data, "POL summary alert", job_args)
-
-        await self._save_state('POL state', lambda: pvdb.set(data.current))
+        await self._save_state('POL reserve state', lambda: pvdb.set(data.current))
 
     async def job_runepool_summary(self, **job_args):
         data = await self.pol_fetcher.fetch()
@@ -257,7 +260,7 @@ class PublicAlertJobExecutor(WithLogger):
     AVAILABLE_TYPES = {
         PubAlertJobNames.TCY_SUMMARY: job_tcy_summary,
         PubAlertJobNames.SECURED_ASSET_SUMMARY: job_secured_asset_summary,
-        PubAlertJobNames.POL_SUMMARY: job_pol_summary,
+        PubAlertJobNames.POL_SUMMARY_ADR024: job_pol_summary_adr024,
         PubAlertJobNames.RUNE_POOL_SUMMARY: job_runepool_summary,
         PubAlertJobNames.KEY_METRICS: job_key_metrics,
         PubAlertJobNames.TOP_POOLS: job_top_pools,

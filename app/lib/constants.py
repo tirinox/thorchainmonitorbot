@@ -347,3 +347,7 @@ THOR_ADDRESS_DICT = {
 }
 
 ADR17_TIMESTAMP = 1732626242  # Tuesday, 26 November 2024
+
+# ADR-024: system income funded POL (the pol_reserve module)
+POL_RESERVE_MODULE = 'pol_reserve'
+ADR24_FIRST_DEPLOY_BLOCK = 27_636_623  # 31 August 2026
