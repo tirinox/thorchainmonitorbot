@@ -196,9 +196,10 @@ class MainMenuDialog(BaseDialog):
 
     @message_handler(filters.RegexpCommandsFilter(regexp_commands=[r'^/unsub_.*']), state='*')
     async def on_unsubscribe_command(self, message: Message):
-        # Commands like /unsub_sMth1
-        unsub_id = message.text.split('_')[1]
-        is_good = await PersonalPeriodicNotificationService(self.deps).unsubscribe_by_id(unsub_id)
+        # Commands like /unsub_sMth1 (in groups: /unsub_sMth1@bot_name)
+        unsub_id = message.get_command(pure=True).partition('_')[2]
+        is_good = await PersonalPeriodicNotificationService(self.deps).unsubscribe_by_id(unsub_id,
+                                                                                         self.user_id(message))
         text = self.loc.ALERT_UNSUBSCRIBED_FROM_LP if is_good else self.loc.ALERT_UNSUBSCRIBE_FAILED
         await message.answer(text, disable_notification=True)
 

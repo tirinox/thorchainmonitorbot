@@ -1,4 +1,5 @@
 import asyncio
+import re
 from typing import NamedTuple
 
 from comm.picture.lp_picture import generate_yield_picture
@@ -23,12 +24,15 @@ class PersonalIdTriplet(NamedTuple):
     def __str__(self):
         return f'{self.user_id}/{self.address}/{self.pool}'
 
+    # user_id-address-pool: a Telegram group id is negative and a pool name may contain '-', an address may not
+    KEY_RE = re.compile(r'(-?[^-]+)-([^-]+)-(.*)')
+
     @classmethod
     def from_key(cls, key):
-        parts = key.split('-')  # '-' is very bad separator, because it can be in the asset name
-        user_id, address, *asset_parts = parts
-        asset = '-'.join(asset_parts)  # thus we reassemble the asset name
-        return cls(user_id, address, asset)
+        m = cls.KEY_RE.fullmatch(key)
+        if not m:
+            raise ValueError(f'Not a subscription key: {key!r}')
+        return cls(*m.groups())
 
     @classmethod
     def wide_for_user_id(cls, user_id):
@@ -68,12 +72,21 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
     async def unsubscribe(self, tr: PersonalIdTriplet):
         await self.deps.scheduler.cancel(tr.as_key)
 
-    async def unsubscribe_by_id(self, unsub_id):
+    async def unsubscribe_by_id(self, unsub_id, user_id) -> bool:
+        """Cancels the subscription behind an /unsub_ code, but only for the chat that owns it."""
         if not unsub_id:
             return False
 
         key = await self._unsub_db.get(unsub_id)
         if not key:
+            return False
+
+        try:
+            owner = PersonalIdTriplet.from_key(key).user_id
+        except ValueError:
+            owner = None  # e.g. a subscription key typed in as the code: its partner is a code, not a key
+        if owner != str(user_id):
+            self.logger.warning(f'Chat {user_id} tried to use unsubscribe code {unsub_id!r} of another chat')
             return False
 
         await self.deps.scheduler.cancel(key)
