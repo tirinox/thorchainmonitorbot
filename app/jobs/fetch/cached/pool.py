@@ -27,6 +27,10 @@ class PoolCache(CachedDataSource[PriceHolder]):
         self.pool_cache_max_age = parse_timespan_to_seconds(deps.cfg.price.pool_cache_max_age)
         assert self.pool_cache_max_age > 0
 
+        # the latest pools are fetched about every block, but only every Nth block goes to the history cache
+        self.pool_cache_save_every_blocks = max(1, deps.cfg.as_int('price.pool_cache_save_every_blocks', 10))
+        self._last_saved_block = 0
+
     async def _cache_redis(self) -> Redis:
         keydb = getattr(self.deps, 'keydb', None)
         if keydb is not None:
@@ -73,7 +77,9 @@ class PoolCache(CachedDataSource[PriceHolder]):
                 pool_map = await self._fetch_pool_data_from_thornode()
                 cache_key = await self.deps.last_block_cache.get_thor_block()
                 if cache_key:
-                    await self._save_historic_data(cache_key, pool_map)
+                    if abs(cache_key - self._last_saved_block) >= self.pool_cache_save_every_blocks:
+                        await self._save_historic_data(cache_key, pool_map)
+                        self._last_saved_block = cache_key
                 else:
                     self.logger.error(f'Last thor block = {cache_key}. Cannot save to cache!')
             else:
@@ -234,15 +240,33 @@ class PoolCache(CachedDataSource[PriceHolder]):
             for block_no, v in data.items():
                 yield int(block_no), v
 
+    @staticmethod
+    def thin_out_heights(block_heights: Iterable[int], min_distance: int = 10) -> list[int]:
+        """
+        Heights to delete so that the remaining ones are at least min_distance blocks apart.
+        The lowest height always stays.
+        """
+        to_delete = []
+        last = None
+        for h in sorted(set(block_heights)):
+            if last is None or h - last >= min_distance:
+                last = h
+            else:
+                to_delete.append(h)
+        return to_delete
+
     async def get_thin_out_keys(self,
                                 min_distance: int = 10,
                                 scan_batch_size: int = 10000,
-                                max_keys_to_delete: int = 10000,
+                                max_keys_to_scan: Optional[int] = None,
                                 ) -> list[str]:
+        """
+        max_keys_to_scan stops the scan early (HSCAN order is arbitrary, so it is only good for a quick trial);
+        None scans the whole hash.
+        """
         r = await self._cache_redis()
         hash_name = self.DB_KEY_POOL_INFO_HASH
 
-        # 1. Stream keys via HSCAN and collect all block heights
         cursor = 0
         block_heights = []
 
@@ -262,8 +286,8 @@ class PoolCache(CachedDataSource[PriceHolder]):
 
             pbar.update(new_keys)
 
-            if len(block_heights) >= max_keys_to_delete:
-                self.logger.warning(f"Reached max keys to delete: {max_keys_to_delete}. Stopping scan.")
+            if max_keys_to_scan and len(block_heights) >= max_keys_to_scan:
+                self.logger.warning(f"Reached max keys to scan: {max_keys_to_scan}. Stopping scan.")
                 break
 
             if cursor == 0:
@@ -271,24 +295,8 @@ class PoolCache(CachedDataSource[PriceHolder]):
 
         pbar.close()
 
-        # 2. Sort all block heights globally
-        self.logger.info(f'Found {len(block_heights)} thin out keys. Sorting...')
-        block_heights.sort()
-
-        # 3. Thin the list based on min_distance
-        kept = []
-        last = None
-        for h in block_heights:
-            if last is None or h - last >= min_distance:
-                kept.append(h)
-                last = h
-
-        # 4. Compute deletion list
-        kept_set = set(str(k) for k in kept)
-        all_keys_str = set(str(h) for h in block_heights)
-        to_delete = list(all_keys_str - kept_set)
-
-        return to_delete
+        self.logger.info(f'Scanned {len(block_heights)} keys. Thinning out...')
+        return [str(h) for h in self.thin_out_heights(block_heights, min_distance)]
 
     async def backup_hash(self,
                           hash_name: str = DB_KEY_POOL_INFO_HASH,

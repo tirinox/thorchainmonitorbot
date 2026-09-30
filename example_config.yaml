@@ -334,6 +334,11 @@ tx:
 price:
   enabled: true
 
+  # history cache of pool states (KeyDB): drop entries older than this
+  pool_cache_max_age: 3000d
+  # save the latest pools to the history cache once in N blocks (a snapshot is ~30 KB)
+  pool_cache_save_every_blocks: 10
+
   global_cd: 12h
   change_cd: 1h
   percent_change_threshold: 5

@@ -62,7 +62,7 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         if self.hide_arb_bots:
             sender = swap_start_ev.from_address
             if await self.arb_detector.try_to_detect_arb_bot(sender) == ArbStatus.ARB:
-                self.logger.warning(f'Ignoring Tx from Arb bot: {swap_start_ev.tx_id} by {sender}')
+                self.logger.info(f'Ignoring Tx from Arb bot: {swap_start_ev.tx_id} by {sender}')
                 return False
 
         if e.volume_usd < self.min_streaming_swap_usd:

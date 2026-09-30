@@ -203,6 +203,11 @@ redis-analysis: # Run the Redis analytics tool
 	docker compose exec redis redis-cli -p $(REDIS_PORT) -a $(REDIS_PASSWORD) --memkeys
 
 
+.PHONY: backup-keydb
+backup-keydb: # Copy the KeyDB dump (pool history cache) to a dated file next to it.
+	cp ./keydb_data/dump.rdb ./keydb_data/dump-${DATE}.rdb
+
+
 .PHONY: renderer-up
 renderer-up: # Launch the HTML renderer image
 	docker compose up -d renderer
@@ -235,9 +240,12 @@ restore-vote-data: # Restore vote records from past blocks (interactive prompts 
 	docker compose exec -it $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/restore_vote_data.py'
 
 
-.PHONY: thin-out-pool-cache  # Thin out the pool cache
-thin-out-pool-cache:
-	docker compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/thin_out_pool_cache.py /config/config.yaml'
+MIN_DISTANCE ?= 10
+
+.PHONY: thin-out-pool-cache
+thin-out-pool-cache: # Thin out the pool history cache in KeyDB (MIN_DISTANCE=10 blocks; YES=1 skips the question; DRY_RUN=1 only counts).
+	docker compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/thin_out_pool_cache.py /config/config.yaml \
+		--min-distance $(MIN_DISTANCE) $(if $(YES),--yes) $(if $(DRY_RUN),--dry-run)'
 
 
 .PHONY: fill-pool-cache  # Fill the pool cache

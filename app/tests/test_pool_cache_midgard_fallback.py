@@ -52,7 +52,8 @@ class FakeMidgard:
 
 def make_deps(midgard):
     return SimpleNamespace(
-        cfg=SimpleNamespace(stable_coins=[USDC], price=SimpleNamespace(pool_cache_max_age='30d')),
+        cfg=SimpleNamespace(stable_coins=[USDC], price=SimpleNamespace(pool_cache_max_age='30d'),
+                            as_int=lambda path, default=None: default),
         db=FakeDB(),
         thor_connector=FakeThorConnector(),
         thor_connector_archive=FakeThorConnector(),
@@ -116,3 +117,40 @@ def test_rune_price_falls_back_to_pool_usd_price_without_stable_coins():
 
     with pytest.raises(ValueError):
         lp._calculate_weighted_rune_price_in_usd({})
+
+
+@pytest.mark.asyncio
+async def test_latest_pools_are_saved_once_in_n_blocks():
+    deps = make_deps({})
+    cache = PoolCache(deps)
+    cache.pool_cache_save_every_blocks = 10
+
+    block = 1000
+    saved = []
+
+    async def fake_fetch(height=None):
+        return {TCY: object()}
+
+    async def fake_save(subkey, pool_map):
+        saved.append(subkey)
+
+    async def get_thor_block():
+        return block
+
+    cache._fetch_pool_data_from_thornode = fake_fetch
+    cache._save_historic_data = fake_save
+    deps.last_block_cache = SimpleNamespace(get_thor_block=get_thor_block)
+
+    for block in range(1000, 1025):
+        await cache.load_pools()
+
+    assert saved == [1000, 1010, 1020]
+
+
+def test_thin_out_heights_keeps_entries_at_least_min_distance_apart():
+    heights = [100, 101, 105, 110, 111, 119, 120, 200, 205, 210]
+    to_delete = PoolCache.thin_out_heights(reversed(heights), min_distance=10)
+    assert to_delete == [101, 105, 111, 119, 205]
+    kept = sorted(set(heights) - set(to_delete))
+    assert kept == [100, 110, 120, 200, 210]
+    assert PoolCache.thin_out_heights([], 10) == []

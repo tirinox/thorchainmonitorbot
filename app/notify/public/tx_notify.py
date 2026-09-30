@@ -287,7 +287,7 @@ class SwapTxNotifier(GenericTxNotifier):
 
         if self.hide_arb_bots:
             if await self.arb_detector.try_to_detect_arb_bot(tx.sender_address) == ArbStatus.ARB:
-                self.logger.warning(f'Ignoring Tx from Arb bot: {tx.tx_hash} by {tx.sender_address}')
+                self.logger.info(f'Ignoring Tx from Arb bot: {tx.tx_hash} by {tx.sender_address}')
                 return False
 
         # a) It is interesting if a steaming swap

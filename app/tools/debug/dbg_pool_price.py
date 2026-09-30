@@ -134,7 +134,7 @@ async def demo_load_historic_data(app):
 
 async def dbg_thin_out_pool_cache(app):
     pf: PoolFetcher = app.deps.pool_fetcher
-    keys = await pf.cache.get_thin_out_keys(min_distance=5, scan_batch_size=1000)
+    keys = await pf.cache.get_thin_out_keys(min_distance=5, scan_batch_size=1000, max_keys_to_scan=10000)
     print(keys)
     print(f"Total keys: {len(keys)}")
 
