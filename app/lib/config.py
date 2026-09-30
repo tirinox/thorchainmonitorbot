@@ -126,23 +126,29 @@ class Config(SubConfig):
             'continuing with the existing process environment.'
         )
 
+    CONFIG_EXTENSIONS = ('.yaml', '.yml')
+
+    @classmethod
+    def _find_config_file(cls) -> str:
+        # "python main.py /config/config.yaml": a YAML path as the first argument is the config;
+        # any other first argument belongs to the script itself (a debug tool's address, a block height...)
+        if len(sys.argv) >= 2 and sys.argv[1].lower().endswith(cls.CONFIG_EXTENSIONS):
+            return sys.argv[1]
+
+        for config_file in cls.DEFAULT_CONFIG_FILES:
+            if Path(config_file).exists():
+                return config_file
+
+        raise FileNotFoundError(f'No config file: pass its path as the first argument '
+                                f'or put it at one of {cls.DEFAULT_CONFIG_FILES}')
+
     def __init__(self, name=None, data=None):
         logging.info(f'App path is "{get_app_path()}"')
 
         self._load_env()
 
         if data is None:
-            if name:
-                self._config_name = name
-            else:
-                if len(sys.argv) >= 2 and 'pytest' not in sys.argv[0]:
-                    self._config_name = sys.argv[1]
-                else:
-                    # self._config_name = self.DEFAULT
-                    for config_file in self.DEFAULT_CONFIG_FILES:
-                        if Path(config_file).exists():
-                            self._config_name = config_file
-                            break
+            self._config_name = name or self._find_config_file()
 
             logging.info(f'Loading config from "{self._config_name}".')
             with open(self._config_name, 'r') as f:

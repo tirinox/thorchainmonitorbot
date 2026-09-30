@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 from lib.config import Config
@@ -71,3 +73,40 @@ def test_treasury_lp_address_loaded_from_config_and_updates_default_supply_map()
     assert c.thor_address_dict[custom_address] == ('Treasury LP', 'Treasury')
     assert len(c.thor_address_dict) == len(THOR_ADDRESS_DICT)
 
+
+def _write_config(path, network_id):
+    path.write_text(f'thor:\n  network_id: "{network_id}"\n')
+
+
+@pytest.fixture
+def default_config(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(Config, 'DEFAULT_CONFIG_FILES', ['config.yaml'])
+    _write_config(tmp_path / 'config.yaml', 'default')
+    return tmp_path
+
+
+def test_config_path_as_the_first_argument(default_config, monkeypatch):
+    # the way the containers start: python main.py /config/config.yaml
+    _write_config(default_config / 'custom.yml', 'from-argv')
+    monkeypatch.setattr(sys, 'argv', ['main.py', str(default_config / 'custom.yml'), '--reload'])
+    assert Config().network_id == 'from-argv'
+
+
+@pytest.mark.parametrize('argv', [
+    ['dbg_tool.py', 'thor1edd07q7q00hcjm5jg404g5jf84fuexqe93txsj', 'ETH.ETH'],
+    ['dbg_tool.py', '28039404'],
+    ['dashboard_api.py', '--reload'],
+    ['main.py'],
+])
+def test_other_arguments_are_left_to_the_script(default_config, monkeypatch, argv):
+    monkeypatch.setattr(sys, 'argv', argv)
+    assert Config().network_id == 'default'
+
+
+def test_no_config_file(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(Config, 'DEFAULT_CONFIG_FILES', ['config.yaml'])
+    monkeypatch.setattr(sys, 'argv', ['dbg_tool.py', 'thor1address'])
+    with pytest.raises(FileNotFoundError, match='No config file'):
+        Config()
