@@ -13,12 +13,15 @@ async def _load_flags(flagship: Flagship) -> list[tuple[str, FlagDescriptor]]:
     redis = flagship.db.redis
     keys = sorted(await redis.keys(f'{Flagship.DB_KEY_PREFIX}*'))
     values = await redis.mget(keys) if keys else []
+    access_times = await flagship.load_access_times()
     flags = []
     for key, raw in zip(keys, values):
         if not raw:
             continue
         try:
-            flags.append((key.removeprefix(Flagship.DB_KEY_PREFIX), FlagDescriptor.model_validate_json(raw)))
+            path = key.removeprefix(Flagship.DB_KEY_PREFIX)
+            flag = FlagDescriptor.model_validate_json(raw)
+            flags.append((path, Flagship.with_access_time(flag, access_times.get(path))))
         except ValueError as e:
             logging.warning(f'Skipping unreadable flag {key!r}: {e}')
     return flags

@@ -674,7 +674,7 @@ class ThorNetwork(NamedTuple):
     @classmethod
     def from_json(cls, j):
         return cls(
-            bond_reward_rune=int(j.get('bond_reward_rune'), 0),
+            bond_reward_rune=int(j.get('bond_reward_rune', 0)),
             burned_bep_2_rune=int(j.get('burned_bep_2_rune', 0)),
             burned_erc_20_rune=int(j.get('burned_erc_20_rune', 0)),
             total_bond_units=int(j.get('total_bond_units', 0)),

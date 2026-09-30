@@ -110,7 +110,7 @@ def parse_timespan_to_seconds(span: str, do_float=True):
                     try:
                         number = float(str_for_number) if do_float else int(str_for_number)
                     except ValueError:
-                        return 'Error! Invalid number: {}'.format(str_for_number)
+                        raise ValueError(f'Invalid number {str_for_number!r} in time span {span!r}')
                     else:
                         multipliers = {
                             's': 1,
@@ -122,16 +122,16 @@ def parse_timespan_to_seconds(span: str, do_float=True):
                     finally:
                         str_for_number = ''
                 else:
-                    return 'Error! Must be some digits before!'
+                    raise ValueError(f'No digits before {symbol!r} in time span {span!r}')
             elif symbol in NUMBER_CHARS:
                 str_for_number += symbol
             elif symbol in WHITE_SPACE_CHARS:
                 pass
             else:
-                return 'Error! Unexpected symbol: {}'.format(symbol)
+                raise ValueError(f'Unexpected symbol {symbol!r} in time span {span!r}')
 
         if str_for_number:
-            return 'Error! Unfinished component in the end: {}'.format(str_for_number)
+            raise ValueError(f'Unfinished component {str_for_number!r} at the end of time span {span!r}')
 
         return result
 

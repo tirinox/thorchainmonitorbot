@@ -197,7 +197,10 @@ class AppSettingsAPI:
         return JSONResponse(stats._asdict())
 
     async def _get_dex_aggregator_stats(self, req: Request):
-        duration = parse_timespan_to_seconds(req.query_params.get('duration', '1d'))
+        try:
+            duration = parse_timespan_to_seconds(req.query_params.get('duration', '1d'))
+        except ValueError as e:
+            return JSONResponse({'error': str(e)}, 400)
         if duration > 90 * DAY:
             return JSONResponse({'error': 'Max duration 90 Days'}, 400)
 

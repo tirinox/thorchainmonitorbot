@@ -96,7 +96,7 @@ class NodeInfo(BaseModelMixin):
     @staticmethod
     def _make_bond_provider(raw, total_bond, fee_rate, node_op_address, total_reward: float) -> BondProvider:
         bond = float(thor_to_float(raw['bond']))
-        bond_share = bond / total_bond
+        bond_share = bond / total_bond if total_bond else 0.0
 
         anticipated_award = bond_share * total_reward * (1.0 - fee_rate)
 

@@ -1,5 +1,4 @@
 import logging
-import math
 import operator
 from dataclasses import dataclass
 from functools import cached_property
@@ -19,9 +18,13 @@ from .node_info import NodeInfo, NetworkNodes
 
 # for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
 ADMIN_VALUE = 1
-SUPER_MAJORITY = 0.66666667
 MIMIR_VOTING_KEY_DISPLAY_LIMIT = 24
 MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT = 30
+
+
+def super_majority_votes(active_nodes_count: int) -> int:
+    # 2/3 of the nodes rounded up, in integers like THORNode's HasSuperMajority: 66 of 99 is enough
+    return (2 * active_nodes_count + 2) // 3
 
 
 @dataclass
@@ -37,7 +40,7 @@ class MimirVoteOption:
 
     def calculate_progress(self, active_nodes_count):
         self.progress = self.signer_count / active_nodes_count if active_nodes_count else 0
-        self.need_votes_to_pass = abs(int(math.ceil(active_nodes_count * SUPER_MAJORITY)) - self.number_votes)
+        self.need_votes_to_pass = abs(super_majority_votes(active_nodes_count) - self.number_votes)
         return self.progress
 
 
@@ -56,7 +59,7 @@ class MimirVoting:
 
     @property
     def min_votes_to_pass(self):
-        return int(math.ceil(self.active_nodes_count * SUPER_MAJORITY))
+        return super_majority_votes(self.active_nodes_count)
 
     @property
     def total_voters(self):
@@ -74,7 +77,7 @@ class MimirVoting:
     def passed(self):
         if not self.top_options:
             return False
-        return self.top_options[0].progress >= SUPER_MAJORITY
+        return self.top_options[0].number_votes >= self.min_votes_to_pass
 
     def __str__(self):
         opts = ', '.join(f'{opt.value}({opt.signer_count})' for opt in self.top_options)

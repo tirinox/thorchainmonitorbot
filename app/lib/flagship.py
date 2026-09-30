@@ -10,11 +10,8 @@ from lib.logs import WithLogger
 class FlagDescriptor(BaseModel):
     value: bool
     last_changed_ts: float
-    last_access_ts: float
+    last_access_ts: float = 0.0
     full_path: str | None = None
-
-    def access(self):
-        self.last_access_ts = now_ts()
 
     def change_to(self, new_value: bool):
         if self.value != new_value:
@@ -38,6 +35,9 @@ class Flagship(WithLogger):
         self.default_value = True
 
     DB_KEY_PREFIX = 'Flagship:'
+    # access times live apart from the flags (and outside of the "Flagship:*" pattern): reading a flag
+    # must never write its value back, or it would undo a switch made from the dashboard in between
+    DB_KEY_ACCESS = 'FlagshipAccess'
 
     def key(self, flag_name: str) -> str:
         return f'{self.DB_KEY_PREFIX}{flag_name}'
@@ -57,10 +57,26 @@ class Flagship(WithLogger):
 
         try:
             data = FlagDescriptor.model_validate_json(json_data)
-            return data
         except Exception as e:
             self.logger.error(f'Failed to parse flag data for "{flag_name}": {e}')
             return None
+
+        access_ts = await self.db.redis.hget(self.DB_KEY_ACCESS, flag_name)
+        return self.with_access_time(data, access_ts)
+
+    @staticmethod
+    def with_access_time(flag: FlagDescriptor, access_ts) -> FlagDescriptor:
+        try:
+            # older flags carry the time inside the descriptor
+            flag.last_access_ts = max(flag.last_access_ts, float(access_ts or 0.0))
+        except (TypeError, ValueError):
+            pass
+        return flag
+
+    async def load_access_times(self) -> dict:
+        if not self.db.redis:
+            return {}
+        return await self.db.redis.hgetall(self.DB_KEY_ACCESS)
 
     async def save_flag_object(self, flag_name: str, flag: FlagDescriptor):
         if not self.db.redis:
@@ -75,18 +91,26 @@ class Flagship(WithLogger):
         await self.db.redis.set(key, json_data)
 
     async def is_flag_set(self, flag_name: str) -> bool:
-        flag = await self.get_flag_object(flag_name)
-        if flag:
-            flag.access()
-            await self.save_flag_object(flag_name, flag)
-            return flag.value
-        else:
-            await self.set_flag(flag_name, self.default_value)
+        if not self.db.redis:
+            self.logger.warning('Redis is not available, assuming all flags are unset')
             return self.default_value
+
+        flag = await self.get_flag_object(flag_name)
+        if flag is None:  # not "if not flag": a descriptor is falsy when the flag is off
+            now = now_ts()
+            flag = FlagDescriptor(value=self.default_value, last_changed_ts=now, last_access_ts=now,
+                                  full_path=flag_name)
+            # NX: if someone has created the flag in the meantime, their value stays
+            if not await self.db.redis.set(self.key(flag_name), flag.model_dump_json(), nx=True):
+                existing = await self.get_flag_object(flag_name)
+                flag = existing if existing is not None else flag
+
+        await self.db.redis.hset(self.DB_KEY_ACCESS, flag_name, now_ts())
+        return flag.value
 
     async def set_flag(self, flag_name: str, value: bool):
         flag = await self.get_flag_object(flag_name)
-        if not flag:
+        if flag is None:
             flag = FlagDescriptor(value=value, last_changed_ts=now_ts(), last_access_ts=now_ts(),
                                   full_path=flag_name)
         else:
@@ -99,13 +123,14 @@ class Flagship(WithLogger):
             return []
 
         keys = await self.db.redis.keys(f'{self.DB_KEY_PREFIX}*')
+        access_times = await self.load_access_times()
         flags = []
         for key in keys:
             json_data = await self.db.redis.get(key)
             if json_data:
                 try:
                     flag = FlagDescriptor.model_validate_json(json_data)
-                    flags.append(flag)
+                    flags.append(self.with_access_time(flag, access_times.get(key.removeprefix(self.DB_KEY_PREFIX))))
                 except Exception as e:
                     self.logger.error(f'Failed to parse flag data for key "{key}": {e}')
         return flags
@@ -135,3 +160,4 @@ class Flagship(WithLogger):
 
         key = self.key(flag_name)
         await self.db.redis.delete(key)
+        await self.db.redis.hdel(self.DB_KEY_ACCESS, flag_name)

@@ -33,8 +33,7 @@ from models.last_block import BlockProduceState, EventBlockSpeed
 from models.limit_swap import LimitSwapPeriodStats
 from models.lp_info import LiquidityPoolReport
 from models.memo import ActionType
-from models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption, AlertMimirVoting, \
-    SUPER_MAJORITY
+from models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption, AlertMimirVoting
 from models.mimir_naming import MimirUnits
 from models.name import ThorName
 from models.net_stats import NetworkStats, AlertNetworkStats
@@ -1675,7 +1674,7 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def make_voting_progress_bar(option: MimirVoteOption, voting: MimirVoting):
-        if option.progress > SUPER_MAJORITY:
+        if option.number_votes >= voting.min_votes_to_pass:
             return '✅'
         else:
             # if "voting.min_votes_to_pass" (100% == 66.67%), otherwise use "voting.active_nodes"
