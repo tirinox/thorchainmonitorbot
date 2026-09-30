@@ -325,11 +325,19 @@ class Broadcaster(WithLogger):
 
         async with self._broadcast_lock:
             count = 0
+            failed = []  # channels whose message could not be built
 
             try:
                 for channel_info in channels:
-                    # make from any message a BoardMessage
-                    b_message = await self._form_message(message, channel_info, msg_type, **kwargs)
+                    try:
+                        # make from any message a BoardMessage
+                        b_message = await self._form_message(message, channel_info, msg_type, **kwargs)
+                    except Exception as e:
+                        # one channel's message (a locale, a chart...) failing must not stop the others
+                        self.logger.exception(f'Failed to build {msg_type} for {channel_info.short_coded}: {e}')
+                        failed.append(channel_info.short_coded)
+                        continue
+
                     if b_message.is_empty:
                         continue
 
@@ -340,6 +348,12 @@ class Broadcaster(WithLogger):
                             f"{channel_info.type} ({channel_info.short_coded})! Skipping.")
                         continue
 
+                    sent_key = self._sent_key(msg_type, channel_info)
+                    if sent_key and await self.deps.db.redis.get(sent_key):
+                        self.logger.warning(f'{msg_type} was already sent to {channel_info.short_coded} '
+                                            f'in this run; not sending it again.')
+                        continue
+
                     send_results = await self._safe_send_message(
                         channel_info, b_message,
                         disable_web_page_preview=True,
@@ -347,9 +361,27 @@ class Broadcaster(WithLogger):
 
                     if send_results:
                         count += 1
+                        if sent_key:
+                            await self.deps.db.redis.set(sent_key, now_ts(), ex=self.SENT_MARK_TTL)
 
                     await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)
             finally:
                 self.logger.info(f"{count} messages successful sent (of {len(channels)})")
 
+            if failed and not count:
+                # nothing went out at all, so a retry of the job cannot produce duplicates: let it retry
+                raise RuntimeError(f'Failed to build {msg_type} for every channel: {failed!r}')
+
             return count
+
+    SENT_MARK_TTL = 3600
+
+    def _sent_key(self, msg_type, channel_info: ChannelDescriptor) -> Optional[str]:
+        """
+        A retry of a scheduled job runs under the same run id, so a message that reached a channel
+        before the job failed is marked in Redis and skipped on the next attempt.
+        """
+        run = current_run()
+        if not run.run_id or not run.is_real or not self.deps.db.redis:
+            return None
+        return f'Broadcast:Sent:{run.run_id}:{msg_type}:{channel_info.short_coded}'

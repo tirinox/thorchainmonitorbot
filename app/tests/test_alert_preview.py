@@ -29,6 +29,11 @@ class FakeLocMan:
         return FakeLocale(lang)
 
 
+class FakeNoSubscribers:
+    async def get_general_alerts_channels(self, _settings_manager):
+        return []
+
+
 def make_broadcaster(test_channels=(), startup_delay='0'):
     cfg = Config(data={
         'broadcasting': {
@@ -43,7 +48,8 @@ def make_broadcaster(test_channels=(), startup_delay='0'):
         'personal': {'rate_limit': {'number': 10, 'period': '1m', 'cooldown': '5m'}},
     })
     db = FakeDB(FakePubSubRedis())
-    deps = SimpleNamespace(cfg=cfg, db=db, flagship=Flagship(db), loc_man=FakeLocMan())
+    deps = SimpleNamespace(cfg=cfg, db=db, flagship=Flagship(db), loc_man=FakeLocMan(),
+                           gen_alert_settings_proc=FakeNoSubscribers(), settings_manager=None)
     broadcaster = Broadcaster(deps)
     sent = []
 
@@ -236,3 +242,50 @@ async def test_run_manager_passes_mode_to_the_bot():
     assert calls[0]['mode'] == 'preview' and calls[0]['run_id'] == run.run_id
     with pytest.raises(ValueError):
         manager.start(job_id='k', mode='bogus')
+
+
+# ---------- broadcast robustness ----------
+
+@pytest.mark.asyncio
+async def test_one_failing_channel_does_not_stop_the_broadcast():
+    broadcaster, deps, sent = make_broadcaster()
+
+    def text_or_boom(locale):
+        if locale.name == 'eng-tw':
+            raise ValueError('no chart for twitter')
+        return BoardMessage(f'hello in {locale.name}', msg_type=MSG_TYPE)
+
+    await broadcaster.broadcast_to_all(MSG_TYPE, text_or_boom)
+    assert sent == [('telegram-@public', 'hello in eng'), ('discord-42', 'hello in eng')]
+
+
+@pytest.mark.asyncio
+async def test_broadcast_raises_when_no_message_could_be_built():
+    broadcaster, deps, sent = make_broadcaster()
+
+    def boom(locale):
+        raise ValueError('boom')
+
+    with pytest.raises(RuntimeError):
+        await broadcaster.broadcast_to_all(MSG_TYPE, boom)
+    assert sent == []
+
+
+@pytest.mark.asyncio
+async def test_retry_of_the_same_run_does_not_resend():
+    broadcaster, deps, sent = make_broadcaster()
+
+    with run_context(RunMode.NORMAL, 'run-1'):
+        await broadcaster.broadcast_to_all(MSG_TYPE, text_by_lang)
+        assert len(sent) == 3
+        await broadcaster.broadcast_to_all(MSG_TYPE, text_by_lang)  # the job failed later and was retried
+        assert len(sent) == 3
+
+    with run_context(RunMode.NORMAL, 'run-2'):  # the next scheduled run posts again
+        await broadcaster.broadcast_to_all(MSG_TYPE, text_by_lang)
+    assert len(sent) == 6
+
+    # a run without an id (e.g. an event-driven alert) is not deduplicated
+    await broadcaster.broadcast_to_all(MSG_TYPE, text_by_lang)
+    await broadcaster.broadcast_to_all(MSG_TYPE, text_by_lang)
+    assert len(sent) == 12

@@ -3,6 +3,7 @@ import datetime
 import functools
 import json
 import time
+import uuid
 from collections import defaultdict
 from typing import Any, List
 from typing import Optional, Literal
@@ -357,6 +358,7 @@ class PublicScheduler(WithLogger):
             job_id = desc.id if desc else 0
             job_args = self._merge_job_args(desc.args if desc else None, override_args)
             retry_count = self.retries if with_retries else 1
+            scheduled_run_id = uuid.uuid4().hex[:12]  # a scheduled run has no run id from the dashboard
             for attempt in range(1, retry_count + 1):
                 try:
                     if desc and not desc.enabled:
@@ -369,7 +371,9 @@ class PublicScheduler(WithLogger):
                         return None
 
                     await stats.set_is_running(True)
-                    with run_context(mode, run_id):
+                    # all attempts share one run id: the broadcaster marks what it has sent under it,
+                    # so a retry does not post again to the channels that already got the message
+                    with run_context(mode, run_id or scheduled_run_id):
                         result = await func(**job_args) if job_args else await func()
                     elapsed = time.monotonic() - start_time
                     await self.db_log.info(action, phase='complete',
