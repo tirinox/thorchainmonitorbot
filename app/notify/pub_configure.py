@@ -109,11 +109,11 @@ class PublicAlertJobExecutor(WithLogger):
             self.logger.info(f'{what}: not saved after a {run.mode} run')
 
     async def job_tcy_summary(self, **job_args):
-        data = await self.tcy_info_fetcher.fetch()
+        data = await self.tcy_info_fetcher.fetch_and_remember()
         await self._send_alert(data, "tcy summary alert", job_args)
 
     async def job_secured_asset_summary(self, **job_args):
-        data = await self.secured_asset_fetcher.fetch()
+        data = await self.secured_asset_fetcher.fetch_and_remember()
         await self._send_alert(data, "secured asset summary alert", job_args)
 
     async def job_pol_summary(self, **job_args):
@@ -146,7 +146,7 @@ class PublicAlertJobExecutor(WithLogger):
         await self._save_state('RUNEPool state', lambda: pvdb.set(data.runepool))
 
     async def job_key_metrics(self, **job_args):
-        data: AlertKeyStats = await self.key_stats_fetcher.fetch()
+        data: AlertKeyStats = await self.key_stats_fetcher.fetch_and_remember()
         if not data.current.btc_total_usd:
             raise ValueError(f'No pool data! Aborting.')
 
@@ -183,7 +183,7 @@ class PublicAlertJobExecutor(WithLogger):
         await self._send_alert(event, "rune burn chart alert", job_args)
 
     async def job_trade_account_summary(self, **job_args):
-        data: AlertTradeAccountStats = await self.trade_acc_fetcher.fetch()
+        data: AlertTradeAccountStats = await self.trade_acc_fetcher.fetch_and_remember()
         await self._send_alert(data, "trade account stats", job_args)
 
     async def job_price_alert(self, price_graph_days: int = 7, **job_args):

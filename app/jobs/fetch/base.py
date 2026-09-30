@@ -145,6 +145,10 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
             self.data_controller.register(self)
         self.run_times = deque(maxlen=100)
 
+        self._remembered_data = None
+        self._remembered_ts = 0.0
+        self._remember_lock = asyncio.Lock()
+
     @property
     def dbg_last_run_time(self):
         return self.run_times[-1] if self.run_times else None
@@ -165,6 +169,23 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
     @abstractmethod
     async def fetch(self):
         ...
+
+    async def fetch_and_remember(self):
+        data = await self.fetch()
+        if data is not None:
+            self._remembered_data = data
+            self._remembered_ts = now_ts()
+        return data
+
+    async def fetch_cached(self, max_age_sec: float):
+        """
+        Returns the last remembered result if it is younger than max_age_sec, otherwise fetches again.
+        Concurrent callers wait for the same fetch instead of starting their own.
+        """
+        async with self._remember_lock:
+            if self._remembered_data is not None and now_ts() - self._remembered_ts < max_age_sec:
+                return self._remembered_data
+            return await self.fetch_and_remember()
 
     async def run_once(self):
         self.logger.info(f'Tick #{self.total_ticks}')

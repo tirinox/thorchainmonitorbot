@@ -63,12 +63,10 @@ class DepContainer:
     fetcher_chain_state = None  # type: 'ChainStateFetcher'
     lend_stats_fetcher = None
     trade_acc_fetcher = None  # type: 'TradeAccountFetcher'
-    key_stat_fetcher = None  # type: 'KeyStatsFetcher'
 
     node_op_notifier = None  # type: 'NodeChangePersonalNotifier'
     block_notifier = None  # type: 'BlockHeightNotifier'
     rune_move_notifier = None  # type: 'RuneMoveNotifier'
-    tr_acc_summary_notifier = None  # type: 'TradeAccSummaryNotifier'
     swap_notifier_tx = None
     refund_notifier_tx = None
     liquidity_notifier_tx = None
@@ -78,8 +76,6 @@ class DepContainer:
     user_counter = None  # type: 'UserCounterMiddleware'
     weekly_stats_notifier = None
     lend_stats_notifier = None
-    secured_asset_notifier = None
-    tcy_summary_notifier = None
     pol_recorder = None  # type: 'POLStateRecorder'
 
     dex_analytics = None
@@ -89,6 +85,7 @@ class DepContainer:
 
     scheduler: Optional[PrivateScheduler] = None
     pub_scheduler: Optional[PublicScheduler] = None
+    pub_alert_executor = None  # type: 'PublicAlertJobExecutor'
 
     gen_alert_settings_proc = None
     alert_watcher: Optional[AlertWatchers] = None

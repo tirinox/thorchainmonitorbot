@@ -28,7 +28,7 @@ from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.node_churn_notify import NodeChurnNotifier
 from notify.public.price_notify import PriceChangeNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
-from .base import BaseDialog, message_handler, query_handler
+from .base import BaseDialog, message_handler, query_handler, logger
 from ..picture.pools_picture import PoolPictureGenerator
 
 
@@ -379,15 +379,33 @@ class MetricsDialog(BaseDialog):
                              disable_web_page_preview=True,
                              disable_notification=True)
 
+    async def _get_pub_job_data(self, fetcher_attr: str, max_age_sec=None):
+        """
+        Data of a public alert job's fetcher: its last result if still fresh, otherwise a new fetch.
+        By default, data stays fresh for the fetcher's own period. Returns None on failure.
+        """
+        executor = self.deps.pub_alert_executor
+        if not executor:
+            return None
+        fetcher = getattr(executor, fetcher_attr)
+        if max_age_sec is None:
+            max_age_sec = fetcher.sleep_period
+        try:
+            return await fetcher.fetch_cached(max_age_sec)
+        except Exception:
+            logger.exception(f'Failed to fetch data with {fetcher.name}')
+            return None
+
     async def show_weekly_stats(self, message: Message):
         await self.start_typing(message)
 
-        if not self.deps.key_stat_fetcher or not self.deps.key_stat_fetcher.last_event:
+        max_age = self.deps.cfg.as_interval('key_metrics.data_max_age', '36h')
+        ev = await self._get_pub_job_data('key_stats_fetcher', max_age)
+        if not ev or not ev.current.btc_total_usd:
             await message.answer(self.loc.TEXT_WEEKLY_STATS_NO_DATA,
                                  disable_notification=True)
             return
 
-        ev = self.deps.key_stat_fetcher.last_event
         pic, pic_name = await self.deps.alert_presenter.render_key_stats(self.loc, ev)
         caption = self.loc.notification_text_key_metrics_caption(ev)
         await message.answer_photo(img_to_bio(pic, pic_name), caption=caption, disable_notification=True)
@@ -395,13 +413,12 @@ class MetricsDialog(BaseDialog):
     async def show_trade_acc_stats(self, message: Message):
         await self.start_typing(message)
 
-        if not self.deps.tr_acc_summary_notifier:
-            await message.answer("This method is disabled.", disable_notification=True)
+        event = await self._get_pub_job_data('trade_acc_fetcher')
+        if not event or not event.curr.vaults:
+            await message.answer(self.loc.TEXT_WEEKLY_STATS_NO_DATA, disable_notification=True)
             return
 
-        event = self.deps.tr_acc_summary_notifier.last_event
-
-        text = self.loc.notification_text_trade_account_summary(event) if event else self.loc.TEXT_WEEKLY_STATS_NO_DATA
+        text = self.loc.notification_text_trade_account_summary(event)
         await message.answer(text, disable_notification=True)
 
     async def show_rune_burned(self, message: Message):
@@ -432,12 +449,8 @@ class MetricsDialog(BaseDialog):
     async def show_secured_assets_stats(self, message: Message):
         await self.start_typing(message)
 
-        if not self.deps.secured_asset_notifier:
-            await message.answer("This method is disabled.", disable_notification=True)
-            return
-
-        event = self.deps.secured_asset_notifier.last_event
-        if not event:
+        event = await self._get_pub_job_data('secured_asset_fetcher')
+        if not event or not event.current:
             await message.answer(self.loc.TEXT_SECURED_ASSETS_NO_DATA, disable_notification=True)
             return
 
@@ -447,11 +460,8 @@ class MetricsDialog(BaseDialog):
 
     async def show_tcy_info(self, message: Message):
         await self.start_typing(message)
-        if not self.deps.tcy_summary_notifier:
-            await message.answer("This method is disabled.", disable_notification=True)
-            return
 
-        event = self.deps.tcy_summary_notifier.last_event
+        event = await self._get_pub_job_data('tcy_info_fetcher')
         if not event:
             await message.answer(self.loc.TEXT_TCY_INFO_NO_DATA, disable_notification=True)
             return
