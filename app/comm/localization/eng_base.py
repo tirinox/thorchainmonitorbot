@@ -1,3 +1,4 @@
+import html
 import logging
 from abc import ABC
 from datetime import datetime
@@ -685,7 +686,7 @@ class BaseLocalization(ABC):  # == English
             )
 
         elif tx.is_of_type(ActionType.REFUND):
-            reason = shorten_text(tx.meta_refund.reason, 180)
+            reason = html.escape(shorten_text(tx.meta_refund.reason, 180))
             content = (
                     self.format_swap_route(tx, usd_per_rune) +
                     f"\nReason: {pre(reason)}"
@@ -2196,7 +2197,7 @@ class BaseLocalization(ABC):  # == English
             for k, v in translate_table.items():
                 comment = comment.replace(k, v)
 
-            comment = shorten_text(comment, 100)
+            comment = html.escape(shorten_text(comment, 100))
             comment = f' "{comment}"'
 
         # TX link
@@ -2210,7 +2211,8 @@ class BaseLocalization(ABC):  # == English
 
         memo = ''
         if t.memo and not t.memo.startswith('OUT:'):
-            memo = f'\nMEMO: "{code(shorten_text(t.memo, limit=42))}"'
+            # anyone can send a transfer with any memo to a watched address
+            memo = f'\nMEMO: "{code(html.escape(shorten_text(t.memo, limit=42)))}"'
 
         return asset, comment, from_my, to_my, tx_link, usd_amt, memo
 

@@ -119,7 +119,7 @@ class MyWalletsMenu(DialogWithSettings):
 
         # If name is not empty, set it
         if name:
-            await self.get_name_service(message).set_wallet_local_name(address, name)
+            await self.get_name_service(message).set_wallet_local_name(address, self._clean_local_name(name))
 
         await self.start_typing(message)
         # redraw menu!
@@ -799,10 +799,13 @@ class MyWalletsMenu(DialogWithSettings):
 
     # --- Set name ---
 
+    def _clean_local_name(self, name: str):
+        # names are stored HTML-escaped: they go into HTML messages as they are
+        return html.escape(name.strip()[:self.MAX_NAME_LEN])
+
     @message_handler(state=LPMenuStates.SET_NAME)
     async def set_name_message_handler(self, message: Message):
-        name = message.text.strip()[:self.MAX_NAME_LEN]
-        name = html.escape(name)
+        name = self._clean_local_name(message.text)
 
         await self.get_name_service(message).set_wallet_local_name(self.current_address, name)
         await self._present_wallet_settings(message, edit=False)

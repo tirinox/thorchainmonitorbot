@@ -1,3 +1,4 @@
+import html
 from datetime import datetime
 from typing import List, Tuple
 
@@ -462,7 +463,7 @@ class RussianLocalization(BaseLocalization):
                 f"{pool_depth_part}\n"
             )
         elif tx.is_of_type(ActionType.REFUND):
-            reason = shorten_text(tx.meta_refund.reason, 180)
+            reason = html.escape(shorten_text(tx.meta_refund.reason, 180))
             content += (
                     self.format_swap_route(tx, usd_per_rune) +
                     f"\nПричина: {pre(reason)}"
