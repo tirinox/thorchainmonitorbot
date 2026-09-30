@@ -1,21 +1,27 @@
 import asyncio
+import math
+import random
 
 from redis.asyncio import Redis
 
-from lib.date_utils import now_ts, DAY
+from lib.date_utils import now_ts, DAY, MINUTE
 from lib.delegates import WithDelegates
 from lib.logs import WithLogger
 
 
 class PrivateScheduler(WithLogger, WithDelegates):
-    def __init__(self, r: Redis, name, poll_interval: float = 10, forget_after=DAY):
+    def __init__(self, r: Redis, name, poll_interval: float = 10, forget_after=DAY, catch_up_spread=30 * MINUTE):
         assert name
         super().__init__()
         self.name = name
         self._poll_interval = poll_interval
         self._r = r
         self._running = False
+        # one-shot events that are late more than this are dropped; periodic events are never dropped
         self.forget_after = forget_after
+        # periodic events that are late more than this (e.g. after a downtime) fire once
+        # at a random moment within this window, so they don't all hit the APIs at once
+        self.catch_up_spread = max(catch_up_spread, 2 * poll_interval)
 
     async def schedule(self, ident, timestamp=0.0, period=0.0):
         assert isinstance(ident, (str, int, float)) and ident, 'ident must be a string or number'
@@ -48,31 +54,48 @@ class PrivateScheduler(WithLogger, WithDelegates):
         score = await self._r.zscore(self.key_timeline(), ident)
         return float(score) if score else None
 
+    @staticmethod
+    def next_slot(ev_ts, now, period):
+        # the first moment strictly after now that keeps the phase of the event, missed slots are skipped
+        return ev_ts + (math.floor((now - ev_ts) / period) + 1) * period
+
     async def _run_handler(self, ev):
         try:
             now = now_ts()
-            delay = now - ev[1]
-            ident = ev[0]
+            ident, ev_ts = ev
+            delay = now - ev_ts
             ev_desc = self.ev_desc(ident)
+            key_timeline = self.key_timeline()
 
-            if 0 < self.forget_after < delay:
-                self.logger.info(f'Event seems forgotten: {ev_desc}. Ignoring.')
+            raw_period = await self.get_period(ident)
+            try:
+                period = float(raw_period) if raw_period else 0.0
+            except ValueError:
+                self.logger.warning(f'Invalid period: {raw_period}. Failed to reschedule: {ev_desc}')
+                period = 0.0
+
+            if period < 0:
+                self.logger.info(f'Periodic event seems cancelled: {ev_desc}. Ignoring.')
+                await self._r.zrem(key_timeline, ident)
                 return
 
+            if period > 0:
+                # the event is moved forward instead of being removed, so it is never lost;
+                # xx=True: do not resurrect an event cancelled in the meantime
+                if delay > self.catch_up_spread:
+                    catch_up_ts = now + random.uniform(0, self.catch_up_spread)
+                    self.logger.info(f'Periodic event {ev_desc} is late by {delay:.0f} sec. '
+                                     f'Catching up in {catch_up_ts - now:.0f} sec.')
+                    await self._r.zadd(key_timeline, {ident: catch_up_ts}, xx=True)
+                    return
+                await self._r.zadd(key_timeline, {ident: self.next_slot(ev_ts, now, period)}, xx=True)
+            else:
+                await self._r.zrem(key_timeline, ident)
+                if 0 < self.forget_after < delay:
+                    self.logger.info(f'Event seems forgotten: {ev_desc}. Ignoring.')
+                    return
+
             self.logger.debug(f'Running scheduler handler: {ev_desc}, delay: {delay:.3f} sec')
-
-            period = await self.get_period(ident)
-            if period:
-                try:
-                    period = float(period)
-                    if period > 0:
-                        await self.schedule(ident, now + period, period)
-                    elif period < 0:
-                        self.logger.info(f'Periodic event seems cancelled: {ev_desc}. Ignoring.')
-                        return
-                except ValueError:
-                    self.logger.warning(f'Invalid period: {period}. Failed to reschedule: {ev_desc}')
-
             await self.pass_data_to_listeners(ident)
             self.logger.debug(f'Finished scheduler handler: {ev_desc}')
 
@@ -99,8 +122,8 @@ class PrivateScheduler(WithLogger, WithDelegates):
     async def _process(self):
         now = now_ts()
         key_timeline = self.key_timeline()
+        # events stay in the timeline until the handler moves or removes them one by one
         evs = await self._r.zrangebyscore(key_timeline, 0, now, withscores=True)
-        await self._r.zremrangebyscore(key_timeline, 0, now)
         for ev in evs:
             await self._run_handler(ev)
 
