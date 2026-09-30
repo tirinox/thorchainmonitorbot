@@ -109,7 +109,9 @@ onMounted(async () => {
       fillFromJob(source)
       form.enabled = false  // a copy starts disabled so it does not double-post alerts by accident
     } else {
-      form.func = functionOptions.value[0]?.func ?? null
+      // /jobs/new?func=<type> comes from "Not configured" on the Jobs page
+      const wanted = route.query.func
+      form.func = functionOptions.value.some(o => o.func === wanted) ? wanted : functionOptions.value[0]?.func ?? null
     }
   } catch (e) {
     loadError.value = e.message

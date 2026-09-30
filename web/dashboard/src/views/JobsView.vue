@@ -106,6 +106,13 @@ const distribution = computed(() => {
   if (!d) return []
   return d.available_types.map(func => ({func, count: d.distribution[func] || 0}))
 })
+const configuredTypes = computed(() => distribution.value.filter(d => d.count))
+const missingTypes = computed(() => distribution.value.filter(d => !d.count))
+
+// a configured type narrows the table to its jobs (click again to clear); a missing one starts a new job
+function toggleTypeSearch(func) {
+  view.q = view.q === func ? '' : func
+}
 
 const expandedRows = ref({})
 const busy = reactive({})  // job id -> action name
@@ -275,12 +282,27 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
         </div>
       </Message>
 
-      <div v-if="distribution.length" class="row">
-        <span class="muted small">Job types:</span>
-        <span v-for="d in distribution" :key="d.func" class="dist" :class="{'dim': !d.count}"
-              v-tooltip.top="d.count ? `${d.count} job(s)` : 'Not configured yet'">
-          <JobTypeBadge :func="d.func" size="small"/><span class="muted small">×{{ d.count }}</span>
-        </span>
+      <div v-if="distribution.length" class="types">
+        <div class="types-row">
+          <span class="types-label"><i class="pi pi-check-circle ok"/> Configured
+            <span class="muted">({{ configuredTypes.length }}/{{ distribution.length }})</span></span>
+          <button v-for="d in configuredTypes" :key="d.func" type="button" class="type-chip"
+                  :class="{active: view.q === d.func}" @click="toggleTypeSearch(d.func)"
+                  v-tooltip.top="view.q === d.func ? 'Show all jobs' : `Show only ${d.func} jobs (${d.count})`">
+            <JobTypeBadge :func="d.func" size="small"/>
+            <span class="count">{{ d.count }}</span>
+          </button>
+        </div>
+        <div v-if="missingTypes.length" class="types-row">
+          <span class="types-label"><i class="pi pi-circle muted"/> Not configured
+            <span class="muted">({{ missingTypes.length }})</span></span>
+          <button v-for="d in missingTypes" :key="d.func" type="button" class="type-chip missing"
+                  @click="router.push({name: 'job-new', query: {func: d.func}})"
+                  v-tooltip.top="`No ${d.func} job yet — click to create one`">
+            <JobTypeBadge :func="d.func" size="small"/>
+            <i class="pi pi-plus"/>
+          </button>
+        </div>
       </div>
 
       <Panel toggleable collapsed>
@@ -448,10 +470,80 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
   opacity: .5;
 }
 
-.dist {
+.types {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+}
+
+.types-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem;
+}
+
+.types-label {
+  font-size: .8rem;
+  font-weight: 600;
+  min-width: 9.5rem;
+}
+
+.type-chip {
   display: inline-flex;
   align-items: center;
-  gap: .2rem;
+  gap: .3rem;
+  padding: .15rem .3rem .15rem .15rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.type-chip:hover {
+  border-color: var(--app-border);
+}
+
+.type-chip.active {
+  border-color: var(--p-primary-color);
+  background: color-mix(in srgb, var(--p-primary-color) 10%, transparent);
+}
+
+.type-chip .count {
+  min-width: 1.35rem;
+  padding: 0 .35rem;
+  border-radius: 999px;
+  background: var(--app-ok);
+  color: var(--app-panel);
+  font-size: .75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* not configured: colourless, dashed, clearly "empty slot" */
+.type-chip.missing {
+  border: 1px dashed var(--app-border);
+  color: var(--app-muted);
+}
+
+.type-chip.missing :deep(.jt) {
+  background: transparent;
+  border-left-color: var(--app-border);
+  filter: grayscale(1);
+  opacity: .6;
+  font-weight: 500;
+}
+
+.type-chip.missing:hover {
+  border-color: var(--p-primary-color);
+  color: var(--p-primary-color);
+}
+
+.type-chip.missing:hover :deep(.jt) {
+  filter: none;
+  opacity: 1;
 }
 
 .toolbar {
