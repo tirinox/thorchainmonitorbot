@@ -16,8 +16,8 @@ LAGGING = 'thor1lagging'
 BTC_BLOCK = Chains.block_time_default(Chains.BTC)
 
 
-def _node(address, btc_height):
-    return NodeInfo(status=NodeInfo.ACTIVE, node_address=address, active_block_height=1_000 + len(address),
+def _node(address, btc_height, status=NodeInfo.ACTIVE):
+    return NodeInfo(status=status, node_address=address, active_block_height=1_000 + len(address),
                     observe_chains=[{'chain': Chains.BTC, 'height': btc_height}])
 
 
@@ -69,6 +69,20 @@ async def test_thorchain_is_not_checked_by_churn_in_height():
     await ticker.alerts(_nodes(1_000))
     assert await ticker.alerts(_nodes(1_000)) == []
     assert Chains.THOR not in ticker.tracker.recent_max_blocks
+
+
+@pytest.mark.asyncio
+async def test_standby_nodes_are_not_checked():
+    # standby and disabled nodes do not observe chains: their heights are months old (seen on mainnet)
+    ticker = Ticker()
+    stale = [_node(f'thor1standby{i}', 10, status=NodeInfo.STANDBY) for i in range(4)]
+    await ticker.alerts(_nodes(1_000) + stale)
+    assert await ticker.alerts(_nodes(1_000) + stale) == []
+
+    # nor do they pull the expected height: 4 of them agree on a height above the active nodes
+    ahead = [_node(f'thor1standby{i}', 5_000, status=NodeInfo.STANDBY) for i in range(4)]
+    await ticker.alerts(_nodes(1_000) + ahead)
+    assert ticker.tracker.recent_max_blocks[Chains.BTC] == 1_000
 
 
 class CountingTracker:

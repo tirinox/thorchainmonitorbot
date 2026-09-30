@@ -77,6 +77,9 @@ class ChainHeightTracker(BaseChangeTracker):
         prev_last_blocks = self.recent_max_blocks
         method = self.chain_height_method
 
+        # only active nodes observe chains; standby and disabled ones keep heights from long ago
+        nodes = [node for node in nodes if node.is_active]
+
         if method == self.METHOD_MAXIMUM:
             self.recent_max_blocks = self.estimate_block_height_maximum(nodes)
         elif method == self.METHOD_MOST_COMMON:
@@ -119,7 +122,7 @@ class ChainHeightTracker(BaseChangeTracker):
 
         events = []
         for chain, expected_block_height in self.recent_max_blocks.items():
-            for node in self.node_set_change.nodes_all:
+            for node in self.node_set_change.active_only_nodes:
                 actual = node.chain_dict.get(chain)
                 actual_block_height = actual or 0
                 if actual_block_height == 0:
