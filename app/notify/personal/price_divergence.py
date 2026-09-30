@@ -1,12 +1,10 @@
-import asyncio
-
 from lib.date_utils import parse_timespan_to_seconds
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.settings_manager import SettingsManager, SettingsContext
 from models.node_watchers import AlertWatchers
-from models.price import RuneMarketInfo
+from models.price import RuneMarketInfo, AlertPriceDiverge
 from notify.channel import ChannelDescriptor, BoardMessage
 from .helpers import GeneralSettings
 
@@ -48,12 +46,19 @@ class PersonalPriceDivergenceNotifier(INotified, WithLogger):
                 settings[self.LAST_VALUE_KEY] = max_percent
 
             if settings_changed:
+                try:
+                    await self._send_notification(rune_market_info, user, settings, normal)
+                except Exception as e:
+                    # the threshold is saved only after a send, so the alert is tried again on the next tick
+                    self.logger.exception(f'Failed to send price divergence alert to {user}: {e!r}')
+                    continue
                 await self.deps.settings_manager.set_settings(user, settings)
-                asyncio.create_task(self._send_notification(rune_market_info, user, settings, normal))
 
     async def _send_notification(self, rune_market_info: RuneMarketInfo, user, settings, normal):
         loc = await self.deps.loc_man.get_from_db(user, self.deps.db)
-        text = loc.notification_text_price_divergence(rune_market_info, normal)
+        text = loc.notification_text_price_divergence(
+            AlertPriceDiverge(rune_market_info, below_min_divergence=normal)
+        )
         await self.deps.broadcaster.safe_send_message_rate(
             ChannelDescriptor(SettingsManager.get_platform(settings), user),
             BoardMessage(text, msg_type='personal:price_divergence'),
