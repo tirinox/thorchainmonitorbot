@@ -22,6 +22,8 @@ class PrivateScheduler(WithLogger, WithDelegates):
         # periodic events that are late more than this (e.g. after a downtime) fire once
         # at a random moment within this window, so they don't all hit the APIs at once
         self.catch_up_spread = max(catch_up_spread, 2 * poll_interval)
+        # optional async predicate(ident) -> bool: which lost periodic events to bring back on start
+        self.should_restore = None
 
     async def schedule(self, ident, timestamp=0.0, period=0.0):
         assert isinstance(ident, (str, int, float)) and ident, 'ident must be a string or number'
@@ -136,12 +138,48 @@ class PrivateScheduler(WithLogger, WithDelegates):
     async def clear(self):
         await self._r.delete(self.key_timeline())
 
+    async def restore_lost_periodic(self):
+        """
+        Older versions dropped periodic events that were late more than forget_after, but kept their period keys.
+        Such events are put back into the timeline, spread like catch-up events.
+        """
+        key_timeline = self.key_timeline()
+        prefix = self.key_period('')
+        restored, skipped = [], 0
+        for key in await self.all_periodic_events():
+            ident = key[len(prefix):]
+            try:
+                raw_period = await self._r.get(key)
+                if not raw_period or float(raw_period) <= 0:
+                    continue
+                if await self._r.zscore(key_timeline, ident) is not None:
+                    continue
+                if self.should_restore and not await self.should_restore(ident):
+                    skipped += 1
+                    continue
+                # nx=True: never move an event that was scheduled in the meantime
+                ts = now_ts() + random.uniform(0, self.catch_up_spread)
+                if await self._r.zadd(key_timeline, {ident: ts}, nx=True):
+                    restored.append(ident)
+            except Exception as e:
+                self.logger.exception(f'Failed to restore {self.ev_desc(ident)}: {e}')
+
+        if restored or skipped:
+            self.logger.warning(f'Restored {len(restored)} lost periodic events of "{self.name}", '
+                                f'skipped {skipped}.')
+        return restored
+
     async def run(self):
         if self._running:
             self.logger.warning('Scheduler already running!')
             return
 
         self._running = True
+        try:
+            await self.restore_lost_periodic()
+        except Exception as e:
+            self.logger.exception(f'Failed to restore lost periodic events: {e}')
+
         while self._running:
             await asyncio.sleep(self._poll_interval)
             try:

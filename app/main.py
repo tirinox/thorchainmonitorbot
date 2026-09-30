@@ -618,6 +618,7 @@ class App(WithLogger):
 
             personal_lp_notifier = PersonalPeriodicNotificationService(d)
             d.scheduler.add_subscriber(personal_lp_notifier)
+            d.scheduler.should_restore = personal_lp_notifier.should_restore
 
         # public one
         d.pub_alert_executor = PublicAlertJobExecutor(d)

@@ -10,7 +10,7 @@ from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
 from lib.logs import WithLogger
 from lib.scheduler import PrivateScheduler
-from lib.settings_manager import SettingsManager
+from lib.settings_manager import SettingsManager, SettingsContext
 from lib.utils import generate_random_code
 from notify.channel import BoardMessage, ChannelDescriptor
 
@@ -86,6 +86,12 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
             await self.unsubscribe(tr)
         else:
             await self.subscribe(tr, period)
+
+    async def should_restore(self, ident: str):
+        # users who blocked the bot don't get their lost subscriptions back, until they come back
+        tr = PersonalIdTriplet.from_key(ident)
+        settings = await self.deps.settings_manager.get_settings(tr.user_id)
+        return not SettingsContext.is_inactive_s(settings)
 
     async def on_data(self, sender: PrivateScheduler, ident: str):
         tr = PersonalIdTriplet.from_key(ident)
