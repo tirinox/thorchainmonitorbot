@@ -90,6 +90,20 @@ class SettingsManager(WithDelegates, WithLogger):
         else:
             await self.db.redis.delete(self.db_key_settings(channel_id))
 
+    async def update_settings(self, channel_id: str, patch: dict):
+        """
+        Merge the patch into the stored settings and save the result.
+        The keys the caller does not send stay untouched, so a client that manages only a part
+        of the settings (the web node-op page: nop:*, gen:alerts, _messenger) cannot wipe the rest
+        (wallets in personal:balance-track, language, personal alert preferences).
+        """
+        if not channel_id or not isinstance(patch, dict):
+            return
+        settings = await self.get_settings(channel_id)
+        settings.update(patch)
+        await self.set_settings(channel_id, settings)
+        return settings
+
     def get_context(self, user_id) -> 'SettingsContext':
         return SettingsContext(self, user_id)
 

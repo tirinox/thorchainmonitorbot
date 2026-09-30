@@ -170,7 +170,9 @@ class AppSettingsAPI:
         settings_set = False
         if 'settings' in data:
             settings = data.pop('settings')
-            await self.manager.set_settings(channel_id, settings)
+            # merge, never replace: the page sends only the keys it manages,
+            # the rest (wallets, language, personal alerts) must survive a save
+            await self.manager.update_settings(channel_id, settings)
             settings_set = True
 
         return JSONResponse({
