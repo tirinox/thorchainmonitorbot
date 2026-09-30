@@ -57,38 +57,44 @@ class BasePersonalNotifier(INotified, WithLogger, ABC):
         settings_dic = await self.deps.settings_manager.get_settings_multi(user_events.keys())
 
         for user, event_list in user_events.items():
-            settings = settings_dic.get(user, {})
+            try:
+                await self._send_user_events(user, event_list, settings_dic.get(user, {}), user_to_address,
+                                             name_map, glue, msg_type)
+            except Exception as e:
+                # one user's failure must not cancel the notifications of everyone after them
+                self.logger.exception(f'Failed to notify user {user}: {e!r}')
 
-            if SettingsContext.is_inactive_s(settings):
-                continue  # paused
+    async def _send_user_events(self, user, event_list, settings, user_to_address, name_map, glue, msg_type):
+        if SettingsContext.is_inactive_s(settings):
+            return  # paused
 
-            # filter events according to the user's preferences
-            filtered_event_list = await self.filter_events(event_list, user, settings)
+        # filter events according to the user's preferences
+        filtered_event_list = await self.filter_events(event_list, user, settings)
 
-            # split to several messages
-            groups = list(grouper(self.max_events_per_message, filtered_event_list))
+        # split to several messages
+        groups = list(grouper(self.max_events_per_message, filtered_event_list))
 
-            if groups:
-                self.logger.info(f'Sending personal notifications to user: {user}: '
-                                 f'{len(event_list)} events grouped to {len(groups)} groups...')
+        if groups:
+            self.logger.info(f'Sending personal notifications to user: {user}: '
+                             f'{len(event_list)} events grouped to {len(groups)} groups...')
 
-                loc = await self.deps.loc_man.get_from_db(user, self.deps.db)
+            loc = await self.deps.loc_man.get_from_db(user, self.deps.db)
 
-                user_watch_addy_list = user_to_address.get(user, [])
+            user_watch_addy_list = user_to_address.get(user, [])
 
-                for group in groups:
-                    if group:
-                        local_ns = self.deps.name_service.get_local_service(user)
-                        local_name_map = await local_ns.get_name_map()
-                        name_map_for_user = name_map.joined_with(local_name_map)
+            for group in groups:
+                if group:
+                    local_ns = self.deps.name_service.get_local_service(user)
+                    local_name_map = await local_ns.get_name_map()
+                    name_map_for_user = name_map.joined_with(local_name_map)
 
-                        message = await self.generate_message_text(
-                            loc, group, settings, user, user_watch_addy_list, name_map_for_user)
+                    message = await self.generate_message_text(
+                        loc, group, settings, user, user_watch_addy_list, name_map_for_user)
 
-                        if not isinstance(message, str):
-                            message = glue.join(message)
+                    if not isinstance(message, str):
+                        message = glue.join(message)
 
-                        await self._send_message(message, settings, user, msg_type)
+                    await self._send_message(message, settings, user, msg_type)
 
     async def filter_events(self, event_list, user, settings):
         # no operation

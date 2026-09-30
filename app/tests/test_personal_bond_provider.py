@@ -15,8 +15,12 @@ def make_notifier(threshold=1.0):
     async def memorize_node_status_change_ts(node, ts, status):
         return None, 0
 
+    async def forget_bond_provider(provider, node):
+        pass
+
     notifier._memorize_bond_provider_ts = memorize_bond_provider_ts
     notifier._memorize_node_status_change_ts = memorize_node_status_change_ts
+    notifier._forget_bond_provider = forget_bond_provider
     return notifier
 
 

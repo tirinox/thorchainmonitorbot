@@ -10,7 +10,7 @@ from typing import List, Dict, NamedTuple, Optional, Tuple, Any, Iterator
 from semver import VersionInfo
 
 from lib.constants import thor_to_float, float_to_thor, bp_to_float
-from lib.date_utils import now_ts
+from lib.date_utils import now_ts, DAY
 from lib.money import calculate_apy
 from lib.texts import find_country_emoji
 from lib.thor_logic import get_effective_security_bond
@@ -483,9 +483,11 @@ class EventProviderBondChange(NamedTuple):
 
     duration_sec: float = 0
 
+    MIN_APY_PERIOD = DAY  # a churn comes every few days; a shorter period extrapolates to a meaningless APY
+
     @property
     def apy(self):
-        if self.prev_bond and self.duration_sec and self.on_churn:
+        if self.prev_bond and self.on_churn and self.duration_sec >= self.MIN_APY_PERIOD:
             apy = calculate_apy(self.prev_bond, self.curr_bond, self.duration_sec)
             if apy < 10_000:
                 return apy

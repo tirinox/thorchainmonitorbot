@@ -124,7 +124,9 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
 
         return None, 0
 
-    DB_KEY_BOND_PROVIDER_STATUS = 'BondProvider:BondTime'
+    # bond and time of the provider's last bond change on a node
+    # (a new key: the old 'BondProvider:BondTime' was overwritten on every tick, so its times are useless)
+    DB_KEY_BOND_PROVIDER_STATUS = 'BondProvider:BondChangeTime'
 
     @staticmethod
     def bond_provider_status_hash_key(provider_address: str, node: str):
@@ -141,6 +143,10 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
             })
         )
         return old_rune_bond, old_ts
+
+    async def _forget_bond_provider(self, provider: str, node: str):
+        await self.deps.db.redis.hdel(self.DB_KEY_BOND_PROVIDER_STATUS,
+                                      self.bond_provider_status_hash_key(provider, node))
 
     async def get_bond_provider_bond_and_change_ts(self, provider_address: str, node: str) -> (float, float):
         with suppress(Exception):
@@ -210,6 +216,9 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
             for provider in common_bp:
                 curr_bond = curr_providers[provider].rune_bond
                 prev_bond = prev_providers[provider].rune_bond
+                if curr_bond == prev_bond:
+                    continue  # keep the time of the last change: "since last change" and APY are counted from it
+
                 _, old_ts = await self._memorize_bond_provider_ts(provider, curr_node.node_address, now, curr_bond)
                 if not self._should_notify_bond_change(prev_bond, curr_bond):
                     continue
@@ -227,6 +236,8 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
 
             added_bp = curr_bp_addresses - prev_bp_addresses
             for bp_address in added_bp:
+                await self._memorize_bond_provider_ts(bp_address, curr_node.node_address, now,
+                                                      curr_providers[bp_address].rune_bond)
                 events.append(NodeEvent.new(
                     curr_node, NodeEventType.BP_PRESENCE,
                     EventProviderStatus(bp_address, curr_providers[bp_address].rune_bond, appeared=True)
@@ -235,6 +246,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
 
             left_bp = prev_bp_addresses - curr_bp_addresses
             for bp_address in left_bp:
+                await self._forget_bond_provider(bp_address, curr_node.node_address)
                 events.append(NodeEvent.new(
                     curr_node, NodeEventType.BP_PRESENCE,
                     EventProviderStatus(bp_address, prev_providers[bp_address].rune_bond, appeared=False)

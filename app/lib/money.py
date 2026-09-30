@@ -325,5 +325,8 @@ def calculate_apy(old_value, new_value, period_in_seconds):
     degree = seconds_in_year / period_in_seconds
 
     # Calculate APY
-    apy = (new_value / old_value) ** degree - 1
+    try:
+        apy = (new_value / old_value) ** degree - 1
+    except OverflowError:
+        return math.inf
     return apy * 100  # Convert to percentage
