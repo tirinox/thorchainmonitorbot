@@ -24,24 +24,23 @@ make certbot-test
 
 ## Frontend
 
-### Yarn installation
+The node-operator settings page is a separate Vue 3 + Vite app: https://github.com/tirinox/nodeop-settings.
+It is built into `web/frontend`, which nginx serves as static files (`/`), while `/api/*` goes to the `api` container.
+
+Build and deploy it (only Docker is needed on the host; the Node version comes from the app's `.nvmrc`):
 
 ```
-curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
-echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
-sudo apt update
-sudo apt install yarn
-yarn --version
+make frontend-build
 ```
 
-### Frontend building
+This clones or pulls the app into `temp/nodeop-settings`, runs `npm ci && npm run build` in a `node:<version>-alpine`
+container and replaces the contents of `web/frontend`. nginx picks it up right away, no restart is needed.
+If the build fails, the deployed frontend is left untouched.
+
+The previous version is kept in `temp/frontend-prev`; to bring it back:
 
 ```
-cd ...your temp path...
-git clone https://github.com/tirinox/nodeop-settings
-yarn install
-yarn build
-
-# move everything to /web/frontend
-cp -r * ../../thorchainmonitorbot/web/frontend/
+make frontend-rollback
 ```
+
+The page loads the node list from `/api/nodes`, so deploy the matching `api` container as well.

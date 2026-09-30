@@ -121,16 +121,33 @@ certbot-test: # Dry-run a certificate renewal through the nginx webroot.
 	docker compose run --rm --entrypoint certbot certbot renew --webroot -w /var/www/certbot --dry-run
 
 
+NODE_OP_SETT_REPO = https://github.com/tirinox/nodeop-settings
 NODE_OP_SETT_DIR = ./temp/nodeop-settings
+FRONTEND_DIR = ./web/frontend
+FRONTEND_PREV_DIR = ./temp/frontend-prev
+
+.PHONY: frontend-build
+frontend-build: # Pull nodeop-settings, build it in a Node container (no Node on the host) and deploy to web/frontend.
+	mkdir -p temp
+	[ -d ${NODE_OP_SETT_DIR}/.git ] || git clone ${NODE_OP_SETT_REPO} ${NODE_OP_SETT_DIR}
+	cd ${NODE_OP_SETT_DIR} && git pull --ff-only && git log -1 --format='Building %h %ci %s'
+	cd ${NODE_OP_SETT_DIR} && rm -rf dist && docker run --rm -u "$$(id -u):$$(id -g)" -e npm_config_cache=/tmp/.npm \
+		-v "$$PWD":/app -w /app node:$$(cat .nvmrc 2>/dev/null || echo 22)-alpine \
+		sh -c "npm ci --no-audit --no-fund && npm run build"
+	test -f ${NODE_OP_SETT_DIR}/dist/index.html
+	rm -rf ${FRONTEND_PREV_DIR} && mkdir -p ${FRONTEND_PREV_DIR} && cp -a ${FRONTEND_DIR}/. ${FRONTEND_PREV_DIR}/
+	find ${FRONTEND_DIR} -mindepth 1 ! -name .gitignore -delete
+	cp -a ${NODE_OP_SETT_DIR}/dist/. ${FRONTEND_DIR}/
+	echo "Frontend deployed; nginx serves it right away. Previous version: ${FRONTEND_PREV_DIR} (make frontend-rollback)."
 
 .PHONY: buildf
-buildf: # Build the frontend.
-	mkdir -p ${NODE_OP_SETT_DIR}
-	cd temp; git clone https://github.com/tirinox/nodeop-settings || true
-	cd ${NODE_OP_SETT_DIR}; git pull
-	cd ${NODE_OP_SETT_DIR}; yarn install; yarn build
-	rm -rf ./web/frontend/*
-	mv ${NODE_OP_SETT_DIR}/dist/* ./web/frontend/
+buildf: frontend-build # Alias for frontend-build.
+
+.PHONY: frontend-rollback
+frontend-rollback: # Restore web/frontend from the copy saved by the last frontend-build.
+	test -f ${FRONTEND_PREV_DIR}/index.html
+	find ${FRONTEND_DIR} -mindepth 1 ! -name .gitignore -delete
+	cp -a ${FRONTEND_PREV_DIR}/. ${FRONTEND_DIR}/
 
 
 .PHONY: test
