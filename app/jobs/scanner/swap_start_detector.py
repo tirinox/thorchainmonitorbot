@@ -12,6 +12,7 @@ from lib.utils import safe_get
 from models.asset import Asset, is_rune
 from models.memo import ActionType
 from models.memo import THORMemo
+from models.mimir import adv_swap_queue_enabled
 from models.price import PriceHolder
 from models.s_swap import AlertSwapStart
 
@@ -153,6 +154,7 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
             interval=memo.s_swap_interval,
             quantity=memo.s_swap_quantity,
             is_limit=(memo.action == ActionType.LIMIT_ORDER),
+            adv_swap_queue=adv_swap_queue_enabled(self.deps.mimir_const_holder),
         )
 
     async def handle_deposits(self, txs: Iterable[NativeThorTx], height):

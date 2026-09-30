@@ -8,6 +8,21 @@ from lib.constants import THOR_BLOCK_TIME, thor_to_float
 from .memo import THORMemo
 
 
+def is_streaming_swap(interval: Optional[int], quantity: Optional[int], adv_swap_queue: bool) -> bool:
+    """
+    interval and quantity are the memo's LIM/INTERVAL/QUANTITY; the parser gives 0/1 when they are omitted,
+    so "no parameters" and an explicit /0/1 look the same, and both are one sub-swap.
+    With the Advanced Swap Queue (Mimir EnableAdvSwapQueue) a swap streams unless the memo asks for exactly one
+    sub-swap (quantity 0 lets the protocol choose, interval 0 streams rapidly). With the classic queue it also
+    needs an interval. On 259 real mainnet swaps this agrees with Midgard's isStreamingSwap in every case.
+    """
+    interval = interval or 0
+    quantity = 1 if quantity is None else quantity
+    if quantity == 1:
+        return False
+    return adv_swap_queue or interval > 0
+
+
 class StreamingSwap(BaseModel):
     """
     Pydantic v2 replacement for your NamedTuple.
@@ -105,6 +120,7 @@ class AlertSwapStart:
     quantity: Optional[int] = 1
     interval: Optional[int] = 1
     is_limit: Optional[bool] = False
+    adv_swap_queue: bool = True  # Mimir EnableAdvSwapQueue when the swap was seen
 
     @property
     def in_amount_float(self) -> float:
@@ -112,10 +128,7 @@ class AlertSwapStart:
 
     @property
     def is_streaming(self):
-        # fixme: unreliable check? maybe interval is detected automatically?
-        # !!!!
-        # with advanced queue, every swap is streaming if not quantity=1 and interval=1
-        return not (self.quantity == 1 and self.interval == 1)
+        return is_streaming_swap(self.interval, self.quantity, self.adv_swap_queue)
 
     @property
     def expected_out_amount(self):

@@ -255,7 +255,7 @@ class SwapProps(NamedTuple):
         asset = Asset.from_string(self.attrs.get('out_asset', ''))
         return not asset.is_trade and not asset.is_synth and not asset.is_virtual and not asset.is_secured
 
-    def build_action(self, ts: int) -> ThorAction:
+    def build_action(self, ts: int, adv_swap_queue: Optional[bool] = None) -> ThorAction:
         attrs = self.attrs
 
         memo_str = self.attrs.get('memo', '')
@@ -305,11 +305,13 @@ class SwapProps(NamedTuple):
                 failed_swap_reasons=ss_ev.failed_swap_reason_list,
             )
         else:
+            # no streaming_swap event: the swap events still tell how many sub-swaps the chain made (1 for a plain swap)
+            sub_swaps = max((swap.streaming_swap_quantity for swap in swaps), default=0) or 1
             ss_desc = StreamingSwap(
                 tx_id=tx_id,
                 interval=1,
-                quantity=1,
-                count=1,
+                quantity=sub_swaps,
+                count=sub_swaps,
                 last_height=0,
                 trade_target=0,
                 deposit=0, source_asset='',
@@ -338,6 +340,7 @@ class SwapProps(NamedTuple):
                 affiliate_address=self.memo.affiliate_address,
                 streaming=ss_desc,
                 is_streaming_swap=ss_desc.count > 1,
+                adv_swap_queue=adv_swap_queue,
             ),
             status=SUCCESS
         )

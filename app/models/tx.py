@@ -12,7 +12,7 @@ from .memo import ActionType, is_action
 from .memo import THORMemo
 from .pool_info import PoolInfo
 from .price import PriceHolder
-from .s_swap import StreamingSwap, RapidSwapStats
+from .s_swap import StreamingSwap, RapidSwapStats, is_streaming_swap
 
 logger = logging.getLogger('ThorTx')
 
@@ -80,6 +80,8 @@ class ThorMetaSwap:
 
     tx_type: str = ''  # swap/loan/...
     is_streaming_swap: bool = False
+    # Mimir EnableAdvSwapQueue when our block scanner built the swap; None for swaps from Midgard
+    adv_swap_queue: Optional[bool] = None
 
     cex_out_amount: float = 0.0
 
@@ -502,13 +504,14 @@ class ThorAction:
 
     @property
     def is_streaming(self):
-        # return bool(self.meta_swap and self.meta_swap.streaming and self.meta_swap.streaming.quantity > 1)
-        if self.meta_swap:
-            if self.meta_swap.streaming:
-                return True
-            if self.meta_swap.streaming.quantity == 1 and self.meta_swap.streaming.interval == 1:
-                return False
-        return True
+        if not self.meta_swap:
+            return False
+        memo = THORMemo.parse_memo(self.meta_swap.memo, no_raise=True)
+        if self.meta_swap.adv_swap_queue is None or not memo:
+            return self.meta_swap.is_streaming_swap  # Midgard's own flag
+        # what the memo asked for, or the chain split the swap into several sub-swaps by itself
+        return (is_streaming_swap(memo.s_swap_interval, memo.s_swap_quantity, self.meta_swap.adv_swap_queue)
+                or self.meta_swap.is_streaming_swap)
 
     @property
     def memo(self) -> Optional[THORMemo]:

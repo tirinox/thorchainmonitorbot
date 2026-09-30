@@ -8,6 +8,7 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.utils import safe_get
+from models.mimir import adv_swap_queue_enabled
 from models.memo import THORMemo, ActionType
 from models.price import PriceHolder
 from models.s_swap import StreamingSwap, EventChangedStreamingSwapList, AlertSwapStart
@@ -230,4 +231,5 @@ class StreamingSwapStartDetectorFromList(INotified, WithDelegates, WithLogger):
             interval=s.interval,
             quantity=s.quantity,
             is_limit=False,
+            adv_swap_queue=adv_swap_queue_enabled(self.deps.mimir_const_holder),
         ))

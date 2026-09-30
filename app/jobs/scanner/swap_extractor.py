@@ -15,6 +15,7 @@ from lib.utils import hash_of_string_repr, say, safe_get
 from models.asset import is_rune
 from models.events import EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut, EventSwap
+from models.mimir import adv_swap_queue_enabled
 from models.s_swap import AlertSwapStart
 from models.tx import ThorAction
 
@@ -212,7 +213,8 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 ts = await self._get_ts_from_swap_props(swap_props, tx_id)
 
                 # Build a ThorAction and put it into the results
-                action = swap_props.build_action(ts)
+                adv_swap_queue = adv_swap_queue_enabled(self.deps.mimir_const_holder)
+                action = swap_props.build_action(ts, adv_swap_queue=adv_swap_queue)
                 results.append(action)
 
         if results:
@@ -238,7 +240,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             raise LookupError(f'Tx {tx_id} not found')
         if not swap_props.is_completed:
             raise ValueError(f'Tx {tx_id} is not completed')
-        return swap_props.build_action(ts)
+        return swap_props.build_action(ts, adv_swap_queue=adv_swap_queue_enabled(self.deps.mimir_const_holder))
 
     async def check_is_outbound_signed(self, tx_id, height=None, swap_props: SwapProps = None):
         # note! this maybe dangerous

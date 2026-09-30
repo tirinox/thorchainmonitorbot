@@ -14,7 +14,7 @@ from lib.logs import WithLogger
 from lib.texts import shorten_text
 from .base import BaseModelMixin
 from .mimir_naming import MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, MimirNameRules, EXTRA_AUTO_SOLVENCY_MIMIRS, \
-    MIMIR_PAUSE_GLOBAL
+    MIMIR_PAUSE_GLOBAL, MIMIR_ADVANCED_QUEUE_ENABLED
 from .node_info import NodeInfo, NetworkNodes
 
 # for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
@@ -245,6 +245,11 @@ class MimirHolder(INotified, WithLogger, WithDelegates):
     def is_loaded(self):
         return bool(self._const_map)
 
+    @property
+    def adv_swap_queue_enabled(self) -> bool:
+        # before the first load assume it is on, as it is on the mainnet now
+        return bool(self.get_constant(MIMIR_ADVANCED_QUEUE_ENABLED, default=1))
+
     @staticmethod
     def detect_auto_solvency_checker(name: str, value):
         return MimirEntry.can_be_automatic(name) and (value != ADMIN_VALUE and value != 0)
@@ -437,3 +442,8 @@ class AlertMimirVoting(NamedTuple):
                     if opt.value not in options:
                         options[opt.value] = opt.value
         return list(options.values())
+
+
+def adv_swap_queue_enabled(mimir: Optional[MimirHolder]) -> bool:
+    """Mimir EnableAdvSwapQueue; on when Mimir is not available."""
+    return mimir.adv_swap_queue_enabled if mimir else True
