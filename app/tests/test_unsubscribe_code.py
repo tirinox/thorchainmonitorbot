@@ -91,3 +91,41 @@ async def test_group_chat_can_unsubscribe():
 @pytest.mark.asyncio
 async def test_unknown_code():
     assert await _service().unsubscribe_by_id('zzzzz', OWNER) is False
+
+
+@pytest.mark.asyncio
+async def test_temporary_failures_do_not_unsubscribe():
+    service = _service()
+    tr, _ = await _subscribe(service, OWNER)
+    errors = []
+
+    async def failing_report(_tr):
+        raise ConnectionError('Midgard is down')
+
+    async def record_error(details, _tr, unsubscribed=True):
+        errors.append(unsubscribed)
+
+    service._deliver_report = failing_report
+    service._deliver_error_message = record_error
+
+    for _ in range(service.max_report_fails - 1):
+        await service._deliver_report_safe(tr)
+        assert tr.as_key in service.deps.scheduler.active
+    assert errors == [False] * (service.max_report_fails - 1)
+
+    # a success in between resets the counter
+    async def good_report(_tr):
+        pass
+
+    service._deliver_report = good_report
+    await service._deliver_report_safe(tr)
+
+    service._deliver_report = failing_report
+    for _ in range(service.max_report_fails - 1):
+        await service._deliver_report_safe(tr)
+    assert tr.as_key in service.deps.scheduler.active
+
+    await service._deliver_report_safe(tr)  # the last straw
+    assert tr.as_key not in service.deps.scheduler.active
+    assert errors[-1] is True
+    assert await service.deps.db.redis.hget(service.DB_KEY_FAILS, tr.as_key) is None

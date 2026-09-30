@@ -183,6 +183,13 @@ class RussianLocalization(BaseLocalization):
             f'Адрес {ital(address)}, пул {ital(pool)}'
         )
 
+    def text_error_delivering_report_retry(self, e, address, pool):
+        return (
+            f'🔥 Ошибка при отправке отчета: {e}. '
+            f'Подписка сохранена, следующая попытка — в обычное время.\n\n'
+            f'Адрес {ital(address)}, пул {ital(pool)}'
+        )
+
     @staticmethod
     def text_subscribed_to_lp(period):
         next_ts = now_ts() + period

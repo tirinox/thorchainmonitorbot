@@ -50,6 +50,11 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
         super().__init__()
         self.deps = deps
         self._unsub_db = OneToOne(deps.db, 'Unsubscribe')
+        # a report fails for a while when Midgard is down: unsubscribe only after this many failures in a row
+        self.max_report_fails = int(deps.cfg.get('personal.scheduler.max_report_fails', 3)) \
+            if getattr(deps, 'cfg', None) is not None else 3
+
+    DB_KEY_FAILS = 'PersonalReport:Fails'
 
     async def cancel_all_for_user(self, user_id):
         key = PersonalIdTriplet(user_id, '*', '*').as_key
@@ -71,6 +76,7 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
 
     async def unsubscribe(self, tr: PersonalIdTriplet):
         await self.deps.scheduler.cancel(tr.as_key)
+        await self._reset_fail_counter(tr)
 
     async def unsubscribe_by_id(self, unsub_id, user_id) -> bool:
         """Cancels the subscription behind an /unsub_ code, but only for the chat that owns it."""
@@ -113,14 +119,28 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
     async def _deliver_report_safe(self, tr: PersonalIdTriplet):
         try:
             await self._deliver_report(tr)
+            await self._reset_fail_counter(tr)
         except Exception as e:
             self.logger.exception(f'Error while delivering report for {tr}: {e}')
-            await self.unsubscribe(tr)
+
+            fails = await self._count_fail(tr)
+            unsubscribe = fails >= self.max_report_fails
+            if unsubscribe:
+                self.logger.warning(f'{fails} reports in a row failed for {tr}; unsubscribing.')
+                await self.unsubscribe(tr)
+            else:
+                self.logger.info(f'Report {fails}/{self.max_report_fails} failed for {tr}; will try again next time.')
 
             try:
-                await self._deliver_error_message(str(e), tr)
+                await self._deliver_error_message(str(e), tr, unsubscribed=unsubscribe)
             except Exception as e:
                 self.logger.exception(f'Error while delivering error message for {tr}: {e}')
+
+    async def _count_fail(self, tr: PersonalIdTriplet) -> int:
+        return int(await self.deps.db.redis.hincrby(self.DB_KEY_FAILS, tr.as_key, 1))
+
+    async def _reset_fail_counter(self, tr: PersonalIdTriplet):
+        await self.deps.db.redis.hdel(self.DB_KEY_FAILS, tr.as_key)
 
     async def _deliver_report(self, tr: PersonalIdTriplet):
         self.logger.info(f'Generating report for {tr}...')
@@ -146,10 +166,13 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
 
         self.logger.info(f'Report for {tr} sent successfully.')
 
-    async def _deliver_error_message(self, details, tr: PersonalIdTriplet):
+    async def _deliver_error_message(self, details, tr: PersonalIdTriplet, unsubscribed=True):
         loc, local_name, unsub_id, platform = await self._prepare_state(tr)
-        message = BoardMessage(loc.text_error_delivering_report(details, tr.address, tr.pool),
-                               msg_type='personal:scheduled:error')
+        if unsubscribed:
+            text = loc.text_error_delivering_report(details, tr.address, tr.pool)
+        else:
+            text = loc.text_error_delivering_report_retry(details, tr.address, tr.pool)
+        message = BoardMessage(text, msg_type='personal:scheduled:error')
         await self._deliver_message_generic(message, platform, tr.user_id)
 
     async def _deliver_message_generic(self, message: BoardMessage, platform, user):

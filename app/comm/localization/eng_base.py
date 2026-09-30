@@ -239,6 +239,13 @@ class BaseLocalization(ABC):  # == English
             f'Address {ital(address)}, pool {ital(pool)}'
         )
 
+    def text_error_delivering_report_retry(self, e, address, pool):
+        return (
+            f'🔥 Error delivering report: {e}. '
+            f'You are still subscribed, the next attempt is at the usual time.\n\n'
+            f'Address {ital(address)}, pool {ital(pool)}'
+        )
+
     @staticmethod
     def text_subscribed_to_lp(period):
         next_ts = now_ts() + period

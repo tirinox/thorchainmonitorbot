@@ -80,6 +80,7 @@ personal:
   scheduler:
     enabled: true
     poll_interval: 10s
+    max_report_fails: 3  # unsubscribe from a scheduled LP report after this many failures in a row
 
 
 telegram:

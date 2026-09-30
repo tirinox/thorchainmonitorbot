@@ -19,6 +19,11 @@ class FakeRedis:
         bucket[key] = float(bucket.get(key, 0.0)) + float(value)
         return bucket[key]
 
+    async def hincrby(self, name, key, value):
+        bucket = self.hashes[name]
+        bucket[key] = int(bucket.get(key, 0)) + int(value)
+        return bucket[key]
+
     async def hset(self, name, *args, mapping=None):
         bucket = self.hashes[name]
         if mapping is not None:
@@ -113,9 +118,6 @@ class FakePubSubRedis(FakeRedis):
     async def publish(self, channel, message):
         self.published.append((channel, json.loads(message)))
         return 1
-
-    async def hincrby(self, name, key, value):
-        return await self.hincrbyfloat(name, key, value)
 
     async def lrange(self, name, start, end):
         items = self.lists.get(name, [])
