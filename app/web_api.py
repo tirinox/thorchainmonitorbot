@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os.path
+import time
 
 import uvicorn
 from starlette.applications import Starlette
@@ -10,12 +11,14 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route, Mount
 from starlette.staticfiles import StaticFiles
 
+from api.aionode.connector import ThorConnector
 from api.midgard.connector import MidgardConnector
 from api.midgard.name_service import NameService
 from api.w3.dex_analytics import DexAnalyticsCollector
 from comm.slack.slack_bot import SlackBot
 from jobs.user_counter import UserCounterMiddleware
 from lib.config import Config
+from lib.constants import HTTP_CLIENT_ID
 from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.db import DB, KeyDB
 from lib.depcont import DepContainer
@@ -28,6 +31,9 @@ from models.node_watchers import NodeWatcherStorage
 
 class AppSettingsAPI:
     IP_MAX_LEN = 2 ** 18
+
+    NODES_CACHE_TTL = 60.0  # sec
+    NODE_FIELDS = ('node_address', 'status', 'total_bond', 'version')
 
     def __init__(self):
         d = self.deps = DepContainer()
@@ -45,6 +51,10 @@ class AppSettingsAPI:
         d.keydb = KeyDB()
 
         self._node_watcher = NodeWatcherStorage(d.db)
+
+        self._nodes = None
+        self._nodes_ts = 0.0
+        self._nodes_lock = asyncio.Lock()
 
         self.web_app = Starlette(
             debug=bool(d.cfg.web.debug),
@@ -67,6 +77,10 @@ class AppSettingsAPI:
         d = self.deps
         d.make_http_session()
         thor_env = d.cfg.get_thor_env_by_network_id()
+        thor_env_backup = d.cfg.get_thor_env_by_network_id(backup=True)
+        d.thor_connector = ThorConnector(thor_env, d.session, additional_envs=[thor_env_backup])
+        d.thor_connector.set_client_id_for_all(HTTP_CLIENT_ID)
+
         cfg = d.cfg.get('thor.midgard')
         d.midgard_connector = MidgardConnector(
             d.session,
@@ -115,6 +129,27 @@ class AppSettingsAPI:
             return JSONResponse({
                 'error': 'not-found'
             })
+
+    async def _get_nodes(self, _req: Request):
+        # Node list for the node-op settings frontend, so the browser does not depend on a public THORNode.
+        # Cached; the last good list is served while THORNode is unavailable.
+        async with self._nodes_lock:
+            if self._nodes is None or time.monotonic() - self._nodes_ts > self.NODES_CACHE_TTL:
+                connector = self.deps.thor_connector
+                try:
+                    raw = await connector.query_raw(connector.env.path_nodes)
+                except Exception as e:
+                    logging.error(f'Failed to load the node list: {e!r}')
+                    raw = None
+
+                if isinstance(raw, list) and raw:
+                    self._nodes = [{k: node.get(k) for k in self.NODE_FIELDS} for node in raw]
+                elif self._nodes is None:
+                    return JSONResponse({'error': 'THORNode is unavailable'}, 502)
+                # on failure the stale list stays, and THORNode is not asked again until the TTL passes
+                self._nodes_ts = time.monotonic()
+
+        return JSONResponse(self._nodes)
 
     async def _set_settings(self, request):
         token = request.path_params.get('token')
@@ -198,6 +233,7 @@ class AppSettingsAPI:
             Route('/api/settings/{token}', self._set_settings, methods=['POST']),
             Route('/api/settings/{token}', self._del_settings, methods=['DELETE']),
             Route('/api/node/ip/{ip}', self._get_node_ip_info, methods=['GET']),
+            Route('/api/nodes', self._get_nodes, methods=['GET']),
 
             Route('/api/stats/users', self._active_users_handle, methods=['GET']),
             Route('/api/stats/dex', self._get_dex_aggregator_stats, methods=['GET']),
