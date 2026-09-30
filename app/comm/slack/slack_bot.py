@@ -134,7 +134,7 @@ class SlackBot(WithLogger):
 
         async with self._context(channel_id) as settings:
             if not settings:
-                await ack(self.get_localization(channel_id).TEXT_NOP_NEED_SETUP_SLACK)
+                await say(self.get_localization(channel_id).TEXT_NOP_NEED_SETUP_SLACK)  # already ack-ed above
                 return
 
             # activate the channel

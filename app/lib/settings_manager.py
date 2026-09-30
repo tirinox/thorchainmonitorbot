@@ -183,6 +183,9 @@ class SettingsContext:
     def __getitem__(self, key):
         return self._curr_settings[key]
 
+    def get(self, key, default=None):
+        return self._curr_settings.get(key, default)
+
     def __repr__(self):
         return repr(self._curr_settings)
 
