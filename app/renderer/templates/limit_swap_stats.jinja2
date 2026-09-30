@@ -216,7 +216,7 @@
     <div class="card shadow-box">
       <div class="card-title">📋 Orders</div>
       <div class="card-value-row">
-        <div class="card-value">{{ total.opened_count | int }}</div>
+        <div class="card-value">{{ short_money(total.opened_count, integer=True) }}</div>
         {{ render_delta(delta.opened_count.pct) }}
       </div>
     </div>
@@ -232,7 +232,7 @@
     <div class="card shadow-box">
       <div class="card-title">👤 Traders</div>
       <div class="card-value-row">
-        <div class="card-value">{{ total.unique_traders | int }}</div>
+        <div class="card-value">{{ short_money(total.unique_traders, integer=True) }}</div>
         {{ render_delta(delta.unique_traders.pct) }}
       </div>
     </div>
@@ -269,15 +269,15 @@
       <div class="chart-footer">
         <div class="mini-stat">
           <div class="mini-label">🔺 Peak day</div>
-          <div class="mini-value">{{ (daily | map(attribute='opened_count') | max) if daily else 0 }}</div>
+          <div class="mini-value">{{ short_money((daily | map(attribute='opened_count') | max) if daily else 0, integer=True) }}</div>
         </div>
         <div class="mini-stat">
           <div class="mini-label">∼ Avg / day</div>
-          <div class="mini-value">{{ ((total.opened_count | float) / (days or 1)) | round | int }}</div>
+          <div class="mini-value">{{ short_money(((total.opened_count | float) / (days or 1)) | round | int, integer=True) }}</div>
         </div>
         <div class="mini-stat">
           <div class="mini-label">👥 Peak traders</div>
-          <div class="mini-value">{{ (daily | map(attribute='unique_traders') | max) if daily else 0 }}</div>
+          <div class="mini-value">{{ short_money((daily | map(attribute='unique_traders') | max) if daily else 0, integer=True) }}</div>
         </div>
       </div>
     </div>
@@ -293,7 +293,7 @@
             <div class="pair-row">
               <div class="pair-rank">{{ loop.index }}</div>
               <div class="pair-name">{{ p.pair_label or p.pair }}</div>
-              <div class="pair-count">{{ p.opened_count }}</div>
+              <div class="pair-count">{{ short_money(p.opened_count | int, integer=True) }}</div>
               <div class="pair-usd">{{ short_dollar(p.opened_usd) }}</div>
             </div>
           {% endfor %}
@@ -307,7 +307,7 @@
             <div class="pair-row pair-row-others">
               <div class="pair-rank">…</div>
               <div class="pair-name">Others</div>
-              <div class="pair-count">{{ other.opened_count }}</div>
+              <div class="pair-count">{{ short_money(other.opened_count, integer=True) }}</div>
               <div class="pair-usd">{{ short_dollar(other.opened_usd) }}</div>
             </div>
           {% endif %}
@@ -328,7 +328,7 @@
     </div>
     <div class="open-cell">
       <div class="open-cell-label">📦 Orders</div>
-      <div class="open-cell-value">{{ oo.total_count | int }}</div>
+      <div class="open-cell-value">{{ short_money(oo.total_count | int, integer=True) }}</div>
     </div>
     <div class="open-cell">
       <div class="open-cell-label">💰 Value</div>
