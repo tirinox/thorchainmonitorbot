@@ -390,9 +390,14 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
             <div class="row nowrap" style="flex-wrap: nowrap; gap: .15rem">
               <Button icon="pi pi-eye" text rounded severity="secondary" v-tooltip.top="'Preview (sends nothing)'"
                       aria-label="Preview" :disabled="!!activeRunForJob(job.id)" @click="openPreview(job)"/>
-              <Button icon="pi pi-play" text rounded v-tooltip.top="'Run now (real post)'" aria-label="Run now"
-                      :loading="!!activeRunForJob(job.id)" :disabled="!!busy[job.id] || !!activeRunForJob(job.id)"
-                      @click="runJob(job)"/>
+              <!-- the bot knows only applied jobs; the wrapper keeps the tooltip on a disabled button -->
+              <span class="inline-flex"
+                    v-tooltip.top="job.stats.is_dirty ? 'Not applied yet: press Apply to run it' : 'Run now (real post)'">
+                <Button icon="pi pi-play" text rounded aria-label="Run now"
+                        :loading="!!activeRunForJob(job.id)"
+                        :disabled="job.stats.is_dirty || !!busy[job.id] || !!activeRunForJob(job.id)"
+                        @click="runJob(job)"/>
+              </span>
               <Button icon="pi pi-pencil" text rounded v-tooltip.top="'Edit'" aria-label="Edit"
                       @click="editJob(job)"/>
               <Button icon="pi pi-ellipsis-v" text rounded severity="secondary" aria-label="More actions"
@@ -424,6 +429,10 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
 </template>
 
 <style scoped>
+.inline-flex {
+  display: inline-flex;
+}
+
 .stats {
   display: grid;
   grid-template-columns: auto 1fr;
