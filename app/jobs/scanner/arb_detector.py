@@ -1,3 +1,5 @@
+from typing import Optional
+
 from lib.constants import Chains
 from lib.date_utils import DAY
 from lib.depcont import DepContainer
@@ -52,13 +54,17 @@ class ArbBotDetector(WithLogger):
             status = await self.read_arb_status(address)
             if status == ArbStatus.UNKNOWN:
                 is_arb = await self._query_api_to_detect_arb_bot(address)
+                if is_arb is None:
+                    return ArbStatus.UNKNOWN  # THORNode did not answer: ask again next time instead of caching a guess
                 await self.register_new_arb_bot(address, is_arb)
+                status = ArbStatus.ARB if is_arb else ArbStatus.NOT_ARB  # the fresh answer, so the first swap is hidden
             return status
         except Exception as e:
             self.logger.exception(f'Error: {e}')
             return ArbStatus.UNKNOWN
 
-    async def _query_api_to_detect_arb_bot(self, address) -> bool:
+    async def _query_api_to_detect_arb_bot(self, address) -> Optional[bool]:
+        """True/False by the account's tx count; None when THORNode did not answer."""
         if not address:
             self.logger.error('Empty address')
             return False
@@ -66,7 +72,7 @@ class ArbBotDetector(WithLogger):
         account = await self.deps.thor_connector.query_raw(f'/cosmos/auth/v1beta1/accounts/{address}')
         if not account:
             self.logger.error(f'Empty account for {address}')
-            return False
+            return None
 
         sequence = safe_get(account, 'account', 'sequence')
         if not sequence:
