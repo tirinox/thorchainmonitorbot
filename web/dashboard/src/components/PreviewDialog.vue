@@ -3,6 +3,7 @@ import {computed, ref, watch} from 'vue'
 import {runs, startJobRun} from '../runs.js'
 import {channelLabel} from '../channels.js'
 import PreviewResult from './PreviewResult.vue'
+import JobTypeBadge from './JobTypeBadge.vue'
 
 // Preview a job's alert (nothing is sent) and optionally try it in the test channel(s).
 const props = defineProps({
@@ -54,7 +55,9 @@ const testStatus = computed(() => {
     <template #header>
       <div>
         <div class="p-dialog-title">Alert preview</div>
-        <div v-if="job" class="muted small">{{ job.config.func }} · <span class="mono">{{ job.id }}</span></div>
+        <div v-if="job" class="row small" style="gap: .4rem">
+          <JobTypeBadge :func="job.config.func" size="small"/> <span class="mono muted">{{ job.id }}</span>
+        </div>
       </div>
     </template>
 

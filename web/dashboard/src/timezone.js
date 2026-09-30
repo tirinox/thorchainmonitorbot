@@ -39,6 +39,22 @@ export function tzShortName(tz, ts = Date.now() / 1000) {
     }
 }
 
+const partsFormatters = new Map()
+
+/** Calendar parts of a moment in a zone: {dayKey: 'YYYY-MM-DD', hour, minute, weekday}. */
+export function zonedParts(ts, tz) {
+    let fmt = partsFormatters.get(tz)
+    if (!fmt) {
+        fmt = new Intl.DateTimeFormat('en-CA', {
+            timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', hourCycle: 'h23', weekday: 'short',
+        })
+        partsFormatters.set(tz, fmt)
+    }
+    const p = Object.fromEntries(fmt.formatToParts(new Date(ts * 1000)).map(x => [x.type, x.value]))
+    return {dayKey: `${p.year}-${p.month}-${p.day}`, hour: +p.hour, minute: +p.minute, weekday: p.weekday}
+}
+
 /** Same UTC offset right now? (then showing both zones is just noise) */
 export function sameOffset(tzA, tzB, ts = Date.now() / 1000) {
     return tzShortName(tzA, ts) === tzShortName(tzB, ts)

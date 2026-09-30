@@ -15,6 +15,7 @@ import RelTime from '../components/RelTime.vue'
 import ScheduleText from '../components/ScheduleText.vue'
 import RunHistory from '../components/RunHistory.vue'
 import LastChange from '../components/LastChange.vue'
+import JobTypeBadge from '../components/JobTypeBadge.vue'
 import PreviewDialog from '../components/PreviewDialog.vue'
 
 const router = useRouter()
@@ -254,6 +255,8 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
       <h1>Scheduled jobs</h1>
       <div class="actions">
         <PollStatus :updated-at="updatedAt" :error="error" :loading="loading"/>
+        <Button label="Calendar" icon="pi pi-calendar" severity="secondary" outlined
+                @click="router.push({name: 'calendar'})"/>
         <Button label="Run function…" icon="pi pi-play" severity="secondary" outlined
                 :disabled="!data" @click="runNowVisible = true"/>
         <Button label="New job" icon="pi pi-plus" @click="router.push({name: 'job-new'})"/>
@@ -274,8 +277,10 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
 
       <div v-if="distribution.length" class="row">
         <span class="muted small">Job types:</span>
-        <Tag v-for="d in distribution" :key="d.func" :severity="d.count ? 'success' : 'secondary'"
-             :value="`${d.func} · ${d.count}`" :class="{'dim': !d.count}"/>
+        <span v-for="d in distribution" :key="d.func" class="dist" :class="{'dim': !d.count}"
+              v-tooltip.top="d.count ? `${d.count} job(s)` : 'Not configured yet'">
+          <JobTypeBadge :func="d.func" size="small"/><span class="muted small">×{{ d.count }}</span>
+        </span>
       </div>
 
       <Panel toggleable collapsed>
@@ -318,7 +323,7 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
         <Column header="Job" style="min-width: 16rem">
           <template #body="{data: job}">
             <div class="stack" style="gap: .3rem">
-              <strong>{{ job.config.func }}</strong>
+              <span><JobTypeBadge :func="job.config.func"/></span>
               <span class="mono muted">{{ job.id }}</span>
               <LastChange :change="job.last_change"/>
               <div class="row small" style="gap: .35rem">
@@ -440,7 +445,13 @@ const successRate = (s) => s.run_count ? formatPercent(s.run_count - s.error_cou
 }
 
 .dim {
-  opacity: .6;
+  opacity: .5;
+}
+
+.dist {
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
 }
 
 .toolbar {

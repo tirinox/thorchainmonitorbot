@@ -5,6 +5,7 @@ import {useNow} from '../composables/useNow.js'
 import {durationHuman} from '../format.js'
 import {parseJsonObject} from '../jsonArgs.js'
 import {channelLabel} from '../channels.js'
+import {jobType} from '../jobTypes.js'
 import PreviewResult from './PreviewResult.vue'
 
 const props = defineProps({
@@ -85,7 +86,13 @@ async function start() {
     <div class="stack">
       <div class="field">
         <label for="rn-func">Function</label>
-        <Select id="rn-func" v-model="func" :options="functions" filter placeholder="Select a function"/>
+        <Select id="rn-func" v-model="func" :options="functions" filter placeholder="Select a function">
+          <template #value="{value, placeholder}">
+            <span v-if="value">{{ jobType(value).emoji }} {{ value }}</span>
+            <span v-else>{{ placeholder }}</span>
+          </template>
+          <template #option="{option}">{{ jobType(option).emoji }} {{ option }}</template>
+        </Select>
       </div>
       <div class="field">
         <label>Mode</label>

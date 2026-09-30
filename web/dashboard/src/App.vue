@@ -15,7 +15,8 @@ const toast = useToast()
 const nav = [
   {to: '/', label: 'Status', icon: 'pi pi-home'},
   {to: '/overview', label: 'Overview', icon: 'pi pi-chart-bar'},
-  {to: '/jobs', label: 'Jobs', icon: 'pi pi-calendar'},
+  {to: '/jobs', label: 'Jobs', icon: 'pi pi-list-check'},
+  {to: '/calendar', label: 'Calendar', icon: 'pi pi-calendar'},
   {to: '/logs', label: 'Logs', icon: 'pi pi-history'},
   {to: '/activity', label: 'Activity', icon: 'pi pi-user-edit'},
   {to: '/flags', label: 'Settings', icon: 'pi pi-sliders-h'},

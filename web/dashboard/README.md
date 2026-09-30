@@ -59,6 +59,16 @@ http://localhost:8501/dashboard/.
   log; runs do not count). Flag changes can be reverted from Activity; that is a normal, audited change.
 - `/jobs/new?from=<job id>` opens the job form pre-filled with a copy (it starts disabled).
 
+## Calendar
+
+- `GET /api/schedule/upcoming?days=7` (`app/dashboard/services/calendar.py`) lists every job's runs in the next
+  days: cron and one-off jobs come from APScheduler triggers; interval jobs step from the bot's real next run
+  (they count from Apply), or from "now" marked `approximate` when the job is not applied yet. Jobs firing more
+  than 24 times a day are returned as `frequent` without individual runs.
+- The Calendar page shows them as a week grid or a list in the display timezone and flags posts closer than a
+  chosen window (5–60 min) to another job's post. Each job type has a colour and an emoji
+  (`web/dashboard/src/jobTypes.js`, `JobTypeBadge.vue`), used across the dashboard.
+
 ## Alert preview and test channel
 
 - Jobs can run in three modes (`app/lib/run_context.py`, carried in a ContextVar through the whole run):

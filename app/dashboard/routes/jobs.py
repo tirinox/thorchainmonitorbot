@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field, ValidationError
 
@@ -10,6 +10,7 @@ from dashboard.context import DashboardContext
 from dashboard.routes.deps import get_ctx
 from dashboard.services import jobs
 from dashboard.services.schedule import get_scheduler_timezone, preview_schedule
+from dashboard.services.calendar import upcoming_runs
 from dashboard.runs import RunConflict
 from dashboard.services.jobs import JobPayload, JobNotFound, JobConflict
 
@@ -68,6 +69,12 @@ class SchedulePreviewBody(BaseModel):
 @router.get('/jobs')
 async def list_jobs(tz: Optional[str] = None, ctx: DashboardContext = Depends(get_ctx)):
     return await jobs.list_jobs(ctx, viewer_tz=tz)
+
+
+@router.get('/schedule/upcoming')
+async def schedule_upcoming(days: int = Query(7, ge=1, le=31), ctx: DashboardContext = Depends(get_ctx)):
+    """Every job's runs in the next `days` days (frequent jobs are summarized), for the calendar page."""
+    return await upcoming_runs(ctx, days=days)
 
 
 @router.post('/schedule/preview')

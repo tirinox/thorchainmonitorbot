@@ -9,6 +9,7 @@ import {browserTz, displayTz, sameOffset} from '../timezone.js'
 import RelTime from '../components/RelTime.vue'
 import ScheduleText from '../components/ScheduleText.vue'
 import {parseJsonObject} from '../jsonArgs.js'
+import {jobType} from '../jobTypes.js'
 
 const props = defineProps({
   id: {type: String, default: null},  // set when editing
@@ -250,9 +251,13 @@ async function save() {
           <InputText v-if="isEdit" id="job-func" :model-value="form.func" disabled/>
           <Select v-else input-id="job-func" v-model="form.func" :options="functionOptions" option-label="func"
                   option-value="func" filter placeholder="Select a job function">
+            <template #value="{value, placeholder}">
+              <span v-if="value">{{ jobType(value).emoji }} {{ value }}</span>
+              <span v-else>{{ placeholder }}</span>
+            </template>
             <template #option="{option}">
               <div class="row" style="justify-content: space-between; width: 100%">
-                <span>{{ option.func }}</span>
+                <span>{{ jobType(option.func).emoji }} {{ option.func }}</span>
                 <Tag v-if="option.count" severity="secondary" :value="`added · ${option.count}`"/>
                 <Tag v-else severity="success" value="new"/>
               </div>
