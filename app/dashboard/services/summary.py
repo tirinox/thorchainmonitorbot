@@ -170,6 +170,19 @@ def evaluate_errors(raw_logs: Optional[list], now: float) -> dict:
     return make_check('errors', 'Scheduler errors', status, f'{len(errors)} in 24h', detail, link, items)
 
 
+def evaluate_bot_link(listeners: Optional[int]) -> dict:
+    title = 'Bot command channel'
+    if listeners is None:
+        return make_check('bot_link', title, Status.UNKNOWN, 'no data', '')
+    if listeners < 1:
+        return make_check('bot_link', title, Status.ERROR, 'not listening',
+                          'The bot does not receive Run now and Apply: it is down or has lost Redis.')
+    if listeners > 1:
+        return make_check('bot_link', title, Status.WARN, f'{listeners} listeners',
+                          'More than one bot process receives commands, so a Run now runs the job several times.')
+    return make_check('bot_link', title, Status.OK, 'listening', 'The bot receives Run now and Apply.')
+
+
 async def _safe(coro, what: str):
     try:
         return await coro
@@ -180,14 +193,16 @@ async def _safe(coro, what: str):
 
 async def build_summary(ctx: DashboardContext) -> dict:
     now = time.time()
-    scanner, fetchers, listing, flags, logs = await asyncio.gather(
+    scanner, fetchers, listing, flags, logs, listeners = await asyncio.gather(
         _safe(block_scanner_info(ctx), 'scanner'),
         _safe(fetchers_info(ctx), 'fetchers'),
         _safe(list_jobs(ctx), 'jobs'),
         _safe(list_flags(ctx), 'flags'),
         _safe(ctx.scheduler.db_log.get_last_logs(MAX_LOG_LINES), 'logs'),
+        _safe(ctx.scheduler.count_command_listeners(), 'bot command listeners'),
     )
     checks = [
+        evaluate_bot_link(listeners),
         evaluate_scanner(scanner, now),
         evaluate_fetchers(fetchers, now),
         evaluate_jobs(listing, now),

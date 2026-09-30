@@ -2,12 +2,20 @@ import asyncio
 import json
 import logging
 import uuid
+from contextlib import suppress
 
 from lib.db import DB
 from lib.logs import WithLogger
 
 
+class NoListenerError(RuntimeError):
+    pass
+
+
 class PubSubChannel:
+    RECONNECT_MIN_DELAY = 1.0  # sec
+    RECONNECT_MAX_DELAY = 30.0  # sec
+
     def __init__(self, db: DB, channel: str, callback):
         self.db = db
         self.channel = channel
@@ -16,8 +24,9 @@ class PubSubChannel:
         self._task = None
         self._running = False
 
-    async def post_message(self, message: dict):
-        await self.db.redis.publish(self.channel, json.dumps(message))
+    async def post_message(self, message: dict) -> int:
+        """Returns how many subscribers received the message."""
+        return await self.db.redis.publish(self.channel, json.dumps(message))
 
     def start(self):
         if self._running:
@@ -35,28 +44,36 @@ class PubSubChannel:
                 pass
 
     async def _listen_loop(self):
-        pubsub = self.db.redis.pubsub()
-        await pubsub.subscribe(self.channel)
+        # redis-py resubscribes by itself only for a few retries (seconds); a longer Redis outage ends listen(),
+        # so subscribe again from scratch for as long as the channel runs. Messages published meanwhile are lost.
+        delay = self.RECONNECT_MIN_DELAY
+        while self._running:
+            pubsub = self.db.redis.pubsub()
+            try:
+                await pubsub.subscribe(self.channel)
+                delay = self.RECONNECT_MIN_DELAY
+                async for msg in pubsub.listen():
+                    if not self._running:
+                        return
+                    await self._handle_message(msg)
+            except Exception as e:  # CancelledError is not an Exception: stop() still works
+                logging.warning(f'Pub/sub channel {self.channel!r} lost: {e!r}; subscribing again in {delay:.0f} s')
+            finally:
+                with suppress(Exception):
+                    await pubsub.aclose()
 
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, self.RECONNECT_MAX_DELAY)
+
+    async def _handle_message(self, msg):
         try:
-            async for msg in pubsub.listen():
-                if not self._running:
-                    break
-                try:
-                    if msg["type"] == "message":
-                        data = msg["data"]
-                        if data and self.callback:
-                            data = json.loads(data)
-                            await self.callback(self.channel, data)
-                except Exception as e:
-                    logging.exception(f'Error processing message: {e}')
-
-        except asyncio.CancelledError:
-            pass
+            if msg["type"] == "message":
+                data = msg["data"]
+                if data and self.callback:
+                    data = json.loads(data)
+                    await self.callback(self.channel, data)
         except Exception as e:
-            logging.exception(f'Error in subscriber listen loop: {e}')
-        finally:
-            await pubsub.close()
+            logging.exception(f'Error processing message: {e}')
 
 
 class SimpleRPC(WithLogger):
@@ -102,12 +119,14 @@ class SimpleRPC(WithLogger):
             self.logger.exception('Error while handling RPC call')
             error = str(e)
         finally:
-            await self._response_listener.post_message({
+            receivers = await self._response_listener.post_message({
                 'response': response,
                 'error': error,
                 '__type': 'response',
                 '__call_id': str(call_id),
             })
+            if not receivers:
+                self.logger.warning(f'Nobody received the response to RPC call id {call_id}')
 
     async def _response_callback(self, _, data):
         call_id = data.get('__call_id')
@@ -144,11 +163,15 @@ class SimpleRPC(WithLogger):
         fut: asyncio.Future = loop.create_future()
         self._response_collection[call_id] = fut
 
-        await self._call_listener.post_message({
+        receivers = await self._call_listener.post_message({
             'data': data,
             '__type': 'call',
             '__call_id': call_id,
         })
+        if not receivers:
+            # nobody got the call, so no answer will ever come: fail now instead of waiting for the timeout
+            self._response_collection.pop(call_id, None)
+            raise NoListenerError('The bot is not listening for commands: it is down or has lost Redis')
 
         try:
             if timeout is not None:
@@ -161,6 +184,11 @@ class SimpleRPC(WithLogger):
                 fut.cancel()
             self._response_collection.pop(call_id, None)
             raise
+
+    async def count_servers(self) -> int:
+        """How many processes listen for calls (the bot: normally exactly one)."""
+        [(_channel, count)] = await self.db.redis.pubsub_numsub(self._call_listener.channel)
+        return int(count)
 
     async def run_as_server(self, callback_receiver):
         if self._mode:

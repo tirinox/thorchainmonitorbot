@@ -6,6 +6,7 @@ from dashboard.audit import AuditLog, diff_dicts, get_actor, LOCAL_ACTOR
 from dashboard.services import flags as flag_service
 from dashboard.services.summary import (
     Status, evaluate_scanner, evaluate_fetchers, evaluate_jobs, evaluate_config, evaluate_flags, evaluate_errors,
+    evaluate_bot_link,
 )
 from lib.flagship import Flagship
 from tests.fakes import FakeDB, FakePubSubRedis
@@ -187,3 +188,10 @@ async def test_list_flags_reads_all_flags_in_one_request():
     assert len(flags) == 150  # the unreadable one is skipped
     assert flags[0]['path'] == 'group:flag000' and flags[0]['value'] is False
     assert flags[1]['value'] is True and flags[1]['last_access_ts'] == 2
+
+
+def test_evaluate_bot_link():
+    assert evaluate_bot_link(None)['status'] == Status.UNKNOWN
+    assert evaluate_bot_link(0)['status'] == Status.ERROR
+    assert evaluate_bot_link(1)['status'] == Status.OK
+    assert evaluate_bot_link(2)['status'] == Status.WARN

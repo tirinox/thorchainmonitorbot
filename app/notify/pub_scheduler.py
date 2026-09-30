@@ -531,6 +531,10 @@ class PublicScheduler(WithLogger):
     async def start_rpc_client(self):
         await self._rpc.run_as_client()
 
+    async def count_command_listeners(self) -> int:
+        """How many bot processes receive dashboard commands right now (normally 1)."""
+        return await self._rpc.count_servers()
+
     @staticmethod
     def job_distribution(jobs: List[SchedJobCfg]):
         distribution = defaultdict(int)
