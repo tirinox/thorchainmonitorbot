@@ -48,7 +48,7 @@ class RunePoolEventDecoder(WithLogger, INotified, WithDelegates):
     def _convert_tx_to_event(self, tx, message: ThorTxMessage, memo: THORMemo, height, usd_per_rune) -> List[
         AlertRunePoolAction]:
         results = []
-        if message:
+        if not message:
             self.logger.error(f'Empty tx or message in RUNE pool @ #{height}')
             return results
 
@@ -68,7 +68,8 @@ class RunePoolEventDecoder(WithLogger, INotified, WithDelegates):
                     (e for e in tx.events if e.type == 'rune_pool_withdraw'),
                     None
                 )
-                amount = withdraw_event.get('rune_amount')
+                # POOL- deposits 0 RUNE; the withdrawn amount is only in the event
+                amount = withdraw_event.get('rune_amount') if withdraw_event else None
             else:
                 amount = coin.get('amount')
 

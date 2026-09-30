@@ -258,6 +258,16 @@ class THORMemo:
 
     @classmethod
     def parse_memo(cls, memo: str, no_raise=False):
+        # memos are arbitrary user input: with no_raise, a malformed one must not break the caller's whole block
+        try:
+            return cls._parse_memo(memo, no_raise)
+        except Exception:
+            if no_raise:
+                return None
+            raise
+
+    @classmethod
+    def _parse_memo(cls, memo: str, no_raise):
         gist, *_comment = memo.split('|', maxsplit=2)  # ignore comments
 
         components = [it for it in gist.split(':')]
@@ -400,7 +410,7 @@ class THORMemo:
 
         elif tx_type == ActionType.RUNEPOOL_WITHDRAW:
             affiliate = ith(components, 2, '')
-            affiliate_fee_bp = ith(components, 3, 0)
+            affiliate_fee_bp = ith(components, 3, '')
             return cls.runepool_withdraw(
                 bp=ith(components, 1, THOR_BASIS_POINT_MAX, is_number=True),
                 affiliates=cls._parse_affiliates(affiliate, affiliate_fee_bp)
