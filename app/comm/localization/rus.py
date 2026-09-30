@@ -1587,7 +1587,7 @@ class RussianLocalization(BaseLocalization):
             if data.is_sync:
                 message = f'✅ Нода {short_addr} догнала актуальные блоки на блокчейне {pre(data.chain)}.'
             else:
-                message = f'🔴 Нода {short_addr} на {pre(data.block_lag)} позади ' \
+                message = f'🔴 Нода {short_addr} на {pre(data.block_lag)} блоков позади ' \
                           f'на блокчейне {pre(data.chain)} (≈{self.seconds_human(data.how_long_behind)})!'
         elif c.type == NodeEventType.PRESENCE:
             if c.data:

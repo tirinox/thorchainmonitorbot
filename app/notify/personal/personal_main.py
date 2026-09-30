@@ -127,7 +127,7 @@ class NodeChangePersonalNotifier(INotified, WithLogger):
             self.bond_tracker,
             self.presence_tracker,
             self.online_tracker,
-            self.churn_tracker,
+            self.chain_height_tracker,
             self.slash_tracker,
         )
 

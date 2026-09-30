@@ -1,5 +1,5 @@
 from collections import defaultdict, Counter
-from typing import Optional, List
+from typing import List
 
 from lib.config import SubConfig
 from lib.constants import Chains
@@ -9,7 +9,6 @@ from lib.texts import sep
 from lib.utils import most_common, estimate_max_by_committee
 from models.node_info import NodeEvent, NodeEventType, EventBlockHeight, NodeInfo
 from .helpers import BaseChangeTracker, NodeOpSetting
-from .user_data import UserDataCache
 
 
 class ChainHeightTracker(BaseChangeTracker):
@@ -25,7 +24,6 @@ class ChainHeightTracker(BaseChangeTracker):
             self.block_times[chain] = parse_timespan_to_seconds(en_time)
 
         self.recent_max_blocks = {}
-        self.cache: Optional[UserDataCache] = None
 
         sub_cfg = deps.cfg.get('node_op_tools.types.chain_height', SubConfig({}))
         self.chain_height_method = sub_cfg.as_str('top_height_estimation_method', self.METHOD_MAX_COMMITTEE)
@@ -73,23 +71,11 @@ class ChainHeightTracker(BaseChangeTracker):
             minimal_members=committee_members_min,
         ) for chain, height_list in chain_block_height.items()}
 
-    @staticmethod
-    def _add_thorchain_height(nodes: List[NodeInfo]):
-        # add THOR Chain to the Chain List
-        for node in nodes:
-            if not node.observe_chains:
-                node.observe_chains = []
-            node.observe_chains.append({
-                'chain': Chains.THOR,
-                'height': node.active_block_height
-            })
-        return nodes
-
     def estimate_block_height(self, nodes: List[NodeInfo]):
+        # only the observed external chains: THORNode does not report a node's own THORChain height
+        # (active_block_height is the height where the node churned in, days or months ago)
         prev_last_blocks = self.recent_max_blocks
         method = self.chain_height_method
-
-        nodes = self._add_thorchain_height(nodes)
 
         if method == self.METHOD_MAXIMUM:
             self.recent_max_blocks = self.estimate_block_height_maximum(nodes)
@@ -119,10 +105,10 @@ class ChainHeightTracker(BaseChangeTracker):
     KEY_SYNC_STATE = 'sync'
 
     def get_user_state(self, user, node, service):
-        return self.cache.user_node_service_data[user][node][service].get(self.KEY_SYNC_STATE, True)
+        return self.user_cache.user_node_service_data[user][node][service].get(self.KEY_SYNC_STATE, True)
 
     def set_user_state(self, user, node, service, is_ok):
-        self.cache.user_node_service_data[user][node][service][self.KEY_SYNC_STATE] = is_ok
+        self.user_cache.user_node_service_data[user][node][service][self.KEY_SYNC_STATE] = is_ok
 
     async def get_events_unsafe(self) -> List[NodeEvent]:
         if self._first_tick:
@@ -156,7 +142,7 @@ class ChainHeightTracker(BaseChangeTracker):
                     node=node, tracker=self
                 ))
 
-        total = total_offline + total_offline
+        total = total_online + total_offline
         self.logger.info(f'Summary: {total_offline = }, {total_online = }, {total = } blockchain clients')
 
         return events
