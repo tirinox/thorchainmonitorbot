@@ -129,10 +129,20 @@ services:
       - ./web/frontend/:/web/frontend/
       - ./web/${NGINX_CFG_NAME:-nginx.conf}:/etc/nginx/nginx.conf:ro
       #      - ./web/nginx-test.conf:/etc/nginx/nginx.conf:ro
-      - "./web/letsencrypt/${DOMAIN}:/etc/letsencrypt:ro"
+      - ./web/letsencrypt/conf:/etc/letsencrypt:ro
+      - ./web/letsencrypt/www:/var/www/certbot:ro
       - ./web/htpasswd-dash-logs:/etc/nginx/htpasswd-dash-logs:ro
-    environment:
-      CERTBOT_EMAIL: developer@tirinox.ru
+    # reload every 6h to pick up certificates renewed by the certbot service
+    command: /bin/sh -c 'while :; do sleep 21600; nginx -s reload; done & exec nginx -g "daemon off;"'
+
+  certbot:
+    image: certbot/certbot:v5.8.0
+    restart: always
+    volumes:
+      - ./web/letsencrypt/conf:/etc/letsencrypt
+      - ./web/letsencrypt/www:/var/www/certbot
+    # HTTP-01 challenges are served by nginx from /var/www/certbot; the first certificate is issued by `make certbot`
+    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 43200 & wait $${!}; done'
 
   api:
     build:

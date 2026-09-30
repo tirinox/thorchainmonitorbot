@@ -17,7 +17,7 @@
 - THORChain data comes from thornode + Midgard connectors (`api/aionode`, `api/midgard`), initialized in `create_thor_node_connector`.
 - Persistent state is Redis-only (`app/lib/db.py`); Telegram FSM state also uses Redis through `RedisStorage3`.
 - Config is YAML + `.env`; `Config` auto-loads `.env` and searches `/config/config.yaml`, `../config.yaml`, then `config.yaml` (`app/lib/config.py`).
-- Container topology in `docker-compose.yml`: `thtgbot`, `renderer`, `api`, `dashboard`, `redis`, `nginx`, `dozzle`.
+- Container topology in `docker-compose.yml`: `thtgbot`, `renderer`, `api`, `dashboard`, `redis`, `keydb`, `nginx`, `certbot` (renews nginx's Let's Encrypt certificate), `dozzle`.
 - HTML infographic rendering is an external worker (`infographic_renderer.renderer_url` in `example_config.yaml`, default `http://renderer:8404/render`).
 
 ## Productive local workflows

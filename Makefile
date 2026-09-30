@@ -110,12 +110,15 @@ redis-sv-loc: # Start the Redis server locally.
 
 
 .PHONY: certbot
-certbot: # Renew the SSL certificate for the bot's web admin panel.
-	docker compose stop $(BOTNAME) api nginx
-	sudo certbot certonly --standalone -w ./web/frontend -d "${DOMAIN}" --email "$(LETS_ENCRYPT_EMAIL)" --agree-tos --no-eff-email
-	sudo rm -rf "./web/letsencrypt/${DOMAIN}/"
-	sudo cp -rL "/etc/letsencrypt/live/${DOMAIN}/" "./web/letsencrypt/${DOMAIN}"
-	make start
+certbot: # Issue the SSL certificate for the first time (renewals then run in the certbot container).
+	docker compose stop nginx
+	docker compose run --rm -p 80:80 --entrypoint certbot certbot certonly --standalone -d "${DOMAIN}" --email "$(LETS_ENCRYPT_EMAIL)" --agree-tos --no-eff-email
+	docker compose up -d nginx certbot
+
+
+.PHONY: certbot-test
+certbot-test: # Dry-run a certificate renewal through the nginx webroot.
+	docker compose run --rm --entrypoint certbot certbot renew --webroot -w /var/www/certbot --dry-run
 
 
 NODE_OP_SETT_DIR = ./temp/nodeop-settings

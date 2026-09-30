@@ -2,24 +2,24 @@
 
 This guide will help you to setup the web interface for the bot.
 
-## Install Certbot
+## SSL certificate
+
+Certificates live in `web/letsencrypt/conf` and are renewed by the `certbot` service in `docker-compose.yml`
+(every 12 hours, HTTP-01 challenge served by nginx from `web/letsencrypt/www`). nginx reloads itself every 6 hours
+to pick up a renewed certificate. Nothing needs to be installed on the host.
+
+The domain is `DOMAIN` from `.env`; `web/nginx.conf` expects the certificate of `settings.thornode.org`.
+
+Issue the first certificate (stops nginx for a moment, because nginx cannot start without a certificate):
 
 ```
-sudo apt install certbot python3-certbot-nginx
+make certbot
 ```
 
-## Generate Certificate
+Check that renewal works through nginx:
 
 ```
-export MY_DOMAIN=settings.thornode.org
-# or 
-export MY_DOMAIN=test-settings.thornode.org
-
-make stop
-sudo certbot certonly --standalone -w ./web/frontend/ -d $MY_DOMAIN
-rm -rf web/letsencrypt/$MY_DOMAIN/
-cp -rL /etc/letsencrypt/live/$MY_DOMAIN/ letsencrypt/
-make start
+make certbot-test
 ```
 
 ## Frontend
