@@ -687,6 +687,7 @@ class RussianLocalization(BaseLocalization):
         )
 
     TEXT_ASK_DURATION = 'За какой период времени вы хотите получить данные?'
+    TEXT_INVALID_DURATION = '⛔ <b>Неверный период!</b> Например: 1h, 12h, 3d или 1d 6h.'
 
     BUTTON_1_HOUR = '1 часов'
     BUTTON_24_HOURS = '24 часа'

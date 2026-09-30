@@ -482,10 +482,10 @@ class MyWalletsMenu(DialogWithSettings):
         if query.data == self.QUERY_CANCEL:
             period = False
         else:
-            period = parse_timespan_to_seconds(query.data)
-
-        if isinstance(period, str):
-            return  # error
+            try:
+                period = parse_timespan_to_seconds(query.data)
+            except ValueError:
+                return  # not one of our buttons
 
         address = self.current_address
         user_id = str(self.user_id(query.message))

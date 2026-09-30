@@ -957,6 +957,7 @@ class BaseLocalization(ABC):  # == English
             return '🤬❗️'
 
     TEXT_ASK_DURATION = 'For what period of time do you want to get the data?'
+    TEXT_INVALID_DURATION = '⛔ <b>Invalid period!</b> Try something like 1h, 12h, 3d or 1d 6h.'
 
     BUTTON_1_HOUR = '1 hour'
     BUTTON_24_HOURS = '24 hours'

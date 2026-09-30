@@ -539,8 +539,10 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_BACK:
             return  # back
         else:
-            period = parse_timespan_to_seconds(message.text.strip())
-            return period
+            try:
+                return parse_timespan_to_seconds(message.text.strip())
+            except ValueError:
+                return self.loc.TEXT_INVALID_DURATION  # a str: the caller replies with it
 
     KEY_NEXT_ACTION = '_metrics_ask_next_action'
     KEY_BACK_SUBMENU = '_metrics_back_submenu'
