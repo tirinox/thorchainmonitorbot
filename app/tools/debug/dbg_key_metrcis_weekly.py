@@ -146,15 +146,18 @@ async def debug_locked_value(app: LpAppFramework):
 
 async def debug_earnings(app: LpAppFramework):
     f = KeyStatsFetcher(app.deps)
-    # Earnings
-    (
-        (curr_total_earnings, curr_block_earnings, curr_organic_fees),
-        (prev_total_earnings, prev_block_earnings, prev_organic_fees),
-    ) = await f.get_earnings_curr_prev()
+    start_ts, end_ts = await f.get_tally_period()
+    curr, prev, income = await f.get_earnings_curr_prev(start_ts, end_ts)
 
-    print("Current")
-    print(f'{curr_total_earnings = }$, {curr_block_earnings = }$, {curr_organic_fees = }$')
-    print(f'{prev_total_earnings = }$, {prev_block_earnings = }$, {prev_organic_fees = }$')
+    print(f'Period: {datetime.fromtimestamp(start_ts)} - {datetime.fromtimestamp(end_ts)}')
+    print(f'{curr = }')
+    print(f'{prev = }')
+    sep()
+    print(f'Distributed: {short_rune(income.total_rune)} = {short_dollar(income.total_usd)}, '
+          f'complete: {income.is_complete}, issues: {income.issues}, '
+          f'discrepancy: {income.discrepancy_rune_raw}, prev: {income.prev_total_usd}')
+    for c in income.categories:
+        print(f'{c.key:12} {short_rune(c.rune):>12} {short_dollar(c.usd):>12} {c.share * 100:6.2f}%')
 
 
 def print_affiliate_table(interval):
@@ -166,7 +169,7 @@ def print_affiliate_table(interval):
 async def dbg_affiliate_top(app: LpAppFramework):
     f = KeyStatsFetcher(app.deps)
 
-    affiliates, _, _ = await f.get_top_affiliates()
+    affiliates, _, _ = await f.get_top_affiliates(*await f.get_tally_period())
     for place, collector in enumerate(affiliates, start=1):
         print(f"#{place} | {collector} ")
     # sep()

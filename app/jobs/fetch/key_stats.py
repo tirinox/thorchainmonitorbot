@@ -10,12 +10,13 @@ from jobs.scanner.swap_routes import SwapRouteRecorder
 from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from lib.constants import BTC_SYMBOL, ETH_SYMBOL
-from lib.date_utils import parse_timespan_to_seconds, DAY
+from lib.date_utils import parse_timespan_to_seconds, DAY, HOUR, date_parse_rfc
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.affiliate import AffiliateInterval, AffiliateCollector
 from models.asset import Asset
-from models.earnings_history import EarningHistoryResponse
+from models.earnings_history import EarningHistoryResponse, EarningsTuple, IncomeDistribution, \
+    build_income_distribution
 from models.key_stats_model import AlertKeyStats, KeyStats, LockedValue, SwapRouteEntry
 from models.pool_info import PoolInfoMap
 from models.vol_n import TxCountStats
@@ -67,8 +68,9 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
 
         swap_count = await self.get_swap_number_stats()
 
-        # Earnings
-        curr_earnings, prev_earnings = await self.get_earnings_curr_prev()
+        # Earnings and who they were accrued to
+        start_ts, end_ts = await self.get_tally_period()
+        curr_earnings, prev_earnings, income = await self.get_earnings_curr_prev(start_ts, end_ts)
 
         # Swap routes
         usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
@@ -82,14 +84,15 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         routes = self.beautify_routes(routes)
 
         # Affiliates
-        top_affiliates, curr_affiliate_revenue, prev_affiliate_revenue = await self.get_top_affiliates()
+        top_affiliates, curr_affiliate_revenue, prev_affiliate_revenue = await self.get_top_affiliates(
+            start_ts, end_ts)
         # Assign affiliate revenue to earnings
         curr_earnings.affiliate_revenue = curr_affiliate_revenue
         prev_earnings.affiliate_revenue = prev_affiliate_revenue
 
         # Done. Construct the resulting event
-        end = datetime.datetime.now()
-        start = end - datetime.timedelta(days=self.tally_days_period)
+        start = datetime.datetime.fromtimestamp(start_ts, datetime.timezone.utc)
+        end = datetime.datetime.fromtimestamp(end_ts, datetime.timezone.utc)
         result = AlertKeyStats(
             routes=routes,
             days=self.tally_days_period,
@@ -113,6 +116,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             start_date=start,
             end_date=end,
             top_affiliates=top_affiliates,
+            income=income,
         )
         self.fill_btc_eth_usd_totals(result.current, curr_pools)
         self.fill_btc_eth_usd_totals(result.previous, prev_pools)
@@ -180,28 +184,66 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         tx_counter: TxCountRecorder = self.deps.tx_count_recorder
         return await tx_counter.get_stats(self.tally_days_period)
 
-    @property
-    def double_period(self):
-        return self.tally_days_period * 2
+    async def get_tally_period(self) -> tuple[int, int]:
+        """
+        [start, end) of the tally period in UTC seconds. It ends at the last full hour before the last block,
+        because Midgard reports the hour that is still running as empty.
+        """
+        block = await self.deps.thor_connector.query_thorchain_block_raw(None)
+        try:
+            block_time = date_parse_rfc(block['header']['time']).replace(tzinfo=datetime.timezone.utc)
+        except (KeyError, TypeError, ValueError, AttributeError):
+            raise ConnectionError(f'Failed to load the time of the last block: {str(block)[:200]!r}')
 
-    async def get_earnings_curr_prev(self):
-        earnings = await self.deps.midgard_connector.query_earnings(count=self.double_period, interval='day')
+        end_ts = int(block_time.timestamp()) // HOUR * HOUR
+        return end_ts - self.tally_period_in_sec, end_ts
+
+    async def get_earnings_curr_prev(self, start_ts: int, end_ts: int) \
+            -> tuple[EarningsTuple, EarningsTuple, IncomeDistribution]:
+        mdg = self.deps.midgard_connector
+        prev_start_ts = start_ts - self.tally_period_in_sec
+        curr, prev, last_aggregated_ts = await asyncio.gather(
+            mdg.query_earnings(start_ts, end_ts, interval='hour'),
+            mdg.query_earnings(prev_start_ts, start_ts, interval='hour'),
+            mdg.query_last_aggregated_ts(),
+        )
+        if not curr or not prev:
+            raise ConnectionError('Failed to load earnings history from Midgard')
+
+        income = build_income_distribution(curr.intervals, start_ts, end_ts)
+        if last_aggregated_ts < end_ts:
+            income.issues.append(f'Midgard is behind: aggregated up to {last_aggregated_ts}, needed {end_ts}')
+        prev_income = build_income_distribution(prev.intervals, prev_start_ts, start_ts)
+        if prev_income.is_complete:
+            income.prev_total_usd = prev_income.total_usd
+
+        if income.issues:
+            self.logger.warning(f'Income distribution is incomplete: {income.issues}')
+        if income.discrepancy_rune_raw:
+            self.logger.warning(f'Income categories do not add up to the total: '
+                                f'{income.discrepancy_rune_raw} base units are unaccounted')
 
         return (
-            EarningHistoryResponse.calc_earnings(intervals=earnings.intervals[0:self.tally_days_period]),
-            EarningHistoryResponse.calc_earnings(intervals=earnings.intervals[self.tally_days_period:])
+            EarningHistoryResponse.calc_earnings(curr.intervals),
+            EarningHistoryResponse.calc_earnings(prev.intervals),
+            income,
         )
 
-    async def get_top_affiliates(self):
-        affiliates = await self.deps.midgard_connector.query_affiliates(self.double_period, interval='day')
-
-        curr_affiliates = affiliates.intervals[0:self.tally_days_period]
-        prev_affiliates = affiliates.intervals[self.tally_days_period:]
+    async def get_top_affiliates(self, start_ts: int, end_ts: int):
+        # without an interval Midgard sums the whole range into a single row, thornames included
+        mdg = self.deps.midgard_connector
+        prev_start_ts = start_ts - self.tally_period_in_sec
+        curr_affiliates, prev_affiliates = await asyncio.gather(
+            mdg.query_affiliates(from_ts=start_ts, to_ts=end_ts, interval=''),
+            mdg.query_affiliates(from_ts=prev_start_ts, to_ts=start_ts, interval=''),
+        )
+        if not curr_affiliates or not prev_affiliates:
+            raise ConnectionError('Failed to load affiliate history from Midgard')
 
         prev_week_interval = AffiliateInterval.sum_of_intervals_per_thorname(
-            prev_affiliates).sort_thornames_by_usd_volume()
+            prev_affiliates.intervals).sort_thornames_by_usd_volume()
         curr_week_interval = AffiliateInterval.sum_of_intervals_per_thorname(
-            curr_affiliates).sort_thornames_by_usd_volume()
+            curr_affiliates.intervals).sort_thornames_by_usd_volume()
 
         prev_names_dict = {tn.thorname: tn for tn in
                            prev_week_interval.thornames} if prev_week_interval.thornames else {}

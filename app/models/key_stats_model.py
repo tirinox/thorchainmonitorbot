@@ -1,9 +1,9 @@
 import dataclasses
 from datetime import datetime
-from typing import NamedTuple, List
+from typing import NamedTuple, List, Optional
 
 from .affiliate import AffiliateCollector
-from .earnings_history import EarningsTuple
+from .earnings_history import EarningsTuple, IncomeDistribution
 
 
 class SwapRouteEntry(NamedTuple):
@@ -55,6 +55,7 @@ class AlertKeyStats:
     swap_type_distribution: dict  # recorded
     top_affiliates: List[AffiliateCollector]
     days: int = 7
+    income: Optional[IncomeDistribution] = None  # who the system income was accrued to
 
     @property
     def locked_value_usd_curr_prev(self):

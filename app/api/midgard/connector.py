@@ -87,6 +87,15 @@ class MidgardConnector(WithLogger):
         if j:
             return EarningHistoryResponse.from_json(j)
 
+    async def query_last_aggregated_ts(self) -> int:
+        """
+        Timestamp of the last block that is in Midgard's aggregates; history after it is not complete yet.
+        """
+        j = await self.request(self.urlgen.url_health())
+        if not isinstance(j, dict):
+            return 0
+        return int((j.get('lastAggregated') or {}).get('timestamp') or 0)
+
     async def query_swap_stats(self, from_ts=0, to_ts=0, count=10, interval='day', pool=None) \
             -> Optional[SwapHistoryResponse]:
         url = self.urlgen.url_for_swap_history(from_ts, to_ts, count, interval, pool)
@@ -120,9 +129,9 @@ class MidgardConnector(WithLogger):
             return None
         return PoolInfo.from_midgard_json(raw_data) if parse else raw_data
 
-    async def query_affiliates(self, count=14, interval='day'):
+    async def query_affiliates(self, count=14, interval='day', from_ts=0, to_ts=0):
         j = await self.request(
-            self.urlgen.url_affiliate_history(count=count, interval=interval)
+            self.urlgen.url_affiliate_history(from_ts, to_ts, count=count, interval=interval)
         )
         if j and j != self.ERROR_RESPONSE:
             return self.parser.parse_affiliate_history(j)

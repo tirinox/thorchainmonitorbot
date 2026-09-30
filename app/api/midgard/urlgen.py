@@ -62,6 +62,9 @@ class MidgardURLGenV2:
     def url_for_address_pool_membership(self, address) -> str:
         return f"{self.base_url}/v2/member/{address}"
 
+    def url_health(self):
+        return f'{self.base_url}/v2/health'
+
     def url_network(self):
         return f'{self.base_url}/v2/network'
 
