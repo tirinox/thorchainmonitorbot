@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import date
+from datetime import date, datetime
 
 from comm.localization.languages import Language
 from comm.picture.lp_picture import lp_address_summary_picture
@@ -56,7 +56,7 @@ async def my_test_block_by_date(lpgen: LpAppFramework, d: date):
     d = d or date(2022, 10, 13)
 
     last_block = await dbm.get_last_thorchain_block()
-    r = await dbm.get_block_height_by_date(d, last_block)
+    r = await dbm.get_block_height_by_datetime(datetime(d.year, d.month, d.day), last_block=last_block)
     print(r)
 
 

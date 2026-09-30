@@ -474,15 +474,16 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         self.last_block = await self.get_last_thorchain_block()
         results = {}
-        now = datetime.datetime.now()
 
         for pool, pool_txs in tx_by_pool_map.items():
             day_to_units = self._pool_units_by_day(pool_txs, days=days)  # List of (day_no, timestamp, units)
 
             graph_points = []
             for day, ts, units in day_to_units:
-                that_day = now - datetime.timedelta(days=day)
-                height = await self.block_mapper.get_block_height_by_date(that_day.date(), self.last_block)
+                # the block at the point's own moment (noon of that day, or now for today)
+                height = await self.block_mapper.get_block_height_by_timestamp(ts, last_block=self.last_block)
+                if self.last_block:
+                    height = min(height, self.last_block)  # extrapolation must not go past the chain tip
                 pools_at_height = await self.deps.pool_cache.load_pools_at(height, ts, [pool])
                 pool_info = pools_at_height.get(pool, None)
 

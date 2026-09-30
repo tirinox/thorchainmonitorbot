@@ -33,7 +33,12 @@ class ThorNodeClient:
             elif resp.status == 501:
                 raise NotImplementedError(f'{url} not implemented, sorry!')
             text = await resp.text()
-            return ujson.loads(text)
+            try:
+                return ujson.loads(text)
+            except ValueError:
+                # e.g. a gateway's plain-text "503 No archive nodes configured" or an HTML error page:
+                # this node failed, so let the connector try the next one
+                raise ConnectionError(f'Not a JSON response ({resp.status}) from {url}: {text[:100]!r}')
 
     def set_client_id_header(self, client_id: str):
         if not isinstance(self.extra_headers, dict):
