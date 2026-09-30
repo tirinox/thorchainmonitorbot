@@ -1,8 +1,10 @@
+import re
+from typing import Optional
+
 import ujson
 
 from lib.config import Config
 from lib.db import DB
-from lib.db_one2one import OneToOne
 from lib.delegates import INotified, WithDelegates
 from lib.logs import WithLogger
 from lib.utils import random_hex
@@ -21,7 +23,7 @@ class SettingsManager(WithDelegates, WithLogger):
         self.db = db
         self.cfg = cfg
         self.public_url = cfg.as_str('web.public_url').rstrip('/')
-        self.token_channel_db = OneToOne(db, 'Token-Channel')
+        self.token_channel_db = TokenChannelMap(db)
 
     def get_link(self, token):
         return f'{self.public_url}/?token={token}'
@@ -100,6 +102,65 @@ class SettingsManager(WithDelegates, WithLogger):
         pattern = 'Bot:User:*'
         keys = await self.db.redis.keys(pattern)
         return len(keys)
+
+
+class TokenChannelMap:
+    """
+    Web settings tokens: the API finds a channel by its token, the bot revokes a token by its channel.
+    The two directions live in separate key spaces, so a channel id is never accepted as a token.
+    """
+
+    TOKEN_RE = re.compile(r'[0-9a-f]{32}')  # random_hex(SettingsManager.TOKEN_LEN)
+
+    # the old OneToOne map kept both directions under one prefix: 121:Token-Channel:{channel or token}
+    LEGACY_PREFIX = '121:Token-Channel'
+
+    def __init__(self, db: DB):
+        self.db = db
+
+    @staticmethod
+    def key_by_token(token):
+        return f'Settings:Token:{token}'
+
+    @staticmethod
+    def key_by_channel(channel_id):
+        return f'Settings:ChannelToken:{channel_id}'
+
+    @classmethod
+    def legacy_key(cls, k):
+        return f'{cls.LEGACY_PREFIX}:{k}'
+
+    async def get(self, token) -> Optional[str]:
+        """Channel id for the token, or None."""
+        if not token:
+            return None
+        channel_id = await self.db.redis.get(self.key_by_token(token))
+        return channel_id or await self._adopt_legacy(token)
+
+    async def put(self, channel_id, token):
+        await self.delete(channel_id)
+        await self.db.redis.set(self.key_by_token(token), channel_id)
+        await self.db.redis.set(self.key_by_channel(channel_id), token)
+
+    async def delete(self, channel_id):
+        r = self.db.redis
+        keys = [self.key_by_channel(channel_id), self.legacy_key(channel_id)]
+        if token := await r.get(self.key_by_channel(channel_id)):
+            keys.append(self.key_by_token(token))
+        if legacy_token := await r.get(self.legacy_key(channel_id)):
+            keys.append(self.legacy_key(legacy_token))
+        await r.delete(*keys)
+
+    async def _adopt_legacy(self, token) -> Optional[str]:
+        # links issued before the split keep working, but only a real token is accepted, never a channel id
+        if not self.TOKEN_RE.fullmatch(token):
+            return None
+        r = self.db.redis
+        channel_id = await r.get(self.legacy_key(token))
+        if not channel_id or await r.get(self.legacy_key(channel_id)) != token:
+            return None
+        await self.put(channel_id, token)  # also removes the legacy pair
+        return channel_id
 
 
 class SettingsContext:
