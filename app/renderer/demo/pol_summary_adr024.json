@@ -1,0 +1,527 @@
+{
+  "template_name": "pol_summary_adr024.jinja2",
+  "parameters": {
+    "usd_per_rune": 0.7505862312096582,
+    "system_income_percent": 20.0,
+    "max_deployment_rune": 100.0,
+    "module_address": "thor1fns25sytpf2gsdlg76g45620u5axm4mkrypqrh",
+    "start_date": "2026-08-31",
+    "end_date": "2026-09-30",
+    "total_days": 31,
+    "current": {
+      "height": 28040503,
+      "timestamp": 1790753972,
+      "value_rune": 850403.2310348969,
+      "value_usd": 638300.9561909995,
+      "rune_deposited": 926396.75986576,
+      "deposited_usd_at_cost": 597845.7299749798,
+      "rune_held": 425201.61551744846,
+      "assets_value_rune": 425201.61551744846,
+      "undeployed_rune": 0.0,
+      "pool_count": 3,
+      "pnl_rune": -75993.52883086307,
+      "pnl_rune_percent": -8.203129816848124,
+      "pnl_usd": 40455.22621601971,
+      "pnl_usd_percent": 6.766833680941869
+    },
+    "previous": {
+      "timestamp": 1790640000,
+      "value_rune": 761277.9319038297,
+      "value_usd": 590928.2040252237,
+      "rune_deposited": 851664.0785118
+    },
+    "pools": [
+      {
+        "asset": "XRP.XRP",
+        "name": "XRP",
+        "ticker": "XRP",
+        "status": "Available",
+        "share_percent": 24.78248135715943,
+        "deeper_percent": 32.94775180611239,
+        "rune_deposited": 567294.04268881,
+        "rune_held": 278826.07157390215,
+        "asset_held": 139387.2361560431,
+        "value_rune": 557652.1431478043,
+        "value_usd": 418566.02045129926,
+        "pnl_percent": -1.6996299653184979
+      },
+      {
+        "asset": "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T",
+        "name": "TRON.USDT",
+        "ticker": "USDT",
+        "status": "Available",
+        "share_percent": 45.33818087122694,
+        "deeper_percent": 82.9430516471079,
+        "rune_deposited": 340743.52604623,
+        "rune_held": 138798.4943114783,
+        "asset_held": 104206.229615972,
+        "value_rune": 277596.9886229566,
+        "value_usd": 208360.47748565537,
+        "pnl_percent": -18.53198449754436
+      },
+      {
+        "asset": "TRON.TRX",
+        "name": "TRON.TRX",
+        "ticker": "TRX",
+        "status": "Available",
+        "share_percent": 4.291258197839251,
+        "deeper_percent": 4.48366378769214,
+        "rune_deposited": 18359.19113072,
+        "rune_held": 7577.049632068013,
+        "asset_held": 16836.34034960745,
+        "value_rune": 15154.099264136026,
+        "value_usd": 11374.458254044914,
+        "pnl_percent": -17.4576964952501
+      }
+    ],
+    "deposits": {
+      "avg_daily_rune": 30785.808383402666,
+      "peak_rune": 213547.50492840004,
+      "peak_date": "2026-09-26",
+      "last_day_rune": 71910.17299028003,
+      "last_7d_rune": 528768.63798588
+    },
+    "fees": {
+      "gross": {
+        "rune": 139624.0496857156,
+        "usd": 102433.60422339059,
+        "apr_7d": 1185.0806097077502,
+        "apr_30d": 611.1917668546367
+      },
+      "net": {
+        "rune": 8903.833489047338,
+        "usd": 6742.9258942285605,
+        "apr_7d": 82.4715044312707,
+        "apr_30d": 38.97573329379711
+      }
+    },
+    "chart_days": 30,
+    "daily": [
+      {
+        "date": "2026-09-01",
+        "partial": false,
+        "deposited_rune": 21742.01305194,
+        "deposited_usd": 10256.77984451617,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 21742.01305194
+        },
+        "cumulative_deposited_rune": 22459.80789715,
+        "value_rune": 22563.13798667978,
+        "value_usd": 10644.144973050905,
+        "fees_rune": 69.84045741532994,
+        "earnings_rune": 0.0
+      },
+      {
+        "date": "2026-09-02",
+        "partial": false,
+        "deposited_rune": 14149.48379965,
+        "deposited_usd": 6713.7679030945565,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 14149.48379965
+        },
+        "cumulative_deposited_rune": 36609.2916968,
+        "value_rune": 36659.85868430931,
+        "value_usd": 17394.68280622267,
+        "fees_rune": 93.35902802534366,
+        "earnings_rune": 0.0
+      },
+      {
+        "date": "2026-09-03",
+        "partial": false,
+        "deposited_rune": 9949.01942525,
+        "deposited_usd": 4881.109948761035,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 9949.01942525
+        },
+        "cumulative_deposited_rune": 46558.31112205,
+        "value_rune": 45944.47942625396,
+        "value_usd": 22540.920469908488,
+        "fees_rune": 119.1667347121929,
+        "earnings_rune": 0.0
+      },
+      {
+        "date": "2026-09-04",
+        "partial": false,
+        "deposited_rune": 6152.744260129999,
+        "deposited_usd": 2948.5451624082402,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 6152.744260129999
+        },
+        "cumulative_deposited_rune": 52711.05538218,
+        "value_rune": 52658.76799234129,
+        "value_usd": 25235.366375997433,
+        "fees_rune": 92.30198546157219,
+        "earnings_rune": 0.0
+      },
+      {
+        "date": "2026-09-05",
+        "partial": false,
+        "deposited_rune": 2423.4371964599995,
+        "deposited_usd": 1185.1947599348289,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 2423.4371964599995
+        },
+        "cumulative_deposited_rune": 55134.49257864,
+        "value_rune": 54553.90861548072,
+        "value_usd": 26679.877126371604,
+        "fees_rune": 195.54547473716227,
+        "earnings_rune": 0.0
+      },
+      {
+        "date": "2026-09-06",
+        "partial": false,
+        "deposited_rune": 1859.813672190001,
+        "deposited_usd": 915.6971508838781,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 1859.813672190001
+        },
+        "cumulative_deposited_rune": 56994.30625083,
+        "value_rune": 56221.00239598971,
+        "value_usd": 27680.951314451922,
+        "fees_rune": 27.211824683991715,
+        "earnings_rune": 0.0
+      },
+      {
+        "date": "2026-09-07",
+        "partial": false,
+        "deposited_rune": 14789.629647610003,
+        "deposited_usd": 7219.174596647809,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 14789.629647610003
+        },
+        "cumulative_deposited_rune": 71783.93589844,
+        "value_rune": 71244.49714191597,
+        "value_usd": 34776.15573700198,
+        "fees_rune": 127.71780564399077,
+        "earnings_rune": 0.0
+      },
+      {
+        "date": "2026-09-08",
+        "partial": false,
+        "deposited_rune": 19006.216426019993,
+        "deposited_usd": 9297.380287486918,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 19006.216426019993
+        },
+        "cumulative_deposited_rune": 90790.15232446,
+        "value_rune": 90170.12568156896,
+        "value_usd": 44109.03939220224,
+        "fees_rune": 90.21010800009546,
+        "earnings_rune": 0.0
+      },
+      {
+        "date": "2026-09-09",
+        "partial": false,
+        "deposited_rune": 22593.546729010006,
+        "deposited_usd": 10893.395034572797,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 22593.546729010006
+        },
+        "cumulative_deposited_rune": 113383.69905347,
+        "value_rune": 113579.7349177873,
+        "value_usd": 54762.04932414933,
+        "fees_rune": 343.10050244505715,
+        "earnings_rune": 0.0
+      },
+      {
+        "date": "2026-09-10",
+        "partial": false,
+        "deposited_rune": 132054.20212464,
+        "deposited_usd": 66274.38602093208,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 132054.20212464
+        },
+        "cumulative_deposited_rune": 245437.90117810998,
+        "value_rune": 243238.79871964504,
+        "value_usd": 122074.88881268725,
+        "fees_rune": 836.3431664650943,
+        "earnings_rune": 0.0
+      },
+      {
+        "date": "2026-09-11",
+        "partial": false,
+        "deposited_rune": 28597.89787968,
+        "deposited_usd": 14670.784401650671,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 20531.145423640002,
+          "TRON.TRX": 8066.75245604
+        },
+        "cumulative_deposited_rune": 274035.79905779,
+        "value_rune": 268665.58836739825,
+        "value_usd": 137826.03671304634,
+        "fees_rune": 531.7208625351612,
+        "earnings_rune": 0.0
+      },
+      {
+        "date": "2026-09-12",
+        "partial": false,
+        "deposited_rune": 3799.648213149967,
+        "deposited_usd": 1952.415049476388,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 3380.5146344499663,
+          "TRON.TRX": 419.1335787000007
+        },
+        "cumulative_deposited_rune": 277835.44727094,
+        "value_rune": 272044.9075029114,
+        "value_usd": 139787.8281741691,
+        "fees_rune": 1619.8510021844588,
+        "earnings_rune": 0.0
+      },
+      {
+        "date": "2026-09-13",
+        "partial": false,
+        "deposited_rune": 26852.920877510023,
+        "deposited_usd": 13653.739158836745,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 17011.529259240022,
+          "TRON.TRX": 9841.391618270001
+        },
+        "cumulative_deposited_rune": 304688.36814845004,
+        "value_rune": 300746.85979235626,
+        "value_usd": 152918.9020134946,
+        "fees_rune": 859.5021275858229,
+        "earnings_rune": 0.0
+      },
+      {
+        "date": "2026-09-14",
+        "partial": false,
+        "deposited_rune": 6920.990005610001,
+        "deposited_usd": 3611.3620897339033,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 6889.076527900004,
+          "TRON.TRX": 31.913477709997096
+        },
+        "cumulative_deposited_rune": 311609.35815405997,
+        "value_rune": 304139.3978048548,
+        "value_usd": 158699.47656861908,
+        "fees_rune": 865.6277673655542,
+        "earnings_rune": 3.9788296193845736
+      },
+      {
+        "date": "2026-09-15",
+        "partial": false,
+        "deposited_rune": 5309.551706239989,
+        "deposited_usd": 2613.95156220809,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 5309.551706239989
+        },
+        "cumulative_deposited_rune": 316918.9098603,
+        "value_rune": 318296.23463111906,
+        "value_usd": 156700.78865248742,
+        "fees_rune": 1190.3446653258586,
+        "earnings_rune": 4.896200745091011
+      },
+      {
+        "date": "2026-09-16",
+        "partial": false,
+        "deposited_rune": 4653.96199351002,
+        "deposited_usd": 2295.4877084635555,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 4653.96199351002
+        },
+        "cumulative_deposited_rune": 321572.87185381004,
+        "value_rune": 322137.69608060876,
+        "value_usd": 158888.94727051744,
+        "fees_rune": 2106.5953211200213,
+        "earnings_rune": 1.3550221087518208
+      },
+      {
+        "date": "2026-09-17",
+        "partial": false,
+        "deposited_rune": 18322.493180699996,
+        "deposited_usd": 9206.150941936994,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 18322.493180699996
+        },
+        "cumulative_deposited_rune": 339895.36503451003,
+        "value_rune": 337435.6328622487,
+        "value_usd": 169544.79604282847,
+        "fees_rune": 1513.8302073783857,
+        "earnings_rune": 10.356999029454938
+      },
+      {
+        "date": "2026-09-18",
+        "partial": false,
+        "deposited_rune": 6637.884189369972,
+        "deposited_usd": 3591.0093763643004,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 6637.884189369972
+        },
+        "cumulative_deposited_rune": 346533.24922388,
+        "value_rune": 332158.9532478598,
+        "value_usd": 179693.6917740392,
+        "fees_rune": 453.1927848705172,
+        "earnings_rune": 9.072066792426
+      },
+      {
+        "date": "2026-09-19",
+        "partial": false,
+        "deposited_rune": 11489.221955800022,
+        "deposited_usd": 6376.393775447389,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 11489.221955800022
+        },
+        "cumulative_deposited_rune": 358022.47117968,
+        "value_rune": 339195.21045260486,
+        "value_usd": 188249.66885592326,
+        "fees_rune": 424.41037228741686,
+        "earnings_rune": 9.66674462954824
+      },
+      {
+        "date": "2026-09-20",
+        "partial": false,
+        "deposited_rune": 9022.801725409987,
+        "deposited_usd": 5106.680597652199,
+        "deposited_by_pool": {
+          "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T": 1080.2459972699871,
+          "XRP.XRP": 7942.555728140001
+        },
+        "cumulative_deposited_rune": 367045.27290509,
+        "value_rune": 345074.44958030403,
+        "value_usd": 195303.52655922723,
+        "fees_rune": 150.19293346842278,
+        "earnings_rune": 3.864934287578432
+      },
+      {
+        "date": "2026-09-21",
+        "partial": false,
+        "deposited_rune": 19315.84728178,
+        "deposited_usd": 12309.98044857304,
+        "deposited_by_pool": {
+          "XRP.XRP": 19315.84728178
+        },
+        "cumulative_deposited_rune": 386361.12018687,
+        "value_rune": 344698.10329586425,
+        "value_usd": 219675.94019211337,
+        "fees_rune": 1180.162279729189,
+        "earnings_rune": 49.00673880348006
+      },
+      {
+        "date": "2026-09-22",
+        "partial": false,
+        "deposited_rune": 8444.493329330002,
+        "deposited_usd": 5431.756525192517,
+        "deposited_by_pool": {
+          "XRP.XRP": 8444.493329330002
+        },
+        "cumulative_deposited_rune": 394805.6135162,
+        "value_rune": 351824.02754922677,
+        "value_usd": 226303.98092950444,
+        "fees_rune": 425.544532873723,
+        "earnings_rune": 21.73863246957214
+      },
+      {
+        "date": "2026-09-23",
+        "partial": false,
+        "deposited_rune": 6610.7458583100015,
+        "deposited_usd": 4055.036567487631,
+        "deposited_by_pool": {
+          "XRP.XRP": 6610.7458583100015
+        },
+        "cumulative_deposited_rune": 401416.35937451,
+        "value_rune": 366556.4889026219,
+        "value_usd": 224846.03075181524,
+        "fees_rune": 539.0074064221409,
+        "earnings_rune": 24.916867741952032
+      },
+      {
+        "date": "2026-09-24",
+        "partial": false,
+        "deposited_rune": 15324.689219380001,
+        "deposited_usd": 9828.995991937954,
+        "deposited_by_pool": {
+          "XRP.XRP": 15324.689219380001
+        },
+        "cumulative_deposited_rune": 416741.04859389004,
+        "value_rune": 373775.96460639226,
+        "value_usd": 239733.57014985566,
+        "fees_rune": 2872.2149871789525,
+        "earnings_rune": 142.99077732210935
+      },
+      {
+        "date": "2026-09-25",
+        "partial": false,
+        "deposited_rune": 89589.30611429,
+        "deposited_usd": 58827.228247219384,
+        "deposited_by_pool": {
+          "XRP.XRP": 89589.30611429
+        },
+        "cumulative_deposited_rune": 506330.35470817995,
+        "value_rune": 460027.69957841263,
+        "value_usd": 302069.02650433616,
+        "fees_rune": 13588.287287548088,
+        "earnings_rune": 716.949524103565
+      },
+      {
+        "date": "2026-09-26",
+        "partial": false,
+        "deposited_rune": 213547.50492840004,
+        "deposited_usd": 165595.68031407075,
+        "deposited_by_pool": {
+          "XRP.XRP": 213547.50492840004
+        },
+        "cumulative_deposited_rune": 719877.8596365801,
+        "value_rune": 630915.1197478322,
+        "value_usd": 489243.9202701316,
+        "fees_rune": 80264.29469387665,
+        "earnings_rune": 5378.129162297848
+      },
+      {
+        "date": "2026-09-27",
+        "partial": false,
+        "deposited_rune": 59883.84786442999,
+        "deposited_usd": 45642.012022541676,
+        "deposited_by_pool": {
+          "XRP.XRP": 59883.84786442999
+        },
+        "cumulative_deposited_rune": 779761.70750101,
+        "value_rune": 699354.5941082307,
+        "value_usd": 533031.0581339169,
+        "fees_rune": 25139.03625615342,
+        "earnings_rune": 2200.724711631078
+      },
+      {
+        "date": "2026-09-28",
+        "partial": false,
+        "deposited_rune": 71902.37101079,
+        "deposited_usd": 55812.912979499044,
+        "deposited_by_pool": {
+          "XRP.XRP": 71902.37101079
+        },
+        "cumulative_deposited_rune": 851664.0785118,
+        "value_rune": 761277.9319038297,
+        "value_usd": 590928.2040252237,
+        "fees_rune": 1843.6432740124217,
+        "earnings_rune": 151.9756444075601
+      },
+      {
+        "date": "2026-09-29",
+        "partial": false,
+        "deposited_rune": 71910.17299028003,
+        "deposited_usd": 54214.343124446044,
+        "deposited_by_pool": {
+          "XRP.XRP": 71910.17299028003
+        },
+        "cumulative_deposited_rune": 923574.2515020801,
+        "value_rune": 844772.3687782509,
+        "value_usd": 636888.7343545357,
+        "fees_rune": 2060.5762270442538,
+        "earnings_rune": 174.20758978501897
+      },
+      {
+        "date": "2026-09-30",
+        "partial": true,
+        "deposited_rune": 2822.5083636799827,
+        "deposited_usd": 2118.5359152522974,
+        "deposited_by_pool": {
+          "XRP.XRP": 2822.5083636799827
+        },
+        "cumulative_deposited_rune": 926396.75986576,
+        "value_rune": 850403.2310348969,
+        "value_usd": 638300.9561909995,
+        "fees_rune": 0.0,
+        "earnings_rune": 0.0
+      }
+    ]
+  }
+}

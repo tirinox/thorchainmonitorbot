@@ -26,7 +26,8 @@ from models.node_info import NodeSetChanges, NodeInfo
 from models.pool_info import EventPools, PoolChanges, PoolInfo
 from models.price import RuneMarketInfo, AlertPrice, AlertPriceDiverge
 from models.ruji import AlertRujiraMergeStats
-from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
+from models.pol_reserve import AlertPolReserveStats
+from models.runepool import AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
@@ -819,36 +820,22 @@ class TwitterEnglishLocalization(BaseLocalization):
         # we add '$' before assets to mention the asset name in Twitter
         return f'{synth}${asset.name}{chain}'
 
-    def notification_text_pol_stats(self, event: AlertPOLState):
-        curr, prev = event.current, event.previous
-        pol_progress = progressbar(curr.rune_value, event.mimir_max_deposit, 10)
-
-        str_value_delta_pct, str_value_delta_abs = '', ''
-        if prev:
-            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True, brackets=True,
-                                                threshold_pct=0.5)
-            # str_value_delta_abs = up_down_arrow(
-            # prev.rune_value, curr.rune_value, money_delta=True, postfix=RAIDO_GLYPH)
-
-        pnl_pct = curr.pnl_percent
-
-        parts = [(
-            f'🥃 Protocol Owned Liquidity\n'
-            f"Current value: {short_rune(curr.rune_value)} or "
-            f"{short_dollar(curr.usd_value)} {str_value_delta_pct}\n"
-            f"Utilization: {pretty_percent(event.pol_utilization, signed=False)} {pol_progress} "
-            f" of {short_rune(event.mimir_max_deposit)} maximum.\n"
-            f"Rune deposited: {short_rune(curr.rune_deposited)}, "
-            f"withdrawn: {short_rune(curr.rune_withdrawn)}\n"
-            f"PnL: {pretty_percent(pnl_pct)} {chart_emoji(pnl_pct)}"
-        )]
-
-        # POL pool membership
-        if event.membership:
-            text = "\n🥃 POL pool membership:\n" + self._format_pol_membership(event, of_pool='of pool', decor=False)
-            parts.append(text)
-
-        return self.smart_split(parts)
+    def notification_text_pol_reserve_stats(self, e: AlertPolReserveStats):
+        cur, prev = e.current, e.previous
+        value_delta = up_down_arrow(prev.value_usd if prev else None, cur.value_usd,
+                                    percent_delta=True, brackets=True)
+        pools = ', '.join(
+            f'{self.pretty_asset(p.asset)} {pretty_percent(p.share_percent, signed=False)}'
+            for p in cur.pools[:4] if p.units
+        )
+        return (
+            f'🥃 THORChain Protocol Owned Liquidity (ADR-024)\n'
+            f'💧 Value: {short_dollar(cur.value_usd)} or {short_rune(cur.value_rune)} {value_delta}\n'
+            f'📥 Deployed: {short_rune(cur.rune_deposited)}\n'
+            f'📊 PnL: {pretty_percent(e.pnl_usd_percent)} in USD, {pretty_percent(cur.pnl_percent)} in Rune\n'
+            f'⚙️ {pretty_percent(e.system_income_percent, signed=False)} of system income goes to POL\n'
+            f'🏊 Share of pools: {pools}'
+        ).strip()
 
     def notification_text_key_metrics_caption(self, data: AlertKeyStats):
         return '.@THORChain weekly stats $RUNE'

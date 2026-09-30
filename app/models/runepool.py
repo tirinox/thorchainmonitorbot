@@ -1,10 +1,8 @@
-import dataclasses
-from typing import NamedTuple, Optional, List
+from typing import NamedTuple, Optional
 
 from api.aionode.types import float_to_thor, ThorRunePool, ThorRunePoolPOL
 from lib.constants import NATIVE_RUNE_SYMBOL, THOR_BASIS_POINT_MAX, thor_to_float
 from .memo import ActionType, THORMemo
-from .pool_member import PoolMemberDetails
 from .price import PriceHolder
 from .tx import ThorAction, SUCCESS, ThorSubTx, ThorCoin
 
@@ -74,55 +72,18 @@ class AlertRunePoolAction(NamedTuple):
 
 
 class POLState(NamedTuple):
+    """The legacy POL of the Reserve (the one RUNEPool takes part in), not the ADR-024 pol_reserve module"""
     usd_per_rune: float
     value: ThorRunePoolPOL
     timestamp: int
-
-    @property
-    def is_zero(self):
-        if not self.value:
-            return True
-
-        return (not self.value.value or self.rune_value == 0) and \
-            (self.rune_deposited == 0 and self.rune_withdrawn == 0)
 
     @property
     def rune_value(self):
         return thor_to_float(self.value.value)
 
     @property
-    def rune_deposited(self):
-        return thor_to_float(self.value.rune_deposited)
-
-    @property
-    def rune_withdrawn(self):
-        return thor_to_float(self.value.rune_withdrawn)
-
-    @property
     def usd_value(self):
         return self.usd_per_rune * self.rune_value
-
-    def pol_utilization_percent(self, mimir_max_deposit):
-        return self.rune_value / mimir_max_deposit * 100.0 if mimir_max_deposit else 0.0
-
-    @property
-    def pnl_percent(self):
-        return self.value.pnl / self.value.current_deposit if self.value.current_deposit else 0.0
-
-    @classmethod
-    def from_json(cls, j):
-        return cls(
-            j.get('usd_per_rune', 0.0),
-            ThorRunePoolPOL.from_json(j.get('value')),
-            j.get('timestamp', 0),
-        )
-
-    def to_dict(self):
-        return {
-            'usd_per_rune': self.usd_per_rune,
-            'value': self.value.to_dict(),
-            'timestamp': self.timestamp,
-        }
 
 
 class RunepoolState(NamedTuple):
@@ -173,35 +134,8 @@ class RunepoolState(NamedTuple):
 
 class AlertPOLState(NamedTuple):
     current: POLState
-    membership: List[PoolMemberDetails]
-    previous: Optional[POLState] = None
     prices: Optional[PriceHolder] = None
     runepool: Optional[RunepoolState] = None
-    mimir_synth_target_ptc: float = 45.0  # %
-    mimir_max_deposit: float = 10_000.0  # Rune
-
-    @property
-    def pol_utilization(self):
-        return self.current.pol_utilization_percent(self.mimir_max_deposit)
-
-    @classmethod
-    def load_from_series(cls, j):
-        usd_per_rune = float(j.get('usd_per_rune', 1.0))
-        pol = POLState(usd_per_rune, ThorRunePoolPOL(**j.get('pol')), j.get('timestamp', 0))
-        membership = [PoolMemberDetails(**it) for it in j.get('membership', [])]
-        return cls(
-            current=pol,
-            membership=membership,
-        )
-
-    def to_dict(self):
-        return {
-            'pol': self.current.value._asdict(),
-            'membership': [
-                dataclasses.asdict(m) for m in self.membership
-            ],
-            'usd_per_rune': self.current.usd_per_rune,
-        }
 
 
 class AlertRunepoolStats(NamedTuple):

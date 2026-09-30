@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Optional
 
 from aiohttp import ClientSession, ClientError, ServerDisconnectedError
 
@@ -95,6 +96,12 @@ class ThorConnector:
         path = self.env.path_balance.format(address=address)
         data = await self._request(path)
         return ThorBalances.from_json(data, address)
+
+    async def query_module_balance(self, module_name: str, height=None) -> Optional[ThorModuleBalance]:
+        path = self.env.path_module_balance.format(name=module_name)
+        data = await self._request(path, height=height)
+        if data:
+            return ThorModuleBalance.from_json(data)
 
     async def query_tendermint_block_raw(self, height):
         path = self.env.path_block_by_height

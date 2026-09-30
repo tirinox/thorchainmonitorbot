@@ -1,0 +1,454 @@
+    {% set _width, _height = set_viewport_size(1440, 1180) %}
+{% extends "base.jinja2" %}
+
+{% block content %}
+{% set daily     = daily or [] %}
+{% set pools     = pools or [] %}
+{% set max_pools = max_pools | default(5) | int %}
+{% set palette   = ['#33FF99', '#23DCC8', '#f5c518', '#7aa2ff', '#ff7f8a', '#c58bff'] %}
+{% set rune_color = '#5f7d86' %}
+
+{# ── helpers ─────────────────────────────────────────────── #}
+{% macro sign_class(v) -%}
+  {%- set p = v | float -%}
+  {%- if p > 0.05 -%}delta-pos{%- elif p < -0.05 -%}delta-neg{%- else -%}delta-zero{%- endif -%}
+{%- endmacro %}
+
+{% macro signed_pct(v, digits=1) -%}
+  {%- set p = v | float -%}
+  {%- if p > 0 -%}+{%- endif -%}{{ ('%.' ~ digits ~ 'f') | format(p) }}%
+{%- endmacro %}
+
+{% macro num(v) -%}
+  {{- '%g' | format(v | float | round(1)) -}}
+{%- endmacro %}
+
+{% macro ddmmyyyy(date) -%}
+  {{- date[8:10] }}.{{ date[5:7] }}.{{ date[0:4] -}}
+{%- endmacro %}
+
+{% macro apr(v) -%}
+  {%- if v is none -%}N/A{%- else -%}{{ short_money(v, integer=(v | float) >= 100) }}%{%- endif -%}
+{%- endmacro %}
+
+<style>
+  /* ── main layout ─────────────────────────────────────── */
+  .layout {
+    position: absolute;
+    top: 150px; left: 30px; right: 30px; bottom: 50px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  /* ── stat cards ──────────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .card {
+    padding: 18px 22px 16px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(18,29,35,.94), rgba(10,16,21,.95));
+    border: 1px solid rgba(255,255,255,.05);
+  }
+  .card-title {
+    color: #91a3a9; font-size: 19px; text-transform: uppercase;
+    letter-spacing: .14em; font-weight: 400; margin-bottom: 9px; white-space: nowrap;
+  }
+  .card-value-row { display: flex; align-items: flex-end; gap: 12px; white-space: nowrap; }
+  .card-value {
+    color: #fff; font-size: 54px; font-weight: 800; line-height: 1;
+    text-shadow: rgba(35,220,200,.14) 0 0 16px;
+  }
+  .card-sub { margin-top: 9px; font-size: 21px; color: #9eb3ba; white-space: nowrap; }
+  .card-sub b { color: #dbe6ea; font-weight: 700; }
+  .delta      { font-size: 25px; font-weight: 800; letter-spacing: .03em; padding-bottom: 4px; }
+  .delta-pos  { color: #33FF99; text-shadow: rgba(51,255,153,.22) 0 0 14px; }
+  .delta-neg  { color: #ff7f8a; text-shadow: rgba(255,127,138,.22) 0 0 14px; }
+  .delta-zero { color: #9ca7ad; }
+  .strong     { font-weight: 700; }
+
+  /* ── content row ─────────────────────────────────────── */
+  .content-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(470px, 1fr);
+    gap: 16px; flex: 1; min-height: 0;
+  }
+  .panel {
+    border-radius: 20px; padding: 18px 22px 16px;
+    background: linear-gradient(180deg, rgba(15,24,30,.97), rgba(9,14,19,.98));
+    border: 1px solid rgba(255,255,255,.05);
+    min-height: 0;
+  }
+  .panel-title {
+    color: #fff; font-size: 27px; font-weight: 800;
+    letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .panel-title small { font-size: 18px; color: #8ea4ab; font-weight: 400; margin-left: 10px; }
+
+  /* ── chart ───────────────────────────────────────────── */
+  .chart-shell { display: flex; flex-direction: column; height: 100%; }
+  .legend-row  { display: flex; gap: 20px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 8px; color: #b4c4c9; font-size: 18px; }
+  .legend-dot  { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+  .legend-line { width: 22px; height: 4px; border-radius: 2px; flex-shrink: 0; background: rgba(255,255,255,.85); }
+  .chart-wrap  { flex: 1; position: relative; min-height: 0; }
+  .chart-footer {
+    display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 10px; margin-top: 12px;
+  }
+  .mini-stat  { border-radius: 13px; padding: 9px 14px; background: rgba(255,255,255,.03); }
+  .mini-label { font-size: 16px; color: #9eb3ba; text-transform: uppercase;
+                letter-spacing: .09em; margin-bottom: 4px; white-space: nowrap; }
+  .mini-value { font-size: 27px; color: #fff; font-weight: 800; white-space: nowrap; }
+  .mini-value small { font-size: 18px; color: #8ea4ab; font-weight: 600; }
+
+  /* ── pools ───────────────────────────────────────────── */
+  .pools-shell { display: flex; flex-direction: column; height: 100%; }
+  .pools-list  { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .pool-row {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr) auto;
+    gap: 12px; align-items: center;
+    padding: 12px 14px 12px 10px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.03);
+    border-left: 4px solid transparent;
+  }
+  .pool-logo {
+    width: 54px; height: 54px; border-radius: 50%;
+    border: 1px solid rgba(156,161,159,.4);
+  }
+  .pool-name {
+    color: #fff; font-size: 27px; font-weight: 800; letter-spacing: .03em; line-height: 1.1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .pool-sub   { color: #8ea4ab; font-size: 18px; margin-top: 3px; white-space: nowrap; }
+  .pool-sub b { color: #cfe9e1; font-weight: 700; }
+  .pool-right { text-align: right; white-space: nowrap; }
+  .pool-value { color: #fff; font-size: 28px; font-weight: 800; line-height: 1.1; }
+  .pool-deployed { color: #8ea4ab; font-size: 18px; margin-top: 3px; }
+  .pool-holds {
+    grid-column: 1 / -1; display: flex; justify-content: space-between; gap: 12px;
+    padding-top: 8px; border-top: 1px solid rgba(255,255,255,.06);
+    color: #8ea4ab; font-size: 18px; white-space: nowrap;
+  }
+  .pool-holds b { color: #cfe9e1; font-weight: 700; }
+
+  .holdings { margin-top: auto; padding-top: 12px; }
+  .holdings-label {
+    font-size: 16px; color: #6ae9e0; text-transform: uppercase;
+    letter-spacing: .12em; margin-bottom: 7px;
+  }
+  .holdings-bar {
+    display: flex; height: 22px; border-radius: 8px; overflow: hidden; gap: 2px;
+    background: rgba(255,255,255,.04);
+  }
+  .holdings-seg { height: 100%; min-width: 3px; }
+  .holdings-legend {
+    display: flex; flex-wrap: wrap; gap: 5px 18px; margin-top: 9px;
+    font-size: 19px; color: #b4c4c9;
+  }
+  .holdings-legend span { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .holdings-legend b { color: #fff; font-weight: 700; }
+
+  .empty-state {
+    color: #637870; font-size: 22px; margin-top: 24px;
+    text-align: center; text-transform: uppercase; letter-spacing: .06em;
+  }
+
+  /* ── fees strip ──────────────────────────────────────── */
+  .fees-strip {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+  }
+  .fee-box {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 22px; align-items: center;
+    padding: 14px 22px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(18,29,35,.94), rgba(10,16,21,.95));
+    border: 1px solid rgba(255,180,40,.18);
+  }
+  .fee-box-net { border-color: rgba(55,255,173,.20); }
+  .fee-title {
+    font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em;
+    color: rgba(255,195,60,.9); white-space: nowrap;
+  }
+  .fee-box-net .fee-title { color: #33FF99; }
+  .fee-hint  { font-size: 16px; color: #8ea4ab; margin-top: 3px; white-space: nowrap; }
+  .fee-cell  { text-align: right; white-space: nowrap; }
+  .fee-label { font-size: 16px; color: #9eb3ba; text-transform: uppercase; letter-spacing: .09em; margin-bottom: 3px; }
+  .fee-value { font-size: 32px; color: #fff; font-weight: 800; line-height: 1; }
+  .fee-value small { font-size: 19px; color: #8ea4ab; font-weight: 600; }
+</style>
+
+{# ── header ───────────────────────────────────────────────── #}
+{% with title="PROTOCOL OWNED LIQUIDITY", header_badge="ADR-024",
+        header_badge_extra="day " ~ total_days ~ " · since " ~ ddmmyyyy(start_date) %}
+  {% include "components/header.jinja2" %}
+{% endwith %}
+
+<div class="layout">
+
+  {# ── stat cards ────────────────────────────────────────── #}
+  <div class="stats-grid">
+
+    <div class="card shadow-box">
+      <div class="card-title">💧 POL value</div>
+      <div class="card-value-row">
+        <div class="card-value">{{ short_dollar(current.value_usd) }}</div>
+        {% if previous and previous.value_usd %}
+          {% set change = (current.value_usd / previous.value_usd - 1) * 100 %}
+          <div class="delta {{ sign_class(change) }}">{{ signed_pct(change) }}</div>
+        {% endif %}
+      </div>
+      <div class="card-sub"><b>{{ short_rune(current.value_rune) }}</b> in {{ current.pool_count }} pools</div>
+    </div>
+
+    <div class="card shadow-box">
+      <div class="card-title">📥 RUNE deployed</div>
+      <div class="card-value-row">
+        <div class="card-value">{{ short_rune(current.rune_deposited) }}</div>
+      </div>
+      <div class="card-sub">
+        {% if previous and current.rune_deposited > previous.rune_deposited %}
+          <b>+{{ short_rune(current.rune_deposited - previous.rune_deposited) }}</b> since last report
+        {% else %}
+          worth <b>{{ short_dollar(current.deposited_usd_at_cost) }}</b> when deployed
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card shadow-box">
+      <div class="card-title">📊 Position PnL</div>
+      <div class="card-value-row">
+        <div class="card-value {{ sign_class(current.pnl_usd_percent) }}">{{ signed_pct(current.pnl_usd_percent) }}</div>
+        <div class="delta delta-zero">in USD</div>
+      </div>
+      <div class="card-sub">
+        in RUNE: <span class="strong {{ sign_class(current.pnl_rune_percent) }}">{{ signed_pct(current.pnl_rune_percent) }}</span>
+        vs. deployed
+      </div>
+    </div>
+
+    <div class="card shadow-box">
+      <div class="card-title">⚙️ Funding</div>
+      <div class="card-value-row">
+        <div class="card-value">{{ num(system_income_percent) }}%</div>
+        <div class="delta delta-zero">of income</div>
+      </div>
+      <div class="card-sub">up to <b>{{ num(max_deployment_rune) }} ᚱ</b> per block</div>
+    </div>
+
+  </div>
+
+  {# ── content row ───────────────────────────────────────── #}
+  <div class="content-row">
+
+    {# chart panel #}
+    <div class="panel chart-shell shadow-box">
+      <div class="panel-title">📈 Daily deployments <small>last {{ chart_days }} days</small></div>
+
+      <div class="legend-row">
+        {% for p in pools[:palette | length] %}
+          <div class="legend-item">
+            <div class="legend-dot" style="background: {{ palette[loop.index0] }}"></div>{{ p.name }}
+          </div>
+        {% endfor %}
+        <div class="legend-item"><div class="legend-line"></div>Total deployed</div>
+      </div>
+
+      <div class="chart-wrap">
+        <canvas id="polChart"></canvas>
+      </div>
+
+      <div class="chart-footer">
+        <div class="mini-stat">
+          <div class="mini-label">∼ Avg / day</div>
+          <div class="mini-value">{{ short_rune(deposits.avg_daily_rune) }}</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-label">📅 Last 7 days</div>
+          <div class="mini-value">{{ short_rune(deposits.last_7d_rune) }}</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-label">🔺 Peak day</div>
+          <div class="mini-value">
+            {{ short_rune(deposits.peak_rune) }}
+            {% if deposits.peak_date %}<small>{{ deposits.peak_date[8:10] }}.{{ deposits.peak_date[5:7] }}</small>{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# pools panel #}
+    <div class="panel pools-shell shadow-box">
+      <div class="panel-title">🏊 Pool positions</div>
+
+      {% if pools %}
+        <div class="pools-list">
+          {% for p in pools[:max_pools] %}
+            <div class="pool-row" style="border-left-color: {{ palette[loop.index0 % (palette | length)] }}">
+              <img class="pool-logo" src="renderer/logo/{{ p.asset }}.png" alt="{{ p.ticker }}"
+                   onerror="this.onerror=null; this.src='renderer/logo/unknown.png';">
+              <div>
+                <div class="pool-name">{{ p.name }}</div>
+                <div class="pool-sub">
+                  <b>{{ short_money(p.share_percent) }}%</b> of pool
+                  {% if p.deeper_percent is not none %}
+                    · <b>+{{ short_money(p.deeper_percent) }}%</b> deeper
+                  {% endif %}
+                </div>
+              </div>
+              <div class="pool-right">
+                <div class="pool-value">{{ short_dollar(p.value_usd) }}</div>
+                <div class="pool-deployed">{{ short_rune(p.rune_deposited) }} deployed</div>
+              </div>
+              {% if pools | length <= 4 %}
+                <div class="pool-holds">
+                  <span>holds <b>{{ short_rune(p.rune_held) }}</b> + <b>{{ short_money(p.asset_held) }} {{ p.ticker }}</b></span>
+                  <span>PnL in RUNE <span class="strong {{ sign_class(p.pnl_percent) }}">{{ signed_pct(p.pnl_percent) }}</span></span>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+          {% if pools | length > max_pools %}
+            <div class="pool-sub" style="text-align: center">and {{ pools | length - max_pools }} more</div>
+          {% endif %}
+        </div>
+
+        <div class="holdings">
+          <div class="holdings-label">Assets held by POL</div>
+          {% set total = current.value_rune or 1 %}
+          <div class="holdings-bar">
+            <div class="holdings-seg" style="width: {{ current.rune_held / total * 100 }}%; background: {{ rune_color }}"></div>
+            {% for p in pools %}
+              <div class="holdings-seg"
+                   style="width: {{ p.rune_held / total * 100 }}%; background: {{ palette[loop.index0 % (palette | length)] }}"></div>
+            {% endfor %}
+          </div>
+          <div class="holdings-legend">
+            <span><i class="legend-dot" style="background: {{ rune_color }}"></i><b>{{ short_money(current.rune_held) }}</b> RUNE</span>
+            {% for p in pools[:max_pools] %}
+              <span><i class="legend-dot" style="background: {{ palette[loop.index0 % (palette | length)] }}"></i><b>{{ short_money(p.asset_held) }}</b> {{ p.ticker }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-state">No positions yet</div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  {# ── fees strip ────────────────────────────────────────── #}
+  <div class="fees-strip">
+    <div class="fee-box shadow-box">
+      <div>
+        <div class="fee-title">💸 Fees generated</div>
+        <div class="fee-hint">POL share of pool fees → system income</div>
+      </div>
+      <div class="fee-cell">
+        <div class="fee-label">Total est.</div>
+        <div class="fee-value">{{ short_rune(fees.gross.rune) }} <small>{{ short_dollar(fees.gross.usd) }}</small></div>
+      </div>
+      <div class="fee-cell">
+        <div class="fee-label">30d APR</div>
+        <div class="fee-value">{{ apr(fees.gross.apr_30d) }}</div>
+      </div>
+    </div>
+
+    <div class="fee-box fee-box-net shadow-box">
+      <div>
+        <div class="fee-title">🌱 Earned by POL</div>
+        <div class="fee-hint">LP yield kept in the position</div>
+      </div>
+      <div class="fee-cell">
+        <div class="fee-label">Total est.</div>
+        <div class="fee-value">{{ short_rune(fees.net.rune) }} <small>{{ short_dollar(fees.net.usd) }}</small></div>
+      </div>
+      <div class="fee-cell">
+        <div class="fee-label">30d APR</div>
+        <div class="fee-value">{{ apr(fees.net.apr_30d) }}</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const dailyRaw  = {{ daily | tojson }};
+  const poolsRaw  = {{ pools | tojson }};
+  const palette   = {{ palette | tojson }};
+  const labels    = dailyRaw.map(d => { const [, mo, day] = d.date.split('-'); return `${day}.${mo}`; });
+
+  const shortNum = v => {
+    if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + 'M';
+    if (v >= 1_000)     return (v / 1_000).toFixed(0) + 'K';
+    return '' + Math.round(v);
+  };
+
+  Chart.defaults.font.family = 'ThorFontLight, sans-serif';
+  Chart.defaults.color = '#b7c8cc';
+
+  // pools that are in the legend get their own color, the rest are merged
+  const named = poolsRaw.slice(0, palette.length).map(p => p.asset);
+  const barSets = named.map((asset, i) => ({
+    type: 'bar', label: poolsRaw[i].name,
+    data: dailyRaw.map(d => (d.deposited_by_pool || {})[asset] || 0),
+    backgroundColor: dailyRaw.map(d => palette[i] + (d.partial ? '66' : 'd9')),
+    borderRadius: 4, stack: 'deposits', yAxisID: 'yDaily', order: 2,
+    barPercentage: 0.82, categoryPercentage: 0.9,
+  }));
+  const others = dailyRaw.map(d => Object.entries(d.deposited_by_pool || {})
+    .filter(([asset]) => !named.includes(asset))
+    .reduce((sum, [, v]) => sum + v, 0));
+  if (others.some(v => v > 0)) {
+    barSets.push({
+      type: 'bar', label: 'Others', data: others, backgroundColor: 'rgba(160,175,180,.7)',
+      borderRadius: 4, stack: 'deposits', yAxisID: 'yDaily', order: 2,
+      barPercentage: 0.82, categoryPercentage: 0.9,
+    });
+  }
+
+  new Chart(document.getElementById('polChart').getContext('2d'), {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'line', label: 'Total deployed',
+          data: dailyRaw.map(d => d.cumulative_deposited_rune || 0),
+          borderColor: 'rgba(255,255,255,.85)', backgroundColor: 'rgba(255,255,255,.04)',
+          pointRadius: 0, borderWidth: 3, tension: 0.25, fill: true,
+          yAxisID: 'yTotal', order: 1,
+        },
+        ...barSets,
+      ]
+    },
+    options: {
+      maintainAspectRatio: false, responsive: true, animation: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: {
+          stacked: true, grid: { display: false },
+          ticks: { color: '#9db0b5', font: { size: 17 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 10 }
+        },
+        yDaily: {
+          position: 'left', beginAtZero: true, stacked: true,
+          grid: { color: 'rgba(255,255,255,.07)' },
+          ticks: { color: '#8fe6bc', font: { size: 18 }, maxTicksLimit: 6, callback: shortNum }
+        },
+        yTotal: {
+          position: 'right', beginAtZero: true,
+          grid: { drawOnChartArea: false },
+          ticks: { color: 'rgba(255,255,255,.75)', font: { size: 18 }, maxTicksLimit: 6, callback: shortNum }
+        },
+      }
+    }
+  });
+</script>
+
+{% endblock %}

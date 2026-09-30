@@ -670,11 +670,6 @@ runepool:
     cooldown: 1d
     tally_period: 1d
 
-  pol_summary:
-    enabled: true
-    cooldown: 1d
-    allow_when_zero: false
-
 
 chain_id:
   enabled: true

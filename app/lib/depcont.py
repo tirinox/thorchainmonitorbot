@@ -76,7 +76,6 @@ class DepContainer:
     user_counter = None  # type: 'UserCounterMiddleware'
     weekly_stats_notifier = None
     lend_stats_notifier = None
-    pol_recorder = None  # type: 'POLStateRecorder'
 
     dex_analytics = None
     affiliate_recorder = None

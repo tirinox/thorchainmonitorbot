@@ -37,7 +37,8 @@ from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.rapid_swap import RapidSwapPeriodStats
 from models.queue import AlertQueue
 from models.ruji import AlertRujiraMergeStats
-from models.runepool import AlertPOLState, AlertRunepoolStats
+from models.pol_reserve import AlertPolReserveStats
+from models.runepool import AlertRunepoolStats
 from models.runepool import AlertRunePoolAction
 from models.s_swap import AlertSwapStart
 from models.secured import AlertSecuredAssetSummary
@@ -85,8 +86,6 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_dex_report(data)
         elif isinstance(data, PoolChanges):
             await self._handle_pool_churn(data)
-        elif isinstance(data, AlertPOLState):
-            await self._handle_pol(data)
         elif isinstance(data, Achievement):
             await self._handle_achievement(data)
         elif isinstance(data, AlertNodeChurn):
@@ -147,6 +146,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_rapid_swap_stats(data)
         elif isinstance(data, AlertRuneTransferStats):
             await self._handle_rune_transfer_stats(data)
+        elif isinstance(data, AlertPolReserveStats):
+            await self._handle_pol_reserve_stats(data)
         elif isinstance(data, EventLastBlock):
             pass  # currently no action
         else:
@@ -212,12 +213,6 @@ class AlertPresenter(INotified, WithLogger):
         await self.broadcaster.broadcast_to_all(
             "public:achievement",
             _gen, event
-        )
-
-    async def _handle_pol(self, event: AlertPOLState):
-        await self.broadcaster.broadcast_to_all(
-            "public:pol",
-            BaseLocalization.notification_text_pol_stats, event
         )
 
     async def _handle_node_churn(self, event: AlertNodeChurn):
@@ -732,6 +727,24 @@ class AlertPresenter(INotified, WithLogger):
         photo = await self.renderer.render('rapid_swap_stats.jinja2', data.to_dict())
         photo_name = 'rapid_swap_stats.png'
         return photo, photo_name
+
+    async def render_pol_reserve_stats(self, loc: BaseLocalization, data: AlertPolReserveStats):
+        photo = await self.renderer.render('pol_summary_adr024.jinja2', data.to_dict())
+        photo_name = 'pol_summary_adr024.png'
+        return photo, photo_name
+
+    async def _handle_pol_reserve_stats(self, data: AlertPolReserveStats):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_pol_reserve_stats(data)
+            photo, photo_name = await self.render_pol_reserve_stats(loc, data)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
+        await self.deps.broadcaster.broadcast_to_all(
+            'public:pol_reserve:stats',
+            message_gen)
 
     async def _handle_limit_swap_stats(self, data: LimitSwapPeriodStats):
         async def message_gen(loc: BaseLocalization):

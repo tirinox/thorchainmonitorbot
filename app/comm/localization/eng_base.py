@@ -46,7 +46,8 @@ from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge, PriceHol
 from models.queue import QueueInfo
 from models.rapid_swap import RapidSwapPeriodStats
 from models.ruji import AlertRujiraMergeStats
-from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
+from models.pol_reserve import AlertPolReserveStats
+from models.runepool import AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
 from models.secured import AlertSecuredAssetSummary
 from models.tcy import TcyFullInfo
@@ -2314,8 +2315,6 @@ class BaseLocalization(ABC):  # == English
 
     # ------ POL -------
 
-    TEXT_POL_NO_DATA = '😩 No data about POL yes.'
-
     @staticmethod
     def pretty_asset(name, abbr=True):
         a = Asset(name)
@@ -2324,55 +2323,30 @@ class BaseLocalization(ABC):  # == English
         else:
             return a.pretty_str
 
-    def _format_pol_membership(self, event: AlertPOLState, of_pool, decor=True):
-        text = ''
-        for i, details in enumerate(event.membership, start=1):
-            pool: PoolInfo = event.prices.find_pool(details.pool)
-            rune = pool.total_my_capital_of_pool_in_rune(details.liquidity_units)
-            if rune < 100.0:
-                continue
-            share = pool.percent_share(rune)
-            usd = rune * event.prices.usd_per_rune
-            asset = self.pretty_asset(details.pool)
-            val = short_rune(rune)
-            pool_pct = pretty_percent(share, signed=False)
-            if decor:
-                val = pre(val)
-            text += (
-                f'‣ {asset}: {val} ({short_dollar(usd)}),'
-                f' {pool_pct} {of_pool}\n'
-            )
-        return text.strip()
+    # ------ POL (ADR-024, the pol_reserve module) -------
 
-    def notification_text_pol_stats(self, event: AlertPOLState):
-        text = '🥃 <b>Protocol Owned Liquidity</b>\n\n'
+    TEXT_POL_RESERVE_NO_DATA = '😩 No data about POL yet.'
 
-        curr, prev = event.current, event.previous
-        pol_progress = progressbar(curr.rune_value, event.mimir_max_deposit, 10)
-
-        str_value_delta_pct, str_value_delta_abs = '', ''
-        if prev:
-            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True, brackets=True)
-            # str_value_delta_abs = up_down_arrow(
-            # prev.rune_value, curr.rune_value, money_delta=True, postfix=RAIDO_GLYPH)
-
-        pnl_pct = curr.pnl_percent
-        text += (
-            f"Current POL value: {code(short_rune(curr.rune_value))} or "
-            f" {code(short_dollar(curr.usd_value))} {str_value_delta_pct}\n"
-            f"POL utilization: {pre(pretty_percent(event.pol_utilization, signed=False))} {pre(pol_progress)} "
-            f" of {short_rune(event.mimir_max_deposit)} maximum.\n"
-            f"Rune deposited: {pre(short_rune(curr.rune_deposited))}, "
-            f"withdrawn: {pre(short_rune(curr.rune_withdrawn))}\n"
-            f"Profit and Loss: {pre(pretty_percent(pnl_pct))} {chart_emoji(pnl_pct)}"
+    def notification_text_pol_reserve_stats(self, e: AlertPolReserveStats):
+        cur, prev = e.current, e.previous
+        value_delta = up_down_arrow(prev.value_usd if prev else None, cur.value_usd,
+                                    percent_delta=True, brackets=True)
+        pools = ', '.join(
+            f'{self.pretty_asset(p.asset)} {pre(pretty_percent(p.share_percent, signed=False))}'
+            for p in cur.pools[:6] if p.units
         )
-
-        # POL pool membership
-        if event.membership:
-            text += "\n\n<b>Pool membership:</b>\n"
-            text += self._format_pol_membership(event, of_pool='of pool')
-
-        return text.strip()
+        return (
+            f'🥃 <b>Protocol Owned Liquidity</b> (ADR-024)\n'
+            f'💧 Value: {bold(short_dollar(cur.value_usd))} or {code(short_rune(cur.value_rune))} {value_delta}\n'
+            f'📥 Deployed: {bold(short_rune(cur.rune_deposited))}, '
+            f'{pre(short_rune(e.avg_daily_deposit_rune))} a day on average\n'
+            f'📊 PnL: {pre(pretty_percent(e.pnl_usd_percent))} in USD, '
+            f'{pre(pretty_percent(cur.pnl_percent))} in Rune\n'
+            f'💸 Fees generated: {pre(short_rune(e.fees_rune()))}, '
+            f'earned by POL itself: {pre(short_rune(e.fees_rune(net=True)))}\n'
+            f'⚙️ {pre(pretty_percent(e.system_income_percent, signed=False))} of system income goes to POL\n'
+            f'🏊 Share of pools: {pools}'
+        ).strip()
 
     # ------ TRADE ACCOUNT ------
 

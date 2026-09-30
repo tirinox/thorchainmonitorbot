@@ -43,6 +43,12 @@ if POLMaxPoolMovement == 1:
 
 MIMIR_KEY_POL_SYNTH_UTILIZATION = "POLSYNTHUTILIZATION"
 
+# ADR-024: share of system income (basis points) routed to the pol_reserve module
+MIMIR_KEY_POL_RESERVE_SYSTEM_INCOME_BPS = "POLRESERVESYSTEMINCOMEBPS"
+
+# ADR-024: maximum amount of RUNE the pol_reserve module deploys into a pool per block
+MIMIR_KEY_POL_RESERVE_MAX_DEPLOYMENT = "POLRESERVEMAXDEPLOYMENT"
+
 SOL_RPC_PROVIDER_KEY = 'SOL-RPC-PROVIDER'
 
 EXTRA_AUTO_SOLVENCY_MIMIRS = [

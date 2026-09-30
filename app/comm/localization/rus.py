@@ -36,7 +36,8 @@ from models.pool_info import PoolInfo, PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.queue import QueueInfo
 from models.ruji import AlertRujiraMergeStats
-from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
+from models.pol_reserve import AlertPolReserveStats
+from models.runepool import AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
 from models.secured import AlertSecuredAssetSummary
 from models.tcy import TcyFullInfo
@@ -1837,33 +1838,30 @@ class RussianLocalization(BaseLocalization):
             f'Средний депозит провайдера: {bold(pretty_rune(event.current.avg_deposit))}\n'
         )
 
-    def notification_text_pol_stats(self, event: AlertPOLState):
-        text = '🥃 <b>POL: ликвидность протокола</b>\n\n'
+    # ------ POL (ADR-024, модуль pol_reserve) -------
 
-        curr, prev = event.current, event.previous
-        pol_progress = progressbar(curr.rune_value, event.mimir_max_deposit, 10)
+    TEXT_POL_RESERVE_NO_DATA = '😩 Данных о POL пока нет.'
 
-        str_value_delta_pct, str_value_delta_abs = '', ''
-        if prev:
-            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True, brackets=True)
-
-        pnl_pct = curr.pnl_percent
-        text += (
-            f"Текущая POL ликвидность: {code(short_rune(curr.rune_value))} или "
-            f" {code(short_dollar(curr.usd_value))} {str_value_delta_pct}\n"
-            f"Использование: {pre(pretty_percent(event.pol_utilization, signed=False))} {pre(pol_progress)} "
-            f" из {short_rune(event.mimir_max_deposit)} максимум.\n"
-            f"Rune депонировано: {pre(short_rune(curr.rune_deposited))} "
-            f"и выведено: {pre(short_rune(curr.rune_withdrawn))}\n"
-            f"Доходы/убытки: {pre(pretty_percent(pnl_pct))} {chart_emoji(pnl_pct)}"
+    def notification_text_pol_reserve_stats(self, e: AlertPolReserveStats):
+        cur, prev = e.current, e.previous
+        value_delta = up_down_arrow(prev.value_usd if prev else None, cur.value_usd,
+                                    percent_delta=True, brackets=True)
+        pools = ', '.join(
+            f'{self.pretty_asset(p.asset)} {pre(pretty_percent(p.share_percent, signed=False))}'
+            for p in cur.pools[:6] if p.units
         )
-
-        # POL pool membership
-        if event.membership:
-            text += "\n\n<b>Членство в пулах:</b>\n"
-            text += self._format_pol_membership(event, of_pool='от пула')
-
-        return text.strip()
+        return (
+            f'🥃 <b>Ликвидность, принадлежащая протоколу (POL)</b> (ADR-024)\n'
+            f'💧 Стоимость: {bold(short_dollar(cur.value_usd))} или {code(short_rune(cur.value_rune))} {value_delta}\n'
+            f'📥 Размещено: {bold(short_rune(cur.rune_deposited))}, '
+            f'в среднем {pre(short_rune(e.avg_daily_deposit_rune))} в день\n'
+            f'📊 PnL: {pre(pretty_percent(e.pnl_usd_percent))} в USD, '
+            f'{pre(pretty_percent(cur.pnl_percent))} в Rune\n'
+            f'💸 Комиссий сгенерировано: {pre(short_rune(e.fees_rune()))}, '
+            f'заработано самим POL: {pre(short_rune(e.fees_rune(net=True)))}\n'
+            f'⚙️ {pre(pretty_percent(e.system_income_percent, signed=False))} дохода системы идет в POL\n'
+            f'🏊 Доля в пулах: {pools}'
+        ).strip()
 
     # ------ Network identifiers ------
 
