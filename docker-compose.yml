@@ -32,7 +32,8 @@ services:
     env_file:
       - .env
     ports:
-      - "8404:8404"
+      # localhost only: the bot reaches it as http://renderer:8404 over redis-net
+      - "127.0.0.1:8404:8404"
     depends_on:
       redis:
         condition: service_healthy
@@ -66,7 +67,8 @@ services:
       retries: 120
       start_period: 2s
     ports:
-      - "${REDIS_PORT}:${REDIS_PORT}"
+      # localhost only: containers use redis:${REDIS_PORT}; the host port is for redis-cli/debugging
+      - "127.0.0.1:${REDIS_PORT}:${REDIS_PORT}"
     expose:
       - "${REDIS_PORT}"
     command:
@@ -85,7 +87,8 @@ services:
       - redis-net
     restart: always
     ports:
-      - "${KEYDB_PORT}:${KEYDB_PORT}"
+      # localhost only: containers use keydb:${KEYDB_PORT}
+      - "127.0.0.1:${KEYDB_PORT}:${KEYDB_PORT}"
     expose:
       - "${KEYDB_PORT}"
     command:
@@ -101,7 +104,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "8888:8080"
+      # localhost only: the public entry point is nginx /logs/ (basic auth); this container holds docker.sock
+      - "127.0.0.1:8888:8080"
     environment:
       - DOZZLE_USERNAME=${DOZZLE_USERNAME}
       - DOZZLE_PASSWORD=${DOZZLE_PASSWORD}
@@ -141,7 +145,8 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "8077:8077"
+      # localhost only: the public entry point is nginx /api/ and /slack/
+      - "127.0.0.1:8077:8077"
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
