@@ -410,12 +410,29 @@ class PublicScheduler(WithLogger):
             self.logger.warning("Scheduler is already running.")
             return
         await self.load_config_from_db()
+        await self._clear_stale_running_flags()
         self.scheduler.start()
         # the dashboard runs elsewhere and needs this to show and preview schedules correctly
         await self.db.redis.set(self.DB_KEY_TIMEZONE, str(self.scheduler.timezone))
         await self.apply_scheduler_configuration()
         await self._rpc.run_as_server(self._on_control_message)
         self.logger.info("Scheduler started.")
+
+    async def _clear_stale_running_flags(self):
+        """
+        Nothing runs before the scheduler starts, so any is_running flag left in Redis
+        belongs to a run killed together with the previous bot process: without this
+        the dashboard would show such a job as running forever.
+        """
+        r = self.db.redis
+        cleared = []
+        async for key in r.scan_iter(match=f'{self.DB_KEY_PREFIX}:Stats:*'):
+            if await r.hget(key, 'is_running') == '1':
+                await r.hset(key, 'is_running', '0')
+                cleared.append(key.removeprefix(f'{self.DB_KEY_PREFIX}:Stats:'))
+        if cleared:
+            self.logger.warning(f'Cleared is_running left by interrupted runs: {cleared}')
+            await self.db_log.warning('clear_stale_running', jobs=cleared)
 
     def stop(self):
         if not self.scheduler.running:

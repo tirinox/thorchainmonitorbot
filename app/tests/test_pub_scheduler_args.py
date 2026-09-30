@@ -1,3 +1,4 @@
+import fnmatch
 import json
 from types import SimpleNamespace
 from typing import cast
@@ -36,6 +37,14 @@ class FakeRedis:
 
     async def hgetall(self, key):
         return dict(self.hashes.get(key, {}))
+
+    async def hget(self, key, field):
+        return self.hashes.get(key, {}).get(field)
+
+    async def scan_iter(self, match='*'):
+        for key in list(self.hashes) + list(self.values) + list(self.lists):
+            if fnmatch.fnmatch(key, match):
+                yield key
 
     async def hincrby(self, key, field, amount):
         bucket = self.hashes.setdefault(key, {})
@@ -121,6 +130,21 @@ async def test_run_job_now_by_id_merges_saved_args_with_run_now_args():
 
     assert result == 'success'
     assert captured == {'days': 7, 'limit': 25, 'dry_run': True}
+
+
+@pytest.mark.asyncio
+async def test_start_clears_running_flags_left_by_killed_process():
+    redis = FakeRedis()
+    redis.hashes['PublicScheduler:Stats:stuck_job'] = {'is_running': '1', 'run_count': '3'}
+    redis.hashes['PublicScheduler:Stats:idle_job'] = {'is_running': '0'}
+    redis.hashes['OtherPrefix:Stats:foreign'] = {'is_running': '1'}
+    scheduler = make_scheduler(redis)
+
+    await scheduler._clear_stale_running_flags()
+
+    assert redis.hashes['PublicScheduler:Stats:stuck_job'] == {'is_running': '0', 'run_count': '3'}
+    assert redis.hashes['PublicScheduler:Stats:idle_job'] == {'is_running': '0'}
+    assert redis.hashes['OtherPrefix:Stats:foreign'] == {'is_running': '1'}
 
 
 @pytest.mark.asyncio
