@@ -8,7 +8,6 @@ from lib.date_utils import parse_timespan_to_seconds
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from models.asset import Asset
 from models.price import PriceHolder
 from models.transfer import NativeTokenTransfer
 
@@ -35,10 +34,9 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
     def is_cex(self, addr):
         return addr in self.cex_list
 
-    async def handle_transfer(self, transfer: NativeTokenTransfer, usd_per_rune):
-        # compare against min_usd_amount threshold
-        min_usd_amount = self.min_usd_native
-        if transfer.amount * usd_per_rune >= min_usd_amount:
+    async def handle_transfer(self, transfer: NativeTokenTransfer):
+        # the transfer's own value in USD: any token can be sent, not only RUNE
+        if transfer.usd_amount >= self.min_usd_native:
             if await self.move_cd.can_do():
                 await self.move_cd.do()
 
@@ -82,13 +80,8 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
 
     @staticmethod
     def _fill_asset_prices(transfers: List[NativeTokenTransfer], ph: PriceHolder):
-        usd_per_rune = ph.usd_per_rune
         for transfer in transfers:
-            if transfer.is_rune:
-                transfer.usd_per_asset = usd_per_rune
-            else:
-                pool_name = Asset.from_string(transfer.asset).native_pool_name
-                transfer.usd_per_asset = ph.usd_per_asset(pool_name)
+            transfer.usd_per_asset = ph.usd_per_denom(transfer.asset)
         return transfers
 
     async def on_data(self, sender, all_transfers: List[NativeTokenTransfer]):
@@ -99,6 +92,6 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
 
         for transfer in transfers:
             try:
-                await self.handle_transfer(transfer, ph.usd_per_rune)
+                await self.handle_transfer(transfer)
             except Exception as e:
                 self.logger.exception(f"Error handling transfer: {e}", exc_info=e)

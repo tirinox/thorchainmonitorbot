@@ -4,7 +4,6 @@ from lib.db import DB
 from lib.depcont import DepContainer
 from lib.money import ABSURDLY_LARGE_NUMBER
 from lib.utils import safe_get
-from models.asset import Asset
 from models.node_watchers import UserWatchlist
 from models.price import PriceHolder
 from models.transfer import NativeTokenTransfer
@@ -41,14 +40,9 @@ class PersonalBalanceNotifier(BasePersonalNotifier):
 
     @staticmethod
     def _fill_asset_price(transfers, ph: PriceHolder):
-        usd_per_rune = ph.usd_per_rune
         for tr in transfers:
             tr: NativeTokenTransfer
-            if tr.is_rune:
-                tr.usd_per_asset = usd_per_rune
-            else:
-                pool_name = Asset.from_string(tr.asset).native_pool_name
-                tr.usd_per_asset = ph.usd_per_asset(pool_name) or 0.0
+            tr.usd_per_asset = ph.usd_per_denom(tr.asset)
 
     @staticmethod
     def _get_min_rune_threshold(balance_settings: dict, address):

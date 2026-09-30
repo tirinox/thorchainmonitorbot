@@ -273,6 +273,15 @@ class PriceHolder(INotified):
         if price_in_rune:
             return self.usd_per_rune * price_in_rune
 
+    def usd_per_denom(self, denom: str) -> float:
+        """
+        USD price of a token by its THORChain bank denom: "rune", "tcy", "x/ruji", "btc-btc" (secured) and so on.
+        0.0 when there is no pool to price it.
+        """
+        if denom.lower().startswith('x/'):
+            denom = f'THOR.{denom[2:]}'  # native tokens: x/ruji is traded in the THOR.RUJI pool
+        return self.get_asset_price_in_usd(denom) or 0.0
+
     def convert_to_usd(self, amount: float, asset: str):
         price = self.get_asset_price_in_usd(asset)
         if price:
