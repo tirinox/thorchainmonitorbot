@@ -161,6 +161,8 @@ class AchievementDescription(NamedTuple):
     milestone_scale: Milestones = MILESTONES_NORMAL
     thresholds: Union[int, dict] = 0
     tint: Optional[str] = None  # overrides the glow color of the background
+    # its source feeds it only while it is news, so the tracker neither holds it as stale nor needs a first record
+    always_fresh: bool = False
 
 
 ADesc = AchievementDescription
@@ -193,7 +195,8 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
           number_font=NUMBER_FONT_BALLOON,
           tint='#f4e18d',
           milestone_scale=MILESTONES_EVERY_INT,
-          thresholds=1),
+          thresholds=1,
+          always_fresh=True),  # fed only within ANNIVERSARY_WINDOW, a year after the previous feed
 
     ADesc(A.BLOCK_NUMBER, 'Blocks produced', milestone_scale=MILESTONES_EVERY_DIGIT,
           thresholds=7_000_000, background=BG_NETWORK),
