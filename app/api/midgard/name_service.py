@@ -17,7 +17,7 @@ from lib.texts import shorten_text
 from models.memo import THORMemo
 from models.name import ThorName, make_virtual_thor_name, ThorNameAlias
 from models.node_info import NetworkNodes
-from .connector import MidgardConnector
+from .connector import MidgardConnector, MidgardError
 
 
 class NameMap(NamedTuple):
@@ -295,18 +295,18 @@ class THORNameAPIClient:
     def __init__(self, midgard: MidgardConnector):
         self.midgard = midgard
 
-    def _empty_if_error_or_not_found(self, results):
-        if results is None or results == self.midgard.ERROR_RESPONSE or results == self.midgard.ERROR_NOT_FOUND:
+    async def _request_or_none(self, path):
+        # a name is a decoration: no name (404) and no answer from Midgard both mean "show without it"
+        try:
+            return await self.midgard.request(path)
+        except MidgardError:
             return None
-        else:
-            return results
 
     async def thorname_lookup(self, name: str) -> Optional[ThorName]:
         """
         Returns an array of chains and their addresses associated with the given ThorName
         """
-        results = await self.midgard.request(f'/v2/thorname/lookup/{name}')
-        results = self._empty_if_error_or_not_found(results)
+        results = await self._request_or_none(f'/v2/thorname/lookup/{name}')
         if results:
             return ThorName(
                 name=name,
@@ -321,8 +321,7 @@ class THORNameAPIClient:
         """
         Returns an array of ThorNames associated with the given address
         """
-        results = await self.midgard.request(f'/v2/thorname/rlookup/{address}')
-        results = self._empty_if_error_or_not_found(results)
+        results = await self._request_or_none(f'/v2/thorname/rlookup/{address}')
         return results or []
 
     async def get_thornames_owned_by_address(self, thor_address: str):
@@ -330,8 +329,7 @@ class THORNameAPIClient:
         Returns an array of ThorNames owned by the address.
         The address is not necessarily an associated address for those thornames.
         """
-        results = await self.midgard.request(f'/v2/thorname/owner/{thor_address}')
-        results = self._empty_if_error_or_not_found(results)
+        results = await self._request_or_none(f'/v2/thorname/owner/{thor_address}')
         return results or []
 
 

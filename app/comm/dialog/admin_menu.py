@@ -206,14 +206,10 @@ class AdminDialog(BaseDialog):
         data_str = ''
         try:
             data = await self.deps.midgard_connector.request('/v2/health')
-            if isinstance(data, str):
-                data_str = data
-                raise FileNotFoundError(data)
-            else:
-                data_str = json.dumps(data, indent=4)
-                assert data['inSync']
-                assert data['database']
-                assert int(data['scannerHeight']) > 0
+            data_str = json.dumps(data, indent=4)
+            assert data['inSync']
+            assert data['database']
+            assert int(data['scannerHeight']) > 0
         except Exception as e:
             self.deps.midgard_connector.public_url = prev_url
             return f'Error updating midgard URL: {e!r}. Returned: <code>{data_str}</code>'

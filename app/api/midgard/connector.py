@@ -1,3 +1,4 @@
+import asyncio
 from typing import Union, Optional, List
 
 import aiohttp
@@ -16,19 +17,36 @@ from models.swap_history import SwapHistoryResponse
 DEFAULT_MIDGARD_PORT = 8080
 
 
-class MidgardConnector(WithLogger):
-    ERROR_RESPONSE = 'ERROR_Midgard'
-    ERROR_NOT_FOUND = 'NotFound_Midgard'
-    ERROR_NO_CLIENT = 'ERROR_NoClient'
+class MidgardError(Exception):
+    """Midgard gave no usable answer: a network failure, a bad status, or a body that is not JSON."""
 
-    def __init__(self, session: aiohttp.ClientSession, retry_number=3, public_url='', network_id=None):
+
+class MidgardNotFound(MidgardError):
+    """404: Midgard is fine, there is just nothing at this path (no such THORName, member, pool...)."""
+
+
+class MidgardBadResponse(MidgardError):
+    def __init__(self, status: int, url: str, body: str = ''):
+        super().__init__(f'Midgard answered {status} for {url}: {body!r}')
+        self.status = status
+        self.url = url
+
+    @property
+    def is_temporary(self):
+        # the request itself is fine, Midgard may answer the next time
+        return self.status >= 500 or self.status == 429
+
+
+class MidgardConnector(WithLogger):
+    def __init__(self, session: aiohttp.ClientSession, retry_number=3, public_url='', network_id=None,
+                 retry_delay=1.0):
         super().__init__()
 
         self._public_url = public_url
 
         self.public_url = public_url
-        self.session = session
-        self.retries = retry_number
+        self.retries = max(1, int(retry_number))
+        self.retry_delay = retry_delay
         self.session = session or aiohttp.ClientSession()
         self.urlgen = free_url_gen
         self.parser = MidgardParserV2(network_id)
@@ -43,6 +61,7 @@ class MidgardConnector(WithLogger):
         self.logger.info(f"Midgard public URL set to {value}")
 
     async def _request_json_from_midgard_by_ip(self, ip_address: str, path: str):
+        """One attempt. Returns the parsed JSON or raises a MidgardError."""
         path = path.lstrip('/')
 
         if ip_address == self.public_url:
@@ -58,28 +77,34 @@ class MidgardConnector(WithLogger):
                 self.logger.debug(f'Midgard "{full_url}"; result code = {resp.status}.')
 
                 if resp.status == 404:
-                    return self.ERROR_NOT_FOUND
+                    raise MidgardNotFound(full_url)
                 elif resp.status != 200:
-                    try:
-                        answer = resp.content[:200]
-                    except TypeError:
-                        answer = 'unknown'
-                    self.logger.warning(f'Midgard ({full_url}) BAD response {resp.status = }, "{answer}"!')
-                    return self.ERROR_RESPONSE
-                j = await resp.json()
-                return j
-        except Exception as e:
-            self.logger.error(f'Midgard ({ip_address}/{path}) exception: {e!r}.')
-            return self.ERROR_RESPONSE
+                    raise MidgardBadResponse(resp.status, full_url, (await resp.text())[:200])
+                return await resp.json()
+        except MidgardError:
+            raise
+        except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as e:
+            # ValueError: the body is not JSON
+            raise MidgardError(f'Midgard request to {full_url} failed: {e!r}') from e
 
-    # noinspection PyTypeChecker
-    async def request(self, path: str) -> Union[str, dict, list]:
-        result = await self._request_json_from_midgard_by_ip(self.public_url, path)
-        if isinstance(result, str) and result != self.ERROR_NOT_FOUND:
-            self.logger.error(f'Probably there is an issue. Midgard has returned a plain string: {result!r} '
-                              f'for the path {path!r}')
-        else:
-            return result
+    async def request(self, path: str) -> Union[dict, list]:
+        """
+        Midgard's JSON answer for the path.
+        Raises MidgardNotFound on 404 and another MidgardError when Midgard cannot answer;
+        temporary failures (network, 5xx, 429) are tried `retries` times first.
+        """
+        for attempt in range(1, self.retries + 1):
+            try:
+                return await self._request_json_from_midgard_by_ip(self.public_url, path)
+            except MidgardNotFound:
+                raise
+            except MidgardError as e:
+                is_temporary = not isinstance(e, MidgardBadResponse) or e.is_temporary
+                if not is_temporary or attempt == self.retries:
+                    self.logger.error(f'{e} (attempt {attempt}/{self.retries}, giving up)')
+                    raise
+                self.logger.warning(f'{e} (attempt {attempt}/{self.retries}, retrying)')
+                await asyncio.sleep(self.retry_delay * attempt)
 
     async def query_earnings(self, from_ts=0, to_ts=0, count=0, interval='') -> Optional[EarningHistoryResponse]:
         url = self.urlgen.url_for_earnings_history(from_ts, to_ts, count, interval)
@@ -91,7 +116,10 @@ class MidgardConnector(WithLogger):
         """
         Timestamp of the last block that is in Midgard's aggregates; history after it is not complete yet.
         """
-        j = await self.request(self.urlgen.url_health())
+        try:
+            j = await self.request(self.urlgen.url_health())
+        except MidgardError:
+            return 0  # unknown: the caller takes it for "nothing is aggregated yet"
         if not isinstance(j, dict):
             return 0
         return int((j.get('lastAggregated') or {}).get('timestamp') or 0)
@@ -109,23 +137,24 @@ class MidgardConnector(WithLogger):
             return self.parser.parse_tx_response(j)
 
     async def query_pool_membership(self, address: str) -> List[PoolMemberDetails]:
-        j = await self.request(
-            self.urlgen.url_for_address_pool_membership(address)
-        )
-        if j == self.ERROR_RESPONSE or j == self.ERROR_NOT_FOUND:
-            return []
-        else:
-            return self.parser.parse_pool_membership(j)
+        try:
+            j = await self.request(self.urlgen.url_for_address_pool_membership(address))
+        except MidgardNotFound:
+            return []  # the address is not a member of any pool
+        return self.parser.parse_pool_membership(j)
 
     async def query_pools(self, period: str = '30d', parse=True) -> Optional[PoolInfoMap]:
         raw_data = await self.request(self.urlgen.url_pools_info(period=period))
-        if not raw_data or raw_data == self.ERROR_RESPONSE:
+        if not raw_data:
             return None
         return self.parser.parse_pool_info(raw_data) if parse else raw_data
 
     async def query_pool(self, pool: str, period: str = '30d', parse=True) -> Optional[PoolInfo]:
-        raw_data = await self.request(self.urlgen.url_pool_info(pool, period=period))
-        if not raw_data or raw_data == self.ERROR_RESPONSE:
+        try:
+            raw_data = await self.request(self.urlgen.url_pool_info(pool, period=period))
+        except MidgardNotFound:
+            return None  # no such pool
+        if not raw_data:
             return None
         return PoolInfo.from_midgard_json(raw_data) if parse else raw_data
 
@@ -133,21 +162,24 @@ class MidgardConnector(WithLogger):
         j = await self.request(
             self.urlgen.url_affiliate_history(from_ts, to_ts, count=count, interval=interval)
         )
-        if j and j != self.ERROR_RESPONSE:
+        if j:
             return self.parser.parse_affiliate_history(j)
 
     async def query_pool_depth_history(self, pool: str, count=30, interval='day'):
         j = await self.request(
             self.urlgen.url_pool_depth_history(pool, count=count, interval=interval)
         )
-        if j and j != self.ERROR_RESPONSE:
+        if j:
             return self.parser.parse_pool_depth_history(j)
 
     async def query_pool_depth_at(self, pool: str, ts) -> Optional[PoolInfoHistoricEntry]:
         """
         Pool depths at the end of the 5-min interval that contains ts (Midgard's finest resolution).
         """
-        j = await self.request(self.urlgen.url_pool_depth_at(pool, ts))
+        try:
+            j = await self.request(self.urlgen.url_pool_depth_at(pool, ts))
+        except MidgardNotFound:
+            return None  # no such pool
         if isinstance(j, dict):
             intervals = self.parser.parse_pool_depth_history(j).intervals
             return intervals[-1] if intervals else None

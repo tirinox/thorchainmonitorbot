@@ -10,6 +10,7 @@ from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
 from api.aionode.types import ThorSwapperClout
+from api.midgard.connector import MidgardError
 from api.midgard.name_service import add_thor_suffix
 from comm.localization.eng_base import BaseLocalization
 from comm.picture.lp_picture import generate_yield_picture, lp_address_summary_picture
@@ -242,8 +243,8 @@ class MyWalletsMenu(DialogWithSettings):
             rune_yield = get_rune_yield_connector(self.deps)
             pools = await rune_yield.get_my_pools(address)
             pool_names = [p.pool for p in pools]
-        except FileNotFoundError:
-            logging.error(f'not found pools for address {address}')
+        except MidgardError as e:
+            logging.error(f'Failed to load pools for address {address}: {e}')
             pool_names = []
         return pool_names
 

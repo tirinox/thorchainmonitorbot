@@ -1,8 +1,8 @@
 from typing import List, Optional
 
-from aiohttp import ContentTypeError
 from tqdm import tqdm
 
+from api.midgard.connector import MidgardError
 from api.midgard.parser import get_parser_by_network_id, TxParseResult
 from api.midgard.urlgen import free_url_gen
 from jobs.fetch.base import BaseFetcher
@@ -130,7 +130,7 @@ class TxFetcher(BaseFetcher):
         try:
             j = await self.deps.midgard_connector.request(q_path)
             return self.tx_parser.parse_tx_response(j)
-        except (ContentTypeError, AttributeError):
+        except (MidgardError, AttributeError):
             return None
 
     async def _fetch_one_batch_tries(self, page, tries) -> Optional[TxParseResult]:
