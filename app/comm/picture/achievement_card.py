@@ -16,6 +16,9 @@ class WreathStyle(NamedTuple):
     hole_x: float
     hole_y: float
     hole_r: float
+    # 'round': a soft round fade around the hole; 'edges': only the picture edges fade,
+    # for a background whose ornament spreads far from the ring
+    mask: str = 'round'
 
 
 # Holes were measured on the pictures: rays cast from the middle stop where it gets brighter than the middle
@@ -29,7 +32,7 @@ BACKGROUND_STYLE = {
     BG_VAULT: WreathStyle('#ffcf7a', 0.511, 0.436, 0.188),
     BG_BTC: WreathStyle('#ffb84d', 0.499, 0.494, 0.189),
     BG_ETH: WreathStyle('#b4a6ff', 0.500, 0.495, 0.188),
-    BG_ANNIVERSARY: WreathStyle('#f4e18d', 0.499, 0.476, 0.152),
+    BG_ANNIVERSARY: WreathStyle('#f4e18d', 0.499, 0.495, 0.187, mask='edges'),
 }
 
 # sprite fonts in data/renderer/static/img/achievement/<font>/
@@ -98,6 +101,7 @@ def build_achievement_card(a: Achievement, loc: AchievementsLocalizationBase) ->
         'hole_x': style.hole_x,
         'hole_y': style.hole_y,
         'hole_r': style.hole_r,
+        'mask': style.mask,
         'number_font': desc.number_font,
         'number_label': number_label,
         'number_text': milestone_str,

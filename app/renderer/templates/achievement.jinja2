@@ -29,9 +29,22 @@
             width: {{ bg_size }}px;
             height: {{ bg_size }}px;
             transform: translateX(-50%);
-            /* soft round edge: the square backgrounds have different base colors */
+        }
+
+        /* soft round edge: the square backgrounds have different base colors */
+        .ach-bg.mask-round {
             -webkit-mask-image: radial-gradient(circle at {{ (hole_x * 100) | round(1) }}% {{ (hole_y * 100) | round(1) }}%, #000 52%, transparent 71%);
             mask-image: radial-gradient(circle at {{ (hole_x * 100) | round(1) }}% {{ (hole_y * 100) | round(1) }}%, #000 52%, transparent 71%);
+        }
+
+        /* only the picture edges fade: the ornament may reach far from the ring */
+        .ach-bg.mask-edges {
+            -webkit-mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent),
+            linear-gradient(to bottom, transparent, #000 2%, #000 96%, transparent);
+            -webkit-mask-composite: source-in;
+            mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent),
+            linear-gradient(to bottom, transparent, #000 2%, #000 96%, transparent);
+            mask-composite: intersect;
         }
 
         .ach-shade {
@@ -66,6 +79,7 @@
             font-weight: 600;
             letter-spacing: 0.3em;
             color: #e6ecef;
+            text-shadow: 0 0 8px #000, 0 0 3px #000; /* readable over sparks of the background */
         }
 
         .ach-date {
@@ -74,7 +88,8 @@
             letter-spacing: 0.2em;
             text-transform: uppercase;
             color: var(--tint);
-            opacity: 0.85;
+            opacity: 0.9;
+            text-shadow: 0 0 8px #000, 0 0 3px #000, 0 0 1px #000;
         }
 
         .ach-number-box {
@@ -134,7 +149,7 @@
         }
 
         .ach-number.balloon {
-            font-size: 210px;
+            font-size: 300px; /* a balloon digit may float a bit over the ring: see fitNumber() */
         }
 
         .ach-number.balloon img {
@@ -237,7 +252,7 @@
         }
     </style>
 
-    <img class="ach-bg" src="renderer/static/img/achievement/bg/{{ background }}" alt="">
+    <img class="ach-bg mask-{{ mask | default('round') }}" src="renderer/static/img/achievement/bg/{{ background }}" alt="">
     <div class="ach-shade"></div>
 
     <div class="ach-brand">
@@ -298,7 +313,8 @@
         // until every corner of both is inside the hole, with some room left to the ring
         function fitNumber() {
             const cx = {{ hole_cx }}, cy = {{ hole_cy }};
-            const maxDistance = {{ hole_radius }} * 0.9;
+            // runic glyphs keep clear of the ring; a balloon digit may float a bit over it
+            const maxDistance = {{ hole_radius }} * {{ 1.15 if number_font == 'balloon' else 0.9 }};
             const box = document.getElementById('ach-number-box');
             const number = document.getElementById('ach-number');
 

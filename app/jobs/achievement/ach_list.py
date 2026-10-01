@@ -139,7 +139,7 @@ BG_RUNE = 'nn_wreath_burn.png'
 BG_VAULT = 'nn_wreath_saver.png'
 BG_BTC = 'nn_wreath_btc_vault_2.png'
 BG_ETH = 'nn_wreath_eth_vault_2.png'
-BG_ANNIVERSARY = 'nn_wreath_ann_2.png'
+BG_ANNIVERSARY = 'nn_wreath_ann_3.png'
 
 NUMBER_FONT_RUNIC = 'runic'
 NUMBER_FONT_BALLOON = 'balloon'
