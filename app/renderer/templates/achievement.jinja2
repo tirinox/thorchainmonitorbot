@@ -3,8 +3,9 @@
 
 {% block content %}
     ## The wreath is drawn smaller than the card to leave room for the title and the stats under it
-    {% set bg_size = 860 %}
-    {% set bg_top = 40 %}
+    {% set bg_size = frame_size | default(860) %}
+    {% set bg_top = frame_top | default(40) %}
+    {% set shade = shade_from | default(58) %}
     ## the wreath hole on the card, px
     {% set hole_cx = 512 + (hole_x - 0.5) * bg_size %}
     {% set hole_cy = bg_top + hole_y * bg_size %}
@@ -50,7 +51,7 @@
         .ach-shade {
             position: absolute;
             inset: 0;
-            background: linear-gradient(to bottom, transparent 58%, rgba(10, 16, 21, 0.82) 76%, #0a1015 90%);
+            background: linear-gradient(to bottom, transparent {{ shade }}%, rgba(10, 16, 21, 0.82) {{ shade + 18 }}%, #0a1015 {{ shade + 32 }}%);
         }
 
         .ach-brand {

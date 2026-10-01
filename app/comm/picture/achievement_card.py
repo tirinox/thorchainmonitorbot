@@ -19,6 +19,11 @@ class WreathStyle(NamedTuple):
     # 'round': a soft round fade around the hole; 'edges': only the picture edges fade,
     # for a background whose ornament spreads far from the ring
     mask: str = 'round'
+    # where the background sits on the card, px; a frame with something hanging under the ring
+    # goes smaller and higher, so it stays above the title
+    size: int = 860
+    top: int = 40
+    shade_from: int = 58  # % of the card height where the shade under the title starts
 
 
 # Holes were measured on the pictures: rays cast from the middle stop where it gets brighter than the middle
@@ -32,7 +37,7 @@ BACKGROUND_STYLE = {
     BG_REVENUE: WreathStyle('#e8c45a', 0.499, 0.445, 0.216),
     BG_BURN: WreathStyle('#ffb347', 0.493, 0.466, 0.175),
     BG_VAULT: WreathStyle('#ffcf7a', 0.512, 0.436, 0.186),
-    BG_STABLES: WreathStyle('#8ff0c0', 0.499, 0.417, 0.239),
+    BG_STABLES: WreathStyle('#8ff0c0', 0.501, 0.472, 0.225, size=770, top=34, shade_from=72),
     BG_BTC: WreathStyle('#ffb84d', 0.499, 0.494, 0.189),
     BG_ETH: WreathStyle('#b4a6ff', 0.500, 0.495, 0.188),
     BG_ANNIVERSARY: WreathStyle('#f4e18d', 0.499, 0.495, 0.187, mask='edges'),
@@ -105,6 +110,9 @@ def build_achievement_card(a: Achievement, loc: AchievementsLocalizationBase) ->
         'hole_y': style.hole_y,
         'hole_r': style.hole_r,
         'mask': style.mask,
+        'frame_size': style.size,
+        'frame_top': style.top,
+        'shade_from': style.shade_from,
         'number_font': desc.number_font,
         'number_label': number_label,
         'number_text': milestone_str,

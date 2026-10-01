@@ -2,22 +2,29 @@
   "template_name": "achievement.jinja2",
   "meta": {
     "title": "Стейблы в хранилище",
-    "subtitle": "50M",
+    "subtitle": "$50M",
     "lang": "ru",
     "order": 29
   },
   "parameters": {
     "key": "stables_in_vault",
-    "background": "nn_wreath_stables.png",
+    "background": "nn_wreath_stables_chains.png",
     "tint": "#8ff0c0",
-    "hole_x": 0.499,
-    "hole_y": 0.417,
-    "hole_r": 0.239,
+    "hole_x": 0.501,
+    "hole_y": 0.472,
+    "hole_r": 0.225,
     "mask": "round",
+    "frame_size": 770,
+    "frame_top": 34,
+    "shade_from": 72,
     "number_font": "runic",
     "number_label": "Более чем",
-    "number_text": "50M",
+    "number_text": "$50M",
     "glyphs": [
+      {
+        "kind": "tall",
+        "src": "runic/bw_USD.png"
+      },
       {
         "kind": "glyph",
         "src": "runic/bw_5.png"
@@ -38,17 +45,17 @@
     "stats": [
       {
         "label": "Было",
-        "value": "20M",
+        "value": "$20M",
         "sub": "24 дн назад"
       },
       {
         "label": "Сейчас",
-        "value": "54,000,000",
+        "value": "$54,000,000",
         "sub": ""
       },
       {
         "label": "Следующая цель",
-        "value": "100M",
+        "value": "$100M",
         "sub": ""
       }
     ]
