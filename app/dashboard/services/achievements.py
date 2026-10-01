@@ -136,7 +136,7 @@ def build_row(key: str, spec: str, record: Optional[Achievement], live: Optional
         # outside of its window an anniversary is not fed, so it is not waiting for anything
         crossed = crossed and now - anniversary_ts(value) < ANNIVERSARY_WINDOW
 
-    stale = bool(record and desc.catch_up_silently and now - record.last_seen_ts > stale_after)
+    stale = bool(record and not desc.always_fresh and now - record.last_seen_ts > stale_after)
 
     if not record and not live:
         status = AchStatus.NO_DATA
@@ -164,7 +164,7 @@ def build_row(key: str, spec: str, record: Optional[Achievement], live: Optional
         'status': status,
         # the status may be another one (under the cut-off), these two are what the tracker will go by
         'stale': stale,
-        'can_be_stale': desc.catch_up_silently,
+        'can_be_stale': not desc.always_fresh,
         'crossed': crossed,
         'descending': descending,
         'single_event': key in SINGLE_EVENT_KEYS,
@@ -306,8 +306,8 @@ async def set_stale(ctx: DashboardContext, key: str, specialization: str, stale:
     """
     if key not in ACHIEVEMENT_DESC_MAP:
         raise ValueError(f'Unknown achievement {key!r}')
-    if not ACHIEVEMENT_DESC_MAP[key].catch_up_silently:
-        raise ValueError(f'{key!r} is never caught up silently, so it cannot be stale')
+    if ACHIEVEMENT_DESC_MAP[key].always_fresh:
+        raise ValueError(f'{key!r} is always fresh, so it cannot be stale')
 
     tracker = AchievementsTracker(ctx.deps.db)
     record = await tracker.get_achievement_record(key, specialization)

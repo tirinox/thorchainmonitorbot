@@ -132,6 +132,45 @@ async def test_tracker_refreshes_last_seen_without_crossing(tracker):
 
 
 @pytest.mark.asyncio
+async def test_anniversary_is_announced_every_year(tracker, monkeypatch):
+    from datetime import datetime
+    import jobs.achievement.tracker as tracker_mod
+    from jobs.achievement.extractor import AchievementsExtractor
+    from jobs.fetch.cached.last_block import EventLastBlock
+
+    async def feed_block(*date):
+        """Feeds a block like the notifier does; returns the anniversary to announce, if any"""
+        now = datetime(*date).timestamp()
+        monkeypatch.setattr(tracker_mod, 'now_ts', lambda: now)
+        announced = None
+        for event in AchievementsExtractor.on_block(EventLastBlock(thor_block=24_000_000, block_dict={}), now=now):
+            event = await tracker.feed_data(event)
+            if event:
+                await tracker.set_achievement_record(event)  # it is sent
+                if event.key == A.ANNIVERSARY:
+                    announced = event
+        return announced
+
+    # there is no record yet, but it is fed only within its window, so it is news
+    ev = await feed_block(2026, 4, 11, 12)
+    assert (ev.milestone, ev.prev_milestone) == (5, 0)
+    assert await feed_block(2026, 4, 11, 13) is None  # once
+
+    # the bot works all the year, but the anniversary is not fed outside its window...
+    assert await feed_block(2026, 10, 1, 12) is None
+    assert await feed_block(2027, 4, 9, 12) is None
+
+    # ...so its record is a year old and far beyond stale_after: it must be announced, not saved silently
+    ev = await feed_block(2027, 4, 11, 12)
+    assert (ev.milestone, ev.prev_milestone) == (6, 5)
+    assert await feed_block(2027, 4, 12, 12) is None
+
+    # the bot was down for the whole window of the 7th one: no late congratulation
+    assert await feed_block(2028, 4, 20, 12) is None
+    assert await feed_block(2029, 4, 11, 12) is not None
+
+
+@pytest.mark.asyncio
 async def test_weekly_achievements_are_not_fed_in_preview():
     from types import SimpleNamespace
     from lib.logs import WithLogger
@@ -228,5 +267,5 @@ async def test_anniversary_is_announced_every_year(monkeypatch):
                 announced.append((datetime.fromtimestamp(t).date().isoformat(), r.value, r.prev_milestone))
         t += 3 * 3600
 
-    # 2026 only creates the record, then one post a year, on the day
-    assert announced == [('2027-04-10', 6, 5), ('2028-04-10', 7, 6)]
+    # one post a year, on the day; always fresh, it is news even without a record to compare with
+    assert announced == [('2026-04-10', 5, 0), ('2027-04-10', 6, 5), ('2028-04-10', 7, 6)]

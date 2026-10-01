@@ -166,9 +166,8 @@ class AchievementDescription(NamedTuple):
     milestone_scale: Milestones = MILESTONES_NORMAL
     thresholds: Union[int, dict] = 0
     tint: Optional[str] = None  # overrides the glow color of the background
-    # after a feed gap longer than achievements.stale_after a crossed milestone is saved without a post.
-    # False for a metric that is fed only now and then by design, so its gaps say nothing about an outage
-    catch_up_silently: bool = True
+    # its source feeds it only while it is news, so the tracker neither holds it as stale nor needs a first record
+    always_fresh: bool = False
 
 
 ADesc = AchievementDescription
@@ -202,8 +201,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
           tint='#f4e18d',
           milestone_scale=MILESTONES_EVERY_INT,
           thresholds=1,
-          # fed only within ANNIVERSARY_WINDOW after the date, which already keeps it from coming late
-          catch_up_silently=False),
+          always_fresh=True),  # fed only within ANNIVERSARY_WINDOW, a year after the previous feed
 
     ADesc(A.BLOCK_NUMBER, 'Blocks produced', milestone_scale=MILESTONES_EVERY_DIGIT,
           thresholds=7_000_000, background=BG_NETWORK),
