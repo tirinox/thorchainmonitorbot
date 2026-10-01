@@ -144,7 +144,7 @@ BG_SWAPS = 'nn_wreath_3.png'
 BG_USERS = 'nn_wreath_4.png'
 BG_RUNE = 'nn_wreath_burn.png'
 BG_VAULT = 'nn_wreath_saver.png'
-BG_BTC = 'nn_wreath_btc_vault.png'
+BG_BTC = 'nn_wreath_btc_vault_2.png'
 BG_ETH = 'nn_wreath_eth_vault.png'
 BG_ANNIVERSARY = 'nn_wreath_ann_2.png'
 

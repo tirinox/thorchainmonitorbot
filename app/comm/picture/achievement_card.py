@@ -27,7 +27,7 @@ BACKGROUND_STYLE = {
     BG_USERS: WreathStyle('#7cc7ff', 0.492, 0.466, 0.210),  # dark twigs fool the rays: radius set by eye
     BG_RUNE: WreathStyle('#ffb347', 0.487, 0.456, 0.162),
     BG_VAULT: WreathStyle('#ffcf7a', 0.511, 0.436, 0.188),
-    BG_BTC: WreathStyle('#ffd55a', 0.501, 0.458, 0.170),  # the black disc, without the dark band around it
+    BG_BTC: WreathStyle('#ffb84d', 0.499, 0.494, 0.189),
     BG_ETH: WreathStyle('#a9c8ff', 0.498, 0.450, 0.190),
     BG_ANNIVERSARY: WreathStyle('#f4e18d', 0.499, 0.476, 0.152),
 }
