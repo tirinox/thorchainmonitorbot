@@ -1,15 +1,21 @@
 {
   "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Weekly protocol revenue",
+    "subtitle": "$1M",
+    "lang": "en",
+    "order": 31
+  },
   "parameters": {
-    "key": "max_add_amount_usd_per_pool",
-    "background": "nn_wreath_1.png",
-    "tint": "#3ee6c8",
-    "hole_x": 0.501,
-    "hole_y": 0.463,
-    "hole_r": 0.165,
+    "key": "weekly_protocol_revenue_usd",
+    "background": "nn_wreath_burn.png",
+    "tint": "#ffb347",
+    "hole_x": 0.487,
+    "hole_y": 0.456,
+    "hole_r": 0.162,
     "number_font": "runic",
     "number_label": "Over",
-    "number_text": "$5M",
+    "number_text": "$1M",
     "glyphs": [
       {
         "kind": "tall",
@@ -17,31 +23,31 @@
       },
       {
         "kind": "glyph",
-        "src": "runic/bw_5.png"
+        "src": "runic/bw_1.png"
       },
       {
         "kind": "glyph",
         "src": "runic/bw_M.png"
       }
     ],
-    "title": "Largest ETH.USDC liquidity add",
+    "title": "Weekly protocol revenue",
     "subtitle": "",
-    "asset_logo": "ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+    "asset_logo": "",
     "date": "October 1, 2026",
     "stats": [
       {
         "label": "Previous",
-        "value": "$2M",
-        "sub": "1 month, 10 days ago"
+        "value": "$500K",
+        "sub": "1 month, 20 days ago"
       },
       {
         "label": "Now",
-        "value": "$8,200,000",
+        "value": "$1,120,000",
         "sub": ""
       },
       {
         "label": "Next milestone",
-        "value": "$10M",
+        "value": "$2M",
         "sub": ""
       }
     ]

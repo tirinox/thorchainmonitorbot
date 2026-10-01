@@ -1,0 +1,51 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Liquidity additions",
+    "subtitle": "1M",
+    "lang": "en",
+    "order": 11
+  },
+  "parameters": {
+    "key": "add_liquidity_count_total",
+    "background": "nn_wreath_1.png",
+    "tint": "#3ee6c8",
+    "hole_x": 0.501,
+    "hole_y": 0.463,
+    "hole_r": 0.165,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "1M",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_1.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_M.png"
+      }
+    ],
+    "title": "Liquidity additions",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "500K",
+        "sub": "1 month ago"
+      },
+      {
+        "label": "Now",
+        "value": "1,120,000",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "2M",
+        "sub": ""
+      }
+    ]
+  }
+}

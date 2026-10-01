@@ -1,47 +1,49 @@
 {
   "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Bitcoin в хранилище",
+    "subtitle": "2K",
+    "lang": "ru",
+    "order": 27
+  },
   "parameters": {
-    "key": "weekly_protocol_revenue_usd",
-    "background": "nn_wreath_burn.png",
-    "tint": "#ffb347",
-    "hole_x": 0.487,
-    "hole_y": 0.456,
-    "hole_r": 0.162,
+    "key": "btc_in_vault",
+    "background": "nn_wreath_btc_vault_2.png",
+    "tint": "#ffb84d",
+    "hole_x": 0.499,
+    "hole_y": 0.494,
+    "hole_r": 0.189,
     "number_font": "runic",
     "number_label": "Более чем",
-    "number_text": "$1M",
+    "number_text": "2K",
     "glyphs": [
       {
-        "kind": "tall",
-        "src": "runic/bw_USD.png"
+        "kind": "glyph",
+        "src": "runic/bw_2.png"
       },
       {
         "kind": "glyph",
-        "src": "runic/bw_1.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_M.png"
+        "src": "runic/bw_K.png"
       }
     ],
-    "title": "Еженедельный доход протокола",
+    "title": "Bitcoin в хранилище",
     "subtitle": "",
     "asset_logo": "",
     "date": "1 октября 2026",
     "stats": [
       {
         "label": "Было",
-        "value": "$500K",
-        "sub": "1 мес 10 дн назад"
+        "value": "1K",
+        "sub": "3 мес 28 дн назад"
       },
       {
         "label": "Сейчас",
-        "value": "$1,030,000",
+        "value": "2,140",
         "sub": ""
       },
       {
         "label": "Следующая цель",
-        "value": "$2M",
+        "value": "5K",
         "sub": ""
       }
     ]

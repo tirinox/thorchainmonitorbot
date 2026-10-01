@@ -1,0 +1,55 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Общее количество свопов",
+    "subtitle": "20M",
+    "lang": "ru",
+    "order": 7
+  },
+  "parameters": {
+    "key": "swap_count_total",
+    "background": "nn_wreath_3.png",
+    "tint": "#4ffffa",
+    "hole_x": 0.503,
+    "hole_y": 0.448,
+    "hole_r": 0.202,
+    "number_font": "runic",
+    "number_label": "Более чем",
+    "number_text": "20M",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_2.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_M.png"
+      }
+    ],
+    "title": "Общее количество свопов",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "1 октября 2026",
+    "stats": [
+      {
+        "label": "Было",
+        "value": "10M",
+        "sub": "3 мес 8 дн назад"
+      },
+      {
+        "label": "Сейчас",
+        "value": "31,250,000",
+        "sub": ""
+      },
+      {
+        "label": "Следующая цель",
+        "value": "50M",
+        "sub": ""
+      }
+    ]
+  }
+}

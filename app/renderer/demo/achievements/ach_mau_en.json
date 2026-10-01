@@ -1,0 +1,55 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Monthly active users",
+    "subtitle": "50K",
+    "lang": "en",
+    "order": 1
+  },
+  "parameters": {
+    "key": "mau",
+    "background": "nn_wreath_4.png",
+    "tint": "#7cc7ff",
+    "hole_x": 0.492,
+    "hole_y": 0.466,
+    "hole_r": 0.21,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "50K",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_5.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_K.png"
+      }
+    ],
+    "title": "Monthly active users",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "20K",
+        "sub": "20 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "61,200",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "100K",
+        "sub": ""
+      }
+    ]
+  }
+}

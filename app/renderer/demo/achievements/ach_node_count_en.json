@@ -1,0 +1,55 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Total node count",
+    "subtitle": "100",
+    "lang": "en",
+    "order": 13
+  },
+  "parameters": {
+    "key": "node_count",
+    "background": "nn_wreath_2.png",
+    "tint": "#6fe8cf",
+    "hole_x": 0.5,
+    "hole_y": 0.469,
+    "hole_r": 0.173,
+    "number_font": "runic",
+    "number_label": "",
+    "number_text": "100",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_1.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      }
+    ],
+    "title": "Total node count",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "50",
+        "sub": "1 month, 26 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "120",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "200",
+        "sub": ""
+      }
+    ]
+  }
+}

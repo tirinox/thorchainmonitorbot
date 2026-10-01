@@ -297,6 +297,7 @@ For local runs point `REDIS_HOST` / `KEYDB_HOST` in `.env` to `localhost` and se
 |---|---|
 | Run tests | `make test` (= `cd app && python -m pytest tests`) |
 | Renderer with auto-reload | `make renderer-dev` (templates in `app/renderer/templates`, sample data in `app/renderer/demo`) |
+| Gallery of all infographics with demo data | http://localhost:8404/render/demo; regenerate the achievement demos with `make renderer-demos` |
 | Dashboard API with auto-reload | `make dashboard-dev` |
 | Dashboard frontend with HMR | `make dashboard-front-dev` → http://localhost:5173/dashboard/ |
 | Build the dashboard frontend | `make dashboard-build` |

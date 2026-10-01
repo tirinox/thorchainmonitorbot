@@ -1,0 +1,51 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Всего голосов за Mimir",
+    "subtitle": "2K",
+    "lang": "ru",
+    "order": 17
+  },
+  "parameters": {
+    "key": "total_mimir_votes",
+    "background": "nn_wreath_2.png",
+    "tint": "#6fe8cf",
+    "hole_x": 0.5,
+    "hole_y": 0.469,
+    "hole_r": 0.173,
+    "number_font": "runic",
+    "number_label": "",
+    "number_text": "2K",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_2.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_K.png"
+      }
+    ],
+    "title": "Всего голосов за Mimir",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "1 октября 2026",
+    "stats": [
+      {
+        "label": "Было",
+        "value": "1K",
+        "sub": "3 мес 18 дн назад"
+      },
+      {
+        "label": "Сейчас",
+        "value": "2,150",
+        "sub": ""
+      },
+      {
+        "label": "Следующая цель",
+        "value": "5K",
+        "sub": ""
+      }
+    ]
+  }
+}

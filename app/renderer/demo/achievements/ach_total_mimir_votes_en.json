@@ -1,0 +1,51 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Total Mimir votes",
+    "subtitle": "2K",
+    "lang": "en",
+    "order": 17
+  },
+  "parameters": {
+    "key": "total_mimir_votes",
+    "background": "nn_wreath_2.png",
+    "tint": "#6fe8cf",
+    "hole_x": 0.5,
+    "hole_y": 0.469,
+    "hole_r": 0.173,
+    "number_font": "runic",
+    "number_label": "",
+    "number_text": "2K",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_2.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_K.png"
+      }
+    ],
+    "title": "Total Mimir votes",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "1K",
+        "sub": "3 months, 18 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "2,150",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "5K",
+        "sub": ""
+      }
+    ]
+  }
+}

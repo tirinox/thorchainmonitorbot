@@ -1,0 +1,51 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Total pools",
+    "subtitle": "50",
+    "lang": "en",
+    "order": 19
+  },
+  "parameters": {
+    "key": "total_pools",
+    "background": "nn_wreath_1.png",
+    "tint": "#3ee6c8",
+    "hole_x": 0.501,
+    "hole_y": 0.463,
+    "hole_r": 0.165,
+    "number_font": "runic",
+    "number_label": "",
+    "number_text": "50",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_5.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      }
+    ],
+    "title": "Total pools",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "20",
+        "sub": "14 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "52",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "100",
+        "sub": ""
+      }
+    ]
+  }
+}

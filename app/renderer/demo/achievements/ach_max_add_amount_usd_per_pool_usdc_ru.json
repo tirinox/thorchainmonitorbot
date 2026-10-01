@@ -1,0 +1,55 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Добавлено ETH.USDC в пул за раз",
+    "subtitle": "$5M",
+    "lang": "ru",
+    "order": 26
+  },
+  "parameters": {
+    "key": "max_add_amount_usd_per_pool",
+    "background": "nn_wreath_1.png",
+    "tint": "#3ee6c8",
+    "hole_x": 0.501,
+    "hole_y": 0.463,
+    "hole_r": 0.165,
+    "number_font": "runic",
+    "number_label": "Более чем",
+    "number_text": "$5M",
+    "glyphs": [
+      {
+        "kind": "tall",
+        "src": "runic/bw_USD.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_5.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_M.png"
+      }
+    ],
+    "title": "Добавлено ETH.USDC в пул за раз",
+    "subtitle": "",
+    "asset_logo": "ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+    "date": "1 октября 2026",
+    "stats": [
+      {
+        "label": "Было",
+        "value": "$2M",
+        "sub": "3 мес 15 дн назад"
+      },
+      {
+        "label": "Сейчас",
+        "value": "$5,400,000",
+        "sub": ""
+      },
+      {
+        "label": "Следующая цель",
+        "value": "$10M",
+        "sub": ""
+      }
+    ]
+  }
+}

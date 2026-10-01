@@ -1,0 +1,58 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Общий объем добавленной ликвидности",
+    "subtitle": "5B ᚱ",
+    "lang": "ru",
+    "order": 12
+  },
+  "parameters": {
+    "key": "add_liquidity_volume_total",
+    "background": "nn_wreath_1.png",
+    "tint": "#3ee6c8",
+    "hole_x": 0.501,
+    "hole_y": 0.463,
+    "hole_r": 0.165,
+    "number_font": "runic",
+    "number_label": "Более чем",
+    "number_text": "5B ᚱ",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_5.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_B.png"
+      },
+      {
+        "kind": "space"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_R.png"
+      }
+    ],
+    "title": "Общий объем добавленной ликвидности",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "1 октября 2026",
+    "stats": [
+      {
+        "label": "Было",
+        "value": "2B ᚱ",
+        "sub": "1 мес 13 дн назад"
+      },
+      {
+        "label": "Сейчас",
+        "value": "5,230,000,000 ᚱ",
+        "sub": ""
+      },
+      {
+        "label": "Следующая цель",
+        "value": "10B ᚱ",
+        "sub": ""
+      }
+    ]
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Trade asset swaps",
+    "subtitle": "2M",
+    "lang": "en",
+    "order": 36
+  },
+  "parameters": {
+    "key": "trade_asset_swaps_count",
+    "background": "nn_wreath_3.png",
+    "tint": "#4ffffa",
+    "hole_x": 0.503,
+    "hole_y": 0.448,
+    "hole_r": 0.202,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "2M",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_2.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_M.png"
+      }
+    ],
+    "title": "Trade asset swaps",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "1M",
+        "sub": "3 months, 25 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "2,150,000",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "5M",
+        "sub": ""
+      }
+    ]
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Swaps in 24h",
+    "subtitle": "50K",
+    "lang": "en",
+    "order": 8
+  },
+  "parameters": {
+    "key": "swap_count_24h",
+    "background": "nn_wreath_3.png",
+    "tint": "#4ffffa",
+    "hole_x": 0.503,
+    "hole_y": 0.448,
+    "hole_r": 0.202,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "50K",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_5.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_K.png"
+      }
+    ],
+    "title": "Swaps in 24h",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "20K",
+        "sub": "3 months, 21 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "62,400",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "100K",
+        "sub": ""
+      }
+    ]
+  }
+}

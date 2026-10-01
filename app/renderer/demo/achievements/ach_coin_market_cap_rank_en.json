@@ -1,5 +1,11 @@
 {
   "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "By market cap",
+    "subtitle": "30",
+    "lang": "en",
+    "order": 21
+  },
   "parameters": {
     "key": "coin_market_cap_rank",
     "background": "nn_wreath_burn.png",

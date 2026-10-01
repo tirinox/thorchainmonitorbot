@@ -1,0 +1,63 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Всего залочено USD",
+    "subtitle": "$500M",
+    "lang": "ru",
+    "order": 30
+  },
+  "parameters": {
+    "key": "tvl",
+    "background": "nn_wreath_1.png",
+    "tint": "#3ee6c8",
+    "hole_x": 0.501,
+    "hole_y": 0.463,
+    "hole_r": 0.165,
+    "number_font": "runic",
+    "number_label": "Более чем",
+    "number_text": "$500M",
+    "glyphs": [
+      {
+        "kind": "tall",
+        "src": "runic/bw_USD.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_5.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_M.png"
+      }
+    ],
+    "title": "Всего залочено USD",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "1 октября 2026",
+    "stats": [
+      {
+        "label": "Было",
+        "value": "$200M",
+        "sub": "1 мес 7 дн назад"
+      },
+      {
+        "label": "Сейчас",
+        "value": "$512,000,000",
+        "sub": ""
+      },
+      {
+        "label": "Следующая цель",
+        "value": "$1B",
+        "sub": ""
+      }
+    ]
+  }
+}

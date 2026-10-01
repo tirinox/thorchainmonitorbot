@@ -1,0 +1,51 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Trade asset holders",
+    "subtitle": "1K",
+    "lang": "en",
+    "order": 35
+  },
+  "parameters": {
+    "key": "trade_asset_holders_count",
+    "background": "nn_wreath_4.png",
+    "tint": "#7cc7ff",
+    "hole_x": 0.492,
+    "hole_y": 0.466,
+    "hole_r": 0.21,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "1K",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_1.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_K.png"
+      }
+    ],
+    "title": "Trade asset holders",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "500",
+        "sub": "3 months, 12 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "1,240",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "2K",
+        "sub": ""
+      }
+    ]
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Total bond",
+    "subtitle": "50M ᚱ",
+    "lang": "en",
+    "order": 16
+  },
+  "parameters": {
+    "key": "total_bond",
+    "background": "nn_wreath_2.png",
+    "tint": "#6fe8cf",
+    "hole_x": 0.5,
+    "hole_y": 0.469,
+    "hole_r": 0.173,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "50M ᚱ",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_5.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_M.png"
+      },
+      {
+        "kind": "space"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_R.png"
+      }
+    ],
+    "title": "Total bond",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "20M ᚱ",
+        "sub": "3 months, 5 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "61,000,000 ᚱ",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "100M ᚱ",
+        "sub": ""
+      }
+    ]
+  }
+}
