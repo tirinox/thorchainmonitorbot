@@ -1,7 +1,7 @@
 from comm.picture.queue_picture import QUEUE_TIME_SERIES
 
 from jobs.fetch.queue import QueueInfo
-from lib.cooldown import CooldownBiTrigger
+from lib.cooldown import CooldownBiTrigger, INFINITE_TIME
 from lib.date_utils import parse_timespan_to_seconds
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
@@ -36,7 +36,10 @@ class QueueNotifier(INotified, WithLogger, WithDelegates):
 
         self.logger.info(f'Avg queue {item_type} is {avg_value:.1f}')
 
-        cd_trigger = CooldownBiTrigger(self.deps.db, f'QueueClog:{item_type}', self.cooldown, self.cooldown)
+        # "Congested" is repeated once per cooldown while the queue stays long. "Free" is the end of a congestion:
+        # it is told once, when the state switches, and never repeated - a short queue is the normal state.
+        cd_trigger = CooldownBiTrigger(self.deps.db, f'QueueClog:{item_type}',
+                                       cooldown_on_sec=self.cooldown, cooldown_off_sec=INFINITE_TIME)
 
         if avg_value > self.threshold_congested:
             if await cd_trigger.turn_on():
