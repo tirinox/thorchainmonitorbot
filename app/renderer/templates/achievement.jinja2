@@ -32,10 +32,17 @@
             transform: translateX(-50%);
         }
 
-        /* soft round edge: the square backgrounds have different base colors */
+        /* soft round edge: the square backgrounds have different base colors;
+           the picture edges fade too, for an ornament that reaches them (the arms of the affiliate frame) */
         .ach-bg.mask-round {
-            -webkit-mask-image: radial-gradient(circle at {{ (hole_x * 100) | round(1) }}% {{ (hole_y * 100) | round(1) }}%, #000 52%, transparent 71%);
-            mask-image: radial-gradient(circle at {{ (hole_x * 100) | round(1) }}% {{ (hole_y * 100) | round(1) }}%, #000 52%, transparent 71%);
+            -webkit-mask-image: radial-gradient(circle at {{ (hole_x * 100) | round(1) }}% {{ (hole_y * 100) | round(1) }}%, #000 52%, transparent 71%),
+            linear-gradient(to right, transparent, #000 12%, #000 88%, transparent),
+            linear-gradient(to bottom, transparent, #000 6%, #000 94%, transparent);
+            -webkit-mask-composite: source-in;
+            mask-image: radial-gradient(circle at {{ (hole_x * 100) | round(1) }}% {{ (hole_y * 100) | round(1) }}%, #000 52%, transparent 71%),
+            linear-gradient(to right, transparent, #000 12%, #000 88%, transparent),
+            linear-gradient(to bottom, transparent, #000 6%, #000 94%, transparent);
+            mask-composite: intersect;
         }
 
         /* only the picture edges fade: the ornament may reach far from the ring */

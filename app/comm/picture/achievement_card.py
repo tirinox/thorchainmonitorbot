@@ -35,8 +35,9 @@ BACKGROUND_STYLE = {
     BG_SWAPS: WreathStyle('#4ffffa', 0.502, 0.449, 0.205),
     BG_USERS: WreathStyle('#7cc7ff', 0.508, 0.443, 0.193),  # dark twigs fool the rays: picked by eye
     BG_RUNE: WreathStyle('#2ee6b8', 0.499, 0.496, 0.190),
-    BG_REVENUE: WreathStyle('#e8c45a', 0.500, 0.436, 0.216, size=800, top=30, shade_from=70),
-    BG_AFFILIATE: WreathStyle('#f0c070', 0.500, 0.375, 0.233, size=820, top=64, shade_from=70),
+    # the tankards and the clasped hands reach into the opening: these holes are set by eye above them
+    BG_REVENUE: WreathStyle('#e8c45a', 0.499, 0.392, 0.170, size=790, top=36, shade_from=70),
+    BG_AFFILIATE: WreathStyle('#f0c070', 0.498, 0.330, 0.165, size=820, top=64, shade_from=70),
     BG_BURN: WreathStyle('#ffb347', 0.493, 0.466, 0.175),
     BG_VAULT: WreathStyle('#ffcf7a', 0.512, 0.436, 0.186),
     BG_STABLES: WreathStyle('#8ff0c0', 0.501, 0.472, 0.225, size=770, top=34, shade_from=72),
