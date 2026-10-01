@@ -4,7 +4,7 @@
     "title": "Bitcoin in vaults",
     "subtitle": "2K",
     "lang": "en",
-    "order": 27
+    "order": 25
   },
   "parameters": {
     "key": "btc_in_vault",
@@ -38,7 +38,7 @@
       {
         "label": "Previous",
         "value": "1K",
-        "sub": "3 months, 28 days ago"
+        "sub": "3 months, 2 days ago"
       },
       {
         "label": "Now",

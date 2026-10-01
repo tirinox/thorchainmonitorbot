@@ -113,13 +113,13 @@ def test_row_anniversary_counts_by_the_calendar():
     assert row(A.ANNIVERSARY, record, now=half_past_five)['status'] == AchStatus.TRACKING
 
 
-def test_row_per_pool():
-    generic = row(A.MAX_ADD_AMOUNT_USD_PER_POOL)
+def test_row_per_pool(per_pool_key):
+    generic = row(per_pool_key)
     assert generic['title'] == 'Largest per-pool liquidity add'
-    assert generic['threshold'] is None and generic['threshold_count'] > 10
+    assert generic['threshold'] is None and generic['threshold_count'] == 3
 
-    btc = row(A.MAX_ADD_AMOUNT_USD_PER_POOL, spec='BTC.BTC', live=live_value(9_000_000))
-    assert btc['id'] == 'max_add_amount_usd_per_pool:BTC.BTC'
+    btc = row(per_pool_key, spec='BTC.BTC', live=live_value(9_000_000))
+    assert btc['id'] == f'{per_pool_key}:BTC.BTC'
     assert btc['title'] == 'Largest BTC liquidity add'
     assert (btc['threshold']['value'], btc['threshold_count']) == (8143923, None)
 
@@ -182,14 +182,14 @@ def test_settings_are_read_from_the_config():
 
 
 @pytest.mark.asyncio
-async def test_list_achievements(monkeypatch):
+async def test_list_achievements(monkeypatch, per_pool_key):
     monkeypatch.setattr(svc, 'now_ts', lambda: NOW)
     db = FakeDB()
     tracker = AchievementsTracker(db)
     await tracker.feed_data(Achievement(A.DAU, 1500))
     await tracker.feed_data(Achievement(A.MAU, 3000))
     await tracker.feed_data(Achievement(A.TEST, 77))
-    await tracker.set_achievement_record(Achievement(A.MAX_ADD_AMOUNT_USD_PER_POOL, 9_000_000, 5_000_000,
+    await tracker.set_achievement_record(Achievement(per_pool_key, 9_000_000, 5_000_000,
                                                      specialization='BTC.BTC'))
     await db.redis.set('Achievements:garbage', 'not json')
 
@@ -211,7 +211,7 @@ async def test_list_achievements(monkeypatch):
     assert rows['mau']['status'] == AchStatus.BELOW_THRESHOLD
     assert rows['tvl']['status'] == AchStatus.NO_DATA
     # a per-pool metric is listed by the pools it has data for
-    assert 'max_add_amount_usd_per_pool:BTC.BTC' in rows and 'max_add_amount_usd_per_pool' not in rows
+    assert f'{per_pool_key}:BTC.BTC' in rows and per_pool_key not in rows
 
 
 @pytest.mark.asyncio

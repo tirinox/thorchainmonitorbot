@@ -4,7 +4,7 @@
     "title": "Total trade account balance",
     "subtitle": "$20M",
     "lang": "en",
-    "order": 34
+    "order": 32
   },
   "parameters": {
     "key": "trade_balance_total_usd",
@@ -46,7 +46,7 @@
       {
         "label": "Previous",
         "value": "$10M",
-        "sub": "2 months, 29 days ago"
+        "sub": "2 months, 3 days ago"
       },
       {
         "label": "Now",

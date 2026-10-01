@@ -4,7 +4,7 @@
     "title": "Держателей торговых активов",
     "subtitle": "1K",
     "lang": "ru",
-    "order": 35
+    "order": 33
   },
   "parameters": {
     "key": "trade_asset_holders_count",
@@ -38,7 +38,7 @@
       {
         "label": "Было",
         "value": "500",
-        "sub": "3 мес 12 дн назад"
+        "sub": "2 мес 16 дн назад"
       },
       {
         "label": "Сейчас",

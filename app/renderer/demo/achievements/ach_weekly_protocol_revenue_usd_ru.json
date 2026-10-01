@@ -4,7 +4,7 @@
     "title": "Еженедельный доход протокола",
     "subtitle": "$1M",
     "lang": "ru",
-    "order": 31
+    "order": 29
   },
   "parameters": {
     "key": "weekly_protocol_revenue_usd",
@@ -42,7 +42,7 @@
       {
         "label": "Было",
         "value": "$500K",
-        "sub": "1 мес 20 дн назад"
+        "sub": "24 дн назад"
       },
       {
         "label": "Сейчас",

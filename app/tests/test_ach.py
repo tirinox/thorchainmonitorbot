@@ -13,19 +13,22 @@ def test_minimum_threshold():
     assert meet(A.DAU, 301)
     assert not meet(A.DAU, 299)
 
-    usdc = 'ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48'
-
-    assert meet(A.MAX_ADD_AMOUNT_USD_PER_POOL, 3_605_512.364805, spec=usdc)
-    assert not meet(A.MAX_ADD_AMOUNT_USD_PER_POOL, 3_500_000, spec=usdc)
-    assert meet(A.MAX_ADD_AMOUNT_USD_PER_POOL, 10_700_000, spec=usdc)
-
-    assert meet(A.MAX_ADD_AMOUNT_USD_PER_POOL, 1, spec='unk')
-    assert meet(A.MAX_ADD_AMOUNT_USD_PER_POOL, 400, spec='unk')
-
     assert meet(A.COIN_MARKET_CAP_RANK, 41, descending=True)
     assert meet(A.COIN_MARKET_CAP_RANK, 42, descending=True)
     assert not meet(A.COIN_MARKET_CAP_RANK, 43, descending=True)
     assert not meet(A.COIN_MARKET_CAP_RANK, 5000, descending=True)
+
+
+def test_minimum_threshold_per_pool(per_pool_key):
+    from tests.conftest import USDC
+
+    assert meet(per_pool_key, 3_605_512.364805, spec=USDC)
+    assert not meet(per_pool_key, 3_500_000, spec=USDC)
+    assert meet(per_pool_key, 10_700_000, spec=USDC)
+
+    # a pool without its own threshold has none
+    assert meet(per_pool_key, 1, spec='unk')
+    assert meet(per_pool_key, 400, spec='unk')
 
 
 def _block_keys(now):

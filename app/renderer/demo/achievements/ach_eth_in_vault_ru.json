@@ -4,7 +4,7 @@
     "title": "Ethereum в хранилище",
     "subtitle": "20K",
     "lang": "ru",
-    "order": 28
+    "order": 26
   },
   "parameters": {
     "key": "eth_in_vault",
@@ -42,7 +42,7 @@
       {
         "label": "Было",
         "value": "10K",
-        "sub": "11 дн назад"
+        "sub": "3 мес 15 дн назад"
       },
       {
         "label": "Сейчас",

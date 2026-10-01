@@ -223,8 +223,6 @@ async def main():
         # await demo_achievements_picture(app, Language.RUSSIAN, A.ANNIVERSARY, 2, 2)
         await demo_achievements_picture(app, Language.ENGLISH, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
         # await demo_achievements_picture(app, Language.RUSSIAN, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
-        # await demo_achievements_picture(app, Language.ENGLISH, A.MAX_ADD_AMOUNT_USD_PER_POOL, 8_200_000,
-        #                                 5_000_000, spec='ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48')
         # await demo_all_achievements(app)
         # await demo_run_pipeline_coin_rank(app)
         # await demo_run_pipeline_test(app, spec='BTC.BTC')

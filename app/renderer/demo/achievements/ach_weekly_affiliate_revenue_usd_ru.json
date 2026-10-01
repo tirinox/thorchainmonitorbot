@@ -4,7 +4,7 @@
     "title": "Еженедельный доход партнеров",
     "subtitle": "$200K",
     "lang": "ru",
-    "order": 32
+    "order": 30
   },
   "parameters": {
     "key": "weekly_affiliate_revenue_usd",
@@ -50,7 +50,7 @@
       {
         "label": "Было",
         "value": "$100K",
-        "sub": "2 мес 3 дн назад"
+        "sub": "1 мес 7 дн назад"
       },
       {
         "label": "Сейчас",

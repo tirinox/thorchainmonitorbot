@@ -4,7 +4,7 @@
     "title": "Всего залочено USD",
     "subtitle": "$500M",
     "lang": "ru",
-    "order": 30
+    "order": 28
   },
   "parameters": {
     "key": "tvl",
@@ -50,7 +50,7 @@
       {
         "label": "Было",
         "value": "$200M",
-        "sub": "1 мес 7 дн назад"
+        "sub": "11 дн назад"
       },
       {
         "label": "Сейчас",

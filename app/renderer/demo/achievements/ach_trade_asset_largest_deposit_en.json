@@ -4,7 +4,7 @@
     "title": "Largest trade asset deposit",
     "subtitle": "$2M",
     "lang": "en",
-    "order": 36
+    "order": 34
   },
   "parameters": {
     "key": "trade_asset_largest_deposit",
@@ -42,7 +42,7 @@
       {
         "label": "Previous",
         "value": "$1M",
-        "sub": "3 months, 25 days ago"
+        "sub": "2 months, 29 days ago"
       },
       {
         "label": "Now",
