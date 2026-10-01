@@ -210,7 +210,7 @@ class PublicAlertJobExecutor(WithLogger):
         nsn = NetworkStatsNotifier(self.deps)
         old_info = await nsn.get_previous_stats()
 
-        fetcher_stats = NetworkStatisticsFetcher(self.deps)
+        fetcher_stats = NetworkStatisticsFetcher(self.deps, 0)  # one-off, the running one is in main.py
         new_info = await fetcher_stats.fetch()
 
         if not new_info.is_ok:
