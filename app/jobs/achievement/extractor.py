@@ -13,7 +13,7 @@ from models.mimir import MimirTuple
 from models.net_stats import NetworkStats
 from models.node_info import NodeSetChanges
 from models.price import RuneMarketInfo
-from models.runepool import AlertPOLState, AlertRunePoolAction
+from models.runepool import AlertPOLState
 from models.trade_acc import AlertTradeAccountStats, AlertTradeAccountAction
 from models.tx import ThorAction
 from .ach_list import A, EventTestAchievement, Achievement
@@ -44,7 +44,6 @@ class AchievementsExtractor(WithLogger):
             kv_events = self.on_thor_tx_list(data, usd_per_rune)
         elif isinstance(data, AlertPOLState):
             kv_events = self.on_thor_pol(data)
-            kv_events += self.on_runepool_stats(data)
         elif isinstance(data, AlertKeyStats):
             kv_events = self.on_weekly_stats(data)
         elif isinstance(data, EventTestAchievement):
@@ -190,17 +189,3 @@ class AchievementsExtractor(WithLogger):
             ]
         else:
             return []
-
-    @staticmethod
-    def on_runepool_action(data: AlertRunePoolAction):
-        return [
-            Achievement(A.RUNEPOOL_LARGEST_DEPOSIT, int(data.usd_amount))
-        ]
-
-    @staticmethod
-    def on_runepool_stats(data: AlertPOLState):
-        return [
-            Achievement(A.RUNEPOOL_PNL, data.runepool.pnl),
-            Achievement(A.RUNEPOOL_TOTAL_PROVIDERS, data.runepool.n_providers),
-            Achievement(A.RUNEPOOL_VALUE_USD, data.runepool.usd_value),
-        ]

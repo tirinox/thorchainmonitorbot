@@ -71,13 +71,6 @@ class AchievementName:
     TRADE_ASSET_MOVE_COUNT = 'trade_asset_move_count'
     TRADE_ASSET_LARGEST_DEPOSIT = 'trade_asset_largest_deposit'
 
-    # runepool
-    RUNEPOOL_LARGEST_DEPOSIT = 'runepool_largest_deposit'
-    RUNEPOOL_VALUE_USD = 'runepool_value_usd'
-    RUNEPOOL_TOTAL_PROVIDERS = 'runepool_total_providers'
-    RUNEPOOL_PNL = 'runepool_pnl'
-    # todo realized pnl on withdraw
-
     @classmethod
     def all_keys(cls):
         return [getattr(cls, k) for k in cls.__dict__
@@ -185,9 +178,9 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.SWAP_COUNT_30D, 'Monthly swaps', background=BG_SWAPS),
 
     ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Liquidity additions'),
-    ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Total liquidity added'),
+    ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Total liquidity added', postfix=POSTFIX_RUNE),
     ADesc(A.DAILY_VOLUME, 'Daily volume', prefix='$', background=BG_SWAPS),
-    ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond', background=BG_NETWORK),
+    ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond', postfix=POSTFIX_RUNE, background=BG_NETWORK),
     ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE, background=BG_NETWORK),
     ADesc(A.NODE_COUNT, 'Total node count', more_than=False, background=BG_NETWORK),
     ADesc(A.ACTIVE_NODE_COUNT, 'Active node count', more_than=False, background=BG_NETWORK),
@@ -254,7 +247,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.COIN_MARKET_CAP_RANK, 'By market cap', milestone_scale=MILESTONES_EVERY_INT,
           thresholds=42, more_than=False, background=BG_RUNE),
 
-    ADesc(A.POL_VALUE_RUNE, 'POL value', background=BG_VAULT),
+    ADesc(A.POL_VALUE_RUNE, 'POL value', postfix=POSTFIX_RUNE, background=BG_VAULT),
 
     ADesc(A.BTC_IN_VAULT, 'Bitcoin in vaults', background=BG_BTC),
     ADesc(A.ETH_IN_VAULT, 'Ethereum in vaults', background=BG_ETH),
@@ -275,10 +268,4 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.TRADE_ASSET_LARGEST_DEPOSIT, 'Largest trade asset deposit', prefix='$', thresholds=100_000),
     ADesc(A.TRADE_ASSET_SWAPS_VOLUME, 'Trade asset swap volume', prefix='$', thresholds=1_000_000,
           background=BG_SWAPS),
-
-    # runepool
-    ADesc(A.RUNEPOOL_LARGEST_DEPOSIT, 'Largest RUNEPool deposit', prefix='$', background=BG_VAULT),
-    ADesc(A.RUNEPOOL_VALUE_USD, 'RUNEPool value', prefix='$', background=BG_VAULT),
-    ADesc(A.RUNEPOOL_TOTAL_PROVIDERS, 'RUNEPool providers', background=BG_USERS),
-    ADesc(A.RUNEPOOL_PNL, 'RUNEPool PnL', prefix='$', background=BG_VAULT),
 ]}

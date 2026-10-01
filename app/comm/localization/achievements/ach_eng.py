@@ -49,11 +49,6 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         A.TRADE_ASSET_SWAPS_VOLUME: "Trade asset swap volume",
         A.TRADE_ASSET_MOVE_COUNT: "Trade account deposits & withdrawals",
         A.TRADE_ASSET_LARGEST_DEPOSIT: "Largest trade asset deposit",
-
-        A.RUNEPOOL_VALUE_USD: "RUNEPool value",
-        A.RUNEPOOL_LARGEST_DEPOSIT: "Largest RUNEPool deposit",
-        A.RUNEPOOL_TOTAL_PROVIDERS: "RUNEPool providers",
-        A.RUNEPOOL_PNL: "RUNEPool PnL",
     }
 
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"

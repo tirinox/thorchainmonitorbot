@@ -604,9 +604,6 @@ class App(WithLogger):
             runepool_decoder.add_subscriber(runepool_not)
             runepool_not.add_subscriber(d.alert_presenter)
 
-            if achievements_enabled:
-                runepool_decoder.add_subscriber(achievements)
-
         if d.block_scanner and d.cfg.get('native_scanner.wasm.enabled', True):
             d.wasm_cache = WasmCache(d.thor_connector, db=d.db)
             wasm_recorder = CosmWasmRecorder(d.db)

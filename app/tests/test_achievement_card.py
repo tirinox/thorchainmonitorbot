@@ -87,7 +87,7 @@ def test_card_default(en):
 
 
 def test_card_first_milestone_has_no_previous(en):
-    a = Achievement(A.RUNEPOOL_VALUE_USD, 20_000_000, 20_000_000, TS)
+    a = Achievement(A.TRADE_BALANCE_TOTAL_USD, 20_000_000, 20_000_000, TS)
     card = build_achievement_card(a, en)
     # "Now" equals the milestone, so only the next goal is left
     assert card['stats'] == [{'label': 'Next milestone', 'value': '$50M', 'sub': ''}]
