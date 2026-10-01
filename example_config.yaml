@@ -641,6 +641,10 @@ achievements:
     hits_before_cd: 5
     period: 15m
 
+  # a metric not seen for longer (the bot or its data source was down) catches up silently:
+  # a milestone crossed meanwhile is saved without a message. Keep it above the weekly jobs' period
+  stale_after: 14d
+
 
 key_metrics:
   enabled: true

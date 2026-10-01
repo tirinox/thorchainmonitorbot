@@ -1,16 +1,20 @@
 import json
 from typing import Optional
 
-from lib.date_utils import now_ts
+from lib.date_utils import now_ts, HOUR, DAY
 from lib.db import DB
 from lib.logs import WithLogger
 from .ach_list import Achievement
 
 
 class AchievementsTracker(WithLogger):
-    def __init__(self, db: DB):
+    # last_seen_ts is rewritten no more often than this, not on every block
+    LAST_SEEN_RESOLUTION = HOUR
+
+    def __init__(self, db: DB, stale_after: float = 14 * DAY):
         super().__init__()
         self.db = db
+        self.stale_after = stale_after
 
     @staticmethod
     def key(name, specialization=''):
@@ -37,6 +41,13 @@ class AchievementsTracker(WithLogger):
                 return a.value >= threshold
 
     async def feed_data(self, event: Achievement) -> Optional[Achievement]:
+        """
+        Returns the new record when the value has crossed a milestone and the achievement must be announced.
+        That record is not saved here: the caller saves it with set_achievement_record once it is really sent,
+        so an achievement held back by the cooldown is announced on a later feed instead of being lost.
+        If the metric was not fed for longer than stale_after (the bot or its source was down),
+        a crossed milestone is saved silently, so a restart does not flood the channels with old news.
+        """
         if not event:
             self.logger.error(f'No event!')
             return
@@ -52,6 +63,7 @@ class AchievementsTracker(WithLogger):
             return
 
         current_milestone = event.get_previous_milestone()
+        now = now_ts()
 
         record = await self.get_achievement_record(name, event.specialization)
         if record is None:
@@ -61,24 +73,38 @@ class AchievementsTracker(WithLogger):
                 timestamp=0,
                 specialization=event.specialization,
                 descending=descending,
+                last_seen_ts=now,
             )
             await self.set_achievement_record(record)
             self.logger.info(f'New achievement record created {record}')
-        else:
-            # check if we need to update
-            if (not event.descending and current_milestone > record.value) or (
-                    event.descending and current_milestone < record.value):
-                new_record = Achievement(
-                    str(name), int(value), current_milestone,
-                    timestamp=now_ts(),
-                    prev_milestone=record.milestone,
-                    previous_ts=record.timestamp,
-                    specialization=event.specialization,
-                    descending=descending,
-                )
-                await self.set_achievement_record(new_record)
-                self.logger.info(f'Achievement record updated {new_record}')
-                return new_record
+            return
+
+        crossed = (not descending and current_milestone > record.value) or (
+                descending and current_milestone < record.value)
+        stale = now - record.last_seen_ts > self.stale_after
+
+        if not crossed:
+            if now - record.last_seen_ts > self.LAST_SEEN_RESOLUTION:
+                await self.set_achievement_record(record._replace(last_seen_ts=now))
+            return
+
+        new_record = Achievement(
+            str(name), int(value), current_milestone,
+            timestamp=now,
+            prev_milestone=record.milestone,
+            previous_ts=record.timestamp,
+            specialization=event.specialization,
+            descending=descending,
+            last_seen_ts=now,
+        )
+        if stale:
+            await self.set_achievement_record(new_record)
+            self.logger.warning(f'Achievement {name} was not fed since {record.last_seen_ts}: '
+                                f'{new_record} saved silently')
+            return
+
+        self.logger.info(f'Achievement record updated {new_record}')
+        return new_record
 
     async def get_achievement_record(self, key, specialization) -> Optional[Achievement]:
         key = self.key(key, specialization)

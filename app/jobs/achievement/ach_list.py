@@ -99,6 +99,7 @@ class Achievement(NamedTuple):
     previous_ts: float = 0
     specialization: str = ''
     descending: bool = False  # if True, then we need to check if value is less than milestone
+    last_seen_ts: float = 0  # the last time this metric was fed to the tracker; 0 for records saved before it
 
     @property
     def has_previous(self):
