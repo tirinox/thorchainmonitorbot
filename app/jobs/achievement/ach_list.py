@@ -136,7 +136,8 @@ BG_NETWORK = 'nn_wreath_2.png'
 BG_SWAPS = 'nn_wreath_3.png'
 BG_USERS = 'nn_wreath_4.png'
 BG_RUNE = 'nn_wreath_rune.png'
-BG_BURN = 'nn_wreath_burn.png'  # for burnt RUNE; the revenue sits here until it gets its own frame
+BG_REVENUE = 'nn_wreath_revenue.png'
+BG_BURN = 'nn_wreath_burn.png'  # kept for a burnt RUNE achievement, none uses it yet
 BG_VAULT = 'nn_wreath_saver.png'
 BG_BTC = 'nn_wreath_btc_vault_2.png'
 BG_ETH = 'nn_wreath_eth_vault_2.png'
@@ -257,9 +258,9 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.TOTAL_VALUE_LOCKED, 'Total value locked', prefix='$', thresholds=356_700_000),
     ADesc(A.WEEKLY_SWAP_VOLUME, 'Weekly swap volume', prefix='$', thresholds=300_600_000, background=BG_SWAPS),
     ADesc(A.WEEKLY_PROTOCOL_REVENUE_USD, 'Weekly protocol revenue', prefix='$', thresholds=867_900,
-          background=BG_BURN),
+          background=BG_REVENUE),
     ADesc(A.WEEKLY_AFFILIATE_REVENUE_USD, 'Weekly affiliate revenue', prefix='$', thresholds=60_300,
-          background=BG_BURN),
+          background=BG_REVENUE),
 
     # trade assets
     ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade account balance', prefix='$', thresholds=10_000_000),
