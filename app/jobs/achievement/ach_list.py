@@ -139,6 +139,7 @@ BG_RUNE = 'nn_wreath_rune.png'
 BG_REVENUE = 'nn_wreath_revenue.png'
 BG_BURN = 'nn_wreath_burnt.png'  # kept for a burnt RUNE achievement, none uses it yet
 BG_VAULT = 'nn_wreath_vault.png'
+BG_STABLES = 'nn_wreath_stables.png'
 BG_BTC = 'nn_wreath_btc_vault_2.png'
 BG_ETH = 'nn_wreath_eth_vault_2.png'
 BG_ANNIVERSARY = 'nn_wreath_ann_3.png'
@@ -253,7 +254,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
 
     ADesc(A.BTC_IN_VAULT, 'Bitcoin in vaults', background=BG_BTC),
     ADesc(A.ETH_IN_VAULT, 'Ethereum in vaults', background=BG_ETH),
-    ADesc(A.STABLES_IN_VAULT, 'Stablecoins in vaults', background=BG_VAULT),
+    ADesc(A.STABLES_IN_VAULT, 'Stablecoins in vaults', background=BG_STABLES),
 
     ADesc(A.TOTAL_VALUE_LOCKED, 'Total value locked', prefix='$', thresholds=356_700_000, background=BG_VAULT),
     ADesc(A.WEEKLY_SWAP_VOLUME, 'Weekly swap volume', prefix='$', thresholds=300_600_000, background=BG_SWAPS),
