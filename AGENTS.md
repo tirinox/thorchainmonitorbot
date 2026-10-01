@@ -26,6 +26,7 @@
 - Test suite runs from app root: `cd app && python -m pytest tests` (same as `make test`).
 - For one-off maintenance against live Redis, follow README caveat commands using `PYTHONPATH="/app"` in container.
 - When running scripts locally, prefer `PYTHONPATH=.` from `app/` (pattern used across `Makefile` tools).
+- Achievement card frames (the wreath backgrounds of `renderer/templates/achievement.jinja2`): before adding or repainting one, read `docs/achievement-frames.md` — design rules, prompt template, `tools/achievement_frame.py` (generate via OpenRouter, measure the hole and edge color, preview a real card) and the `WreathStyle` table.
 
 ## Codebase-specific patterns and conventions
 - Many components implement subscriber chaining (`add_subscriber`); extend pipelines by inserting a stage, not by bypassing existing notifiers.
