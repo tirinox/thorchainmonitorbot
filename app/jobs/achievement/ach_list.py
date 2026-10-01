@@ -136,7 +136,8 @@ BG_NETWORK = 'nn_wreath_network.png'
 BG_SWAPS = 'nn_wreath_swaps.png'
 BG_USERS = 'nn_wreath_users.png'
 BG_RUNE = 'nn_wreath_rune.png'
-BG_REVENUE = 'nn_wreath_revenue.png'
+BG_REVENUE = 'nn_wreath_revenue_feast.png'
+BG_AFFILIATE = 'nn_wreath_affiliate.png'
 BG_BURN = 'nn_wreath_burnt.png'  # kept for a burnt RUNE achievement, none uses it yet
 BG_VAULT = 'nn_wreath_vault.png'
 BG_STABLES = 'nn_wreath_stables_chains.png'
@@ -262,7 +263,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.WEEKLY_PROTOCOL_REVENUE_USD, 'Weekly protocol revenue', prefix='$', thresholds=867_900,
           background=BG_REVENUE),
     ADesc(A.WEEKLY_AFFILIATE_REVENUE_USD, 'Weekly affiliate revenue', prefix='$', thresholds=60_300,
-          background=BG_REVENUE),
+          background=BG_AFFILIATE),
 
     # trade assets
     ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade account balance', prefix='$', thresholds=10_000_000,
