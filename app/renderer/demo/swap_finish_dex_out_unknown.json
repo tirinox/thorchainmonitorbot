@@ -1,0 +1,41 @@
+{
+  "template_name": "swap_finished.jinja2",
+  "parameters": {
+    "tx_hash_in": "E85A69910168AD6EEA96CD45710D320DFE3782BA755CCD7D6F3E82A5367494EA",
+    "source_user_name": "bc1q83t … 5adf",
+    "source_address": "0x00709fc50f42763943309b4d0268b9651ac03510",
+    "source_amount": 0.0706,
+    "source_asset": "BTC.BTC",
+    "source_asset_logo": "BTC.BTC",
+    "source_asset_name": "BTC",
+    "source_chain_logo": "",
+    "source_volume_usd": 3341,
+    "tx_hash_out": "",
+    "destination_user_name": "0x4cb8 … f6a6",
+    "destination_address": "0x4cb801c62a03535b82f1cf1dba7d2cc2f870f6a6",
+    "destination_amount": 1.2,
+    "destination_asset": "ETH.ETH",
+    "destination_logo": "ETH.ETH",
+    "destination_asset_name": "ETH",
+    "destination_chain_logo": "",
+    "destination_volume_usd": 3300,
+    "liquidity_fee_percent": 0.048,
+    "affiliate_names": [
+      "THORSwap"
+    ],
+    "affiliate_logos": [
+      ""
+    ],
+    "affiliate_fee": 0.15,
+    "streaming_count": 7,
+    "rapid_swap_stats": null,
+    "total_time_sec": 610,
+    "refund": false,
+    "refund_rate": 0,
+    "dex_in": null,
+    "dex_out": {
+      "aggregator": "FC4414199",
+      "aggregator_short": "FC4414199"
+    }
+  }
+}

@@ -127,15 +127,15 @@ class DexAnalyticsCollector(WithLogger, INotified):
         swap_in_report = self.make_dex_report_entry([p for p in all_points if p.swap_in])
         swap_out_report = self.make_dex_report_entry([p for p in all_points if p.swap_out])
 
-        outer_assets = set([p.swap_in.token.symbol for p in all_points if p.swap_in] +
-                           [p.swap_out.token.symbol for p in all_points if p.swap_out])
+        outer_assets = set([p.swap_in.symbol for p in all_points if p.swap_in] +
+                           [p.swap_out.symbol for p in all_points if p.swap_out])
 
         by_outer_asset = {}
         for outer_asset in outer_assets:
             by_outer_asset[outer_asset] = self.make_dex_report_entry(
                 [p for p in all_points if (
-                        (p.swap_in and p.swap_in.token.symbol == outer_asset) or
-                        (p.swap_out and p.swap_out.token.symbol == outer_asset)
+                        (p.swap_in and p.swap_in.symbol == outer_asset) or
+                        (p.swap_out and p.swap_out.symbol == outer_asset)
                 )],
                 name=outer_asset
             )

@@ -1,0 +1,41 @@
+{
+  "template_name": "swap_finished.jinja2",
+  "parameters": {
+    "tx_hash_in": "232D084ABE576D561AD37810DEC9D4D301A4D141FC42B7C64770800B9F48193E",
+    "source_user_name": "0x4cb8 … f6a6",
+    "source_address": "0x4cb801c62a03535b82f1cf1dba7d2cc2f870f6a6",
+    "source_amount": 0.05,
+    "source_asset": "ETH.ETH",
+    "source_asset_logo": "ETH.ETH",
+    "source_asset_name": "ETH",
+    "source_chain_logo": "",
+    "source_volume_usd": 134.5,
+    "tx_hash_out": "123D0CACCEE5BBD2CE45F5FA593C65D38230468F63D81B4972BB61081518E377",
+    "destination_user_name": "0x4CB8 … F6a6",
+    "destination_address": "0x4CB801C62A03535b82F1cF1DBA7D2CC2F870F6a6",
+    "destination_amount": 4.6,
+    "destination_asset": "AVAX.AVAX",
+    "destination_logo": "AVAX.AVAX",
+    "destination_asset_name": "AVAX",
+    "destination_chain_logo": "",
+    "destination_volume_usd": 50.7,
+    "liquidity_fee_percent": 0.001,
+    "affiliate_names": [
+      "THORSwap"
+    ],
+    "affiliate_logos": [
+      ""
+    ],
+    "affiliate_fee": 0.15,
+    "streaming_count": 1,
+    "rapid_swap_stats": null,
+    "total_time_sec": 4344,
+    "refund": false,
+    "refund_rate": 0,
+    "dex_in": null,
+    "dex_out": {
+      "aggregator": "TSAggregatorPangolin",
+      "aggregator_short": "TS Pangolin"
+    }
+  }
+}

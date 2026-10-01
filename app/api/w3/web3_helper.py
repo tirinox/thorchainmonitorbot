@@ -28,15 +28,17 @@ class Web3Helper(WithLogger):
         self.logger.info(f'Init Web3 for {chain} @ "{rpc_url}".')
         self.w3 = Web3(Web3.HTTPProvider(rpc_url))
 
-    async def _retry_action(self, coroutine):
-        for _ in range(self._retries):
+    async def _retry_action(self, action, *args):
+        # A coroutine can be awaited only once, so the action is a function that makes a fresh one per attempt
+        for attempt in range(1, max(1, self._retries) + 1):
             try:
-                return await coroutine
+                return await action(*args)
             except TransactionNotFound:
                 raise
             except Exception:
-                self.logger.exception(f'failed to load WEB3 data for {coroutine}', exc_info=True)
-                if self._retry_wait > 0:
+                self.logger.exception(f'failed to load WEB3 data ({action.__name__}{args}), attempt {attempt}',
+                                      exc_info=True)
+                if self._retry_wait > 0 and attempt < self._retries:
                     await asyncio.sleep(self._retry_wait)
 
     @async_wrap
@@ -44,14 +46,14 @@ class Web3Helper(WithLogger):
         return self.w3.eth.get_transaction(tx_id)
 
     async def get_transaction(self, tx_id):
-        return await self._retry_action(self._get_transaction(tx_id))
+        return await self._retry_action(self._get_transaction, tx_id)
 
     @async_wrap
     def _get_transaction_receipt(self, tx_id):
         return self.w3.eth.get_transaction_receipt(tx_id)
 
     async def get_transaction_receipt(self, tx_id):
-        return await self._retry_action(self._get_transaction_receipt(tx_id))
+        return await self._retry_action(self._get_transaction_receipt, tx_id)
 
 
 class Web3HelperCached(Web3Helper):

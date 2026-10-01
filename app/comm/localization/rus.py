@@ -479,10 +479,11 @@ class RussianLocalization(BaseLocalization):
         elif tx.is_of_type(ActionType.SWAP):
             content += self.format_swap_route(tx, usd_per_rune)
 
-            if tx.is_streaming:
-                if (success := tx.meta_swap.streaming.success_rate) < 1.0:
-                    good = tx.meta_swap.streaming.successful_swaps
-                    total = tx.meta_swap.streaming.quantity
+            streaming = tx.meta_swap.streaming if tx.meta_swap else None
+            if tx.is_streaming and streaming:  # old Midgard actions may lack the streaming block
+                if (success := streaming.success_rate) < 1.0:
+                    good = streaming.successful_swaps
+                    total = streaming.quantity
                     content += f'\nПроцент успеха: {format_percent(success, 1)} ({good}/{total})'
 
         user_link = self.link_to_address(tx.sender_address, name_map)

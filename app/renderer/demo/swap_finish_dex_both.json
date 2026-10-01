@@ -1,0 +1,44 @@
+{
+  "template_name": "swap_finished.jinja2",
+  "parameters": {
+    "tx_hash_in": "D3C21913EDA1D8D432E0ED09323A3F4B433373D319E632CD7B089CC27D318023",
+    "source_user_name": "0x44fe … d42b",
+    "source_address": "0x44fe3d1f7ab441695c2a8286f2fe3d698ed6d42b",
+    "source_amount": 2.1,
+    "source_asset": "BSC.BNB",
+    "source_asset_logo": "BSC.BNB",
+    "source_asset_name": "BNB",
+    "source_chain_logo": "",
+    "source_volume_usd": 1600,
+    "tx_hash_out": "7B5E8C0D6C5F2A1B3E4D5C6B7A8F9E0D1C2B3A4F5E6D7C8B9A0F1E2D3C4B5A69",
+    "destination_user_name": "0x44fe … d42b",
+    "destination_address": "0x44fe3d1f7ab441695c2a8286f2fe3d698ed6d42b",
+    "destination_amount": 0.273,
+    "destination_asset": "ETH.ETH",
+    "destination_logo": "ETH.ETH",
+    "destination_asset_name": "ETH",
+    "destination_chain_logo": "",
+    "destination_volume_usd": 735.3,
+    "liquidity_fee_percent": 0.002,
+    "affiliate_names": [
+      "THORSwap"
+    ],
+    "affiliate_logos": [
+      ""
+    ],
+    "affiliate_fee": 0,
+    "streaming_count": 1,
+    "rapid_swap_stats": null,
+    "total_time_sec": 36,
+    "refund": false,
+    "refund_rate": 0,
+    "dex_in": {
+      "aggregator": "TSAggregatorPancakeV2 BinanceSmartChain",
+      "aggregator_short": "TS PancakeV2"
+    },
+    "dex_out": {
+      "aggregator": "TSAggregatorUniswapV3 500",
+      "aggregator_short": "TS UniswapV3 500"
+    }
+  }
+}

@@ -31,9 +31,13 @@ web3:
     rpc: "https://api.avax.network/ext/bc/C/rpc"
   BSC:
     rpc: "https://bscrpc.com"
+  BASE:
+    rpc: "https://mainnet.base.org"
+  # DEX aggregator detection works only for the chains that have an RPC above.
   cache_expire: 30d
   retries: 3
   retry_wait: 2s
+  timeout: 30s  # one RPC lookup (tx or receipt) while detecting a DEX aggregator
 
 
 thor:
@@ -302,7 +306,7 @@ tx:
 
     also_trigger_when:
       dex_aggregator_used:
-        min_usd_total: 1000
+        min_usd_total: 1000  # also: swaps this big get the DEX swap-out decoded on-chain (actual amount, recipient)
       affiliate_fee_usd_greater: 1000
       streaming_swap:
         volume_greater: 25000

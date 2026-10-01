@@ -577,16 +577,15 @@ class BaseLocalization(ABC):  # == English
         return bold(short_money(amt))
 
     def format_aggregator(self, a: AmountToken):
-        chain = ''
+        chain = a.chain
+        if not chain and a.token:
+            chain = next((c for c in Chains.ALL_EVM if a.token.chain_id == Chains.web3_chain_id(c)), '')
 
-        for chain in Chains.ALL_EVM:
-            if a.token.chain_id == Chains.web3_chain_id(chain):
-                break
-
-        if a.amount > 0:
-            return f'{self.format_op_amount(a.amount)} {chain}.{a.token.symbol}'
+        asset = f'{chain}.{a.symbol}' if chain else a.symbol
+        if a.has_amount:
+            return f'{self.format_op_amount(a.amount)} {asset}'
         else:
-            return f'{chain}.{a.token.symbol}'
+            return asset
 
     def _get_asset_summary_string(self, tx, in_only=False, out_only=False):
         ends = tx.get_asset_summary(in_only=in_only, out_only=out_only)
@@ -700,10 +699,11 @@ class BaseLocalization(ABC):  # == English
             )
         elif tx.is_of_type(ActionType.SWAP):
             content += self.format_swap_route(tx, usd_per_rune)
-            if tx.is_streaming:
-                if (success := tx.meta_swap.streaming.success_rate) < 1.0:
-                    good = tx.meta_swap.streaming.successful_swaps
-                    total = tx.meta_swap.streaming.quantity
+            streaming = tx.meta_swap.streaming if tx.meta_swap else None
+            if tx.is_streaming and streaming:  # old Midgard actions may lack the streaming block
+                if (success := streaming.success_rate) < 1.0:
+                    good = streaming.successful_swaps
+                    total = streaming.quantity
                     content += f'\nSuccess rate: {format_percent(success, 1)} ({good}/{total})'
 
         user_link = self.link_to_address(tx.sender_address, name_map)

@@ -173,10 +173,11 @@ class TwitterEnglishLocalization(BaseLocalization):
         elif tx.is_of_type(ActionType.SWAP):
             content += self.format_swap_route(tx, usd_per_rune)
 
-            if tx.is_streaming:
-                if (success := tx.meta_swap.streaming.success_rate) < 1.0:
-                    good = tx.meta_swap.streaming.successful_swaps
-                    total = tx.meta_swap.streaming.quantity
+            streaming = tx.meta_swap.streaming if tx.meta_swap else None
+            if tx.is_streaming and streaming:  # old Midgard actions may lack the streaming block
+                if (success := streaming.success_rate) < 1.0:
+                    good = streaming.successful_swaps
+                    total = streaming.quantity
                     content += f'\nSuccess rate: {format_percent(success, 1)} ({good}/{total})'
 
         link = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.first_input_tx_hash) \

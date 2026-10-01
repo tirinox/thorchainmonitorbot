@@ -1,0 +1,90 @@
+{#
+    A hint that a DEX aggregator was used outside THORChain, on the outer side of an asset logo.
+    Context: leg = {aggregator, aggregator_short}, side = "in" | "out"
+    "in":  an arrow fading in from the left edge towards the source logo
+    "out": an arrow fading out from the destination logo towards the right edge
+    Tokens and amounts are deliberately not shown here: the full route is in the message text.
+    The hint lives in the page margin and is absolutely positioned, so the main route does not move.
+#}
+<style>
+    .dex-anchor {
+        position: relative;
+        display: flex;
+    }
+
+    .dex-hint {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 112px;
+    }
+
+    .dex-hint-in {
+        right: calc(100% + 14px);
+    }
+
+    .dex-hint-out {
+        left: calc(100% + 14px);
+    }
+
+    .dex-hint-arrow-fade {
+        display: flex;
+    }
+
+    .dex-hint-in .dex-hint-arrow-fade {
+        -webkit-mask-image: linear-gradient(to right, transparent 0%, black 85%);
+        mask-image: linear-gradient(to right, transparent 0%, black 85%);
+    }
+
+    .dex-hint-out .dex-hint-arrow-fade {
+        -webkit-mask-image: linear-gradient(to right, black 15%, transparent 100%);
+        mask-image: linear-gradient(to right, black 15%, transparent 100%);
+    }
+
+    .dex-hint-arrow {
+        width: 112px;
+        padding: 0;
+        filter: brightness(190%) hue-rotate(30deg) saturate(200%);
+    }
+
+    .dex-hint-label {
+        position: absolute;
+        bottom: calc(100% + 6px);
+        left: 50%;
+        transform: translateX(-50%);
+        width: 132px;
+        text-align: center;
+        line-height: 1.1;
+        font-size: 19px;
+        font-style: italic;
+        color: #23DCC8;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .dex-hint-caption {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 15px;
+        letter-spacing: 2px;
+        color: #7fa7a3;
+    }
+</style>
+
+{% if leg %}
+    <div class="dex-hint dex-hint-{{ side }}">
+        <div class="dex-hint-label" title="{{ leg.aggregator }}">
+            {{ leg.aggregator_short or leg.aggregator or "aggregator" }}
+        </div>
+        <div class="dex-hint-arrow-fade">
+            <img src="renderer/static/img/arrow2.png" alt="DEX aggregator" class="dex-hint-arrow">
+        </div>
+        <div class="dex-hint-caption">DEX</div>
+    </div>
+{% endif %}

@@ -19,15 +19,39 @@ def aggr() -> AggregatorResolver:
 
 
 def test_loading(aggr):
-    assert len(aggr) == 40
-    assert len(aggr.by_chain) == 3
-    assert set(aggr.by_chain.keys()) == {Chains.ETH, Chains.AVAX, Chains.BSC}
+    assert len(aggr) == 76
+    assert len(aggr.by_chain) == 4
+    assert set(aggr.by_chain.keys()) == {Chains.ETH, Chains.AVAX, Chains.BSC, Chains.BASE}
+    # the same contract may be whitelisted on several chains
+    assert aggr.by_chain[Chains.ETH]['0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE'].chain == Chains.ETH
+    assert aggr.by_chain[Chains.BSC]['0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE'].chain == Chains.BSC
+
+
+@pytest.mark.parametrize(('address', 'chain', 'name'), [
+    ('1D3', 'AVAX', 'TSAggregatorAvaxGeneric'),  # suffix within the chain, like thornode
+    ('771d3', 'AVAX', 'TSAggregatorAvaxGeneric'),
+    ('0x7C38b8B2efF28511ECc14a621e263857Fb5771d3', 'AVAX', 'TSAggregatorAvaxGeneric'),
+    ('1D3', 'ETH', None),  # on ETH nothing ends with it (a substring match is not enough)
+    ('F4EaE', 'BSC', 'LiFi - BSC'),
+    ('F4EaE', 'ETH', 'LiFi - ETH'),
+    ('F4EaE', 'BASE', None),  # LiFi is not whitelisted on BASE
+    ('dc48Ef', 'BASE', 'SwapKit Base UniswapV3 - 500'),
+    ('zzz', 'ETH', None),
+    ('', 'ETH', None),
+])
+def test_aggregator_search_within_chain(address, chain, name, aggr):
+    result = aggr.search_aggregator_address(address, chain=chain)
+    if name is None:
+        assert result is None
+    else:
+        assert result
+        assert not isinstance(result, list)
+        assert result.chain == chain
+        assert result.name.startswith(name)
 
 
 @pytest.mark.parametrize(('address', 'name', 'chain'), [
     ('0x7C38b8B2efF28511ECc14a621e263857Fb5771d3', 'TSAggregatorAvaxGeneric', 'AVAX'),
-    ('7c3', 'TSAggregatorAvaxGeneric', 'AVAX'),
-    ('1D3', 'TSAggregatorAvaxGeneric', 'AVAX'),
     ('983976529', 'TSAggregator2LegUniswapV2 USDC', 'ETH'),
     ('5dA', 'TSAggregator2LegUniswapV2 USDC', 'ETH'),
     ('4DD4072A9a8e', 'XDEFIAggregatorEthGeneric', 'ETH'),
