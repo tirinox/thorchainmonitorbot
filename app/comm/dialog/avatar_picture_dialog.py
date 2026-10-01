@@ -1,11 +1,11 @@
 import asyncio
 from contextlib import AsyncExitStack
 from io import BytesIO
+from typing import List
 
 from PIL import Image
 from aiogram import Bot
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.dispatcher.storage import FSMContextProxy
 from aiogram.types import Message, PhotoSize, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.types.mixins import Downloadable
 from aiogram.utils.helper import HelperMode
@@ -14,7 +14,6 @@ from comm.dialog.base import BaseDialog, message_handler, query_handler
 from comm.dialog.my_wallets_menu import ContentTypes, CallbackQuery
 from comm.picture.avatar import make_avatar
 from comm.localization.manager import BaseLocalization
-from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
 
 
@@ -24,11 +23,15 @@ async def download_tg_photo(photo: Downloadable) -> Image.Image:
     return Image.open(photo_raw)
 
 
+def largest_size(sizes: List[PhotoSize]) -> PhotoSize:
+    # Telegram gives every photo in several sizes, from a ~90 px thumbnail up
+    return max(sizes, key=lambda size: size.width * size.height)
+
+
 async def get_userpic(bot: Bot, user_id) -> Image.Image:
     pics = await bot.get_user_profile_photos(user_id, 0, 1)
     if pics.photos and pics.photos[0]:
-        first_pic: PhotoSize = pics.photos[0][0]
-        return await download_tg_photo(first_pic)
+        return await download_tg_photo(largest_size(pics.photos[0]))
 
 
 class AvatarStates(StatesGroup):
@@ -37,9 +40,11 @@ class AvatarStates(StatesGroup):
 
 
 class AvatarDialog(BaseDialog):
-    def __init__(self, loc: BaseLocalization, data: FSMContextProxy, d: DepContainer, message: Message):
-        super().__init__(loc, data, d, message)
-        self._work_lock = asyncio.Lock()
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # a picture sent as a file
+    MAX_PIXELS = 40_000_000
+
+    # a dialog object lives for one update only, so the limit is shared by the class: at most 2 avatars at once
+    _work_slots = asyncio.Semaphore(2)
 
     def menu_inline_kbd(self):
         return InlineKeyboardMarkup(
@@ -65,16 +70,23 @@ class AvatarDialog(BaseDialog):
 
     @message_handler(state=AvatarStates.MAIN, content_types=ContentTypes.PHOTO)
     async def on_picture(self, message: Message):
-        await self.handle_avatar_picture(message, self.loc, explicit_picture=message.photo[0])
+        await self.handle_avatar_picture(message, self.loc, explicit_picture=largest_size(message.photo))
 
     @message_handler(state=AvatarStates.MAIN, content_types=ContentTypes.DOCUMENT)
     async def on_picture_doc(self, message: Message):
-        await self.handle_avatar_picture(message, self.loc, explicit_picture=message.document)
+        doc = message.document
+        if not (doc.mime_type or '').startswith('image/'):
+            await message.answer(self.loc.TEXT_AVA_ERR_INVALID, reply_markup=self.menu_inline_kbd())
+            return
+        if (doc.file_size or 0) > self.MAX_FILE_SIZE:
+            await message.answer(self.loc.TEXT_AVA_ERR_TOO_BIG, reply_markup=self.menu_inline_kbd())
+            return
+        await self.handle_avatar_picture(message, self.loc, explicit_picture=doc)
 
     async def handle_avatar_picture(self, message: Message, loc: BaseLocalization,
                                     explicit_picture: Downloadable = None):
         async with AsyncExitStack() as stack:
-            await stack.enter_async_context(self._work_lock)
+            await stack.enter_async_context(self._work_slots)
 
             # POST A LOADING STICKER
             sticker = await self.answer_loading_sticker(message, remove_keyboard=True)
@@ -97,9 +109,12 @@ class AvatarDialog(BaseDialog):
                 await message.answer(loc.TEXT_AVA_ERR_NO_PIC, reply_markup=self.menu_inline_kbd())
                 return
 
-            w, h = user_pic.size
+            w, h = user_pic.size  # from the header: the pixels are not decoded yet
             if not w or not h:
                 await message.answer(loc.TEXT_AVA_ERR_INVALID, reply_markup=self.menu_inline_kbd())
+                return
+            if w * h > self.MAX_PIXELS:
+                await message.answer(loc.TEXT_AVA_ERR_TOO_BIG, reply_markup=self.menu_inline_kbd())
                 return
 
             pic = await make_avatar(user_pic)

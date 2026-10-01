@@ -969,6 +969,7 @@ class BaseLocalization(ABC):  # == English
                        'You can send me a picture as a file (or document) to avoid compression issues.'
 
     TEXT_AVA_ERR_INVALID = '⚠️ Your picture has invalid format!'
+    TEXT_AVA_ERR_TOO_BIG = '⚠️ Your picture is too big! Please send one up to 10 MB and 40 megapixels.'
     TEXT_AVA_ERR_NO_PIC = '⚠️ You have no user pic...'
     TEXT_AVA_READY = '🥳 <b>Your THORChain avatar is ready!</b> Download this image and set it as a profile picture' \
                      ' at Telegram and other social networks.'
