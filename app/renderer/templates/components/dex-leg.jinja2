@@ -1,0 +1,136 @@
+{#
+    One DEX aggregator leg outside THORChain.
+    Context: leg = {symbol, chain, amount, aggregator, aggregator_short, logo, local_logo, chain_logo}, side = "in" | "out"
+    leg = None renders an invisible spacer of the same width, so a one-sided route stays symmetric.
+    "in":  [external token] --aggregator--> (the L1 gas asset enters THORChain)
+    "out": (the L1 gas asset leaves THORChain) --aggregator--> [external token]
+#}
+<style>
+    .dex-leg {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .dex-node {
+        position: relative;
+        width: 90px;
+        height: 90px;
+    }
+
+    .dex-logo {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        border: 1px solid rgba(156, 161, 159, 0.4);
+        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
+    }
+
+    .dex-chain-logo {
+        position: absolute;
+        top: -6px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1px solid rgba(156, 161, 159, 0.4);
+    }
+
+    .dex-chain-logo-left {
+        left: -8px;
+    }
+
+    .dex-chain-logo-right {
+        right: -8px;
+    }
+
+    .dex-amount {
+        position: absolute;
+        top: 96px;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
+        text-align: center;
+        line-height: 1.05;
+        font-family: ThorFontLight, sans-serif;
+        font-weight: bold;
+        font-size: 24px;
+        color: #ffffff;
+        text-shadow: 0 0 10px rgba(69, 221, 237, 60%);
+    }
+
+    .dex-arrow-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 110px;
+    }
+
+    .dex-arrow {
+        width: 100px;
+        padding: 0;
+        filter: brightness(190%) hue-rotate(30deg) saturate(200%) drop-shadow(3px 3px 4px rgba(0, 213, 213, 0.51)) drop-shadow(-3px -3px 4px rgba(3, 243, 150, 0.51));
+    }
+
+    .dex-aggregator {
+        max-width: 150px;
+        margin-bottom: 2px;
+        text-align: center;
+        line-height: 1.1;
+        font-size: 18px;
+        font-style: italic;
+        color: #23DCC8;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .dex-leg-spacer {
+        width: 200px; /* node + arrow box */
+        height: 1px;
+    }
+</style>
+
+{% set dex_node %}{% if leg %}
+    <div class="dex-node">
+        <img class="dex-logo"
+             src="{{ leg.logo if leg.logo else ('renderer/logo/' ~ leg.local_logo ~ '.png' if leg.local_logo else 'renderer/logo/unknown.png') }}"
+             alt="{{ leg.symbol }} logo"
+             data-local-logo="{{ leg.local_logo }}"
+             onerror="if (this.dataset.localLogo && !this.dataset.triedLocal) { this.dataset.triedLocal = 1; this.src = 'renderer/logo/' + this.dataset.localLogo + '.png'; } else { this.onerror = null; this.src = 'renderer/logo/unknown.png'; }"
+        >
+        {% if leg.chain_logo %}
+            <img class="dex-chain-logo {{ 'dex-chain-logo-left' if side == 'in' else 'dex-chain-logo-right' }}"
+                 src="renderer/logo/{{ leg.chain_logo }}.png" alt="{{ leg.chain }} logo"
+                 onerror="this.style.display = 'none'">
+        {% endif %}
+        <div class="dex-amount">
+            {% if leg.amount %}<div>{{ short_money(leg.amount) }}</div>{% endif %}
+            <div>{{ leg.symbol }}</div>
+        </div>
+    </div>
+{% endif %}{% endset %}
+
+{% set dex_arrow %}{% if leg %}
+    <div class="dex-arrow-box">
+        <div class="dex-aggregator" title="{{ leg.aggregator }}">
+            {{ leg.aggregator_short or leg.aggregator or "DEX aggregator" }}
+        </div>
+        <img src="renderer/static/img/arrow2.png" alt="Arrow" class="dex-arrow shadow">
+    </div>
+{% endif %}{% endset %}
+
+{% if leg %}
+    <div class="dex-leg dex-leg-{{ side }}">
+        {% if side == 'in' %}
+            {{ dex_node }}
+            {{ dex_arrow }}
+        {% else %}
+            {{ dex_arrow }}
+            {{ dex_node }}
+        {% endif %}
+    </div>
+{% else %}
+    <div class="dex-leg-spacer"></div>
+{% endif %}

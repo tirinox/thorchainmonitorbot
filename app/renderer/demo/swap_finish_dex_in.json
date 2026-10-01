@@ -1,0 +1,47 @@
+{
+  "template_name": "swap_finished.jinja2",
+  "parameters": {
+    "tx_hash_in": "E85A69910168AD6EEA96CD45710D320DFE3782BA755CCD7D6F3E82A5367494EA",
+    "source_user_name": "0x0070 … 3510",
+    "source_address": "0x00709fc50f42763943309b4d0268b9651ac03510",
+    "source_amount": 6.5,
+    "source_asset": "ETH.ETH",
+    "source_asset_logo": "ETH.ETH",
+    "source_asset_name": "ETH",
+    "source_chain_logo": "",
+    "source_volume_usd": 17500,
+    "tx_hash_out": "",
+    "destination_user_name": "thor10 … qvwt",
+    "destination_address": "thor10ehc8k4udc0cmzgy7ak8frj7c98gm9yy2xqvwt",
+    "destination_amount": 2800,
+    "destination_asset": "THOR.RUNE",
+    "destination_logo": "THOR.RUNE",
+    "destination_asset_name": "RUNE",
+    "destination_chain_logo": "",
+    "destination_volume_usd": 2200,
+    "liquidity_fee_percent": 0.048,
+    "affiliate_names": [
+      "THORSwap"
+    ],
+    "affiliate_logos": [
+      ""
+    ],
+    "affiliate_fee": 0.15,
+    "streaming_count": 1,
+    "rapid_swap_stats": null,
+    "total_time_sec": 18,
+    "refund": false,
+    "refund_rate": 0,
+    "dex_in": {
+      "symbol": "USDT",
+      "chain": "ETH",
+      "amount": 26000.0,
+      "aggregator": "TSAggregatorUniswapV2",
+      "aggregator_short": "TS UniswapV2",
+      "logo": "https://tokens.1inch.io/0xdac17f958d2ee523a2206206994597c13d831ec7.png",
+      "local_logo": "ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7",
+      "chain_logo": "ETH.ETH"
+    },
+    "dex_out": null
+  }
+}

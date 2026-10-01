@@ -87,17 +87,27 @@ async def render_full_pipeline(template_name, parameters):
     return Response(png_bytes)
 
 
-def _response_no_template_found(template_name: str):
+def _demo_index_html(heading: str = '') -> str:
     items = "".join(
         f'<li><a href="/render/demo-html/{name}">{name}</a> '
         f'| <a href="/render/demo/{name}">PNG</a></li>'
         for name in sorted(available_demo_templates())
     )
-    html = (
-        f"<h2>Template <code>{template_name}</code> not found.</h2>"
-        f"<h3>Available demos:</h3><ul>{items}</ul>"
-    )
+    return f"{heading}<h3>Available demos:</h3><ul>{items}</ul>"
+
+
+def _response_no_template_found(template_name: str):
+    html = _demo_index_html(f"<h2>Template <code>{template_name}</code> not found.</h2>")
     return Response(status_code=404, content=html, media_type="text/html")
+
+
+@app.get("/render/demo-html", include_in_schema=False)
+@app.get("/render/demo-html/", include_in_schema=False)
+@app.get("/render/demo", include_in_schema=False)
+@app.get("/render/demo/", include_in_schema=False)
+async def demo_index():
+    """The list of the demos: each one opens as HTML or as the rendered PNG."""
+    return Response(content=_demo_index_html("<h2>Renderer demos</h2>"), media_type="text/html")
 
 
 @app.get("/render/demo-html/{name}")

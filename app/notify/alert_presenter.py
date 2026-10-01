@@ -1,7 +1,9 @@
+from typing import Optional
 import asyncio
 
 from api.midgard.name_service import NameService, NameMap, add_thor_suffix
 from api.w3.dex_analytics import DexReport
+from api.w3.token_record import AmountToken
 from comm.localization.manager import BaseLocalization
 from comm.picture.achievement_picture import build_achievement_picture_generator
 from comm.picture.block_height_picture import block_speed_chart
@@ -300,6 +302,34 @@ class AlertPresenter(INotified, WithLogger):
             # just address
             return shorten_text_middle(address, 6, 4) if address else ''
 
+    # words that add nothing under a small arrow: the chain is already shown by the token's chain logo
+    _AGGREGATOR_NOISE_WORDS = {'aggregator', 'ethereum', 'avalanche', 'binancesmartchain', 'bsc', 'base', 'arbitrum'}
+
+    @classmethod
+    def _short_aggregator_name(cls, name: str) -> str:
+        """ "TSAggregatorPancakeV2 BinanceSmartChain" -> "TS PancakeV2" """
+        words = (name or '').replace('Aggregator', ' ').split()
+        words = [w for w in words if w.lower() not in cls._AGGREGATOR_NOISE_WORDS]
+        return ' '.join(words) or (name or '')
+
+    @classmethod
+    def _dex_leg_for_renderer(cls, leg: Optional[AmountToken]) -> Optional[dict]:
+        """A DEX aggregator leg (swap-in or swap-out) as the swap_finished template wants it."""
+        if not leg or not leg.is_known:
+            return None
+        token = leg.token
+        return {
+            "symbol": leg.symbol,
+            "chain": leg.chain,
+            "amount": leg.amount if leg.has_amount else 0,
+            "aggregator": leg.aggr_name or '',
+            "aggregator_short": cls._short_aggregator_name(leg.aggr_name),
+            "logo": token.logoURI if token and token.logoURI else '',
+            # tokens with a THORChain pool have a logo in data/asset_logo under their full asset name
+            "local_logo": f'{leg.chain}.{token.symbol}-{token.address.upper()}' if token and leg.chain and token.address else '',
+            "chain_logo": str(Asset.gas_asset_from_chain(leg.chain)) if leg.chain else '',
+        }
+
     @staticmethod
     def _get_chain_logo(asset: Asset) -> str:
         if is_ambiguous_asset(asset):
@@ -421,6 +451,11 @@ class AlertPresenter(INotified, WithLogger):
 
             "refund": refund_rate > 0 or tx.has_refund_output,
             "refund_rate": refund_rate,
+
+            # DEX aggregator legs outside THORChain: an external token swapped into the L1 gas asset before
+            # the swap (dex_in) and/or the gas asset swapped into an external token after it (dex_out)
+            "dex_in": self._dex_leg_for_renderer(tx.dex_info.swap_in),
+            "dex_out": self._dex_leg_for_renderer(tx.dex_info.swap_out),
         }
         photo = await self.renderer.render('swap_finished.jinja2', parameters)
         photo_name = 'swap_finished.png'
