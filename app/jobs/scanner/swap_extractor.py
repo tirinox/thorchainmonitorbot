@@ -7,7 +7,6 @@ from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.native_scan import BlockResult
 from jobs.scanner.swap_props import SwapProps
 from jobs.scanner.swap_start_detector import SwapStartDetectorFromBlock
-from jobs.scanner.tx import ThorObservedTx, ThorEvent
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -46,8 +45,8 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         end_block_outbounds_tx_ids = set(
             ev.tx_id for ev in interesting_end_block_events if isinstance(ev, EventOutbound))
 
-        # Also get quorum observed outbounds
-        outbound_tx_id_set, outbound_events = self.detect_observed_quorum_outbounds(block)
+        # Also get L1 outbounds the chain has accepted
+        outbound_tx_id_set, outbound_events = self.detect_accepted_l1_outbounds(block)
 
         # Write them into the DB
         await self.register_swap_events(block, interesting_end_block_events)
@@ -143,51 +142,29 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         """Return all ev_swap_xxx events (EventSwap instances) stored in the given swap props."""
         return [ev for ev in swap_props.events if isinstance(ev, EventSwap)]
 
-    def make_events_from_observed_tx(self, tx: ThorObservedTx):
-        if not tx.is_outbound:
-            self.logger.error("Cannot create EventOutbound from inbound transaction")
-            return
-
-        memo = (tx.memo or '').upper()
-        if memo.startswith('MIGRATE') or memo.startswith('CONSOLIDATE'):
-            self.logger.debug(f"Internal tx {tx.memo} is ignored.")
-            return
-
-        if not (memo.startswith('OUT:') or memo.startswith('REFUND:')):
-            self.logger.warning(f"Cannot create EventOutbound from tx with memo: {tx.memo!r}")
-            return
-
-        real_in_tx = tx.memo.split(':')[1]
-
-        for coin in tx.coins:
-            yield EventOutbound.from_event(ThorEvent({
-                'id': tx.tx_id,
-                'chain': tx.chain,
-                'in_tx_id': real_in_tx,
-                'from': tx.from_address,
-                'to': tx.to_address,
-                'coin': f"{coin.asset} {coin.amount}",
-                'memo': tx.memo,
-                'type': 'outbound',
-                '_height': tx.block_height,
-                '_amount': coin.amount,
-                '_asset': coin.asset,
-            }))
-
-    def detect_observed_quorum_outbounds(self, block: BlockResult):
+    @staticmethod
+    def detect_accepted_l1_outbounds(block: BlockResult):
+        """
+        THORChain emits an "outbound" event in the results of the observation tx that brings the outbound to consensus.
+        An observed outbound alone is not enough: a vault may send a leg that is never accepted, then the leg is
+        rescheduled to another vault, and counting both observations would add that leg twice.
+        """
         completed_txs_ids = set()
         events = []
-        for tx in block.all_observed_txs:
-            if tx.is_outbound:
-                this_events = list(self.make_events_from_observed_tx(tx))
-                events.extend(this_events)
-                # EventOutbound.tx_id is the original inbound tx id (in_tx_id field)
-                completed_txs_ids.update(e.tx_id for e in this_events)
+        for tx in block.txs:
+            if not tx.is_success:
+                continue
+            for ev in tx.find_events_by_type('outbound'):
+                outbound = EventOutbound.from_event(ev)
+                if outbound.is_outbound_memo or outbound.is_refund_memo:
+                    events.append(outbound)
+                    # EventOutbound.tx_id is the original inbound tx id (in_tx_id field)
+                    completed_txs_ids.add(outbound.tx_id)
         return completed_txs_ids, events
 
     async def handle_finished_swaps(self, outbound_tx_id_set: set, height: int) -> List[ThorAction]:
         """
-        Outbound can come from end_block_events or from observed quorum txs.
+        Outbound can come from end_block_events or from the outbound events of the observation txs.
         """
         results = []
 

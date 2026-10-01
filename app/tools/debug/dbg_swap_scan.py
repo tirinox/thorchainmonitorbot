@@ -147,8 +147,7 @@ async def dbg_find_missing_outs(app):
 
     sep('Events')
 
-    extractor = SwapExtractorBlock(app.deps)
-    outbound_tx_id_set, outbound_events = extractor.detect_observed_quorum_outbounds(block)
+    outbound_tx_id_set, outbound_events = SwapExtractorBlock.detect_accepted_l1_outbounds(block)
     for ev in outbound_events:
         sep()
         print(ev)

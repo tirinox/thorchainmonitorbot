@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from jobs.scanner.block_result import BlockResult
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.scanner.swap_props import SwapProps
 from jobs.scanner.tx import ThorEvent
@@ -139,3 +140,103 @@ async def test_handle_finished_swaps_still_checks_tx_stages_for_non_rune_l1_outb
     assert deps.thor_connector.called is True
 
 
+
+
+TRON_USDT = 'TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T'
+
+
+def make_observed_outbound_tx(in_tx_id: str, out_id: str, amount: int, *, accepted: bool):
+    """An observation of an L1 outbound; once the chain accepts it, the tx result carries an "outbound" event."""
+    memo = f'OUT:{in_tx_id}'
+    events = [{
+        'type': 'outbound',
+        'id': out_id,
+        'in_tx_id': in_tx_id,
+        'chain': 'TRON',
+        'from': 'TVaultAddress',
+        'to': 'TUserAddress',
+        'coin': f'{amount} {TRON_USDT}',
+        'memo': memo,
+    }] if accepted else []
+    return {
+        'hash': f'NATIVE-{out_id}',
+        'tx': {'messages': [{
+            '@type': '/types.MsgObservedTxQuorum',
+            'quoTx': {
+                'obsTx': {
+                    'tx': {
+                        'id': out_id,
+                        'chain': 'TRON',
+                        'from_address': 'TVaultAddress',
+                        'to_address': 'TUserAddress',
+                        'coins': [{'asset': TRON_USDT, 'amount': str(amount), 'decimals': '6'}],
+                        'gas': [],
+                        'memo': memo,
+                    },
+                    'status': 'incomplete',
+                    'out_hashes': [],
+                    'block_height': '84341306',
+                    'finalise_height': '84341306',
+                },
+                'inbound': False,
+            },
+        }]},
+        'result': {'code': 0, 'events': events},
+    }
+
+
+def make_block(height: int, txs: list):
+    return BlockResult.load_block({
+        'header': {'time': '2026-07-10T06:21:19.607Z'},
+        'txs': txs,
+        'begin_block_events': [],
+        'end_block_events': [],
+    }, height)
+
+
+@pytest.mark.asyncio
+async def test_outbound_attempt_the_chain_did_not_accept_is_not_counted(monkeypatch):
+    # 26D5E260...: leg 2 was observed from one vault but never accepted, then rescheduled and sent by another vault;
+    # both observations were summed, and the alert showed 436.8K USDT out of 265.6K
+    deps = make_deps(stages={'outbound_signed': {'completed': False}})
+    extractor = SwapExtractorBlock(deps)
+
+    async def no_new_swaps(_block):
+        return []
+
+    monkeypatch.setattr(extractor, 'register_new_swaps', no_new_swaps)
+
+    tx_id = '26D5E260244B1B8299B7EC8A48394D81088C7AEE22DD500899A2DACC8B310A42'
+    await extractor._db.write_tx_status_kw(
+        tx_id,
+        id=tx_id,
+        status=SwapProps.STATUS_OBSERVED_IN,
+        memo='=:TRON.USDT:TUserAddress:0/1/0',
+        from_address='0x206698dcab42174cf0e8da81bc1662ebf34ccf13',
+        in_amount='15014200000',
+        in_asset='ETH.ETH',
+        out_asset=TRON_USDT,
+        block_height=26941941,
+    )
+    await extractor.register_swap_events(SimpleNamespace(block_no=26944835), [
+        parse_swap_and_out_event(make_swap_event(tx_id, 26944835, out_asset=TRON_USDT)),
+    ])
+
+    leg_1, leg_2 = 9436391688400, 17122382108500
+    assert await extractor.on_data(None, make_block(26944845, [
+        make_observed_outbound_tx(tx_id, 'C4FF1F43C1F4BDEC566679BAEF1A702C4AC6460994B878B8554219AD4B993844', leg_1,
+                                  accepted=True),
+        make_observed_outbound_tx(tx_id, '6C2C9FCDE12444B45BB0496209A81B70D43DD732FBEA89638C4E9EEDE1096120', leg_2,
+                                  accepted=False),
+    ])) == []
+
+    deps.thor_connector.stages = {'outbound_signed': {'completed': True}}
+    txs = await extractor.on_data(None, make_block(26946347, [
+        make_observed_outbound_tx(tx_id, '2CA14FF9E6A47A36304795A2FEAFB2518E60C721A2A7B9627928FFB0291F4A8D', leg_2,
+                                  accepted=True),
+    ]))
+
+    assert len(txs) == 1
+    out = txs[0].recipients_output
+    assert out.address == 'TUserAddress'
+    assert [(c.amount, c.asset) for c in out.coins] == [(leg_1 + leg_2, TRON_USDT)]
