@@ -170,3 +170,21 @@ def test_twitter_symbol_rewrite_only_targets_valid_lengths():
     assert used is False
 
 
+
+
+def test_twitter_cut_text_keeps_real_links():
+    url = 'https://thorchain.org/some/very/long/path/that/is/longer/than/a/t.co/link'
+    text = f'Read {url} now! ' + 'a' * 300
+
+    cut = twitter_cut_text(text, 280)
+    assert url in cut
+    assert TWITTER_T_CO_EXAMPLE not in cut
+    assert twitter_text_length(cut) == 280
+
+    # a link that does not fit goes away as a whole
+    assert twitter_cut_text(f'12345 {url}', 20) == '12345 '
+    assert twitter_cut_text(f'12345 {url}', 6 + TWITTER_T_CO_LENGTH) == f'12345 {url}'
+
+    # and the splitter does not swap links for the placeholder either
+    parts = twitter_intelligent_text_splitter([text], 280)
+    assert all(TWITTER_T_CO_EXAMPLE not in part for part in parts) and url in parts[0]

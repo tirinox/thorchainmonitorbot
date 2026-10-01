@@ -133,7 +133,7 @@ class TwitterBot(WithLogger):
             return
 
         real_len = twitter_text_length(text)
-        if real_len >= self.max_length:
+        if real_len > self.max_length:
             self.logger.warning(f'Too long text ({real_len} symbols): "{text}".')
             text = twitter_cut_text(text, self.max_length)
 
