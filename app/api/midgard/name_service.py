@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import re
 import struct
 from contextlib import suppress
 from typing import Optional, List, Iterable, Dict, NamedTuple
@@ -432,6 +433,9 @@ class AffiliateManager(WithLogger):
             yaml.dump(data, file, sort_keys=False, allow_unicode=True)
         self.logger.info(f'Saved affiliate data to {self.FILE}')
 
+    # bech32 thor address (mainnet, stagenet or testnet); a THORName is at most 30 characters, so it never matches
+    THOR_ADDRESS_RE = re.compile(r'[st]?thor1[02-9ac-hj-np-z]{38}')
+
     @staticmethod
     def _simplify_name(name: str) -> str:
         return name.replace(' ', '').lower()
@@ -443,7 +447,9 @@ class AffiliateManager(WithLogger):
         """
         name = self._simplify_name(address_or_name)
 
-        display_name = shorten_text(name.capitalize(), 12)
+        # a raw thor address keeps its lower case, only a THORName gets capitalized
+        display_name = name if self.THOR_ADDRESS_RE.fullmatch(name) else name.capitalize()
+        display_name = shorten_text(display_name, 12)
 
         return self.thorname_to_name.get(name, display_name)
 

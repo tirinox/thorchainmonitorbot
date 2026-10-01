@@ -17,7 +17,7 @@ affiliates:
 
   - name: THORWallet
     logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorwallet/logo.png
-    codes: [matias, thorwallet, wr]
+    codes: [matias, thorwallet, wr, w1]
 
   - name: THORWallet DEX
     logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorwallet/logo.png
@@ -41,7 +41,7 @@ affiliates:
 
   - name: Ledger Live
     logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/ledgerlive/logo.svg
-    codes: [ll]
+    codes: [ll, l1]
 
   - name: Cake Wallet
     logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/cakewallet/logo.png
@@ -225,7 +225,7 @@ affiliates:
 
   - name: Symbiosis
     logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/symbiosis/logo.svg
-    codes: [sy]
+    codes: [sy, symbiosis]
 
   - name: TokenPocket
     logo: tps.png
