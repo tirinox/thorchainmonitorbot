@@ -37,7 +37,7 @@ class JobPayload(BaseModel):
 
     max_instances: int = Field(1, ge=1, le=100)
     coalesce: bool = True
-    misfire_grace_time: Optional[int] = Field(None, ge=0, le=3600)
+    misfire_grace_time: Optional[int] = Field(None, ge=1, le=3600)
 
 
 async def read_job_stats(sched: PublicScheduler, job_ids: list[str]) -> list[JobStatsModel]:

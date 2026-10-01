@@ -12,17 +12,23 @@ class SchedVariant:
 
 
 class IntervalCfg(BaseModel):
-    weeks: Optional[int] = None
-    days: Optional[int] = None
-    hours: Optional[int] = None
-    minutes: Optional[int] = None
-    seconds: Optional[int] = None
+    # a negative field would make APScheduler step back in time and hang the event loop
+    weeks: Optional[int] = Field(None, ge=0)
+    days: Optional[int] = Field(None, ge=0)
+    hours: Optional[int] = Field(None, ge=0)
+    minutes: Optional[int] = Field(None, ge=0)
+    seconds: Optional[int] = Field(None, ge=0)
 
     @model_validator(mode="after")
     def validate_interval(self):
         if not any([self.weeks, self.days, self.hours, self.minutes, self.seconds]):
             raise ValueError("Interval trigger requires at least one time field")
         return self
+
+    @property
+    def total_seconds(self) -> int:
+        return ((self.weeks or 0) * 7 * 86400 + (self.days or 0) * 86400 + (self.hours or 0) * 3600 +
+                (self.minutes or 0) * 60 + (self.seconds or 0))
 
     @property
     def human_readable(self) -> str:
@@ -92,9 +98,9 @@ class SchedJobCfg(BaseModel):
     date: Optional[DateCfg] = None
 
     # APScheduler extras
-    max_instances: int = 1
+    max_instances: int = Field(1, ge=1)
     coalesce: bool = True
-    misfire_grace_time: Optional[int] = None
+    misfire_grace_time: Optional[int] = Field(None, ge=1)  # APScheduler accepts only None or a positive number
 
     @field_validator("args")
     @classmethod

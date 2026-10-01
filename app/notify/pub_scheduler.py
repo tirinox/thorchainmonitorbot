@@ -10,7 +10,7 @@ from typing import Optional, Literal
 
 from apscheduler.events import EVENT_JOB_MISSED, EVENT_JOB_ERROR
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from lib.config import Config
 from lib.db import DB
@@ -18,7 +18,7 @@ from lib.interchan import SimpleRPC
 from lib.log_db import CircularLog
 from lib.logs import WithLogger
 from lib.run_context import RunMode, run_context
-from models.sched import SchedJobCfg
+from models.sched import SchedJobCfg, SchedVariant
 
 
 class JobStatsModel(BaseModel):
@@ -33,6 +33,9 @@ class JobStatsModel(BaseModel):
     is_dirty: bool = False
     is_running: bool = False
     creation_ts: float | None = None
+    # an interval job runs at interval_anchor_ts + k * interval_anchor_period; see PublicScheduler._interval_start_date
+    interval_anchor_ts: float | None = None
+    interval_anchor_period: float | None = None
 
     @property
     def avg_elapsed(self) -> float | None:
@@ -91,6 +94,9 @@ class JobStats(WithLogger):
     async def set_next_time_run(self, ts):
         r = self.db.redis
         await r.hset(self.key, 'next_run_ts', ts)
+
+    async def set_interval_anchor(self, ts: float, period: float):
+        await self.db.redis.hset(self.key, mapping={'interval_anchor_ts': ts, 'interval_anchor_period': period})
 
     async def set_is_dirty(self, is_dirty: bool):
         r = self.db.redis
@@ -228,7 +234,7 @@ class PublicScheduler(WithLogger):
                 await self.db_log.warning('job_scheduled_now', func=func, **run_tag)
                 return await self.run_job_by_function(func, args=run_args, run_id=run_id, mode=mode)
             else:
-                await self.logger.error(f'Cannot run {command} with parameters {payload}')
+                self.logger.error(f'Cannot run {command} with parameters {payload}')
                 return None
         else:
             return "unknown_command"
@@ -409,7 +415,7 @@ class PublicScheduler(WithLogger):
                                                 job=func_name, job_id=job_id,
                                                 attempt=attempt, error=error_msg, **run_tag)
                         await asyncio.sleep(current_delay)
-                        current_delay = current_delay * self.retry_delay
+                        current_delay = current_delay * self.retry_delay_mult
                     else:
                         await self.db_log.error(action, phase='failed',
                                                 job=func_name, job_id=job_id,
@@ -463,7 +469,15 @@ class PublicScheduler(WithLogger):
         if not isinstance(schedule_cfg, list):
             self.logger.error('Invalid schedule configuration format.')
             schedule_cfg = []
-        self._scheduled_jobs = [SchedJobCfg(**item) for item in schedule_cfg]
+        jobs = []
+        for item in schedule_cfg:
+            try:
+                jobs.append(SchedJobCfg(**item))
+            except (ValidationError, TypeError) as e:
+                # one broken entry must not take down the whole schedule (or the bot's startup)
+                job_id = item.get('id') if isinstance(item, dict) else None
+                self.logger.error(f'Skipping invalid scheduled job {job_id!r}: {e}')
+        self._scheduled_jobs = jobs
         if not silent:
             self.logger.info(f'Loaded scheduler configuration from DB: {len(self._scheduled_jobs)} jobs.')
         return self._scheduled_jobs
@@ -502,20 +516,42 @@ class PublicScheduler(WithLogger):
                     self.logger.error(f"Job function '{job_cfg.func}' is not registered; skipping job '{job_cfg.id}'.")
                 continue
 
-            j = self.scheduler.add_job(
-                coro,
-                **job_cfg.to_add_job_args(),
-                args=[job_cfg],
-            )
+            stats = JobStats(self.db, job_cfg.id)
+            add_job_args = job_cfg.to_add_job_args()
+            if job_cfg.variant == SchedVariant.INTERVAL:
+                add_job_args['start_date'] = await self._interval_start_date(job_cfg, stats)
+
+            try:
+                j = self.scheduler.add_job(coro, **add_job_args, args=[job_cfg])
+            except Exception as e:
+                # e.g. a value APScheduler rejects: skip this job, but schedule all the others
+                self.logger.error(f"Cannot schedule job '{job_cfg.id}': {e}")
+                await self.db_log.error('apply', job_id=job_cfg.id, job=job_cfg.func, error=str(e))
+                continue
 
             if isinstance(j.next_run_time, datetime.datetime):
-                stats = JobStats(self.db, job_cfg.id)
                 await stats.set_next_time_run(j.next_run_time.timestamp())
 
         await self._mark_job_dirty(self.ANY_JOB_SPECIAL_ID, value=False)
 
         self.logger.info(
             f'Applied scheduler configuration: {self.total_running_jobs} / {len(self._scheduled_jobs)} jobs scheduled.')
+
+    @staticmethod
+    async def _interval_start_date(job_cfg: SchedJobCfg, stats: JobStats) -> datetime.datetime:
+        """
+        APScheduler counts an interval from the moment the job is added, so every restart and every Apply
+        would push the next run a whole period away. Instead, runs count from an anchor saved when the job
+        is first scheduled with this period; changing the period starts a new count.
+        """
+        period = job_cfg.interval.total_seconds
+        saved = await stats.read_stats()
+        if saved.interval_anchor_ts and saved.interval_anchor_period == period:
+            anchor = saved.interval_anchor_ts
+        else:
+            anchor = time.time() + period  # the first run is one period away, as APScheduler would do it
+            await stats.set_interval_anchor(anchor, period)
+        return datetime.datetime.fromtimestamp(anchor, datetime.timezone.utc)
 
     def find_job_by_id(self, job_id: str) -> SchedJobCfg | None:
         for job in self._scheduled_jobs:

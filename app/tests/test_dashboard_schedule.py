@@ -103,7 +103,7 @@ def test_preview_errors_and_warnings():
     assert past['ok'] and 'past' in past['warning']
 
     interval = preview_schedule('interval', {'minutes': 30}, None, None, 'UTC', now=NOW)
-    assert interval['schedule']['text'] == 'Every 30 minutes' and 'applied' in interval['warning']
+    assert interval['schedule']['text'] == 'Every 30 minutes' and 'Apply' in interval['warning']
     assert len(interval['next_runs']) == 5
 
 

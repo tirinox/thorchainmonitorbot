@@ -15,7 +15,7 @@ from apscheduler.triggers.date import DateTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from tzlocal import get_localzone
 
-from models.sched import SchedVariant, SchedJobCfg
+from models.sched import SchedVariant, SchedJobCfg, IntervalCfg
 from notify.pub_scheduler import PublicScheduler
 
 UTC_ALIASES = {'Etc/UTC', 'UTC', 'Etc/Universal', 'Universal', 'Etc/Zulu', 'Zulu', 'Etc/GMT', 'GMT'}
@@ -61,6 +61,7 @@ def build_trigger(variant: str, interval: Optional[dict], cron: Optional[dict], 
         params = {k: v for k, v in (interval or {}).items() if v}
         if not params:
             raise ValueError('Interval needs at least one non-zero field')
+        params = IntervalCfg(**params).model_dump(exclude_none=True)  # rejects negative and non-integer fields
         return IntervalTrigger(**params, timezone=tz)
     if variant == SchedVariant.CRON:
         params = {k: v for k, v in (cron or {}).items() if v not in (None, '')}
@@ -406,7 +407,7 @@ def preview_schedule(variant, interval, cron, date, scheduler_tz: str, viewer_tz
     elif not runs:
         warning = 'This schedule never fires.'
     elif variant == SchedVariant.INTERVAL:
-        warning = 'Interval runs are counted from the moment the config is applied.'
+        warning = 'Interval runs count from the first Apply of this interval; restarts and Applies keep the rhythm.'
     return {
         'ok': True,
         'error': None,

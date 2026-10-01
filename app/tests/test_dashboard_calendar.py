@@ -29,6 +29,8 @@ async def make_ctx():
                 await st.set_next_time_run(fields['next_run_ts'])
             if fields.get('is_dirty'):
                 await st.set_is_dirty(True)
+            if 'interval_anchor_ts' in fields:
+                await st.set_interval_anchor(fields['interval_anchor_ts'], fields['interval_anchor_period'])
         return SimpleNamespace(scheduler=sched, deps=SimpleNamespace(db=db, broadcaster=SimpleNamespace(test_channels=[])))
 
     return factory
@@ -119,3 +121,22 @@ async def test_days_are_clamped(make_ctx):
     ctx = await make_ctx([])
     assert (await upcoming_runs(ctx, days=0, now=NOW))['days'] == 1
     assert (await upcoming_runs(ctx, days=365, now=NOW))['days'] == 31
+
+
+@pytest.mark.asyncio
+async def test_unapplied_interval_job_keeps_its_saved_rhythm(make_ctx):
+    ctx = await make_ctx(
+        [
+            SchedJobCfg(id='same_period', func='top_pools', variant='interval', interval={'hours': 6}),
+            SchedJobCfg(id='new_period', func='top_pools', variant='interval', interval={'hours': 3}),
+        ],
+        stats={
+            # edited but not applied yet; Apply keeps the anchor only while the period stays the same
+            'same_period': {'is_dirty': True, 'interval_anchor_ts': NOW - 4 * HOUR, 'interval_anchor_period': 6 * HOUR},
+            'new_period': {'is_dirty': True, 'interval_anchor_ts': NOW - 4 * HOUR, 'interval_anchor_period': 6 * HOUR},
+        })
+    jobs = by_id(await upcoming_runs(ctx, days=1, now=NOW))
+
+    assert jobs['same_period']['runs'][:2] == [NOW + 2 * HOUR, NOW + 8 * HOUR]
+    assert not jobs['same_period']['approximate']
+    assert jobs['new_period']['approximate']

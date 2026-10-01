@@ -20,8 +20,7 @@ FREQUENT_PER_DAY = 24
 
 
 def interval_seconds(interval: IntervalCfg) -> float:
-    return ((interval.weeks or 0) * 7 * 86400 + (interval.days or 0) * 86400 + (interval.hours or 0) * 3600 +
-            (interval.minutes or 0) * 60 + (interval.seconds or 0))
+    return interval.total_seconds
 
 
 # every window below is half-open, [now, until): an hourly job gives exactly 24 runs a day
@@ -51,20 +50,24 @@ def _from_anchor(anchor: float, period: float, now: float, until: float, limit: 
 
 
 def upcoming_fire_times(job: SchedJobCfg, trigger, next_run_ts: Optional[float], applied: bool,
-                        now: float, until: float, limit: int) -> tuple[list[float], bool]:
+                        now: float, until: float, limit: int,
+                        anchor_ts: Optional[float] = None, anchor_period: Optional[float] = None,
+                        ) -> tuple[list[float], bool]:
     """
     Returns (unix times in [now, until), approximate). At most limit + 1 times, so the caller can tell
     "exactly limit" from "more than limit".
 
-    Interval jobs count from the moment the bot applied them, which only the bot knows: when it is running the
-    job (`applied` and a known next run) we step from that; otherwise we assume an Apply right now (first run one
-    period later) and say it is approximate. (APScheduler's own IntervalTrigger would count from the wall clock,
-    not from `now`.)
+    Interval jobs count from the anchor the bot saved when it first scheduled them with this period: when it is
+    running the job (`applied` and a known next run) we step from that; an unapplied job whose period matches the
+    anchor keeps it after Apply too; otherwise we assume an Apply right now (first run one period later) and say it
+    is approximate. (APScheduler's own IntervalTrigger would count from the wall clock, not from `now`.)
     """
     if job.variant == SchedVariant.INTERVAL:
         period = interval_seconds(job.interval)
         if applied and next_run_ts:
             return _from_anchor(next_run_ts, period, now, until, limit), False
+        if anchor_ts and anchor_period == period:
+            return _from_anchor(anchor_ts, period, now, until, limit), False
         return _from_anchor(now + period, period, now, until, limit), True
     return _from_trigger(trigger, now, until, limit), False
 
@@ -104,7 +107,8 @@ async def upcoming_runs(ctx: DashboardContext, days: int = DEFAULT_DAYS, now: Op
 
         # the bot only follows the saved config after Apply, and only schedules enabled jobs
         applied = job.enabled and not st.is_dirty
-        runs, approximate = upcoming_fire_times(job, trigger, st.next_run_ts, applied, now, until, limit)
+        runs, approximate = upcoming_fire_times(job, trigger, st.next_run_ts, applied, now, until, limit,
+                                                st.interval_anchor_ts, st.interval_anchor_period)
         item['approximate'] = approximate
         if len(runs) > limit:
             item['frequent'] = True
