@@ -5,7 +5,7 @@ from api.midgard.name_service import NameService, NameMap, add_thor_suffix
 from api.w3.dex_analytics import DexReport
 from api.w3.token_record import AmountToken
 from comm.localization.manager import BaseLocalization
-from comm.picture.achievement_picture import build_achievement_picture_generator
+from comm.picture.achievement_card import build_achievement_card, achievement_card_filename, ACHIEVEMENT_TEMPLATE
 from comm.picture.block_height_picture import block_speed_chart
 from comm.picture.nodes_pictures import NodePictureGenerator
 from comm.picture.pools_picture import PoolPictureGenerator
@@ -202,12 +202,23 @@ class AlertPresenter(INotified, WithLogger):
             BaseLocalization.notification_text_pool_churn, event
         )
 
+    async def render_achievement(self, loc: BaseLocalization, event: Achievement):
+        parameters = build_achievement_card(event, loc.ach)
+        photo = await self.renderer.render(ACHIEVEMENT_TEMPLATE, parameters)
+        return photo, achievement_card_filename(event)
+
     async def _handle_achievement(self, event: Achievement):
         async def _gen(loc: BaseLocalization, _a: Achievement):
-            pic_gen = build_achievement_picture_generator(_a, loc.ach)
-            pic, pic_name = await pic_gen.get_picture()
             caption = loc.ach.notification_achievement_unlocked(event)
-            return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
+            if not self.use_renderer:
+                return caption
+            try:
+                photo, photo_name = await self.render_achievement(loc, event)
+            except Exception as e:
+                # the milestone is still worth announcing without its picture
+                self.logger.exception(f'Failed to render the achievement card {event.key!r}: {e!r}')
+                return caption
+            return BoardMessage.make_photo(photo, caption=caption, photo_file_name=photo_name)
 
         await self.broadcaster.broadcast_to_all(
             "public:achievement",

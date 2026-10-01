@@ -1,0 +1,25 @@
+{
+  "template_name": "achievement.jinja2",
+  "parameters": {
+    "key": "anniversary",
+    "background": "nn_wreath_ann_2.png",
+    "tint": "#f4e18d",
+    "hole_x": 0.499,
+    "hole_y": 0.476,
+    "hole_r": 0.152,
+    "number_font": "balloon",
+    "number_label": "",
+    "number_text": "6",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "balloon/6.png"
+      }
+    ],
+    "title": "День Рождения",
+    "subtitle": "6 лет с первого блока",
+    "asset_logo": "",
+    "date": "1 октября 2026",
+    "stats": []
+  }
+}

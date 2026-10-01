@@ -43,6 +43,17 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         A.WEEKLY_PROTOCOL_REVENUE_USD: "Weekly protocol revenue",
         A.WEEKLY_AFFILIATE_REVENUE_USD: "Weekly affiliate revenue",
 
+        A.TRADE_BALANCE_TOTAL_USD: "Total trade asset balance",
+        A.TRADE_ASSET_HOLDERS_COUNT: "Trade asset holders",
+        A.TRADE_ASSET_SWAPS_COUNT: "Trade asset swaps",
+        A.TRADE_ASSET_SWAPS_VOLUME: "Trade asset swaps volume",
+        A.TRADE_ASSET_MOVE_COUNT: "Trade asset deposits/withdrawals",
+        A.TRADE_ASSET_LARGEST_DEPOSIT: "Largest trade asset deposit",
+
+        A.RUNEPOOL_VALUE_USD: "RUNEPool value",
+        A.RUNEPOOL_LARGEST_DEPOSIT: "Largest RUNEPool deposit",
+        A.RUNEPOOL_TOTAL_PROVIDERS: "RUNEPool providers",
+        A.RUNEPOOL_PNL: "RUNEPool PnL",
     }
 
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"
@@ -57,7 +68,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
             # special case for anniversary
             msg += f"Happy Birthday! It's been {milestone_str} years since the first block!"
         elif a.key == A.COIN_MARKET_CAP_RANK:
-            msg += f"THORChain Rune is <b>#{milestone_str}</b> largest coin my market cap!"
+            msg += f"THORChain Rune is <b>#{milestone_str}</b> largest coin by market cap!"
             if a.has_previous:
                 msg += f'\nPreviously #{prev_milestone_str} ({ago} ago)'
         else:

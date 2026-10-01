@@ -1628,6 +1628,8 @@ class RussianLocalization(BaseLocalization):
     DATE_TRANSLATOR = {
         'just now': 'прямо сейчас',
         'never': 'никогда',
+        'year': 'г.',
+        'years': 'г.',
         'sec': 'сек',
         'min': 'мин',
         'hour': 'час',

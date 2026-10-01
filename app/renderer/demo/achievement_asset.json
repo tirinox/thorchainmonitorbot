@@ -1,0 +1,49 @@
+{
+  "template_name": "achievement.jinja2",
+  "parameters": {
+    "key": "max_add_amount_usd_per_pool",
+    "background": "nn_wreath_1.png",
+    "tint": "#3ee6c8",
+    "hole_x": 0.501,
+    "hole_y": 0.463,
+    "hole_r": 0.165,
+    "number_font": "runic",
+    "number_label": "More than",
+    "number_text": "$5M",
+    "glyphs": [
+      {
+        "kind": "tall",
+        "src": "runic/bw_USD.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_5.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_M.png"
+      }
+    ],
+    "title": "Added ETH.USDC in a single TX",
+    "subtitle": "",
+    "asset_logo": "ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "$2M",
+        "sub": "1 month 10 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "$8,200,000",
+        "sub": ""
+      },
+      {
+        "label": "Next goal",
+        "value": "$10M",
+        "sub": ""
+      }
+    ]
+  }
+}
