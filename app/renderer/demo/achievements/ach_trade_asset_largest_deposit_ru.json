@@ -4,7 +4,7 @@
     "title": "Самый крупный депозит",
     "subtitle": "$2M",
     "lang": "ru",
-    "order": 36
+    "order": 34
   },
   "parameters": {
     "key": "trade_asset_largest_deposit",
@@ -42,7 +42,7 @@
       {
         "label": "Было",
         "value": "$1M",
-        "sub": "3 мес 25 дн назад"
+        "sub": "2 мес 29 дн назад"
       },
       {
         "label": "Сейчас",

@@ -34,7 +34,6 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         A.SWAP_VOLUME_TOTAL_RUNE: "Общий объем свопов в RUNE",
         A.MAX_SWAP_AMOUNT_USD: "Максимальный объем обмена",
         A.MAX_ADD_AMOUNT_USD: "Максимальный объем добавления",
-        A.MAX_ADD_AMOUNT_USD_PER_POOL: "Добавлено ::asset:: в пул за раз",
         A.COIN_MARKET_CAP_RANK: "Место по капитализации",
         A.POL_VALUE_RUNE: "POL вклад в Rune",
         A.BTC_IN_VAULT: "Bitcoin в хранилище",

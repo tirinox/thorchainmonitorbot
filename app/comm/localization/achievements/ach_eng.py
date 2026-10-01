@@ -31,7 +31,6 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         A.SWAP_VOLUME_TOTAL_RUNE: "Total swap volume",
         A.MAX_SWAP_AMOUNT_USD: "Largest single swap",
         A.MAX_ADD_AMOUNT_USD: "Largest single liquidity add",
-        A.MAX_ADD_AMOUNT_USD_PER_POOL: "Largest ::asset:: liquidity add",
         A.COIN_MARKET_CAP_RANK: "By market cap",
         A.POL_VALUE_RUNE: "POL value",
         A.BTC_IN_VAULT: "Bitcoin in vaults",

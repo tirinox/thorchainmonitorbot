@@ -4,7 +4,7 @@
     "title": "Ethereum in vaults",
     "subtitle": "20K",
     "lang": "en",
-    "order": 28
+    "order": 26
   },
   "parameters": {
     "key": "eth_in_vault",
@@ -42,7 +42,7 @@
       {
         "label": "Previous",
         "value": "10K",
-        "sub": "11 days ago"
+        "sub": "3 months, 15 days ago"
       },
       {
         "label": "Now",

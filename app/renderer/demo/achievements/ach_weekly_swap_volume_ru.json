@@ -4,16 +4,16 @@
     "title": "Еженедельный объем свопов",
     "subtitle": "$2B",
     "lang": "ru",
-    "order": 33
+    "order": 31
   },
   "parameters": {
     "key": "weekly_swap_volume",
-    "background": "nn_wreath_swaps.png",
-    "tint": "#4ffffa",
-    "hole_x": 0.502,
-    "hole_y": 0.449,
-    "hole_r": 0.205,
-    "base_color": "#030708",
+    "background": "nn_wreath_trade.png",
+    "tint": "#ff7a6b",
+    "hole_x": 0.501,
+    "hole_y": 0.498,
+    "hole_r": 0.193,
+    "base_color": "#030202",
     "frame_size": 860,
     "frame_top": 40,
     "shade_from": 58,
@@ -42,7 +42,7 @@
       {
         "label": "Было",
         "value": "$1B",
-        "sub": "2 мес 16 дн назад"
+        "sub": "1 мес 20 дн назад"
       },
       {
         "label": "Сейчас",

@@ -281,7 +281,7 @@ function openPreview(item) {
         <Column header="" style="width: 1%">
           <template #body="{data: a}">
             <div class="row nowrap" style="flex-wrap: nowrap; gap: .15rem">
-              <template v-if="a.milestone">
+              <template v-if="a.milestone && a.can_be_stale">
                 <Button v-if="a.stale" icon="pi pi-bell" text rounded aria-label="Clear stale"
                         :loading="!!busy[a.id]"
                         v-tooltip.left="'Clear stale: its next milestone will be posted'" @click="clearStale(a)"/>

@@ -76,8 +76,8 @@ def test_round_milestones_lose_zero_fraction(en):
     assert fmt(A.NODE_COUNT, 100) == '100'
 
 
-def test_asset_name_is_short(en, ru):
-    a = Achievement(A.MAX_ADD_AMOUNT_USD_PER_POOL, 8_200_000, 5_000_000, TS, specialization=USDC)
+def test_asset_name_is_short(en, ru, per_pool_key):
+    a = Achievement(per_pool_key, 8_200_000, 5_000_000, TS, specialization=USDC)
     assert build_achievement_card(a, en)['title'] == 'Largest ETH.USDC liquidity add'
     assert 'Largest ETH.USDC liquidity add' in en.notification_achievement_unlocked(a)
     assert '0XA0B8' not in ru.notification_achievement_unlocked(a)

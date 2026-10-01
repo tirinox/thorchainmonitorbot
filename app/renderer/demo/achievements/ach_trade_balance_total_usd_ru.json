@@ -4,7 +4,7 @@
     "title": "Общий баланс торговых счетов",
     "subtitle": "$20M",
     "lang": "ru",
-    "order": 34
+    "order": 32
   },
   "parameters": {
     "key": "trade_balance_total_usd",
@@ -46,7 +46,7 @@
       {
         "label": "Было",
         "value": "$10M",
-        "sub": "2 мес 29 дн назад"
+        "sub": "2 мес 3 дн назад"
       },
       {
         "label": "Сейчас",

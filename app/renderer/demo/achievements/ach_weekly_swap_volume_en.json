@@ -4,16 +4,16 @@
     "title": "Weekly swap volume",
     "subtitle": "$2B",
     "lang": "en",
-    "order": 33
+    "order": 31
   },
   "parameters": {
     "key": "weekly_swap_volume",
-    "background": "nn_wreath_swaps.png",
-    "tint": "#4ffffa",
-    "hole_x": 0.502,
-    "hole_y": 0.449,
-    "hole_r": 0.205,
-    "base_color": "#030708",
+    "background": "nn_wreath_trade.png",
+    "tint": "#ff7a6b",
+    "hole_x": 0.501,
+    "hole_y": 0.498,
+    "hole_r": 0.193,
+    "base_color": "#030202",
     "frame_size": 860,
     "frame_top": 40,
     "shade_from": 58,
@@ -42,7 +42,7 @@
       {
         "label": "Previous",
         "value": "$1B",
-        "sub": "2 months, 16 days ago"
+        "sub": "1 month, 20 days ago"
       },
       {
         "label": "Now",
