@@ -73,6 +73,15 @@ class GeoIPManager(WithLogger):
         if raw_data:
             return json.loads(raw_data)
 
+    async def get_ip_info_from_cache_many(self, ip_list: List[str]) -> dict:
+        """Cached info for every address of the list (None if there is none), read with a single MGET."""
+        ip_list = [ip for ip in ip_list if ip]
+        if not ip_list:
+            return {}
+        r: Redis = await self.deps.db.get_redis()
+        raw_items = await r.mget([self.key(ip) for ip in ip_list])
+        return {ip: json.loads(raw) if raw else None for ip, raw in zip(ip_list, raw_items)}
+
     async def clear_info(self, ip: str):
         if not ip:
             return

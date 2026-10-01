@@ -1,4 +1,5 @@
 import asyncio
+import ipaddress
 import logging
 import os.path
 import time
@@ -30,7 +31,8 @@ from models.node_watchers import NodeWatcherStorage
 
 
 class AppSettingsAPI:
-    IP_MAX_LEN = 2 ** 18
+    IP_MAX_COUNT = 256  # per request; more than there are nodes
+    IP_MAX_LEN = IP_MAX_COUNT * 46  # an IPv6 address takes up to 45 characters, plus a comma
 
     NODES_CACHE_TTL = 60.0  # sec
     NODE_FIELDS = ('node_address', 'status', 'total_bond', 'version')
@@ -112,16 +114,36 @@ class AppSettingsAPI:
             'nodes': all_nodes,
         })
 
+    @classmethod
+    def _parse_ip_list(cls, raw: str) -> list[str]:
+        """
+        The distinct valid IP addresses of a comma separated list.
+        This is a public endpoint: anything else in the list is dropped, and a list that is too long is refused.
+        """
+        if len(raw) > cls.IP_MAX_LEN:
+            raise ValueError('The list of IP addresses is too long')
+
+        addresses = {}
+        for item in raw.split(','):
+            item = item.strip()
+            try:
+                ipaddress.ip_address(item)
+            except ValueError:
+                continue
+            addresses[item] = True
+
+        if len(addresses) > cls.IP_MAX_COUNT:
+            raise ValueError(f'No more than {cls.IP_MAX_COUNT} IP addresses per request')
+        return list(addresses)
+
     async def _get_node_ip_info(self, request):
-        ip_address_list = str(request.path_params.get('ip')).strip()[:self.IP_MAX_LEN].split(',')
-        ip_address_list = [ip.strip() for ip in ip_address_list]
+        try:
+            ip_address_list = self._parse_ip_list(str(request.path_params.get('ip')))
+        except ValueError as e:
+            return JSONResponse({'error': str(e)}, 400)
 
-        geo_ip = GeoIPManager(self.deps)
-
-        info_list = await asyncio.gather(
-            *(geo_ip.get_ip_info_from_cache(ip) for ip in ip_address_list)
-        )
-        info_dic = {ip: info for ip, info in zip(ip_address_list, info_list)}
+        # one request to Redis however many addresses are asked for
+        info_dic = await GeoIPManager(self.deps).get_ip_info_from_cache_many(ip_address_list)
 
         if info_dic:
             return JSONResponse(info_dic)
