@@ -4,7 +4,7 @@
     "title": "By market cap",
     "subtitle": "30",
     "lang": "en",
-    "order": 21
+    "order": 22
   },
   "parameters": {
     "key": "coin_market_cap_rank",
@@ -38,7 +38,7 @@
       {
         "label": "Previous",
         "value": "#33",
-        "sub": "1 month, 10 days ago"
+        "sub": "1 month, 23 days ago"
       },
       {
         "label": "Next milestone",

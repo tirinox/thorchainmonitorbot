@@ -4,7 +4,7 @@
     "title": "Total swaps",
     "subtitle": "20M",
     "lang": "en",
-    "order": 7
+    "order": 8
   },
   "parameters": {
     "key": "swap_count_total",
@@ -42,7 +42,7 @@
       {
         "label": "Previous",
         "value": "10M",
-        "sub": "3 months, 8 days ago"
+        "sub": "3 months, 21 days ago"
       },
       {
         "label": "Now",

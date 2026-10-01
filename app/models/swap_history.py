@@ -153,6 +153,11 @@ class SwapHistoryResponse:
     def last_whole_interval(self) -> SwapsHistoryEntry:
         return self.intervals[-2] if self.intervals[-1].total_count == 0 else self.intervals[-1]
 
+    def last_whole_intervals(self, n: int) -> List[SwapsHistoryEntry]:
+        # Midgard reports the interval that is still running as empty
+        whole = self.intervals[:-1] if self.intervals and self.intervals[-1].total_count == 0 else self.intervals
+        return whole[-n:]
+
     def curr_and_prev_interval(self, attr_name):
         middle = len(self.intervals) // 2
         interval_prev = sum_by_attribute(self.intervals[0:middle], attr_name)

@@ -4,7 +4,7 @@
     "title": "POL value",
     "subtitle": "20M ᚱ",
     "lang": "en",
-    "order": 24
+    "order": 25
   },
   "parameters": {
     "key": "pol_value_rune",
@@ -49,7 +49,7 @@
       {
         "label": "Previous",
         "value": "10M ᚱ",
-        "sub": "2 months, 19 days ago"
+        "sub": "3 months, 2 days ago"
       },
       {
         "label": "Now",

@@ -87,7 +87,9 @@ class AchievementsExtractor(WithLogger):
             Achievement(A.TOTAL_ACTIVE_BOND, int(data.total_active_bond_rune)),
             Achievement(A.TOTAL_BOND, int(data.total_bond_rune)),
 
-            Achievement(A.SWAP_VOLUME_TOTAL_RUNE, int(data.swap_volume_rune)),
+            Achievement(A.DAILY_VOLUME, int(data.swap_volume_day_usd)),
+            Achievement(A.MONTHLY_SWAP_VOLUME, int(data.swap_volume_30d_usd)),
+            Achievement(A.SWAP_VOLUME_TOTAL_USD, int(data.swap_volume_total_usd)),
         ]
         return events
 

@@ -4,7 +4,7 @@
     "title": "Количество свопов за 24 часа",
     "subtitle": "50K",
     "lang": "ru",
-    "order": 8
+    "order": 9
   },
   "parameters": {
     "key": "swap_count_24h",
@@ -42,7 +42,7 @@
       {
         "label": "Было",
         "value": "20K",
-        "sub": "3 мес 21 дн назад"
+        "sub": "4 мес 4 дн назад"
       },
       {
         "label": "Сейчас",

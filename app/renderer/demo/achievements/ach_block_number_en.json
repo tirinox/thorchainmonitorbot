@@ -4,7 +4,7 @@
     "title": "Blocks produced",
     "subtitle": "20M",
     "lang": "en",
-    "order": 5
+    "order": 6
   },
   "parameters": {
     "key": "block_number",
@@ -42,7 +42,7 @@
       {
         "label": "Previous",
         "value": "10M",
-        "sub": "2 months, 12 days ago"
+        "sub": "2 months, 25 days ago"
       },
       {
         "label": "Now",

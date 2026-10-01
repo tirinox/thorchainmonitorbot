@@ -4,7 +4,7 @@
     "title": "Stablecoins in vaults",
     "subtitle": "$50M",
     "lang": "en",
-    "order": 27
+    "order": 28
   },
   "parameters": {
     "key": "stables_in_vault",
@@ -46,7 +46,7 @@
       {
         "label": "Previous",
         "value": "$20M",
-        "sub": "3 months, 28 days ago"
+        "sub": "11 days ago"
       },
       {
         "label": "Now",

@@ -4,7 +4,7 @@
     "title": "Monthly swaps",
     "subtitle": "1M",
     "lang": "en",
-    "order": 9
+    "order": 10
   },
   "parameters": {
     "key": "swap_count_30d",
@@ -38,7 +38,7 @@
       {
         "label": "Previous",
         "value": "500K",
-        "sub": "4 months, 4 days ago"
+        "sub": "17 days ago"
       },
       {
         "label": "Now",

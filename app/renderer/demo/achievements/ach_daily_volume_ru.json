@@ -1,19 +1,19 @@
 {
   "template_name": "achievement.jinja2",
   "meta": {
-    "title": "Ежедневный объем",
+    "title": "Объем свопов за день",
     "subtitle": "$200M",
     "lang": "ru",
     "order": 4
   },
   "parameters": {
     "key": "daily_volume",
-    "background": "nn_wreath_swaps.png",
-    "tint": "#4ffffa",
-    "hole_x": 0.502,
-    "hole_y": 0.449,
-    "hole_r": 0.205,
-    "base_color": "#030708",
+    "background": "nn_wreath_trade.png",
+    "tint": "#ff7a6b",
+    "hole_x": 0.501,
+    "hole_y": 0.498,
+    "hole_r": 0.193,
+    "base_color": "#030202",
     "frame_size": 860,
     "frame_top": 40,
     "shade_from": 58,
@@ -42,7 +42,7 @@
         "src": "runic/bw_M.png"
       }
     ],
-    "title": "Ежедневный объем",
+    "title": "Объем свопов за день",
     "subtitle": "",
     "asset_logo": "",
     "date": "1 октября 2026",

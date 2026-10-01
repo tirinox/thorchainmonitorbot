@@ -4,7 +4,7 @@
     "title": "Всего нод в сети",
     "subtitle": "100",
     "lang": "ru",
-    "order": 13
+    "order": 14
   },
   "parameters": {
     "key": "node_count",
@@ -42,7 +42,7 @@
       {
         "label": "Было",
         "value": "50",
-        "sub": "1 мес 26 дн назад"
+        "sub": "2 мес 9 дн назад"
       },
       {
         "label": "Сейчас",

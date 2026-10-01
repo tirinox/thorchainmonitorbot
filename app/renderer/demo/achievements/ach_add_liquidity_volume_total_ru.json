@@ -4,7 +4,7 @@
     "title": "Общий объем добавленной ликвидности",
     "subtitle": "5B ᚱ",
     "lang": "ru",
-    "order": 12
+    "order": 13
   },
   "parameters": {
     "key": "add_liquidity_volume_total",
@@ -45,7 +45,7 @@
       {
         "label": "Было",
         "value": "2B ᚱ",
-        "sub": "1 мес 13 дн назад"
+        "sub": "1 мес 26 дн назад"
       },
       {
         "label": "Сейчас",

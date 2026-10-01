@@ -4,7 +4,7 @@
     "title": "Максимальный объем обмена",
     "subtitle": "$20M",
     "lang": "ru",
-    "order": 22
+    "order": 23
   },
   "parameters": {
     "key": "max_swap_amount_usd",
@@ -46,7 +46,7 @@
       {
         "label": "Было",
         "value": "$10M",
-        "sub": "1 мес 23 дн назад"
+        "sub": "2 мес 6 дн назад"
       },
       {
         "label": "Сейчас",

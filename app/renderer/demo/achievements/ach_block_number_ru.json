@@ -4,7 +4,7 @@
     "title": "Сгенерировано блоков",
     "subtitle": "20M",
     "lang": "ru",
-    "order": 5
+    "order": 6
   },
   "parameters": {
     "key": "block_number",
@@ -42,7 +42,7 @@
       {
         "label": "Было",
         "value": "10M",
-        "sub": "2 мес 12 дн назад"
+        "sub": "2 мес 25 дн назад"
       },
       {
         "label": "Сейчас",

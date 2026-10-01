@@ -4,7 +4,7 @@
     "title": "Общее количество добавлений ликвидности",
     "subtitle": "1M",
     "lang": "ru",
-    "order": 11
+    "order": 12
   },
   "parameters": {
     "key": "add_liquidity_count_total",
@@ -38,7 +38,7 @@
       {
         "label": "Было",
         "value": "500K",
-        "sub": "1 мес назад"
+        "sub": "1 мес 13 дн назад"
       },
       {
         "label": "Сейчас",

@@ -4,7 +4,7 @@
     "title": "Trade asset holders",
     "subtitle": "1K",
     "lang": "en",
-    "order": 33
+    "order": 34
   },
   "parameters": {
     "key": "trade_asset_holders_count",
@@ -38,7 +38,7 @@
       {
         "label": "Previous",
         "value": "500",
-        "sub": "2 months, 16 days ago"
+        "sub": "2 months, 29 days ago"
       },
       {
         "label": "Now",

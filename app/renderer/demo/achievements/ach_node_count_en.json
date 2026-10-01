@@ -4,7 +4,7 @@
     "title": "Total node count",
     "subtitle": "100",
     "lang": "en",
-    "order": 13
+    "order": 14
   },
   "parameters": {
     "key": "node_count",
@@ -42,7 +42,7 @@
       {
         "label": "Previous",
         "value": "50",
-        "sub": "1 month, 26 days ago"
+        "sub": "2 months, 9 days ago"
       },
       {
         "label": "Now",

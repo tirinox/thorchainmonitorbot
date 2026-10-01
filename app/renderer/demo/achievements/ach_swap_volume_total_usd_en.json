@@ -1,13 +1,13 @@
 {
   "template_name": "achievement.jinja2",
   "meta": {
-    "title": "Общий баланс торговых счетов",
-    "subtitle": "$20M",
-    "lang": "ru",
-    "order": 33
+    "title": "Total swap volume",
+    "subtitle": "$100B",
+    "lang": "en",
+    "order": 11
   },
   "parameters": {
-    "key": "trade_balance_total_usd",
+    "key": "swap_volume_total_usd",
     "background": "nn_wreath_trade.png",
     "tint": "#ff7a6b",
     "hole_x": 0.501,
@@ -18,8 +18,8 @@
     "frame_top": 40,
     "shade_from": 58,
     "number_font": "runic",
-    "number_label": "Более чем",
-    "number_text": "$20M",
+    "number_label": "Over",
+    "number_text": "$100B",
     "glyphs": [
       {
         "kind": "tall",
@@ -27,7 +27,7 @@
       },
       {
         "kind": "glyph",
-        "src": "runic/bw_2.png"
+        "src": "runic/bw_1.png"
       },
       {
         "kind": "glyph",
@@ -35,27 +35,31 @@
       },
       {
         "kind": "glyph",
-        "src": "runic/bw_M.png"
-      }
-    ],
-    "title": "Общий баланс торговых счетов",
-    "subtitle": "",
-    "asset_logo": "",
-    "date": "1 октября 2026",
-    "stats": [
-      {
-        "label": "Было",
-        "value": "$10M",
-        "sub": "2 мес 16 дн назад"
+        "src": "runic/bw_0.png"
       },
       {
-        "label": "Сейчас",
-        "value": "$23,400,000",
+        "kind": "glyph",
+        "src": "runic/bw_B.png"
+      }
+    ],
+    "title": "Total swap volume",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "$90B",
+        "sub": "1 month ago"
+      },
+      {
+        "label": "Now",
+        "value": "$123,270,000,000",
         "sub": ""
       },
       {
-        "label": "Следующая цель",
-        "value": "$50M",
+        "label": "Next milestone",
+        "value": "$200B",
         "sub": ""
       }
     ]
