@@ -1,0 +1,59 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Еженедельный объем свопов",
+    "subtitle": "$2B",
+    "lang": "ru",
+    "order": 33
+  },
+  "parameters": {
+    "key": "weekly_swap_volume",
+    "background": "nn_wreath_swaps.png",
+    "tint": "#4ffffa",
+    "hole_x": 0.502,
+    "hole_y": 0.449,
+    "hole_r": 0.205,
+    "base_color": "#030708",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Более чем",
+    "number_text": "$2B",
+    "glyphs": [
+      {
+        "kind": "tall",
+        "src": "runic/bw_USD.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_2.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_B.png"
+      }
+    ],
+    "title": "Еженедельный объем свопов",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "1 октября 2026",
+    "stats": [
+      {
+        "label": "Было",
+        "value": "$1B",
+        "sub": "2 мес 16 дн назад"
+      },
+      {
+        "label": "Сейчас",
+        "value": "$2,340,000,000",
+        "sub": ""
+      },
+      {
+        "label": "Следующая цель",
+        "value": "$5B",
+        "sub": ""
+      }
+    ]
+  }
+}

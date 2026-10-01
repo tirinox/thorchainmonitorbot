@@ -1,10 +1,8 @@
 import os.path
-import string
 
 from PIL import Image, ImageFont
 
 from comm.picture.crypto_logo import CryptoLogoDownloader
-from comm.picture.sprite_font import SpriteFont
 from lib.utils import Singleton
 
 
@@ -47,10 +45,6 @@ class Resources(metaclass=Singleton):
     LOGO_FILE = f'{BASE}/tc_logo.png'
     LOGO_FILE_TRANSPARENT = f'{BASE}/tc_logo_transparent.png'
 
-    CUSTOM_FONT_RUNIC = f'{BASE}/achievement/numbers_runic'
-    CUSTOM_FONT_RUNIC_BW = f'{BASE}/achievement/numbers_runic_bw'
-    CUSTOM_FONT_BALLOON = f'{BASE}/achievement/numbers_balloon'
-
     def __init__(self) -> None:
         self.fonts = FontCache(self.BASE)
         self.hidden_img = Image.open(self.HIDDEN_IMG)
@@ -69,10 +63,6 @@ class Resources(metaclass=Singleton):
         self.tc_logo_transparent = Image.open(self.LOGO_FILE_TRANSPARENT)
 
         self.logo_downloader = CryptoLogoDownloader(self.LOGO_BASE)
-
-        self.custom_font_runic = SpriteFont(self.CUSTOM_FONT_RUNIC)
-        self.custom_font_runic_bw = SpriteFont(self.CUSTOM_FONT_RUNIC_BW, filename_prefix='bw_')
-        self.custom_font_balloon = SpriteFont(self.CUSTOM_FONT_BALLOON, available_symbols=string.digits)
 
     def put_hidden_plate(self, image, position, anchor='left', ey=-3):
         x, y = position

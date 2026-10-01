@@ -1,0 +1,67 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Weekly affiliate revenue",
+    "subtitle": "$200K",
+    "lang": "en",
+    "order": 32
+  },
+  "parameters": {
+    "key": "weekly_affiliate_revenue_usd",
+    "background": "nn_wreath_affiliate_grip.png",
+    "tint": "#f0c070",
+    "hole_x": 0.498,
+    "hole_y": 0.33,
+    "hole_r": 0.165,
+    "base_color": "#080805",
+    "frame_size": 820,
+    "frame_top": 64,
+    "shade_from": 70,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "$200K",
+    "glyphs": [
+      {
+        "kind": "tall",
+        "src": "runic/bw_USD.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_2.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_K.png"
+      }
+    ],
+    "title": "Weekly affiliate revenue",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "$100K",
+        "sub": "2 months, 3 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "$213,000",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "$500K",
+        "sub": ""
+      }
+    ]
+  }
+}

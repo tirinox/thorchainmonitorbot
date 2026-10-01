@@ -1,0 +1,374 @@
+{% set _width, _height = set_viewport_size(1024, 1024) %}
+{% extends "base.jinja2" %}
+
+{% block content %}
+    ## The wreath is drawn smaller than the card to leave room for the title and the stats under it
+    {% set bg_size = frame_size | default(860) %}
+    {% set bg_top = frame_top | default(40) %}
+    {% set shade = shade_from | default(58) %}
+    ## the card continues the background picture: its color is the one at the picture edges
+    {% set base = base_color | default('#0a1015') %}
+    {% set fade = 10 %}
+    ## the wreath hole on the card, px
+    {% set hole_cx = 512 + (hole_x - 0.5) * bg_size %}
+    {% set hole_cy = bg_top + hole_y * bg_size %}
+    {% set hole_radius = hole_r * bg_size %}
+
+    <style>
+        :root {
+            --tint: {{ tint }};
+            --tint-soft: color-mix(in srgb, var(--tint) 45%, transparent);
+            --tint-faint: color-mix(in srgb, var(--tint) 14%, transparent);
+        }
+
+        .container.bg {
+            background: radial-gradient(circle at {{ (hole_cx / 10.24) | round(1) }}% {{ (hole_cy / 10.24) | round(1) }}%, var(--tint-faint), transparent 55%),
+            {{ base }};
+        }
+
+        .ach-bg {
+            position: absolute;
+            left: 50%;
+            top: {{ bg_top }}px;
+            width: {{ bg_size }}px;
+            height: {{ bg_size }}px;
+            transform: translateX(-50%);
+            /* only the picture edges fade, into the card color taken from them: the picture flows into the card */
+            -webkit-mask-image: linear-gradient(to right, transparent, #000 {{ fade }}%, #000 {{ 100 - fade }}%, transparent),
+            linear-gradient(to bottom, transparent, #000 {{ fade }}%, #000 {{ 100 - fade }}%, transparent);
+            -webkit-mask-composite: source-in;
+            mask-image: linear-gradient(to right, transparent, #000 {{ fade }}%, #000 {{ 100 - fade }}%, transparent),
+            linear-gradient(to bottom, transparent, #000 {{ fade }}%, #000 {{ 100 - fade }}%, transparent);
+            mask-composite: intersect;
+        }
+
+        .ach-shade {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, transparent {{ shade }}%, color-mix(in srgb, {{ base }} 82%, transparent) {{ shade + 18 }}%, {{ base }} {{ shade + 32 }}%);
+        }
+
+        .ach-brand {
+            position: absolute;
+            top: 26px;
+            left: 0;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ach-brand-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .ach-brand-row img {
+            height: 40px;
+        }
+
+        .ach-brand-name {
+            font-size: 30px;
+            font-weight: 600;
+            letter-spacing: 0.3em;
+            color: #e6ecef;
+            text-shadow: 0 0 8px #000, 0 0 3px #000; /* readable over sparks of the background */
+        }
+
+        .ach-date {
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--tint);
+            opacity: 0.9;
+            text-shadow: 0 0 8px #000, 0 0 3px #000, 0 0 1px #000;
+        }
+
+        .ach-number-box {
+            position: absolute;
+            left: {{ hole_cx }}px;
+            top: {{ hole_cy }}px;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .ach-number-label {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #fff;
+            text-shadow: 0 0 10px var(--tint), 0 0 2px #000;
+        }
+
+        .ach-number {
+            display: flex;
+            align-items: center;
+            gap: 0.05em;
+            font-size: 150px; /* = glyph height; shrunk by fitNumber() */
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .ach-number img {
+            height: 1em;
+            display: block;
+        }
+
+        .ach-number .tall {
+            height: 1.17em;
+        }
+
+        .ach-number .dot {
+            width: 0.26em;
+            object-fit: cover;
+        }
+
+        .ach-number .space {
+            width: 0.2em;
+        }
+
+        .ach-number .text {
+            font-size: 0.8em;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .ach-number.runic img, .ach-number.runic .text {
+            filter: drop-shadow(0 0 3px var(--tint)) drop-shadow(0 0 14px var(--tint));
+        }
+
+        .ach-number.balloon {
+            font-size: 300px; /* a balloon digit may float a bit over the ring: see fitNumber() */
+        }
+
+        .ach-number.balloon img {
+            filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.6));
+        }
+
+        .ach-bottom {
+            position: absolute;
+            left: 36px;
+            right: 36px;
+            bottom: 42px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .ach-bottom.no-stats {
+            bottom: 90px;
+        }
+
+        .ach-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+            max-width: 100%;
+        }
+
+        .ach-asset-logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.25));
+        }
+
+        .ach-title {
+            font-size: 50px;
+            font-weight: 800;
+            line-height: 1.1;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            text-align: center;
+            color: #fff;
+            text-shadow: 0 0 18px var(--tint-soft), 0 2px 2px rgba(0, 0, 0, 0.8);
+            min-width: 0;
+        }
+
+        .ach-subtitle {
+            font-size: 30px;
+            font-weight: 600;
+            color: var(--tint);
+            margin-top: -6px;
+        }
+
+        .ach-stats {
+            display: grid;
+            grid-template-columns: repeat({{ stats | length }}, 1fr);
+            width: 100%;
+            padding: 16px 8px;
+            border-radius: 20px;
+            border: 1px solid color-mix(in srgb, var(--tint) 30%, transparent);
+            background: rgba(12, 20, 26, 0.78);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .ach-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 0 12px;
+            min-width: 0;
+        }
+
+        .ach-stat + .ach-stat {
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ach-stat-label {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: #8f9aa1;
+        }
+
+        .ach-stat-value {
+            font-size: 34px;
+            font-weight: 700;
+            color: #fff;
+            white-space: nowrap;
+        }
+
+        .ach-stat-sub {
+            font-size: 18px;
+            color: #8f9aa1;
+        }
+    </style>
+
+    <img class="ach-bg" src="renderer/static/img/achievement/bg/{{ background }}" alt="">
+    <div class="ach-shade"></div>
+
+    <div class="ach-brand">
+        <div class="ach-brand-row">
+            <img src="renderer/static/img/tc_logo_transparent.png?rv=1" alt="THORChain logo">
+            <div class="ach-brand-name">THORCHAIN</div>
+        </div>
+        <div class="ach-date">{{ date }}</div>
+    </div>
+
+    <div class="ach-number-box" id="ach-number-box">
+        {% if number_label %}
+            <div class="ach-number-label">{{ number_label }}</div>
+        {% endif %}
+        <div class="ach-number {{ number_font }}" id="ach-number">
+            {% for g in glyphs %}
+                {% if g.kind == 'space' %}
+                    <span class="space"></span>
+                {% elif g.kind == 'text' %}
+                    <span class="text">{{ g.text }}</span>
+                {% else %}
+                    <img class="{{ g.kind }}" src="renderer/static/img/achievement/{{ g.src }}" alt="">
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="ach-bottom {{ '' if stats else 'no-stats' }}">
+        <div class="ach-title-row">
+            {% if asset_logo %}
+                <img class="ach-asset-logo" src="renderer/logo/{{ asset_logo }}.png" alt=""
+                     onerror="this.style.display='none'">
+            {% endif %}
+            <div class="ach-title" id="ach-title">{{ title }}</div>
+        </div>
+
+        {% if subtitle %}
+            <div class="ach-subtitle">{{ subtitle }}</div>
+        {% endif %}
+
+        {% if stats %}
+            <div class="ach-stats">
+                {% for s in stats %}
+                    <div class="ach-stat">
+                        <div class="ach-stat-label">{{ s.label }}</div>
+                        <div class="ach-stat-value">{{ s.value }}</div>
+                        {% if s.sub %}
+                            <div class="ach-stat-sub">{{ s.sub }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // the number and its label sit in the middle of the wreath hole: shrink the number
+        // until every corner of both is inside the hole, with some room left to the ring
+        function fitNumber() {
+            const cx = {{ hole_cx }}, cy = {{ hole_cy }};
+            // runic glyphs keep clear of the ring; a balloon digit may float a bit over it
+            const maxDistance = {{ hole_radius }} * {{ 1.15 if number_font == 'balloon' else 0.9 }};
+            const box = document.getElementById('ach-number-box');
+            const number = document.getElementById('ach-number');
+
+            const farthestCorner = (el) => {
+                const r = el.getBoundingClientRect();
+                const dx = Math.max(Math.abs(r.left - cx), Math.abs(r.right - cx));
+                const dy = Math.max(Math.abs(r.top - cy), Math.abs(r.bottom - cy));
+                return Math.hypot(dx, dy);
+            };
+
+            // the label keeps its size, so the box shifts as the number shrinks: a few passes to settle
+            for (let pass = 0; pass < 8; pass++) {
+                const distance = Math.max(...[...box.children].map(farthestCorner));
+                if (distance <= maxDistance) {
+                    break;
+                }
+                const size = parseFloat(getComputedStyle(number).fontSize);
+                number.style.fontSize = (size * Math.max(0.6, maxDistance / distance)) + 'px';
+            }
+        }
+
+        // the title: one line if it fits without getting too small, otherwise at most two lines
+        function fitTitle() {
+            const el = document.getElementById('ach-title');
+            const baseSize = parseFloat(getComputedStyle(el).fontSize);
+            const overflows = () => el.scrollWidth > el.clientWidth + 1;
+            const setSize = (size) => el.style.fontSize = size + 'px';
+
+            let size = baseSize;
+            el.style.whiteSpace = 'nowrap';
+            while (size > baseSize * 0.76 && overflows()) {
+                setSize(size -= 2);
+            }
+            if (!overflows()) {
+                return;
+            }
+
+            el.style.whiteSpace = 'normal';
+            setSize(size = baseSize);
+            while (size > 20 && (overflows() || el.offsetHeight > size * 1.1 * 2 + 4)) {
+                setSize(size -= 2);
+            }
+        }
+
+        // shrink a stat value that does not fit its column
+        function fitStats() {
+            document.querySelectorAll('.ach-stat-value').forEach(el => {
+                let size = parseFloat(getComputedStyle(el).fontSize);
+                while (size > 16 && el.scrollWidth > el.parentElement.clientWidth - 24) {
+                    size -= 1;
+                    el.style.fontSize = size + 'px';
+                }
+            });
+        }
+
+        window.addEventListener('load', () => {
+            fitNumber();
+            fitTitle();
+            fitStats();
+        });
+    </script>
+{% endblock %}

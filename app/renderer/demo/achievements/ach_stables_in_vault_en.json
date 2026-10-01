@@ -1,0 +1,63 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Stablecoins in vaults",
+    "subtitle": "$50M",
+    "lang": "en",
+    "order": 29
+  },
+  "parameters": {
+    "key": "stables_in_vault",
+    "background": "nn_wreath_stables_chains.png",
+    "tint": "#8ff0c0",
+    "hole_x": 0.501,
+    "hole_y": 0.472,
+    "hole_r": 0.225,
+    "base_color": "#090d0e",
+    "frame_size": 770,
+    "frame_top": 34,
+    "shade_from": 72,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "$50M",
+    "glyphs": [
+      {
+        "kind": "tall",
+        "src": "runic/bw_USD.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_5.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_M.png"
+      }
+    ],
+    "title": "Stablecoins in vaults",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "$20M",
+        "sub": "24 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "$54,000,000",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "$100M",
+        "sub": ""
+      }
+    ]
+  }
+}

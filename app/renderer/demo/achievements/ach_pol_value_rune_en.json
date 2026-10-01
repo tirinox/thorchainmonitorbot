@@ -1,0 +1,66 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "POL value",
+    "subtitle": "20M ᚱ",
+    "lang": "en",
+    "order": 24
+  },
+  "parameters": {
+    "key": "pol_value_rune",
+    "background": "nn_wreath_vault.png",
+    "tint": "#ffcf7a",
+    "hole_x": 0.512,
+    "hole_y": 0.436,
+    "hole_r": 0.186,
+    "base_color": "#06080e",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "20M ᚱ",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_2.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_M.png"
+      },
+      {
+        "kind": "space"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_R.png"
+      }
+    ],
+    "title": "POL value",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "10M ᚱ",
+        "sub": "2 months, 19 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "21,500,000 ᚱ",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "50M ᚱ",
+        "sub": ""
+      }
+    ]
+  }
+}

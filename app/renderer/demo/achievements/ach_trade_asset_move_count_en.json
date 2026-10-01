@@ -1,0 +1,63 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Trade account deposits & withdrawals",
+    "subtitle": "100K",
+    "lang": "en",
+    "order": 38
+  },
+  "parameters": {
+    "key": "trade_asset_move_count",
+    "background": "nn_wreath_trade.png",
+    "tint": "#ff7a6b",
+    "hole_x": 0.501,
+    "hole_y": 0.498,
+    "hole_r": 0.193,
+    "base_color": "#030202",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "100K",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_1.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_K.png"
+      }
+    ],
+    "title": "Trade account deposits & withdrawals",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "50K",
+        "sub": "21 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "112,000",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "200K",
+        "sub": ""
+      }
+    ]
+  }
+}

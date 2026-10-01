@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Renderer gallery</title>
+    <style>
+        @font-face {
+            font-family: ThorFont;
+            src: url(/static/fonts/ThorFont.ttf);
+        }
+
+        @font-face {
+            font-family: Exo2;
+            src: url(/static/fonts/Exo2-VariableFont_wght.ttf);
+            font-weight: 100 900;
+        }
+
+        :root {
+            --table: #0e1b1e;
+            --panel: #13252a;
+            --panel-hi: #1a3138;
+            --line: #24414a;
+            --ink: #e4f1ee;
+            --ink-soft: #9db7b2;
+            --ink-faint: #6b8a85;
+            --accent: #23dcc8;
+            --accent-ink: #062320;
+            --warn: #f2b45c;
+            --card-min: 260px;
+            --radius: 10px;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-padding-top: 132px;
+        }
+
+        body {
+            margin: 0;
+            background: var(--table);
+            color: var(--ink);
+            font-family: Exo2, system-ui, sans-serif;
+            font-weight: 400;
+            font-size: 15px;
+            line-height: 1.45;
+        }
+
+        button, input {
+            font: inherit;
+            color: inherit;
+        }
+
+        code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 12px;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* ---- top bar ---- */
+        .top {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: color-mix(in srgb, var(--table) 92%, transparent);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px 20px;
+            padding: 14px 24px 10px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-right: auto;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-family: ThorFont, Exo2, sans-serif;
+            font-weight: normal;
+            font-size: 26px;
+            letter-spacing: 0.01em;
+        }
+
+        .brand .count {
+            color: var(--ink-faint);
+            font-size: 14px;
+        }
+
+        .search {
+            position: relative;
+        }
+
+        .search input {
+            width: 240px;
+            padding: 7px 34px 7px 12px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .search input::placeholder {
+            color: var(--ink-faint);
+        }
+
+        .search kbd {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 0 6px;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            color: var(--ink-faint);
+            font: 12px ui-monospace, Menlo, monospace;
+        }
+
+        .seg {
+            display: inline-flex;
+            padding: 3px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .seg button {
+            padding: 4px 11px;
+            border: 0;
+            border-radius: 5px;
+            background: transparent;
+            color: var(--ink-soft);
+            cursor: pointer;
+        }
+
+        .seg button:hover {
+            color: var(--ink);
+        }
+
+        .seg button[aria-pressed="true"] {
+            background: var(--accent);
+            color: var(--accent-ink);
+            font-weight: 600;
+        }
+
+        .rail {
+            display: flex;
+            gap: 6px;
+            padding: 0 24px 12px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .rail a {
+            flex: none;
+            display: inline-flex;
+            gap: 7px;
+            align-items: baseline;
+            padding: 4px 11px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--ink-soft);
+            text-decoration: none;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .rail a:hover {
+            border-color: var(--accent);
+            color: var(--ink);
+        }
+
+        .rail a.current {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .rail a span {
+            color: var(--ink-faint);
+            font-size: 12px;
+        }
+
+        .notice {
+            margin: 18px 24px 0;
+            padding: 12px 16px;
+            border: 1px solid color-mix(in srgb, var(--warn) 50%, transparent);
+            border-radius: var(--radius);
+            background: color-mix(in srgb, var(--warn) 9%, transparent);
+            color: var(--warn);
+        }
+
+        /* ---- sections ---- */
+        main {
+            padding: 8px 24px 64px;
+        }
+
+        section {
+            padding-top: 28px;
+        }
+
+        .sec-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 6px 16px;
+            margin-bottom: 16px;
+        }
+
+        .sec-head h2 {
+            margin: 0;
+            font-family: ThorFont, Exo2, sans-serif;
+            font-weight: normal;
+            font-size: 30px;
+            line-height: 1.1;
+        }
+
+        .sec-head .n {
+            color: var(--accent);
+            font-size: 16px;
+        }
+
+        .sec-head .tpl {
+            color: var(--ink-faint);
+            font-size: 13px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(var(--card-min), 100%), 1fr));
+            gap: 22px 18px;
+        }
+
+        /* ---- cards ---- */
+        .card {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .frame {
+            position: relative;
+            display: block;
+            width: 100%;
+            padding: 0;
+            border: 0;
+            background: #0a1015;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: zoom-in;
+        }
+
+        /* crop marks: the corners of the real render */
+        .frame::before {
+            content: "";
+            position: absolute;
+            inset: 6px;
+            z-index: 2;
+            pointer-events: none;
+            border: 0 solid color-mix(in srgb, var(--ink) 55%, transparent);
+            opacity: 0;
+            transition: opacity .15s;
+            --m: 14px;
+            -webkit-mask: linear-gradient(#000 0 0) top left / var(--m) var(--m) no-repeat,
+            linear-gradient(#000 0 0) top right / var(--m) var(--m) no-repeat,
+            linear-gradient(#000 0 0) bottom left / var(--m) var(--m) no-repeat,
+            linear-gradient(#000 0 0) bottom right / var(--m) var(--m) no-repeat;
+            mask: linear-gradient(#000 0 0) top left / var(--m) var(--m) no-repeat,
+            linear-gradient(#000 0 0) top right / var(--m) var(--m) no-repeat,
+            linear-gradient(#000 0 0) bottom left / var(--m) var(--m) no-repeat,
+            linear-gradient(#000 0 0) bottom right / var(--m) var(--m) no-repeat;
+            border-width: 1.5px;
+        }
+
+        .frame:hover::before, .frame:focus-visible::before {
+            opacity: 1;
+        }
+
+        .frame:focus-visible {
+            outline-offset: 3px;
+        }
+
+        .frame iframe, .frame img {
+            position: absolute;
+            left: 0;
+            top: 0;
+            border: 0;
+            transform-origin: 0 0;
+            pointer-events: none;
+        }
+
+        .frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .frame .err {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            color: var(--warn);
+            font-size: 13px;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .info {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 2px 10px;
+            padding: 10px 2px 0;
+        }
+
+        .title {
+            font-weight: 600;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .figure {
+            color: var(--accent);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .meta {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--ink-faint);
+            font-size: 12px;
+            min-width: 0;
+        }
+
+        code.title {
+            font-size: 13px;
+            color: var(--ink);
+        }
+
+        .meta code {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--ink-soft);
+        }
+
+        .lang {
+            flex: none;
+            padding: 0 5px;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--ink-soft);
+        }
+
+        .links {
+            margin-left: auto;
+            display: flex;
+            gap: 2px;
+            flex: none;
+        }
+
+        .links a {
+            padding: 1px 6px;
+            border-radius: 4px;
+            color: var(--ink-faint);
+            text-decoration: none;
+        }
+
+        .links a:hover {
+            color: var(--accent);
+            background: var(--panel-hi);
+        }
+
+        .card.broken .title {
+            color: var(--warn);
+        }
+
+        .empty {
+            padding: 80px 0;
+            color: var(--ink-soft);
+            text-align: center;
+        }
+
+        /* ---- viewer ---- */
+        dialog {
+            width: 100vw;
+            height: 100vh;
+            max-width: none;
+            max-height: none;
+            margin: 0;
+            padding: 0;
+            border: 0;
+            background: #071012;
+            color: var(--ink);
+        }
+
+        dialog::backdrop {
+            background: rgba(0, 0, 0, .7);
+        }
+
+        .v-wrap {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            height: 100%;
+        }
+
+        .v-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 16px;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .v-title {
+            margin-right: auto;
+            min-width: 0;
+        }
+
+        .v-title strong {
+            display: block;
+            font-size: 17px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .v-title span {
+            color: var(--ink-faint);
+            font-size: 13px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--panel);
+            color: var(--ink-soft);
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            color: var(--ink);
+            border-color: var(--accent);
+        }
+
+        .v-stage {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .v-canvas {
+            position: absolute;
+            box-shadow: 0 0 0 1px var(--line), 0 20px 60px rgba(0, 0, 0, .5);
+            background: #0a1015;
+        }
+
+        .v-canvas iframe {
+            border: 0;
+            transform-origin: 0 0;
+            display: block;
+        }
+
+        .v-canvas img {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .v-canvas .err {
+            position: absolute;
+            inset: 0;
+            padding: 24px;
+            overflow: auto;
+            color: var(--warn);
+            white-space: pre-wrap;
+            font: 13px ui-monospace, Menlo, monospace;
+        }
+
+        .v-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            width: 44px;
+            height: 64px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--panel) 85%, transparent);
+            color: var(--ink-soft);
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .v-nav:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .v-prev {
+            left: 14px;
+        }
+
+        .v-next {
+            right: 14px;
+        }
+
+        .v-status {
+            position: absolute;
+            left: 50%;
+            bottom: 12px;
+            transform: translateX(-50%);
+            color: var(--ink-faint);
+            font-size: 13px;
+        }
+
+        @media (max-width: 720px) {
+            /* the controls wrap to several rows here: let them scroll away */
+            .top {
+                position: static;
+            }
+
+            html {
+                scroll-padding-top: 0;
+            }
+
+            .bar, .rail, main {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            .search input {
+                width: 100%;
+            }
+
+            .search {
+                flex: 1 1 100%;
+                order: 5;
+            }
+
+            .v-nav {
+                display: none;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+            }
+
+            html {
+                scroll-behavior: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header class="top">
+    <div class="bar">
+        <div class="brand">
+            <h1>Renderer gallery</h1>
+            <span class="count" id="count"></span>
+        </div>
+        <label class="search">
+            <input id="q" type="search" placeholder="Find a demo" aria-label="Find a demo" autocomplete="off">
+            <kbd>/</kbd>
+        </label>
+        <div class="seg" role="group" aria-label="Language" data-pref="lang">
+            <button data-v="all">All</button>
+            <button data-v="en">EN</button>
+            <button data-v="ru">RU</button>
+        </div>
+        <div class="seg" role="group" aria-label="Preview" data-pref="mode"
+             title="Live HTML is instant; PNG goes through Playwright like the bot does">
+            <button data-v="html">Live HTML</button>
+            <button data-v="png">PNG</button>
+        </div>
+        <div class="seg" role="group" aria-label="Preview size" data-pref="size">
+            <button data-v="s">S</button>
+            <button data-v="m">M</button>
+            <button data-v="l">L</button>
+        </div>
+    </div>
+    <nav class="rail" id="rail" aria-label="Sections"></nav>
+</header>
+
+<div id="notice"></div>
+<main id="main"></main>
+
+<dialog id="viewer" aria-label="Demo preview">
+    <div class="v-wrap">
+        <div class="v-bar">
+            <div class="v-title">
+                <strong id="v-title"></strong>
+                <span id="v-sub"></span>
+            </div>
+            <div class="seg" role="group" aria-label="Viewer preview" id="v-mode">
+                <button data-v="html">Live HTML</button>
+                <button data-v="png">PNG</button>
+            </div>
+            <button class="btn" id="v-reload" title="Re-render after editing the template (R)">Reload</button>
+            <a class="btn" id="v-open" target="_blank" rel="noopener">Open</a>
+            <a class="btn" id="v-json" target="_blank" rel="noopener">Parameters</a>
+            <button class="btn" id="v-close" title="Esc">Close</button>
+        </div>
+        <div class="v-stage" id="v-stage">
+            <button class="v-nav v-prev" id="v-prev" aria-label="Previous demo">‹</button>
+            <div class="v-canvas" id="v-canvas"></div>
+            <button class="v-nav v-next" id="v-next" aria-label="Next demo">›</button>
+            <div class="v-status" id="v-status"></div>
+        </div>
+    </div>
+</dialog>
+
+<script id="catalog" type="application/json">__CATALOG__</script>
+<script>
+    (() => {
+        const {demos, missing} = JSON.parse(document.getElementById('catalog').textContent);
+        const SIZES = {s: 190, m: 260, l: 400};
+        const $ = id => document.getElementById(id);
+        const enc = encodeURIComponent;
+        const htmlUrl = d => `/render/demo-html/${enc(d.name)}`;
+        const pngUrl = (d, bust) => `/render/demo/${enc(d.name)}` + (bust ? `?_=${Date.now()}` : '');
+        const jsonUrl = d => `/render/demo-json/${enc(d.name)}`;
+
+        const store = {
+            get(k, def) {
+                try {
+                    return localStorage.getItem('gallery.' + k) || def;
+                } catch (e) {
+                    return def;
+                }
+            },
+            set(k, v) {
+                try {
+                    localStorage.setItem('gallery.' + k, v);
+                } catch (e) {
+                }
+            }
+        };
+        const prefs = {lang: store.get('lang', 'all'), mode: store.get('mode', 'html'), size: store.get('size', 'm')};
+
+        function el(tag, attrs = {}, ...kids) {
+            const e = document.createElement(tag);
+            for (const [k, v] of Object.entries(attrs)) {
+                if (k === 'class') e.className = v;
+                else if (k === 'text') e.textContent = v;
+                else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+                else e.setAttribute(k, v);
+            }
+            kids.forEach(c => c && e.append(c));
+            return e;
+        }
+
+        if (missing) {
+            $('notice').append(el('div', {
+                class: 'notice',
+                text: `There is no demo called “${missing}”. Pick one below, or add ${missing}.json to renderer/demo/.`
+            }));
+        }
+
+        // ---- previews: an iframe at the template's own size, scaled down to the frame ----
+        const scaler = new ResizeObserver(entries => {
+            for (const {target} of entries) fitInside(target);
+        });
+
+        function fitInside(frame) {
+            const child = frame.firstElementChild;
+            if (!child || child.tagName !== 'IFRAME') return;
+            child.style.transform = `scale(${frame.clientWidth / +child.width})`;
+        }
+
+        function fillFrame(frame, d) {
+            frame.replaceChildren();
+            if (d.error) {
+                frame.append(el('div', {class: 'err', text: d.error}));
+            } else if (prefs.mode === 'png') {
+                frame.append(el('img', {src: pngUrl(d), loading: 'lazy', alt: ''}));
+            } else {
+                frame.append(el('iframe', {
+                    src: htmlUrl(d), width: d.w, height: d.h, loading: 'lazy',
+                    tabindex: '-1', title: d.name, scrolling: 'no'
+                }));
+                fitInside(frame);
+            }
+        }
+
+        // ---- page ----
+        const groups = [];
+        for (const d of demos) {
+            let g = groups.find(g => g.name === d.group);
+            if (!g) groups.push(g = {name: d.group, items: []});
+            g.items.push(d);
+        }
+
+        const cards = new Map();  // demo name => card
+        const sectionEls = [];
+
+        for (const [gi, g] of groups.entries()) {
+            const id = 'g' + gi;
+            const templates = [...new Set(g.items.map(d => d.template).filter(Boolean))];
+            const sizes = [...new Set(g.items.filter(d => !d.error).map(d => `${d.w}×${d.h}`))];
+            const grid = el('div', {class: 'grid'});
+            const n = el('span', {class: 'n'});
+            const sec = el('section', {id},
+                el('div', {class: 'sec-head'},
+                    el('h2', {text: g.name}), n,
+                    el('span', {
+                        class: 'tpl',
+                        text: [templates.join(', '), sizes.length === 1 ? sizes[0] + ' px' : ''].filter(Boolean).join(', ')
+                    })),
+                grid);
+            sectionEls.push({sec, grid, n, g, id});
+
+            for (const d of g.items) {
+                // a div, not a <button>: an iframe may not sit inside a button
+                const frame = el('div', {
+                    class: 'frame', style: `aspect-ratio: ${d.w} / ${d.h}`, role: 'button', tabindex: '0',
+                    'aria-label': `Open ${d.title}`, onclick: () => openViewer(d),
+                    onkeydown: e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            openViewer(d);
+                        }
+                    }
+                });
+                const card = el('article', {class: 'card' + (d.error ? ' broken' : '')},
+                    frame,
+                    el('div', {class: 'info'},
+                        // without a title of its own the demo name is the title
+                        d.title === d.name
+                            ? el('code', {class: 'title', text: d.name, title: d.name})
+                            : el('div', {class: 'title', text: d.title, title: d.title}),
+                        d.subtitle ? el('div', {class: 'figure', text: d.subtitle}) : el('span'),
+                        el('div', {class: 'meta'},
+                            d.title === d.name ? null : el('code', {text: d.name, title: d.name}),
+                            el('span', {class: 'lang', text: d.lang.toUpperCase()}),
+                            el('span', {class: 'links'},
+                                el('a', {href: htmlUrl(d), target: '_blank', rel: 'noopener', text: 'HTML', title: 'Open the HTML'}),
+                                el('a', {href: pngUrl(d), target: '_blank', rel: 'noopener', text: 'PNG', title: 'Render the PNG'}),
+                                el('a', {href: jsonUrl(d), target: '_blank', rel: 'noopener', text: 'JSON', title: 'Demo parameters'})))));
+                card.dataset.search = `${d.name} ${d.title} ${d.subtitle} ${d.template} ${d.group}`.toLowerCase();
+                fillFrame(frame, d);
+                scaler.observe(frame);
+                grid.append(card);
+                cards.set(d.name, {card, frame, d});
+            }
+            $('main').append(sec);
+        }
+
+        const empty = el('div', {class: 'empty', text: 'No demo matches the search. Clear it or switch the language to All.'});
+        $('main').append(empty);
+
+        // ---- filters ----
+        let visible = demos;
+
+        function applyFilters() {
+            const q = $('q').value.trim().toLowerCase();
+            const words = q.split(/\s+/).filter(Boolean);
+            visible = [];
+            $('rail').replaceChildren();
+            for (const s of sectionEls) {
+                let shown = 0;
+                for (const d of s.g.items) {
+                    const {card} = cards.get(d.name);
+                    const ok = (prefs.lang === 'all' || d.lang === prefs.lang) &&
+                        words.every(w => card.dataset.search.includes(w));
+                    card.hidden = !ok;
+                    if (ok) {
+                        shown++;
+                        visible.push(d);
+                    }
+                }
+                s.sec.hidden = !shown;
+                s.n.textContent = shown;
+                if (shown) {
+                    $('rail').append(el('a', {href: '#' + s.id, 'data-sec': s.id}, s.g.name, el('span', {text: shown})));
+                }
+            }
+            empty.hidden = visible.length > 0;
+            $('count').textContent = visible.length === demos.length
+                ? `${demos.length} demos in ${groups.length} sections`
+                : `${visible.length} of ${demos.length} demos`;
+            highlightRail();
+        }
+
+        function setPref(k, v) {
+            prefs[k] = v;
+            store.set(k, v);
+            document.querySelectorAll(`.seg[data-pref="${k}"] button`).forEach(b =>
+                b.setAttribute('aria-pressed', b.dataset.v === v));
+            if (k === 'size') document.documentElement.style.setProperty('--card-min', SIZES[v] + 'px');
+            if (k === 'mode') cards.forEach(({frame, d}) => fillFrame(frame, d));
+            if (k === 'lang') applyFilters();
+        }
+
+        document.querySelectorAll('.seg[data-pref]').forEach(seg => {
+            const k = seg.dataset.pref;
+            seg.addEventListener('click', e => {
+                const b = e.target.closest('button');
+                if (b) setPref(k, b.dataset.v);
+            });
+        });
+        setPref('size', prefs.size);
+        setPref('lang', prefs.lang);
+        document.querySelectorAll('.seg[data-pref="mode"] button').forEach(b =>
+            b.setAttribute('aria-pressed', b.dataset.v === prefs.mode));
+
+        $('q').addEventListener('input', applyFilters);
+
+        // the rail follows the scroll
+        function highlightRail() {
+            let cur = null;
+            for (const s of sectionEls) {
+                if (!s.sec.hidden && s.sec.getBoundingClientRect().top <= 160) cur = s.id;
+            }
+            const rail = $('rail');
+            rail.querySelectorAll('a').forEach(a => {
+                const on = a.dataset.sec === cur;
+                if (on && !a.classList.contains('current')) {
+                    // scroll the rail only, never the page
+                    const left = a.offsetLeft - rail.offsetLeft;
+                    if (left < rail.scrollLeft || left + a.offsetWidth > rail.scrollLeft + rail.clientWidth) {
+                        rail.scrollTo({left: left - 24});
+                    }
+                }
+                a.classList.toggle('current', on);
+            });
+        }
+
+        addEventListener('scroll', highlightRail, {passive: true});
+
+        // ---- viewer ----
+        const viewer = $('viewer');
+        let current = null;
+        let viewMode = prefs.mode;
+
+        function openViewer(d) {
+            current = d;
+            if (!viewer.open) viewer.showModal();
+            history.replaceState(null, '', '#' + enc(d.name));
+            $('v-title').textContent = d.title;
+            $('v-sub').textContent = [d.name, d.template, `${d.w}×${d.h}`, d.lang.toUpperCase()].filter(Boolean).join(', ');
+            $('v-open').href = viewMode === 'png' ? pngUrl(d) : htmlUrl(d);
+            $('v-json').href = jsonUrl(d);
+            const i = visible.indexOf(d);
+            $('v-status').textContent = i >= 0 ? `${i + 1} of ${visible.length}` : '';
+            $('v-mode').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === viewMode));
+            drawViewer(false);
+        }
+
+        function drawViewer(bust) {
+            const d = current;
+            const canvas = $('v-canvas');
+            canvas.replaceChildren();
+            if (d.error) {
+                canvas.append(el('div', {class: 'err', text: d.error}));
+            } else if (viewMode === 'png') {
+                const img = el('img', {src: pngUrl(d, bust), alt: d.title});
+                img.addEventListener('error', () => fetch(pngUrl(d, true)).then(r => r.text()).then(t => {
+                    canvas.replaceChildren(el('div', {class: 'err', text: t}));
+                }));
+                canvas.append(img);
+            } else {
+                canvas.append(el('iframe', {src: htmlUrl(d), width: d.w, height: d.h, title: d.title}));
+            }
+            layoutViewer();
+        }
+
+        function layoutViewer() {
+            if (!current) return;
+            const stage = $('v-stage');
+            const pad = innerWidth > 720 ? 76 : 12;
+            const sw = stage.clientWidth - pad * 2, sh = stage.clientHeight - 48;
+            const k = Math.min(sw / current.w, sh / current.h, 1);
+            const w = current.w * k, h = current.h * k;
+            const canvas = $('v-canvas');
+            Object.assign(canvas.style, {
+                width: w + 'px', height: h + 'px',
+                left: (stage.clientWidth - w) / 2 + 'px', top: Math.max(12, (sh - h) / 2 + 12) + 'px'
+            });
+            const frame = canvas.querySelector('iframe');
+            if (frame) frame.style.transform = `scale(${k})`;
+        }
+
+        function step(delta) {
+            if (!visible.length) return;
+            const i = visible.indexOf(current);
+            openViewer(visible[(i + delta + visible.length) % visible.length]);
+        }
+
+        function closeViewer() {
+            viewer.close();
+        }
+
+        viewer.addEventListener('close', () => {
+            $('v-canvas').replaceChildren();
+            history.replaceState(null, '', location.pathname);
+            cards.get(current?.name)?.frame.focus({preventScroll: true});
+            current = null;
+        });
+        $('v-close').onclick = closeViewer;
+        $('v-prev').onclick = () => step(-1);
+        $('v-next').onclick = () => step(1);
+        $('v-reload').onclick = () => drawViewer(true);
+        $('v-mode').addEventListener('click', e => {
+            const b = e.target.closest('button');
+            if (!b) return;
+            viewMode = b.dataset.v;
+            openViewer(current);
+        });
+        addEventListener('resize', layoutViewer);
+
+        addEventListener('keydown', e => {
+            if (viewer.open) {
+                if (e.key === 'ArrowLeft') step(-1);
+                else if (e.key === 'ArrowRight') step(1);
+                else if (e.key === 'r' && !e.metaKey && !e.ctrlKey) drawViewer(true);
+                return;
+            }
+            if (e.key === '/' && document.activeElement !== $('q')) {
+                e.preventDefault();
+                $('q').focus();
+            } else if (e.key === 'Escape' && document.activeElement === $('q')) {
+                $('q').value = '';
+                applyFilters();
+                $('q').blur();
+            }
+        });
+
+        // a refresh keeps the open demo: handy while editing a template
+        const fromHash = decodeURIComponent(location.hash.slice(1));
+        if (fromHash && cards.has(fromHash)) openViewer(cards.get(fromHash).d);
+    })();
+</script>
+</body>
+</html>

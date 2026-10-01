@@ -12,11 +12,12 @@ from fastapi import FastAPI, Response, Request
 from fastapi.staticfiles import StaticFiles
 from jinja2 import TemplateNotFound
 from pydantic import BaseModel, Field
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, RedirectResponse
 
 from .const import DEVICE_SCALE_FACTOR
-from .demo import demo_template_parameters, available_demo_templates
+from .demo import demo_template_parameters, load_demo
 from .engine import RendererEngine
+from .gallery import gallery_html
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 
@@ -87,18 +88,13 @@ async def render_full_pipeline(template_name, parameters):
     return Response(png_bytes)
 
 
-def _demo_index_html(heading: str = '') -> str:
-    items = "".join(
-        f'<li><a href="/render/demo-html/{name}">{name}</a> '
-        f'| <a href="/render/demo/{name}">PNG</a></li>'
-        for name in sorted(available_demo_templates())
-    )
-    return f"{heading}<h3>Available demos:</h3><ul>{items}</ul>"
-
-
 def _response_no_template_found(template_name: str):
-    html = _demo_index_html(f"<h2>Template <code>{template_name}</code> not found.</h2>")
-    return Response(status_code=404, content=html, media_type="text/html")
+    return Response(status_code=404, content=gallery_html(renderer, missing=template_name), media_type="text/html")
+
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return RedirectResponse("/render/demo")
 
 
 @app.get("/render/demo-html", include_in_schema=False)
@@ -106,8 +102,16 @@ def _response_no_template_found(template_name: str):
 @app.get("/render/demo", include_in_schema=False)
 @app.get("/render/demo/", include_in_schema=False)
 async def demo_index():
-    """The list of the demos: each one opens as HTML or as the rendered PNG."""
-    return Response(content=_demo_index_html("<h2>Renderer demos</h2>"), media_type="text/html")
+    """The gallery of all demos: live HTML previews, the rendered PNG and the parameters of each one."""
+    return Response(content=gallery_html(renderer), media_type="text/html")
+
+
+@app.get("/render/demo-json/{name}")
+async def demo_json(name: str):
+    demo = load_demo(name)
+    if not demo:
+        return _response_no_template_found(name)
+    return JSONResponse(demo)
 
 
 @app.get("/render/demo-html/{name}")

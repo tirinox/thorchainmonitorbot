@@ -1,4 +1,7 @@
+from datetime import datetime
+
 from jobs.achievement.ach_list import Achievement, A
+from lib.date_utils import seconds_human
 from lib.texts import code, pre
 from .ach_eng import AchievementsEnglishLocalization
 
@@ -28,13 +31,6 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         A.MARKET_CAP_USD: "Rune общая капитализации",
         A.TOTAL_POOLS: "Всего пулов",
         A.TOTAL_ACTIVE_POOLS: "Активных пулов",
-        A.TOTAL_UNIQUE_SAVERS: "Всего уникальных сберегателей",
-        A.TOTAL_SAVED_USD: "Всего в сберегательных хранилищах",
-        A.TOTAL_SAVERS_EARNED_USD: "Всего заработано на сбережениях",
-        A.SAVER_VAULT_SAVED_ASSET: "Глубина хранилища ::asset::",
-        A.SAVER_VAULT_SAVED_USD: "Глубина хранилища ::asset:: в USD",
-        A.SAVER_VAULT_MEMBERS: "Сберегателей ::asset::",
-        A.SAVER_VAULT_EARNED_ASSET: "Сберегатели заработали ::asset::",
         A.SWAP_VOLUME_TOTAL_RUNE: "Общий объем свопов в RUNE",
         A.MAX_SWAP_AMOUNT_USD: "Максимальный объем обмена",
         A.MAX_ADD_AMOUNT_USD: "Максимальный объем добавления",
@@ -56,14 +52,32 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         A.TRADE_ASSET_SWAPS_VOLUME: "Объем свопов торговых активов",
         A.TRADE_ASSET_MOVE_COUNT: "Операций торговых счетов",
         A.TRADE_ASSET_LARGEST_DEPOSIT: "Самый крупный депозит",
-
-        A.RUNEPOOL_VALUE_USD: "RUNEPool ценность",
-        A.RUNEPOOL_LARGEST_DEPOSIT: "Самый крупный депозит в RUNEPool",
-        A.RUNEPOOL_TOTAL_PROVIDERS: "Всего провайдеров в RUNEPool",
-        A.RUNEPOOL_PNL: "Прибыль RUNEPool",
     }
 
     MORE_THAN = 'Более чем'
+    LESS_THAN = 'Менее чем'
+
+    CARD_RANK_LABEL = 'Топ'
+    CARD_PREVIOUS = 'Было'
+    CARD_NOW = 'Сейчас'
+    CARD_NEXT = 'Следующая цель'
+    MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+              'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
+
+    def seconds_human(self, seconds) -> str:
+        # imported here: rus.py imports this module
+        from comm.localization.rus import RussianLocalization
+        return seconds_human(seconds, translate=RussianLocalization.DATE_TRANSLATOR)
+
+    def format_date(self, ts) -> str:
+        d = datetime.fromtimestamp(ts)
+        return f'{d.day} {self.MONTHS[d.month - 1]} {d.year}'
+
+    def card_ago(self, ago: str) -> str:
+        return f'{ago} назад'
+
+    def card_anniversary_subtitle(self, years: int) -> str:
+        return f'{years} {self._years_string(years)} с первого блока'
 
     def notification_achievement_unlocked(self, a: Achievement):
         desc, ago, desc_str, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)

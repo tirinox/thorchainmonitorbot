@@ -1,0 +1,59 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Самый крупный депозит",
+    "subtitle": "$2M",
+    "lang": "ru",
+    "order": 39
+  },
+  "parameters": {
+    "key": "trade_asset_largest_deposit",
+    "background": "nn_wreath_trade.png",
+    "tint": "#ff7a6b",
+    "hole_x": 0.501,
+    "hole_y": 0.498,
+    "hole_r": 0.193,
+    "base_color": "#030202",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Более чем",
+    "number_text": "$2M",
+    "glyphs": [
+      {
+        "kind": "tall",
+        "src": "runic/bw_USD.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_2.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_M.png"
+      }
+    ],
+    "title": "Самый крупный депозит",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "1 октября 2026",
+    "stats": [
+      {
+        "label": "Было",
+        "value": "$1M",
+        "sub": "1 мес 4 дн назад"
+      },
+      {
+        "label": "Сейчас",
+        "value": "$2,430,000",
+        "sub": ""
+      },
+      {
+        "label": "Следующая цель",
+        "value": "$5M",
+        "sub": ""
+      }
+    ]
+  }
+}

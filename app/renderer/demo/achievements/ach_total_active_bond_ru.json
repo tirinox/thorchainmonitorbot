@@ -1,0 +1,66 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Всего активный бонд",
+    "subtitle": "50M ᚱ",
+    "lang": "ru",
+    "order": 15
+  },
+  "parameters": {
+    "key": "total_active_bond",
+    "background": "nn_wreath_network.png",
+    "tint": "#6fe8cf",
+    "hole_x": 0.5,
+    "hole_y": 0.471,
+    "hole_r": 0.14,
+    "base_color": "#04060e",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Более чем",
+    "number_text": "50M ᚱ",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_5.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_M.png"
+      },
+      {
+        "kind": "space"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_R.png"
+      }
+    ],
+    "title": "Всего активный бонд",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "1 октября 2026",
+    "stats": [
+      {
+        "label": "Было",
+        "value": "20M ᚱ",
+        "sub": "2 мес 22 дн назад"
+      },
+      {
+        "label": "Сейчас",
+        "value": "52,400,000 ᚱ",
+        "sub": ""
+      },
+      {
+        "label": "Следующая цель",
+        "value": "100M ᚱ",
+        "sub": ""
+      }
+    ]
+  }
+}

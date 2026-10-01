@@ -119,6 +119,13 @@ class RendererEngine:
             logging.error(f"Error rendering template '{template_name}': {e}")
             raise e
 
+    def measure_template(self, template_name: str, parameters: dict) -> tuple:
+        """The viewport size the template asks for; renders it to HTML quietly and throws the result away"""
+        template = self.jinja_env.get_template(template_name)
+        self._set_viewport(self.default_width, self.default_height)
+        template.render(parameters)
+        return self._viewport_w, self._viewport_h
+
     async def render_html_to_png(self, r: HTMLRenderResult) -> bytes:
         """
         Render HTML content to PNG using Playwright with dynamic viewport sizes.

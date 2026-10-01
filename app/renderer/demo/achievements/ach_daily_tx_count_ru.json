@@ -1,0 +1,59 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Количество транзакций за день",
+    "subtitle": "50K",
+    "lang": "ru",
+    "order": 3
+  },
+  "parameters": {
+    "key": "daily_tx_count",
+    "background": "nn_wreath_swaps.png",
+    "tint": "#4ffffa",
+    "hole_x": 0.502,
+    "hole_y": 0.449,
+    "hole_r": 0.205,
+    "base_color": "#030708",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Более чем",
+    "number_text": "50K",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_5.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_K.png"
+      }
+    ],
+    "title": "Количество транзакций за день",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "1 октября 2026",
+    "stats": [
+      {
+        "label": "Было",
+        "value": "20K",
+        "sub": "1 мес 16 дн назад"
+      },
+      {
+        "label": "Сейчас",
+        "value": "54,300",
+        "sub": ""
+      },
+      {
+        "label": "Следующая цель",
+        "value": "100K",
+        "sub": ""
+      }
+    ]
+  }
+}

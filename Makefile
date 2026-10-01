@@ -218,6 +218,11 @@ renderer-dev: # Launch the HTML renderer locally in development mode
 	cd app && PYTHONPATH=. uvicorn renderer.main_renderer:app --port 8404 --reload
 
 
+.PHONY: renderer-demos
+renderer-demos: # Regenerate the achievement demos for the renderer gallery (http://127.0.0.1:8404/render/demo)
+	cd app && PYTHONPATH=. python tools/gen_achievement_demos.py
+
+
 .PHONY: renderer-restart
 renderer-restart: # Restart the renderer container to pick up template and engine changes
 	@docker compose restart renderer

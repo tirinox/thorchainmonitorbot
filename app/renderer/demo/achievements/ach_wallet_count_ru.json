@@ -1,0 +1,63 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Количество кошельков",
+    "subtitle": "700K",
+    "lang": "ru",
+    "order": 2
+  },
+  "parameters": {
+    "key": "wallet_count",
+    "background": "nn_wreath_users.png",
+    "tint": "#7cc7ff",
+    "hole_x": 0.508,
+    "hole_y": 0.443,
+    "hole_r": 0.193,
+    "base_color": "#060505",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Более чем",
+    "number_text": "700K",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_7.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_K.png"
+      }
+    ],
+    "title": "Количество кошельков",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "1 октября 2026",
+    "stats": [
+      {
+        "label": "Было",
+        "value": "600K",
+        "sub": "1 мес 3 дн назад"
+      },
+      {
+        "label": "Сейчас",
+        "value": "712,400",
+        "sub": ""
+      },
+      {
+        "label": "Следующая цель",
+        "value": "800K",
+        "sub": ""
+      }
+    ]
+  }
+}

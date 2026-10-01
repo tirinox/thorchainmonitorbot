@@ -5,11 +5,13 @@ import random
 
 from comm.localization.achievements.ach_eng import AchievementsEnglishLocalization
 from comm.localization.achievements.ach_rus import AchievementsRussianLocalization
+from comm.localization.achievements.common import AchievementsLocalizationBase
 from comm.localization.languages import Language
-from comm.picture.achievement_picture import build_achievement_picture_generator
+from comm.picture.achievement_card import build_achievement_card, achievement_card_filename, \
+    ACHIEVEMENT_TEMPLATE
 from comm.telegram.telegram import TG_TEST_USER
 from jobs.achievement.ach_list import Achievement, EventTestAchievement, A, AchievementDescription, \
-    ACHIEVEMENT_DESC_MAP
+    ACHIEVEMENT_DESC_MAP, META_KEY_SPEC
 from jobs.achievement.milestones import Milestones
 from jobs.achievement.notifier import AchievementsNotifier
 from jobs.achievement.tracker import AchievementsTracker
@@ -81,25 +83,29 @@ def random_achievement():
     return rec
 
 
+async def render_achievement_card(app: LpAppFramework, rec: Achievement, loc: AchievementsLocalizationBase,
+                                  show=True):
+    # needs the HTML renderer running (make renderer-dev)
+    parameters = build_achievement_card(rec, loc)
+    pic = await app.deps.alert_presenter.renderer.render(ACHIEVEMENT_TEMPLATE, parameters)
+    save_and_show_pic(pic, name=f'a/{type(loc).__name__}-{achievement_card_filename(rec)}', show=show)
+    return pic
+
+
 async def demo_achievements_picture(app: LpAppFramework,
                                     lang=None, a=None, v=None, milestone=None, descending=False,
-                                    force_background=None, send_to_tg=False):
+                                    spec='', send_to_tg=False):
     # rec = random_achievement()
-    # rec = Achievement(Achievement.MARKET_CAP_USD, 501_344_119, 500_000_000, now_ts(), 0, 0)
     v = v or 501_344_119
     milestone = milestone or 500_000_000
-    prev_milestone = 666
+    prev_milestone = 200_000_000
     previous_ts = now_ts() - random.randint(1, 30) * DAY
-    rec = Achievement(a or A.SAVER_VAULT_EARNED_ASSET, v, milestone, now_ts(), prev_milestone,
-                      previous_ts, 'BNB', descending=descending)
+    rec = Achievement(a or A.MARKET_CAP_USD, v, milestone, now_ts(), prev_milestone,
+                      previous_ts, spec, descending=descending)
     lang = lang or Language.ENGLISH
 
     loc = AchievementsRussianLocalization() if lang == Language.RUSSIAN else AchievementsEnglishLocalization()
-    gen = build_achievement_picture_generator(rec, loc)
-    if force_background:
-        gen.force_background = force_background
-    pic, pic_name = await gen.get_picture()
-    save_and_show_pic(pic, name=f'a/{pic_name}')
+    pic = await render_achievement_card(app, rec, loc)
 
     text = loc.notification_achievement_unlocked(rec)
     sep()
@@ -114,7 +120,7 @@ async def demo_achievements_picture(app: LpAppFramework,
         await asyncio.sleep(1.0)
 
 
-async def demo_all_achievements():
+async def demo_all_achievements(app: LpAppFramework):
     loc_en = AchievementsEnglishLocalization()
     loc_ru = AchievementsRussianLocalization()
 
@@ -134,16 +140,14 @@ async def demo_all_achievements():
 
             ts = now_ts() - random.randint(1, 30 * DAY)
             ts_prev = ts - random.randint(1, 30 * DAY)
-            spec = random.choice(['BNB', 'BTC', 'ETH', 'LTC', 'DOGE'])
+            spec = random.choice(['BTC.BTC', 'ETH.ETH', 'DOGE.DOGE', 'ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48']) \
+                if META_KEY_SPEC in ACHIEVEMENT_DESC_MAP[ach_key].description else ''
             rec = Achievement(ach_key, v, ml, ts, 200_000,
                               ts_prev, spec)
 
             print('TS: ', ts, datetime.datetime.fromtimestamp(rec.timestamp).strftime('%B %d, %Y'))
 
-            # loc = AchievementsEnglishLocalization()
-            gen = build_achievement_picture_generator(rec, loc)
-            pic, pic_name = await gen.get_picture()
-            save_and_show_pic(pic, name=f'a/{pic_name}', show=show)
+            await render_achievement_card(app, rec, loc, show=show)
 
             text = loc.notification_achievement_unlocked(rec)
             sep()
@@ -181,27 +185,6 @@ async def demo_run_pipeline_coin_rank(app: LpAppFramework):
     await demo_run_pipeline(app, ach_fet, spec_key_clear=A.COIN_MARKET_CAP_RANK)
 
 
-async def debug_naughty_savers_achievements(app: LpAppFramework):
-    ach_not = AchievementsNotifier(app.deps)
-
-    ach_not.add_subscriber(app.deps.alert_presenter)
-
-    # reset and clear
-    await ach_not.cd.clear()
-    await ach_not.tracker.delete_achievement_record(A.SAVER_VAULT_SAVED_USD, specialization='USDC')
-
-    # noinspection PyTypeChecker
-    event = Achievement(A.SAVER_VAULT_EARNED_ASSET, -0.1, specialization='USDC')
-
-    await ach_not.tracker.feed_data(event)
-
-    await asyncio.sleep(1.0)
-
-    await ach_not.tracker.feed_data(event)
-
-    await asyncio.sleep(3.0)
-
-
 def clear_temp_achievements_folder():
     source_folder = '../temp/a'
     os.makedirs(source_folder, exist_ok=True)
@@ -234,14 +217,15 @@ async def main():
     async with app:
         clear_temp_achievements_folder()
         # await demo_debug_logic(app)
-        # await demo_achievements_picture(Language.ENGLISH, A.ANNIVERSARY, 3, 3)
-        # await demo_achievements_picture(Language.RUSSIAN, A.ANNIVERSARY, 2, 2)
-        await demo_achievements_picture(Language.ENGLISH, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
-        # await demo_achievements_picture(Language.RUSSIAN, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
-        # await demo_all_achievements()
+        # await demo_achievements_picture(app, Language.ENGLISH, A.ANNIVERSARY, 3, 3)
+        # await demo_achievements_picture(app, Language.RUSSIAN, A.ANNIVERSARY, 2, 2)
+        await demo_achievements_picture(app, Language.ENGLISH, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
+        # await demo_achievements_picture(app, Language.RUSSIAN, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
+        # await demo_achievements_picture(app, Language.ENGLISH, A.MAX_ADD_AMOUNT_USD_PER_POOL, 8_200_000,
+        #                                 5_000_000, spec='ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48')
+        # await demo_all_achievements(app)
         # await demo_run_pipeline_coin_rank(app)
         # await demo_run_pipeline_test(app, spec='BTC.BTC')
-        # await debug_naughty_savers_achievements(app)
         # gen_ach_desc_translate_mapping(AchievementsEnglishLocalization())
         # gen_ach_desc_translate_mapping(AchievementsRussianLocalization())
 

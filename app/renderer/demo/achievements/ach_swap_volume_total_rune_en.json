@@ -1,0 +1,66 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Total swap volume",
+    "subtitle": "10B ᚱ",
+    "lang": "en",
+    "order": 10
+  },
+  "parameters": {
+    "key": "swap_volume_total_rune",
+    "background": "nn_wreath_swaps.png",
+    "tint": "#4ffffa",
+    "hole_x": 0.502,
+    "hole_y": 0.449,
+    "hole_r": 0.205,
+    "base_color": "#030708",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "10B ᚱ",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_1.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_B.png"
+      },
+      {
+        "kind": "space"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_R.png"
+      }
+    ],
+    "title": "Total swap volume",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "5B ᚱ",
+        "sub": "17 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "12,340,000,000 ᚱ",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "20B ᚱ",
+        "sub": ""
+      }
+    ]
+  }
+}

@@ -22,7 +22,7 @@
 
 ## Productive local workflows
 - First-time setup follows `README.md`: copy `example.env` + `example_config.yaml`, then `make start`.
-- Main ops commands are in `Makefile`: `make start|stop|restart|logs|attach|test|graph|dashboard-dev|dashboard-front-dev|dashboard-build|renderer-dev|redis-analysis`.
+- Main ops commands are in `Makefile`: `make start|stop|restart|logs|attach|test|graph|dashboard-dev|dashboard-front-dev|dashboard-build|renderer-dev|renderer-demos|redis-analysis`.
 - Test suite runs from app root: `cd app && python -m pytest tests` (same as `make test`).
 - For one-off maintenance against live Redis, follow README caveat commands using `PYTHONPATH="/app"` in container.
 - When running scripts locally, prefer `PYTHONPATH=.` from `app/` (pattern used across `Makefile` tools).

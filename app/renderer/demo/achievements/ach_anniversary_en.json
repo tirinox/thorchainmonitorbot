@@ -1,0 +1,35 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Anniversary",
+    "subtitle": "5",
+    "lang": "en",
+    "order": 6
+  },
+  "parameters": {
+    "key": "anniversary",
+    "background": "nn_wreath_ann_3.png",
+    "tint": "#f4e18d",
+    "hole_x": 0.499,
+    "hole_y": 0.495,
+    "hole_r": 0.187,
+    "base_color": "#090d16",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "balloon",
+    "number_label": "",
+    "number_text": "5",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "balloon/5.png"
+      }
+    ],
+    "title": "Anniversary",
+    "subtitle": "5 years since the first block",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": []
+  }
+}

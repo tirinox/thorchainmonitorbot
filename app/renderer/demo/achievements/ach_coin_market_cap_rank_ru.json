@@ -1,0 +1,50 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Место по капитализации",
+    "subtitle": "30",
+    "lang": "ru",
+    "order": 21
+  },
+  "parameters": {
+    "key": "coin_market_cap_rank",
+    "background": "nn_wreath_rune.png",
+    "tint": "#2ee6b8",
+    "hole_x": 0.499,
+    "hole_y": 0.496,
+    "hole_r": 0.19,
+    "base_color": "#080d16",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Топ",
+    "number_text": "30",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_3.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      }
+    ],
+    "title": "Место по капитализации",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "1 октября 2026",
+    "stats": [
+      {
+        "label": "Было",
+        "value": "#33",
+        "sub": "1 мес 10 дн назад"
+      },
+      {
+        "label": "Следующая цель",
+        "value": "#29",
+        "sub": ""
+      }
+    ]
+  }
+}

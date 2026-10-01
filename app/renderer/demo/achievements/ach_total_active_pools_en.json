@@ -1,0 +1,55 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Active pools",
+    "subtitle": "20",
+    "lang": "en",
+    "order": 20
+  },
+  "parameters": {
+    "key": "total_active_pools",
+    "background": "nn_wreath_liquidity.png",
+    "tint": "#3ee6c8",
+    "hole_x": 0.501,
+    "hole_y": 0.461,
+    "hole_r": 0.162,
+    "base_color": "#01040c",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "",
+    "number_text": "20",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_2.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      }
+    ],
+    "title": "Active pools",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "10",
+        "sub": "27 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "31",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "50",
+        "sub": ""
+      }
+    ]
+  }
+}

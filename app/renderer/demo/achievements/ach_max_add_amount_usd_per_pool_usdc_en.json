@@ -1,0 +1,59 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Largest ETH.USDC liquidity add",
+    "subtitle": "$5M",
+    "lang": "en",
+    "order": 26
+  },
+  "parameters": {
+    "key": "max_add_amount_usd_per_pool",
+    "background": "nn_wreath_liquidity.png",
+    "tint": "#3ee6c8",
+    "hole_x": 0.501,
+    "hole_y": 0.461,
+    "hole_r": 0.162,
+    "base_color": "#01040c",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "$5M",
+    "glyphs": [
+      {
+        "kind": "tall",
+        "src": "runic/bw_USD.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_5.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_M.png"
+      }
+    ],
+    "title": "Largest ETH.USDC liquidity add",
+    "subtitle": "",
+    "asset_logo": "ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "$2M",
+        "sub": "3 months, 15 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "$5,400,000",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "$10M",
+        "sub": ""
+      }
+    ]
+  }
+}

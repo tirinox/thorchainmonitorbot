@@ -1,0 +1,63 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Wallets",
+    "subtitle": "700K",
+    "lang": "en",
+    "order": 2
+  },
+  "parameters": {
+    "key": "wallet_count",
+    "background": "nn_wreath_users.png",
+    "tint": "#7cc7ff",
+    "hole_x": 0.508,
+    "hole_y": 0.443,
+    "hole_r": 0.193,
+    "base_color": "#060505",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "700K",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_7.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_K.png"
+      }
+    ],
+    "title": "Wallets",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "600K",
+        "sub": "1 month, 3 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "712,400",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "800K",
+        "sub": ""
+      }
+    ]
+  }
+}

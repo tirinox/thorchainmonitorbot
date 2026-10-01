@@ -1,0 +1,50 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "By market cap",
+    "subtitle": "30",
+    "lang": "en",
+    "order": 21
+  },
+  "parameters": {
+    "key": "coin_market_cap_rank",
+    "background": "nn_wreath_rune.png",
+    "tint": "#2ee6b8",
+    "hole_x": 0.499,
+    "hole_y": 0.496,
+    "hole_r": 0.19,
+    "base_color": "#080d16",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Top",
+    "number_text": "30",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_3.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      }
+    ],
+    "title": "By market cap",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "#33",
+        "sub": "1 month, 10 days ago"
+      },
+      {
+        "label": "Next milestone",
+        "value": "#29",
+        "sub": ""
+      }
+    ]
+  }
+}

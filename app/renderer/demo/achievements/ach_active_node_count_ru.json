@@ -1,0 +1,59 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Число активных нод",
+    "subtitle": "100",
+    "lang": "ru",
+    "order": 14
+  },
+  "parameters": {
+    "key": "active_node_count",
+    "background": "nn_wreath_network.png",
+    "tint": "#6fe8cf",
+    "hole_x": 0.5,
+    "hole_y": 0.471,
+    "hole_r": 0.14,
+    "base_color": "#04060e",
+    "frame_size": 860,
+    "frame_top": 40,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "",
+    "number_text": "100",
+    "glyphs": [
+      {
+        "kind": "glyph",
+        "src": "runic/bw_1.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      },
+      {
+        "kind": "glyph",
+        "src": "runic/bw_0.png"
+      }
+    ],
+    "title": "Число активных нод",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "1 октября 2026",
+    "stats": [
+      {
+        "label": "Было",
+        "value": "50",
+        "sub": "2 мес 9 дн назад"
+      },
+      {
+        "label": "Сейчас",
+        "value": "104",
+        "sub": ""
+      },
+      {
+        "label": "Следующая цель",
+        "value": "200",
+        "sub": ""
+      }
+    ]
+  }
+}
