@@ -19,13 +19,20 @@ from models.s_swap import AlertSwapStart
 
 class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
     OBSERVED_TX_DEDUP_COMPONENT = 'ss_start_observed_first_seen'
+    # the detector that feeds the swap start alerts; SwapExtractorBlock has a detector of its own
+    ALERT_DEDUP_COMPONENT = 'ss_start_observed_alert'
 
-    def __init__(self, deps: DepContainer):
+    def __init__(self, deps: DepContainer, dedup_component: str = OBSERVED_TX_DEDUP_COMPONENT):
+        """
+        dedup_component: where this detector remembers the observed inbound txs it has already seen.
+        Every detector needs its own: with a shared one, the detector that gets a block first
+        hides all the observed txs of that block from the other.
+        """
         super().__init__()
         self.deps = deps
         self.ph = None
         self.observed_tx_deduplicator = EventDbTxDeduplicator(
-            deps.db, self.OBSERVED_TX_DEDUP_COMPONENT
+            deps.db, dedup_component
         ) if getattr(deps, 'db', None) else None
 
     @staticmethod

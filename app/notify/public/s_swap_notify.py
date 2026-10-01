@@ -34,8 +34,16 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         if not await self.is_swap_eligible(event):
             return
 
+        # The same swap comes from the block detector and from the streaming swap list, possibly at the same time.
+        # Claim it before the slow requests below, so only one of them gets to announce it.
+        if self.check_unique:
+            if not await self.deduplicator.claim(event.tx_id):
+                self.logger.debug(f'Swap start {event.tx_id}: already announced')
+                return
+        else:
+            await self.deduplicator.mark_as_seen(event.tx_id)
+
         await self.load_extra_tx_information(event)
-        await self.deduplicator.mark_as_seen(event.tx_id)
         await self.pass_data_to_listeners(event)  # alert!
 
     async def is_swap_eligible(self, swap_start_ev: AlertSwapStart):

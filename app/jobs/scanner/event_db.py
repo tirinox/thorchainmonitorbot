@@ -80,6 +80,17 @@ class EventDatabase(WithLogger):
             self.normalize_flag_name(flag_name): value,
         })
 
+    async def set_tx_flag_if_absent(self, tx_id, flag_name: str) -> bool:
+        """Sets the flag in one atomic step (HSETNX). True if it was not there, i.e. this caller is the first."""
+        if not tx_id:
+            return False
+        r: Redis = await self.db.get_redis()
+        key = self.key_to_tx(tx_id)
+        is_first = bool(await r.hsetnx(key, self.normalize_flag_name(flag_name), 1))
+        if is_first:
+            await r.expire(key, int(self._expiration_sec))
+        return is_first
+
     async def is_component_seen(self, tx_id, component_name: str) -> bool:
         return await self.has_tx_flag(tx_id, self.component_flag_name(component_name))
 
@@ -179,6 +190,15 @@ class EventDbTxDeduplicator:
         if self.ignore_all_checks:
             return
         await self.event_db.set_tx_flag(tx_id, self.flag_name, True)
+
+    async def claim(self, tx_id) -> bool:
+        """
+        Marks the tx as seen and tells whether this call was the first one to do it.
+        Check and mark are one atomic step, so of several concurrent callers exactly one gets True.
+        """
+        if self.ignore_all_checks:
+            return bool(tx_id)
+        return await self.event_db.set_tx_flag_if_absent(tx_id, self.flag_name)
 
     async def mark_as_seen_txs(self, txs: list[ThorAction]):
         if self.ignore_all_checks:

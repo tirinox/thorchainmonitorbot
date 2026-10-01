@@ -441,7 +441,8 @@ class App(WithLogger):
 
                     if self._can_run('Streaming swap starts found in blocks',
                                      {'native_scanner.enabled': d.block_scanner is not None}):
-                        swap_start_detector_from_block = SwapStartDetectorFromBlock(d)
+                        swap_start_detector_from_block = SwapStartDetectorFromBlock(
+                            d, dedup_component=SwapStartDetectorFromBlock.ALERT_DEDUP_COMPONENT)
                         d.block_scanner.add_subscriber(swap_start_detector_from_block)
                         swap_start_detector_from_block.add_subscriber(stream_swap_notifier)
 
