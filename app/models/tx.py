@@ -336,10 +336,13 @@ class ThorAction:
     def sum_of_rune(self, in_only=False, out_only=False):
         return self.sum_of(lambda c: is_rune(c.asset), in_only, out_only)
 
-    def get_asset_summary(self, in_only=False, out_only=False):
+    def get_asset_summary(self, in_only=False, out_only=False, skip_affiliates=False):
         results = defaultdict(float)
-        for coin in self.coins_of(in_only, out_only):
-            results[coin.asset] += coin.amount_float
+        for sub_tx in self.search_realm(in_only, out_only):
+            if skip_affiliates and sub_tx.is_affiliate:
+                continue
+            for coin in sub_tx.coins:
+                results[coin.asset] += coin.amount_float
         return results
 
     def not_rune_asset(self, in_only=False, out_only=False):

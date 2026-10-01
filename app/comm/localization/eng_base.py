@@ -586,8 +586,8 @@ class BaseLocalization(ABC):  # == English
         else:
             return asset
 
-    def _get_asset_summary_string(self, tx, in_only=False, out_only=False):
-        ends = tx.get_asset_summary(in_only=in_only, out_only=out_only)
+    def _get_asset_summary_string(self, tx, in_only=False, out_only=False, skip_affiliates=False):
+        ends = tx.get_asset_summary(in_only=in_only, out_only=out_only, skip_affiliates=skip_affiliates)
         ends = {self.pretty_asset(a): v for a, v in ends.items()}
         items = [(asset, amount) for asset, amount in ends.items()]
         # sort items, so those with "RUNE" in asset are last
@@ -596,7 +596,8 @@ class BaseLocalization(ABC):  # == English
 
     def format_swap_route(self, tx: ThorAction, usd_per_rune):
         input_str = self._get_asset_summary_string(tx, in_only=True)
-        output_str = self._get_asset_summary_string(tx, out_only=True)
+        # the affiliate fee is paid out too, but it is not what the user got
+        output_str = self._get_asset_summary_string(tx, out_only=True, skip_affiliates=True)
 
         route_components = []
         dex = tx.dex_info
