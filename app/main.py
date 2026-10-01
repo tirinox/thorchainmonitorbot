@@ -355,7 +355,7 @@ class App(WithLogger):
             if achievements_enabled:
                 ev_gen = LastBlockEventGenerator(d.last_block_cache)
                 d.block_scanner.add_subscriber(ev_gen)
-                ev_gen.add_subscriber(d.alert_presenter)
+                ev_gen.add_subscriber(achievements)
         else:
             self.logger.warning('native_scanner.enabled is false: swap, transfer and balance alerts, limit and rapid '
                                 'swap and CosmWasm tracking and user counting are off.')

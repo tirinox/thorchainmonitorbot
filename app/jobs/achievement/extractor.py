@@ -1,9 +1,10 @@
 from collections import defaultdict
+from datetime import datetime
 from typing import List
 
 from jobs.fetch.account_number import AccountNumberFetcher
 from lib.constants import THORCHAIN_BIRTHDAY
-from lib.date_utils import full_years_old_ts
+from lib.date_utils import full_years_old_ts, now_ts, DAY
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.utils import is_list_of_type
@@ -19,6 +20,10 @@ from models.tx import ThorAction
 from .ach_list import A, EventTestAchievement, Achievement
 from ..fetch.cached.last_block import EventLastBlock
 
+# the anniversary is announced only this soon after the date, so a bot that was down on the day
+# does not congratulate months late
+ANNIVERSARY_WINDOW = 7 * DAY
+
 
 class AchievementsExtractor(WithLogger):
     def __init__(self, deps: DepContainer):
@@ -28,9 +33,8 @@ class AchievementsExtractor(WithLogger):
     async def extract_events_by_type(self, sender, data) -> List[Achievement]:
         if isinstance(data, NetworkStats):
             kv_events = self.on_network_stats(data)
-        # fixme
-        elif isinstance(sender, EventLastBlock):
-            kv_events = self.on_block(sender)  # sender not data!
+        elif isinstance(data, EventLastBlock):
+            kv_events = self.on_block(data)
         elif isinstance(data, NodeSetChanges):
             kv_events = self.on_node_changes(data)
         elif isinstance(data, MimirTuple):
@@ -88,13 +92,18 @@ class AchievementsExtractor(WithLogger):
         return events
 
     @staticmethod
-    def on_block(block_ev: EventLastBlock):
-        years_old = full_years_old_ts(THORCHAIN_BIRTHDAY)
-
+    def on_block(block_ev: EventLastBlock, now=None):
+        now = now or now_ts()
         achievements = [
             Achievement(A.BLOCK_NUMBER, block_ev.thor_block),
-            Achievement(A.ANNIVERSARY, years_old),
         ]
+
+        years_old = full_years_old_ts(THORCHAIN_BIRTHDAY, now)
+        birth = datetime.fromtimestamp(THORCHAIN_BIRTHDAY)
+        last_anniversary_ts = birth.replace(year=birth.year + years_old).timestamp()
+        if now - last_anniversary_ts < ANNIVERSARY_WINDOW:
+            achievements.append(Achievement(A.ANNIVERSARY, years_old))
+
         return achievements
 
     @staticmethod
