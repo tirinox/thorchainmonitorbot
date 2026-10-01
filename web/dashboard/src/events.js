@@ -13,6 +13,11 @@ const handlers = new Map()  // type -> Set<fn>
 let source = null
 let wasConnected = false
 
+const RETRY_MIN_MS = 2000
+const RETRY_MAX_MS = 30000
+let retryMs = RETRY_MIN_MS
+let retryTimer = null
+
 function emit(type, event) {
     for (const fn of handlers.get(type) || []) {
         try {
@@ -23,11 +28,10 @@ function emit(type, event) {
     }
 }
 
-export function connectEvents() {
-    if (source) return
-    source = new EventSource(URL)
+function open() {
+    const es = source = new EventSource(URL)
 
-    source.onmessage = (msg) => {
+    es.onmessage = (msg) => {
         let event
         try {
             event = JSON.parse(msg.data)
@@ -35,6 +39,7 @@ export function connectEvents() {
             return
         }
         if (event.type === 'hello') {
+            retryMs = RETRY_MIN_MS
             liveStatus.value = 'live'
             if (wasConnected) emit('resync', event)
             wasConnected = true
@@ -43,10 +48,29 @@ export function connectEvents() {
         emit(event.type, event)
     }
 
-    // EventSource reconnects by itself (the server sets `retry`)
-    source.onerror = () => {
+    es.onerror = () => {
+        if (es !== source) return
         liveStatus.value = wasConnected ? 'reconnecting' : 'connecting'
+        // A dropped connection is reopened by the browser itself (the server sets `retry`), the state is CONNECTING
+        // then. But an answer that is not a 200 event stream (502 while the dashboard restarts, 401...) closes
+        // the EventSource for good, so it has to be opened anew.
+        if (es.readyState === EventSource.CLOSED) reopenLater()
     }
+}
+
+function reopenLater() {
+    source.close()
+    source = null
+    retryTimer = setTimeout(() => {
+        retryTimer = null
+        open()
+    }, retryMs)
+    retryMs = Math.min(retryMs * 2, RETRY_MAX_MS)
+}
+
+export function connectEvents() {
+    if (source || retryTimer) return
+    open()
 }
 
 /**
