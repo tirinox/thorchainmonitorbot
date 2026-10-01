@@ -140,6 +140,7 @@ BG_REVENUE = 'nn_wreath_revenue.png'
 BG_BURN = 'nn_wreath_burnt.png'  # kept for a burnt RUNE achievement, none uses it yet
 BG_VAULT = 'nn_wreath_vault.png'
 BG_STABLES = 'nn_wreath_stables_chains.png'
+BG_TRADE = 'nn_wreath_trade.png'
 BG_BTC = 'nn_wreath_btc_vault_2.png'
 BG_ETH = 'nn_wreath_eth_vault_2.png'
 BG_ANNIVERSARY = 'nn_wreath_ann_3.png'
@@ -265,12 +266,12 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
 
     # trade assets
     ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade account balance', prefix='$', thresholds=10_000_000,
-          background=BG_VAULT),
-    ADesc(A.TRADE_ASSET_HOLDERS_COUNT, 'Trade asset holders', thresholds=100, background=BG_USERS),
-    ADesc(A.TRADE_ASSET_SWAPS_COUNT, 'Trade asset swaps', thresholds=100_000, background=BG_SWAPS),
-    ADesc(A.TRADE_ASSET_MOVE_COUNT, 'Trade account deposits & withdrawals', thresholds=10_000, background=BG_SWAPS),
+          background=BG_TRADE),
+    ADesc(A.TRADE_ASSET_HOLDERS_COUNT, 'Trade asset holders', thresholds=100, background=BG_TRADE),
+    ADesc(A.TRADE_ASSET_SWAPS_COUNT, 'Trade asset swaps', thresholds=100_000, background=BG_TRADE),
+    ADesc(A.TRADE_ASSET_MOVE_COUNT, 'Trade account deposits & withdrawals', thresholds=10_000, background=BG_TRADE),
     ADesc(A.TRADE_ASSET_LARGEST_DEPOSIT, 'Largest trade asset deposit', prefix='$', thresholds=100_000,
-          background=BG_VAULT),
+          background=BG_TRADE),
     ADesc(A.TRADE_ASSET_SWAPS_VOLUME, 'Trade asset swap volume', prefix='$', thresholds=1_000_000,
-          background=BG_SWAPS),
+          background=BG_TRADE),
 ]}
