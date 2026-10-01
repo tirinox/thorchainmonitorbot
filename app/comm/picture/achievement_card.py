@@ -2,7 +2,7 @@ from typing import NamedTuple
 
 from comm.localization.achievements.common import AchievementsLocalizationBase
 from jobs.achievement.ach_list import Achievement, A, NUMBER_FONT_BALLOON, BG_LIQUIDITY, BG_NETWORK, BG_SWAPS, \
-    BG_USERS, BG_RUNE, BG_VAULT, BG_BTC, BG_ETH, BG_ANNIVERSARY
+    BG_USERS, BG_RUNE, BG_BURN, BG_VAULT, BG_BTC, BG_ETH, BG_ANNIVERSARY
 from lib.date_utils import today_str, now_ts
 from lib.money import RAIDO_GLYPH
 from models.asset import Asset
@@ -28,7 +28,8 @@ BACKGROUND_STYLE = {
     BG_NETWORK: WreathStyle('#6fe8cf', 0.500, 0.469, 0.173),
     BG_SWAPS: WreathStyle('#4ffffa', 0.503, 0.448, 0.202),
     BG_USERS: WreathStyle('#7cc7ff', 0.492, 0.466, 0.210),  # dark twigs fool the rays: radius set by eye
-    BG_RUNE: WreathStyle('#ffb347', 0.487, 0.456, 0.162),
+    BG_RUNE: WreathStyle('#2ee6b8', 0.499, 0.496, 0.190),
+    BG_BURN: WreathStyle('#ffb347', 0.487, 0.456, 0.162),
     BG_VAULT: WreathStyle('#ffcf7a', 0.511, 0.436, 0.188),
     BG_BTC: WreathStyle('#ffb84d', 0.499, 0.494, 0.189),
     BG_ETH: WreathStyle('#b4a6ff', 0.500, 0.495, 0.188),
