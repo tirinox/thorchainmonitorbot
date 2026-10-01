@@ -94,7 +94,7 @@ class AchievementsTracker(WithLogger):
             return
 
         crossed = self.is_crossed(record, event)
-        stale = now - record.last_seen_ts > self.stale_after
+        stale = event.descriptor.catch_up_silently and now - record.last_seen_ts > self.stale_after
 
         if not crossed:
             if now - record.last_seen_ts > self.LAST_SEEN_RESOLUTION:

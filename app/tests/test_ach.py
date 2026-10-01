@@ -206,3 +206,27 @@ async def test_tracker_live_peak_survives_restart(tracker):
     await restarted.feed_data(Achievement(A.COIN_MARKET_CAP_RANK, 35, descending=True))
     live = await restarted.get_live_value(A.COIN_MARKET_CAP_RANK)
     assert (live['value'], live['peak']) == (35, 30)  # the best rank is the lowest
+
+
+@pytest.mark.asyncio
+async def test_anniversary_is_announced_every_year(monkeypatch):
+    # fed only in the week after the date, its last feed is a year old every time: it must not be taken
+    # for a metric that missed a milestone while the bot was down
+    from datetime import datetime
+    import jobs.achievement.tracker as tracker_mod
+    from jobs.achievement.extractor import AchievementsExtractor
+    from jobs.fetch.cached.last_block import EventLastBlock
+
+    tracker = AchievementsTracker(FakeDB(), stale_after=14 * DAY)
+    announced = []
+    t, end = datetime(2026, 4, 1).timestamp(), datetime(2028, 4, 20).timestamp()
+    while t < end:
+        monkeypatch.setattr(tracker_mod, 'now_ts', lambda t=t: t)
+        for ev in AchievementsExtractor.on_block(EventLastBlock(thor_block=24_000_000, block_dict={}), now=t):
+            if ev.key == A.ANNIVERSARY and (r := await tracker.feed_data(ev)):
+                await tracker.set_achievement_record(r)
+                announced.append((datetime.fromtimestamp(t).date().isoformat(), r.value, r.prev_milestone))
+        t += 3 * 3600
+
+    # 2026 only creates the record, then one post a year, on the day
+    assert announced == [('2027-04-10', 6, 5), ('2028-04-10', 7, 6)]

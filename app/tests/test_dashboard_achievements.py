@@ -292,3 +292,14 @@ async def test_set_stale_decides_whether_the_next_milestone_is_posted(monkeypatc
         await svc.set_stale(ctx, A.MAU, '', True)  # no record
     with pytest.raises(ValueError):
         await svc.set_stale(ctx, 'nope', '', True)
+    with pytest.raises(ValueError):
+        await svc.set_stale(ctx, A.ANNIVERSARY, '', True)  # never caught up silently
+
+
+def test_anniversary_is_never_stale():
+    # it is fed only around the date, so its last feed is always about a year old
+    half_past_five = THORCHAIN_BIRTHDAY + 5.5 * 365.25 * DAY
+    record = Achievement(A.ANNIVERSARY, 5, 5, half_past_five - 180 * DAY, last_seen_ts=half_past_five - 180 * DAY)
+    r = row(A.ANNIVERSARY, record, now=half_past_five)
+    assert (r['stale'], r['can_be_stale'], r['status']) == (False, False, AchStatus.TRACKING)
+    assert row(A.DAU)['can_be_stale'] is True
