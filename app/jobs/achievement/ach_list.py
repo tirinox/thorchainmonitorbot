@@ -20,7 +20,8 @@ class AchievementName:
     WALLET_COUNT = 'wallet_count'
 
     DAILY_TX_COUNT = 'daily_tx_count'  # todo
-    DAILY_VOLUME = 'daily_volume'  # todo
+    DAILY_VOLUME = 'daily_volume'
+    MONTHLY_SWAP_VOLUME = 'monthly_swap_volume'
 
     BLOCK_NUMBER = 'block_number'
     ANNIVERSARY = 'anniversary'
@@ -29,7 +30,7 @@ class AchievementName:
     SWAP_COUNT_24H = 'swap_count_24h'
     SWAP_COUNT_30D = 'swap_count_30d'
 
-    SWAP_VOLUME_TOTAL_RUNE = 'swap_volume_total_rune'
+    SWAP_VOLUME_TOTAL_USD = 'swap_volume_total_usd'
 
     ADD_LIQUIDITY_COUNT_TOTAL = 'add_liquidity_count_total'
     ADD_LIQUIDITY_VOLUME_TOTAL = 'add_liquidity_volume_total'
@@ -189,7 +190,10 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
 
     ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Liquidity additions'),
     ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Total liquidity added', postfix=POSTFIX_RUNE),
-    ADesc(A.DAILY_VOLUME, 'Daily volume', prefix='$', background=BG_SWAPS),
+    # swap volumes in USD from Midgard's swap history: the last whole day, the last 30 whole days, all of it
+    ADesc(A.DAILY_VOLUME, 'Daily swap volume', prefix='$', thresholds=50_000_000, background=BG_TRADE),
+    ADesc(A.MONTHLY_SWAP_VOLUME, 'Monthly swap volume', prefix='$', thresholds=1_000_000_000,
+          background=BG_TRADE),
     ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond', postfix=POSTFIX_RUNE, background=BG_NETWORK),
     ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE, background=BG_NETWORK),
     ADesc(A.NODE_COUNT, 'Total node count', more_than=False, background=BG_NETWORK),
@@ -211,7 +215,8 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.TOTAL_POOLS, 'Total pools', more_than=False),
     ADesc(A.TOTAL_ACTIVE_POOLS, 'Active pools', more_than=False),
 
-    ADesc(A.SWAP_VOLUME_TOTAL_RUNE, 'Total swap volume', postfix=POSTFIX_RUNE, background=BG_TRADE),
+    ADesc(A.SWAP_VOLUME_TOTAL_USD, 'Total swap volume', prefix='$', milestone_scale=MILESTONES_EVERY_DIGIT,
+          thresholds=100_000_000_000, background=BG_TRADE),
 
     ADesc(A.MAX_SWAP_AMOUNT_USD, 'Largest single swap', prefix='$',
           thresholds=1_329_208, background=BG_SWAPS),

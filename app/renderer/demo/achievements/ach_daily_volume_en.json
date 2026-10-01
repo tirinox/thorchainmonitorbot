@@ -1,19 +1,19 @@
 {
   "template_name": "achievement.jinja2",
   "meta": {
-    "title": "Daily volume",
+    "title": "Daily swap volume",
     "subtitle": "$200M",
     "lang": "en",
     "order": 4
   },
   "parameters": {
     "key": "daily_volume",
-    "background": "nn_wreath_swaps.png",
-    "tint": "#4ffffa",
-    "hole_x": 0.502,
-    "hole_y": 0.449,
-    "hole_r": 0.205,
-    "base_color": "#030708",
+    "background": "nn_wreath_trade.png",
+    "tint": "#ff7a6b",
+    "hole_x": 0.501,
+    "hole_y": 0.498,
+    "hole_r": 0.193,
+    "base_color": "#030202",
     "frame_size": 860,
     "frame_top": 40,
     "shade_from": 58,
@@ -42,7 +42,7 @@
         "src": "runic/bw_M.png"
       }
     ],
-    "title": "Daily volume",
+    "title": "Daily swap volume",
     "subtitle": "",
     "asset_logo": "",
     "date": "October 1, 2026",

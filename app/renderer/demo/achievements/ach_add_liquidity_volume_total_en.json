@@ -4,7 +4,7 @@
     "title": "Total liquidity added",
     "subtitle": "5B ᚱ",
     "lang": "en",
-    "order": 12
+    "order": 13
   },
   "parameters": {
     "key": "add_liquidity_volume_total",
@@ -45,7 +45,7 @@
       {
         "label": "Previous",
         "value": "2B ᚱ",
-        "sub": "1 month, 13 days ago"
+        "sub": "1 month, 26 days ago"
       },
       {
         "label": "Now",

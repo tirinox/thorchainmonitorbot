@@ -4,7 +4,7 @@
     "title": "Total active bond",
     "subtitle": "50M ᚱ",
     "lang": "en",
-    "order": 15
+    "order": 16
   },
   "parameters": {
     "key": "total_active_bond",
@@ -49,7 +49,7 @@
       {
         "label": "Previous",
         "value": "20M ᚱ",
-        "sub": "2 months, 22 days ago"
+        "sub": "3 months, 5 days ago"
       },
       {
         "label": "Now",

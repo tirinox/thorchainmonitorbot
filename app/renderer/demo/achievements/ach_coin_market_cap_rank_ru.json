@@ -4,7 +4,7 @@
     "title": "Место по капитализации",
     "subtitle": "30",
     "lang": "ru",
-    "order": 21
+    "order": 22
   },
   "parameters": {
     "key": "coin_market_cap_rank",
@@ -38,7 +38,7 @@
       {
         "label": "Было",
         "value": "#33",
-        "sub": "1 мес 10 дн назад"
+        "sub": "1 мес 23 дн назад"
       },
       {
         "label": "Следующая цель",

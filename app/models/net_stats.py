@@ -58,6 +58,11 @@ class NetworkStats(BaseModelMixin):
 
     swap_volume_24h: float = 0  # swap history
 
+    # in USD at the price of each interval, as Midgard counts it
+    swap_volume_day_usd: float = 0.0  # swap history: the last whole day
+    swap_volume_30d_usd: float = 0.0  # swap history: the last 30 whole days
+    swap_volume_total_usd: float = 0.0  # swap history: all of it (Midgard has it since 2022)
+
     swap_stats: Optional[SwapsHistoryEntry] = None
 
     @property

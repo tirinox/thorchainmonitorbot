@@ -4,7 +4,7 @@
     "title": "Стейблы в хранилище",
     "subtitle": "$50M",
     "lang": "ru",
-    "order": 27
+    "order": 28
   },
   "parameters": {
     "key": "stables_in_vault",
@@ -46,7 +46,7 @@
       {
         "label": "Было",
         "value": "$20M",
-        "sub": "3 мес 28 дн назад"
+        "sub": "11 дн назад"
       },
       {
         "label": "Сейчас",

@@ -4,7 +4,7 @@
     "title": "Число активных нод",
     "subtitle": "100",
     "lang": "ru",
-    "order": 14
+    "order": 15
   },
   "parameters": {
     "key": "active_node_count",
@@ -42,7 +42,7 @@
       {
         "label": "Было",
         "value": "50",
-        "sub": "2 мес 9 дн назад"
+        "sub": "2 мес 22 дн назад"
       },
       {
         "label": "Сейчас",

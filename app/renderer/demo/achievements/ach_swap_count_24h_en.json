@@ -4,7 +4,7 @@
     "title": "Swaps in 24h",
     "subtitle": "50K",
     "lang": "en",
-    "order": 8
+    "order": 9
   },
   "parameters": {
     "key": "swap_count_24h",
@@ -42,7 +42,7 @@
       {
         "label": "Previous",
         "value": "20K",
-        "sub": "3 months, 21 days ago"
+        "sub": "4 months, 4 days ago"
       },
       {
         "label": "Now",

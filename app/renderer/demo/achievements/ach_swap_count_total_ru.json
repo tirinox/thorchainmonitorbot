@@ -4,7 +4,7 @@
     "title": "Общее количество свопов",
     "subtitle": "20M",
     "lang": "ru",
-    "order": 7
+    "order": 8
   },
   "parameters": {
     "key": "swap_count_total",
@@ -42,7 +42,7 @@
       {
         "label": "Было",
         "value": "10M",
-        "sub": "3 мес 8 дн назад"
+        "sub": "3 мес 21 дн назад"
       },
       {
         "label": "Сейчас",

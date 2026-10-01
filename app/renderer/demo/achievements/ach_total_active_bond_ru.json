@@ -4,7 +4,7 @@
     "title": "Всего активный бонд",
     "subtitle": "50M ᚱ",
     "lang": "ru",
-    "order": 15
+    "order": 16
   },
   "parameters": {
     "key": "total_active_bond",
@@ -49,7 +49,7 @@
       {
         "label": "Было",
         "value": "20M ᚱ",
-        "sub": "2 мес 22 дн назад"
+        "sub": "3 мес 5 дн назад"
       },
       {
         "label": "Сейчас",

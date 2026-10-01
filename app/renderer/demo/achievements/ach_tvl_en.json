@@ -4,7 +4,7 @@
     "title": "Total value locked",
     "subtitle": "$500M",
     "lang": "en",
-    "order": 28
+    "order": 29
   },
   "parameters": {
     "key": "tvl",
@@ -50,7 +50,7 @@
       {
         "label": "Previous",
         "value": "$200M",
-        "sub": "11 days ago"
+        "sub": "24 days ago"
       },
       {
         "label": "Now",

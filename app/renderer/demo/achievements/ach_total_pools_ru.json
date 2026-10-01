@@ -4,7 +4,7 @@
     "title": "Всего пулов",
     "subtitle": "50",
     "lang": "ru",
-    "order": 19
+    "order": 20
   },
   "parameters": {
     "key": "total_pools",
@@ -38,7 +38,7 @@
       {
         "label": "Было",
         "value": "20",
-        "sub": "14 дн назад"
+        "sub": "27 дн назад"
       },
       {
         "label": "Сейчас",

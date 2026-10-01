@@ -4,7 +4,7 @@
     "title": "Weekly protocol revenue",
     "subtitle": "$1M",
     "lang": "en",
-    "order": 29
+    "order": 30
   },
   "parameters": {
     "key": "weekly_protocol_revenue_usd",
@@ -42,7 +42,7 @@
       {
         "label": "Previous",
         "value": "$500K",
-        "sub": "24 days ago"
+        "sub": "1 month, 7 days ago"
       },
       {
         "label": "Now",

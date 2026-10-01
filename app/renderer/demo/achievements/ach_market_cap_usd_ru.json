@@ -4,7 +4,7 @@
     "title": "Rune общая капитализации",
     "subtitle": "$2B",
     "lang": "ru",
-    "order": 18
+    "order": 19
   },
   "parameters": {
     "key": "market_cap_usd",
@@ -42,7 +42,7 @@
       {
         "label": "Было",
         "value": "$1B",
-        "sub": "4 мес 1 дн назад"
+        "sub": "14 дн назад"
       },
       {
         "label": "Сейчас",

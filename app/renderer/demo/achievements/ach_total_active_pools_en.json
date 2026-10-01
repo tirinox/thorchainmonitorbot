@@ -4,7 +4,7 @@
     "title": "Active pools",
     "subtitle": "20",
     "lang": "en",
-    "order": 20
+    "order": 21
   },
   "parameters": {
     "key": "total_active_pools",
@@ -38,7 +38,7 @@
       {
         "label": "Previous",
         "value": "10",
-        "sub": "27 days ago"
+        "sub": "1 month, 10 days ago"
       },
       {
         "label": "Now",

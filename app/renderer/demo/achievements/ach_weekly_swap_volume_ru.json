@@ -4,7 +4,7 @@
     "title": "Еженедельный объем свопов",
     "subtitle": "$2B",
     "lang": "ru",
-    "order": 31
+    "order": 32
   },
   "parameters": {
     "key": "weekly_swap_volume",
@@ -42,7 +42,7 @@
       {
         "label": "Было",
         "value": "$1B",
-        "sub": "1 мес 20 дн назад"
+        "sub": "2 мес 3 дн назад"
       },
       {
         "label": "Сейчас",

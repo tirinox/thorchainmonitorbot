@@ -10,13 +10,19 @@ from models.net_stats import NetworkStats
 
 
 class NetworkStatisticsFetcher(BaseFetcher):
+    MONTH_DAYS = 30
+    # the all-time volume grows slowly and asks Midgard to sum years, so it is fetched once in a while.
+    # Shared by all instances: the circulating supply update makes a one-off fetcher every few minutes
+    TOTAL_VOLUME_MAX_AGE = 3600
+    _total_volume_usd_cache = (0.0, 0.0)  # (ts, value)
+
     def __init__(self, deps: DepContainer, sleep_period=None):
         # None: the period from the config; 0: a one-off fetcher, not registered in the DataController
         if sleep_period is None:
             sleep_period = parse_timespan_to_seconds(deps.cfg.net_summary.fetch_period)
         super().__init__(deps, sleep_period)
         self.step_sleep = deps.cfg.sleep_step
-        self.swap_stats_days = 15
+        self.swap_stats_days = self.MONTH_DAYS + 1  # and the day that is still running
 
     async def _get_stats(self, ns: NetworkStats):
         j = await self.deps.midgard_connector.request(free_url_gen.url_stats())
@@ -96,8 +102,32 @@ class NetworkStatisticsFetcher(BaseFetcher):
             ns.trade_op_count = ns.swap_stats.to_trade_count + ns.swap_stats.from_trade_count
 
             ns.swap_volume_24h = thor_to_float(ns.swap_stats.total_volume)
+
+            ns.swap_volume_day_usd = ns.swap_stats.total_volume_usd
+            month = swap_stats.last_whole_intervals(self.MONTH_DAYS)
+            if len(month) == self.MONTH_DAYS:
+                ns.swap_volume_30d_usd = sum(day.total_volume_usd for day in month)
         else:
             self.logger.error('Failed to get swap history from Midgard!')
+
+        ns.swap_volume_total_usd = await self._get_total_swap_volume_usd()
+
+    async def _get_total_swap_volume_usd(self) -> float:
+        cls = NetworkStatisticsFetcher
+        ts, value = cls._total_volume_usd_cache
+        if value and now_ts() - ts < self.TOTAL_VOLUME_MAX_AGE:
+            return value
+        try:
+            years = await self.deps.midgard_connector.query_swap_stats(count=10, interval='year')
+        except Exception as e:
+            self.logger.error(f'Failed to get the yearly swap history from Midgard: {e!r}')
+            return value
+        if not years or not years.meta:
+            return value
+        # meta sums all the intervals asked for
+        value = years.meta.total_volume_usd
+        cls._total_volume_usd_cache = (now_ts(), value)
+        return value
 
     async def _get_user_stats(self, ns: NetworkStats):
         counter = UserCounterMiddleware(self.deps)
