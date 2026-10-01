@@ -314,20 +314,16 @@ class AlertPresenter(INotified, WithLogger):
 
     @classmethod
     def _dex_leg_for_renderer(cls, leg: Optional[AmountToken]) -> Optional[dict]:
-        """A DEX aggregator leg (swap-in or swap-out) as the swap_finished template wants it."""
+        """
+        A DEX aggregator leg (swap-in or swap-out) as the swap_finished template wants it.
+        The picture only hints at the aggregator; the tokens and amounts of the full route are in the text.
+        """
         if not leg or not leg.is_known:
             return None
-        token = leg.token
+        name = leg.aggr_name or ''
         return {
-            "symbol": leg.symbol,
-            "chain": leg.chain,
-            "amount": leg.amount if leg.has_amount else 0,
-            "aggregator": leg.aggr_name or '',
-            "aggregator_short": cls._short_aggregator_name(leg.aggr_name),
-            "logo": token.logoURI if token and token.logoURI else '',
-            # tokens with a THORChain pool have a logo in data/asset_logo under their full asset name
-            "local_logo": f'{leg.chain}.{token.symbol}-{token.address.upper()}' if token and leg.chain and token.address else '',
-            "chain_logo": str(Asset.gas_asset_from_chain(leg.chain)) if leg.chain else '',
+            "aggregator": name,
+            "aggregator_short": cls._short_aggregator_name(name),
         }
 
     @staticmethod
@@ -452,8 +448,7 @@ class AlertPresenter(INotified, WithLogger):
             "refund": refund_rate > 0 or tx.has_refund_output,
             "refund_rate": refund_rate,
 
-            # DEX aggregator legs outside THORChain: an external token swapped into the L1 gas asset before
-            # the swap (dex_in) and/or the gas asset swapped into an external token after it (dex_out)
+            # DEX aggregators used outside THORChain: before the swap (dex_in) and/or after it (dex_out)
             "dex_in": self._dex_leg_for_renderer(tx.dex_info.swap_in),
             "dex_out": self._dex_leg_for_renderer(tx.dex_info.swap_out),
         }

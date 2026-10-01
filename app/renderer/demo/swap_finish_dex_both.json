@@ -33,24 +33,12 @@
     "refund": false,
     "refund_rate": 0,
     "dex_in": {
-      "symbol": "USDT",
-      "chain": "BSC",
-      "amount": 1100.0,
       "aggregator": "TSAggregatorPancakeV2 BinanceSmartChain",
-      "aggregator_short": "TS PancakeV2",
-      "logo": "https://tokens.pancakeswap.finance/images/0x55d398326f99059fF775485246999027B3197955.png",
-      "local_logo": "BSC.USDT-0X55D398326F99059FF775485246999027B3197955",
-      "chain_logo": "BSC.BNB"
+      "aggregator_short": "TS PancakeV2"
     },
     "dex_out": {
-      "symbol": "SYN",
-      "chain": "ETH",
-      "amount": 725.6659,
-      "aggregator": "TSAggregatorSushiswap",
-      "aggregator_short": "TS Sushiswap",
-      "logo": "https://tokens.1inch.io/0x0f2d719407fdbeff09d87557abb7232601fd9f29.png",
-      "local_logo": "ETH.SYN-0X0F2D719407FDBEFF09D87557ABB7232601FD9F29",
-      "chain_logo": "ETH.ETH"
+      "aggregator": "TSAggregatorUniswapV3 500",
+      "aggregator_short": "TS UniswapV3 500"
     }
   }
 }

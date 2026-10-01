@@ -33,14 +33,8 @@
     "refund": false,
     "refund_rate": 0,
     "dex_in": {
-      "symbol": "USDT",
-      "chain": "ETH",
-      "amount": 26000.0,
       "aggregator": "TSAggregatorUniswapV2",
-      "aggregator_short": "TS UniswapV2",
-      "logo": "https://tokens.1inch.io/0xdac17f958d2ee523a2206206994597c13d831ec7.png",
-      "local_logo": "ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7",
-      "chain_logo": "ETH.ETH"
+      "aggregator_short": "TS UniswapV2"
     },
     "dex_out": null
   }

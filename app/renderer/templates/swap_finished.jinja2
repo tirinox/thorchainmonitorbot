@@ -119,117 +119,31 @@
             gap: 10px;
         }
 
-        /* DEX aggregator legs: keep the route within its usual bounds and shrink the main elements instead */
-        .route-box.with-dex {
-            left: 5%;
-            right: 5%;
+        .rapid-time-block .clock {
+            padding: 6px 8px 6px 3px;
         }
 
-        .route-box.with-dex .asset-logo {
-            width: 120px;
-            height: 120px;
-        }
-
-        .route-box.with-dex .chain-logo {
-            width: 48px;
-            height: 48px;
-        }
-
-        .route-box.with-dex .arrow-lr {
-            width: 120px;
-        }
-
-        .route-box.with-dex .above-arrow {
-            width: 130px;
-            bottom: 135px;
-            white-space: nowrap;
-        }
-
-        .route-box.with-dex .streaming-count {
-            font-size: 24px;
-            margin-left: -5px;
-        }
-
-        .route-box.with-dex .circle-tc-logo {
-            width: 150px;
-        }
-
-        .route-box.with-dex .liquidity-fee-block {
-            font-size: 28px;
-            top: -8%;
-        }
-
-        .route-box.with-dex .asset-part {
-            margin-top: 40px;
-            width: 34%;
-        }
-
-        /* the text is centred on the logo group (leg + logo); move it back under the main logo */
-        .route-box.with-dex #source_logo .asset-part {
-            transform: translateX(100px);
-        }
-
-        .route-box.with-dex #dest_logo .asset-part {
-            transform: translateX(-100px);
-        }
-
-        .route-box.with-dex .user-name {
-            font-size: 32px;
-        }
-
-        .route-box.with-dex .input-amount,
-        .route-box.with-dex .output-amount {
-            font-size: 50px;
-        }
-
-        .route-box.with-dex .usd-volume {
-            font-size: 44px;
-        }
-
-        .route-box.with-dex .wait-time {
-            font-size: 34px;
-        }
-
-        .route-box.with-dex .clock {
-            width: 46px;
-        }
-
-        .route-box.with-dex .arrow-down-holder {
-            margin-top: 185px; /* a fixed offset: a percentage would grow with the route width */
-        }
-
-        .route-box.with-dex .affiliate-logos img {
-            width: 100px;
-            height: 100px;
-        }
-
-        .route-box.with-dex .affiliate-name {
-            font-size: 34px;
-        }
-
-        .route-box.with-dex .aff-fee {
-            font-size: 30px;
-        }
-
-        .route-box.with-dex .dashed-circle {
-            width: 100px;
-            height: 100px;
+        .rapid-time-block .wait-time {
+            margin-bottom: 0;
+            font-size: 46px;
+            font-weight: 500;
+            line-height: 1;
         }
 
     </style>
 
-    <div class="route-box {{ 'with-dex' if dex_in or dex_out else '' }}">
+    <div class="route-box">
         <div id="source_logo" class="logo-holder">
             <div class="logo-part">
-                {% if dex_in or dex_out %}
+
+                <div class="dex-anchor">
+                    {% with asset_name=source_asset, asset_logo=source_asset_logo, chain_logo=source_chain_logo %}
+                        {% include "components/asset-logo.jinja2" %}
+                    {% endwith %}
                     {% with leg=dex_in, side='in' %}
                         {% include "components/dex-leg.jinja2" %}
                     {% endwith %}
-                {% endif %}
-
-                {% with asset_name=source_asset, asset_logo=source_asset_logo, chain_logo=source_chain_logo %}
-                    {% include "components/asset-logo.jinja2" %}
-                {% endwith %}
+                </div>
 
                 <div class="asset-part">
                     <div class="user-name">
@@ -311,16 +225,15 @@
 
         <div id="dest_logo" class="logo-holder">
             <div class="logo-part">
-                {% with asset_name=destination_asset, asset_logo=destination_logo, chain_logo=destination_chain_logo,
-                        right=True %}
-                    {% include "components/asset-logo.jinja2" %}
-                {% endwith %}
-
-                {% if dex_in or dex_out %}
+                <div class="dex-anchor">
+                    {% with asset_name=destination_asset, asset_logo=destination_logo, chain_logo=destination_chain_logo,
+                            right=True %}
+                        {% include "components/asset-logo.jinja2" %}
+                    {% endwith %}
                     {% with leg=dex_out, side='out' %}
                         {% include "components/dex-leg.jinja2" %}
                     {% endwith %}
-                {% endif %}
+                </div>
 
                 <div class="asset-part">
                     <div class="user-name">

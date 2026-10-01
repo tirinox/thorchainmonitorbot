@@ -34,14 +34,8 @@
     "refund_rate": 0,
     "dex_in": null,
     "dex_out": {
-      "symbol": "0x0F2C…4199",
-      "chain": "ETH",
-      "amount": 0,
       "aggregator": "FC4414199",
-      "aggregator_short": "FC4414199",
-      "logo": "",
-      "local_logo": "",
-      "chain_logo": "ETH.ETH"
+      "aggregator_short": "FC4414199"
     }
   }
 }

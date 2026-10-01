@@ -1,82 +1,61 @@
 {#
-    One DEX aggregator leg outside THORChain.
-    Context: leg = {symbol, chain, amount, aggregator, aggregator_short, logo, local_logo, chain_logo}, side = "in" | "out"
-    leg = None renders an invisible spacer of the same width, so a one-sided route stays symmetric.
-    "in":  [external token] --aggregator--> (the L1 gas asset enters THORChain)
-    "out": (the L1 gas asset leaves THORChain) --aggregator--> [external token]
+    A hint that a DEX aggregator was used outside THORChain, on the outer side of an asset logo.
+    Context: leg = {aggregator, aggregator_short}, side = "in" | "out"
+    "in":  an arrow fading in from the left edge towards the source logo
+    "out": an arrow fading out from the destination logo towards the right edge
+    Tokens and amounts are deliberately not shown here: the full route is in the message text.
+    The hint lives in the page margin and is absolutely positioned, so the main route does not move.
 #}
 <style>
-    .dex-leg {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-    }
-
-    .dex-node {
+    .dex-anchor {
         position: relative;
-        width: 90px;
-        height: 90px;
+        display: flex;
     }
 
-    .dex-logo {
-        width: 90px;
-        height: 90px;
-        border-radius: 50%;
-        border: 1px solid rgba(156, 161, 159, 0.4);
-        filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
-    }
-
-    .dex-chain-logo {
+    .dex-hint {
         position: absolute;
-        top: -6px;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        border: 1px solid rgba(156, 161, 159, 0.4);
+        top: 50%;
+        transform: translateY(-50%);
+        width: 112px;
     }
 
-    .dex-chain-logo-left {
-        left: -8px;
+    .dex-hint-in {
+        right: calc(100% + 14px);
     }
 
-    .dex-chain-logo-right {
-        right: -8px;
+    .dex-hint-out {
+        left: calc(100% + 14px);
     }
 
-    .dex-amount {
+    .dex-hint-arrow-fade {
+        display: flex;
+    }
+
+    .dex-hint-in .dex-hint-arrow-fade {
+        -webkit-mask-image: linear-gradient(to right, transparent 0%, black 85%);
+        mask-image: linear-gradient(to right, transparent 0%, black 85%);
+    }
+
+    .dex-hint-out .dex-hint-arrow-fade {
+        -webkit-mask-image: linear-gradient(to right, black 15%, transparent 100%);
+        mask-image: linear-gradient(to right, black 15%, transparent 100%);
+    }
+
+    .dex-hint-arrow {
+        width: 112px;
+        padding: 0;
+        filter: brightness(190%) hue-rotate(30deg) saturate(200%);
+    }
+
+    .dex-hint-label {
         position: absolute;
-        top: 96px;
+        bottom: calc(100% + 6px);
         left: 50%;
         transform: translateX(-50%);
-        white-space: nowrap;
-        text-align: center;
-        line-height: 1.05;
-        font-family: ThorFontLight, sans-serif;
-        font-weight: bold;
-        font-size: 24px;
-        color: #ffffff;
-        text-shadow: 0 0 10px rgba(69, 221, 237, 60%);
-    }
-
-    .dex-arrow-box {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 110px;
-    }
-
-    .dex-arrow {
-        width: 100px;
-        padding: 0;
-        filter: brightness(190%) hue-rotate(30deg) saturate(200%) drop-shadow(3px 3px 4px rgba(0, 213, 213, 0.51)) drop-shadow(-3px -3px 4px rgba(3, 243, 150, 0.51));
-    }
-
-    .dex-aggregator {
-        max-width: 150px;
-        margin-bottom: 2px;
+        width: 132px;
         text-align: center;
         line-height: 1.1;
-        font-size: 18px;
+        font-size: 19px;
         font-style: italic;
         color: #23DCC8;
         overflow: hidden;
@@ -86,51 +65,26 @@
         -webkit-box-orient: vertical;
     }
 
-    .dex-leg-spacer {
-        width: 200px; /* node + arrow box */
-        height: 1px;
+    .dex-hint-caption {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        width: 100%;
+        text-align: center;
+        font-size: 15px;
+        letter-spacing: 2px;
+        color: #7fa7a3;
     }
 </style>
 
-{% set dex_node %}{% if leg %}
-    <div class="dex-node">
-        <img class="dex-logo"
-             src="{{ leg.logo if leg.logo else ('renderer/logo/' ~ leg.local_logo ~ '.png' if leg.local_logo else 'renderer/logo/unknown.png') }}"
-             alt="{{ leg.symbol }} logo"
-             data-local-logo="{{ leg.local_logo }}"
-             onerror="if (this.dataset.localLogo && !this.dataset.triedLocal) { this.dataset.triedLocal = 1; this.src = 'renderer/logo/' + this.dataset.localLogo + '.png'; } else { this.onerror = null; this.src = 'renderer/logo/unknown.png'; }"
-        >
-        {% if leg.chain_logo %}
-            <img class="dex-chain-logo {{ 'dex-chain-logo-left' if side == 'in' else 'dex-chain-logo-right' }}"
-                 src="renderer/logo/{{ leg.chain_logo }}.png" alt="{{ leg.chain }} logo"
-                 onerror="this.style.display = 'none'">
-        {% endif %}
-        <div class="dex-amount">
-            {% if leg.amount %}<div>{{ short_money(leg.amount) }}</div>{% endif %}
-            <div>{{ leg.symbol }}</div>
-        </div>
-    </div>
-{% endif %}{% endset %}
-
-{% set dex_arrow %}{% if leg %}
-    <div class="dex-arrow-box">
-        <div class="dex-aggregator" title="{{ leg.aggregator }}">
-            {{ leg.aggregator_short or leg.aggregator or "DEX aggregator" }}
-        </div>
-        <img src="renderer/static/img/arrow2.png" alt="Arrow" class="dex-arrow shadow">
-    </div>
-{% endif %}{% endset %}
-
 {% if leg %}
-    <div class="dex-leg dex-leg-{{ side }}">
-        {% if side == 'in' %}
-            {{ dex_node }}
-            {{ dex_arrow }}
-        {% else %}
-            {{ dex_arrow }}
-            {{ dex_node }}
-        {% endif %}
+    <div class="dex-hint dex-hint-{{ side }}">
+        <div class="dex-hint-label" title="{{ leg.aggregator }}">
+            {{ leg.aggregator_short or leg.aggregator or "aggregator" }}
+        </div>
+        <div class="dex-hint-arrow-fade">
+            <img src="renderer/static/img/arrow2.png" alt="DEX aggregator" class="dex-hint-arrow">
+        </div>
+        <div class="dex-hint-caption">DEX</div>
     </div>
-{% else %}
-    <div class="dex-leg-spacer"></div>
 {% endif %}

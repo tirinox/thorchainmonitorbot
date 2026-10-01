@@ -34,14 +34,8 @@
     "refund_rate": 0,
     "dex_in": null,
     "dex_out": {
-      "symbol": "USDT",
-      "chain": "AVAX",
-      "amount": 204.7652,
       "aggregator": "TSAggregatorPangolin",
-      "aggregator_short": "TS Pangolin",
-      "logo": "https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/logos/0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7/logo.png",
-      "local_logo": "AVAX.USDT-0X9702230A8EA53601F5CD2DC00FDBC13D4DF4A8C7",
-      "chain_logo": "AVAX.AVAX"
+      "aggregator_short": "TS Pangolin"
     }
   }
 }
