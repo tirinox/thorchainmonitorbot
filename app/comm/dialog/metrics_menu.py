@@ -12,17 +12,15 @@ from jobs.fetch.top_pools import BestPoolsFetcher
 from jobs.fetch.wasm_stats import WasmStatsBuilder
 from jobs.limit_recorder import LimitSwapStatsRecorder
 from jobs.rapid_recorder import RapidSwapRecorder
-from jobs.ruji_merge import RujiMergeTracker
 from jobs.rune_burn_recorder import RuneBurnRecorder
 from jobs.transfer_recorder import RuneTransferRecorder
 from jobs.vote_recorder import VoteRecorder
 from jobs.wasm_recorder import CosmWasmRecorder
-from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
+from lib.date_utils import DAY, HOUR, parse_timespan_to_seconds
 from lib.draw_utils import img_to_bio
 from lib.texts import kbd
 from models.net_stats import AlertNetworkStats
 from models.node_info import NodeInfo, NetworkNodes
-from models.ruji import AlertRujiraMergeStats
 from models.transfer import AlertRuneTransferStats
 from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.node_churn_notify import NodeChurnNotifier
@@ -437,18 +435,6 @@ class MetricsDialog(BaseDialog):
 
         text = self.loc.notification_rune_burn(event)
         photo, photo_name = await self.deps.alert_presenter.render_rune_burn_graph(self.loc, event)
-        await message.answer_photo(img_to_bio(photo, photo_name), caption=text, disable_notification=True)
-
-    async def show_rujira_merge_stats(self, message: Message):
-        await self.start_typing(message)
-
-        ruji_merge_tracker = RujiMergeTracker(self.deps)
-        merge = await ruji_merge_tracker.get_merge_system()
-        top_txs = await ruji_merge_tracker.get_top_events_from_db(now_ts(), 1)
-        event = AlertRujiraMergeStats(merge, top_txs, 1)
-
-        text = self.loc.notification_rujira_merge_stats(event)
-        photo, photo_name = await self.deps.alert_presenter.render_rujira_merge_graph(None, event)
         await message.answer_photo(img_to_bio(photo, photo_name), caption=text, disable_notification=True)
 
     async def show_secured_assets_stats(self, message: Message):

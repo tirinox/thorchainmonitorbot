@@ -697,12 +697,6 @@ rujira:
     local_file: "data/rujira/rujira-mainnet.json"
     infographic_name_limit: 32
 
-  merge:
-    enabled: true
-    period: 1d
-    notification:
-      enabled: false
-
 
 secured_assets:
   enabled: true

@@ -44,7 +44,6 @@ from models.pool_info import PoolInfo, PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge, PriceHolder
 from models.queue import QueueInfo
 from models.rapid_swap import RapidSwapPeriodStats
-from models.ruji import AlertRujiraMergeStats
 from models.pol_reserve import AlertPolReserveStats
 from models.runepool import AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
@@ -2522,15 +2521,6 @@ class BaseLocalization(ABC):  # == English
                 f'({short_dollar(e.last_24h_burned_usd)})')
 
     TEXT_BURN_NO_DATA = '😩 Sorry. We have not gotten any data for burned Rune yet.'
-
-    # ------- Ruji -------
-
-    @staticmethod
-    def notification_rujira_merge_stats(e: AlertRujiraMergeStats):
-        return (
-            f'RUJIRA Merge stats $RUJI\n'
-            f'https://rujira.network/merge/'
-        )
 
     TEXT_SECURED_ASSETS_NO_DATA = '😩 Sorry. We have not gotten any data for secured assets yet.'
 

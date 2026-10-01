@@ -290,17 +290,3 @@ def test_runepool_action_restores_tx_url_when_enabled():
 
     assert 'TX:' in text
     assert 'http' in text
-
-
-def test_rujira_merge_stats_has_no_url_by_default():
-    text = _make_localization(0).notification_rujira_merge_stats(SimpleNamespace())
-
-    assert text == 'RUJIRA Merge stats $RUJI'
-    assert 'http' not in text
-
-
-def test_rujira_merge_stats_restores_url_when_enabled():
-    text = _make_localization(0, post_urls_enabled=True).notification_rujira_merge_stats(SimpleNamespace())
-
-    assert 'RUJIRA Merge stats $RUJI' in text
-    assert 'https://rujira.network/merge/' in text

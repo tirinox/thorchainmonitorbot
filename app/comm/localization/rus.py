@@ -35,7 +35,6 @@ from models.node_info import NodeSetChanges, NodeInfo, NodeEvent, EventDataSlash
 from models.pool_info import PoolInfo, PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.queue import QueueInfo
-from models.ruji import AlertRujiraMergeStats
 from models.pol_reserve import AlertPolReserveStats
 from models.runepool import AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
@@ -1892,10 +1891,6 @@ class RussianLocalization(BaseLocalization):
         )
 
     TEXT_SECURED_ASSETS_NO_DATA = '😩 Пока нет данных о секьюред активах.'
-
-    @staticmethod
-    def notification_rujira_merge_stats(e: AlertRujiraMergeStats):
-        return f'RUJIRA Статистика слияния'
 
     @staticmethod
     def notification_text_secured_asset_summary(e: AlertSecuredAssetSummary):

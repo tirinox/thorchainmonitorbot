@@ -52,7 +52,7 @@ human-readable alerts and rendered infographics. It serves three audiences at on
 | **Governance** | Mimir changes, node-Mimir voting progress, upgrade proposals and version rollout |
 | **Capital flows** | Large RUNE transfers, CEX in/out flow summaries, RUNEPool deposits/withdrawals, trade accounts |
 | **Supply** | RUNE supply breakdown, burned RUNE and income charts |
-| **Ecosystem** | Rujira merge, secured assets, TCY, CosmWasm app-layer stats, limit swaps, rapid swaps |
+| **Ecosystem** | Secured assets, TCY, CosmWasm app-layer stats, limit swaps, rapid swaps |
 | **Achievements** | Milestones such as record volume, users, or pool depth |
 
 ### 🗓️ Scheduled reports
@@ -250,7 +250,6 @@ Broadcast channel languages: `eng`, `rus`, and `eng-tw` (English tuned for X/Twi
 | `/tradeacc` | Trade accounts |
 | `/secured` | Secured assets |
 | `/tcy` | TCY info |
-| `/rujimerge` | Rujira merge stats |
 | `/applayer` | CosmWasm app-layer stats |
 | `/limitswaps` | Limit swap stats |
 | `/rapid` | Rapid swap stats |

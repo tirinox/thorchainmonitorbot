@@ -38,7 +38,6 @@ from models.pool_info import PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.rapid_swap import RapidSwapPeriodStats
 from models.queue import AlertQueue
-from models.ruji import AlertRujiraMergeStats
 from models.pol_reserve import AlertPolReserveStats
 from models.runepool import AlertRunepoolStats
 from models.runepool import AlertRunePoolAction
@@ -132,8 +131,6 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_liquidity_cap(data)
         elif isinstance(data, EventRuneBurn):
             await self._handle_rune_burn(data)
-        elif isinstance(data, AlertRujiraMergeStats):
-            await self._handle_rujira_merge_stats(data)
         elif isinstance(data, AlertSecuredAssetSummary):
             await self._handle_secured_asset_summary(data)
         elif isinstance(data, TcyFullInfo):
@@ -674,30 +671,6 @@ class AlertPresenter(INotified, WithLogger):
 
         await self.deps.broadcaster.broadcast_to_all(
             "public:rune_burn",
-            message_gen)
-
-    async def render_rujira_merge_graph(self, loc, data: AlertRujiraMergeStats):
-        photo = await self.renderer.render('rujira_merge.jinja2', namedtuple_to_dict(data))
-        return photo, 'rujira_merge.png'
-
-    async def _handle_rujira_merge_stats(self, data: AlertRujiraMergeStats):
-        names = await self.load_names(data.addresses)
-
-        try:
-            data.update_names(names)
-        except Exception as e:
-            self.logger.exception(f'Failed to load names for merge: {e}', stack_info=True)
-
-        async def message_gen(loc: BaseLocalization):
-            text = loc.notification_rujira_merge_stats(data)
-            photo, photo_name = await self.render_rujira_merge_graph(loc, data)
-            if photo is not None:
-                return BoardMessage.make_photo(photo, text, photo_name)
-            else:
-                return text
-
-        await self.deps.broadcaster.broadcast_to_all(
-            "public:rujira:merge_stats",
             message_gen)
 
     async def render_secured_asset_summary(self, loc: BaseLocalization, data: AlertSecuredAssetSummary):

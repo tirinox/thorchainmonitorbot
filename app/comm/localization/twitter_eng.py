@@ -25,7 +25,6 @@ from models.net_stats import AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo
 from models.pool_info import EventPools, PoolChanges, PoolInfo
 from models.price import RuneMarketInfo, AlertPrice, AlertPriceDiverge
-from models.ruji import AlertRujiraMergeStats
 from models.pol_reserve import AlertPolReserveStats
 from models.runepool import AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
@@ -966,14 +965,6 @@ class TwitterEnglishLocalization(BaseLocalization):
         #     f"approximately {pretty_rune(e.yearly_burn_prediction)} Runes will be burned in a year.\n"
         #     f"{trend} is {pretty_percent(e.deflation_percent, signed=False)}."
         # )
-
-    def notification_rujira_merge_stats(self, e: AlertRujiraMergeStats):
-        return (
-            'RUJIRA Merge stats $RUJI\n'
-            'https://rujira.network/merge/'
-            if self.are_post_urls_enabled else
-            'RUJIRA Merge stats $RUJI'
-        )
 
     @staticmethod
     def notification_text_app_layer_stats(e: WasmPeriodStats):

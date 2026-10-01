@@ -174,10 +174,6 @@ class MainMenuDialog(BaseDialog):
     async def cmd_rune_burn(self, message: Message):
         await self.build_metrics_dialog().show_rune_burned(message)
 
-    @message_handler(commands='rujimerge', state='*')
-    async def cmd_ruji_merge(self, message: Message):
-        await self.build_metrics_dialog().show_rujira_merge_stats(message)
-
     @message_handler(commands='secured', state='*')
     async def cmd_secured_assets(self, message: Message):
         await self.build_metrics_dialog().show_secured_assets_stats(message)
