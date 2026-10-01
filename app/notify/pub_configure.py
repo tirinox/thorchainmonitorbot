@@ -275,11 +275,37 @@ class PublicAlertJobExecutor(WithLogger):
         PubAlertJobNames.RUNE_TRANSFER_STATS: job_rune_transfer_stats,
     }
 
+    def job_types_without_data(self) -> dict[str, str]:
+        """Job types whose data source is turned off in the config, with the reason."""
+        cfg = self.deps.cfg
+        scanner = ('native_scanner.enabled', cfg.get('native_scanner.enabled', True))
+        tx = ('tx.enabled', cfg.get('tx.enabled', True))
+        sources = {
+            # recorded from the blocks by the native scanner
+            PubAlertJobNames.RAPID_SWAP_STATS: [scanner],
+            PubAlertJobNames.RUNE_TRANSFER_STATS: [scanner],
+            PubAlertJobNames.LIMIT_SWAP_STATS: [
+                scanner, ('native_scanner.limit_swaps.enabled', cfg.get('native_scanner.limit_swaps.enabled', True))],
+            PubAlertJobNames.APP_LAYER_STATS: [
+                scanner, ('native_scanner.wasm.enabled', cfg.get('native_scanner.wasm.enabled', True))],
+            # swap counts and volumes (swaps come from the scanner) and the user counter
+            PubAlertJobNames.KEY_METRICS: [scanner, tx],
+            PubAlertJobNames.TRADE_ASSET_SUMMARY: [scanner, tx],
+        }
+        return {
+            job: 'needs ' + ', '.join(flag for flag, on in flags if not on)
+            for job, flags in sources.items() if not all(on for _, on in flags)
+        }
+
     async def configure_jobs(self):
         d = self.deps
         scheduler = d.public_scheduler = PublicScheduler(d.cfg, d.db, d.loop)
+        without_data = self.job_types_without_data()
         for job_name, job_func in self.AVAILABLE_TYPES.items():
-            await scheduler.register_job_type(job_name, job_func.__get__(self))
+            if reason := without_data.get(job_name):
+                scheduler.disable_job_type(job_name, reason)
+            else:
+                await scheduler.register_job_type(job_name, job_func.__get__(self))
         return scheduler
 
     @staticmethod

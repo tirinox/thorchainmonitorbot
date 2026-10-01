@@ -279,6 +279,19 @@ class App(WithLogger):
                 self.logger.error(f'No luck. {e!r} Retrying in {retry_after} sec...')
                 await asyncio.sleep(retry_after)
 
+    def _can_run(self, feature: str, needs: dict) -> bool:
+        """False, with a warning, when a feature turned on in the config lacks a data source turned off there."""
+        missing = [flag for flag, on in needs.items() if not on]
+        if missing:
+            self.logger.warning(f'{feature} are turned off: they need {", ".join(missing)}.')
+        return not missing
+
+    def _record_volumes_from(self, source):
+        # the volume and tx count recorders exist only with tx.enabled
+        for recorder in (self.deps.volume_recorder, self.deps.tx_count_recorder):
+            if recorder:
+                source.add_subscriber(recorder)
+
     async def _prepare_task_graph(self):
         # note! all periodic tasks have been moved to pub_configure.py (PublicAlertJobExecutor)
         d = self.deps
@@ -343,6 +356,9 @@ class App(WithLogger):
                 ev_gen = LastBlockEventGenerator(d.last_block_cache)
                 d.block_scanner.add_subscriber(ev_gen)
                 ev_gen.add_subscriber(d.alert_presenter)
+        else:
+            self.logger.warning('native_scanner.enabled is false: swap, transfer and balance alerts, limit and rapid '
+                                'swap and CosmWasm tracking and user counting are off.')
 
         if d.cfg.get('tx.enabled', True):
             main_tx_types = [
@@ -419,14 +435,15 @@ class App(WithLogger):
                     start_detector_from_list = StreamingSwapStartDetectorFromList(d)
                     swl.add_subscriber(start_detector_from_list)
 
-                    swap_start_detector_from_block = SwapStartDetectorFromBlock(d)
-                    d.block_scanner.add_subscriber(swap_start_detector_from_block)
-
                     stream_swap_notifier = StreamingSwapStartTxNotifier(d)
-                    swap_start_detector_from_block.add_subscriber(stream_swap_notifier)
-
                     start_detector_from_list.add_subscriber(stream_swap_notifier)
                     stream_swap_notifier.add_subscriber(d.alert_presenter)
+
+                    if self._can_run('Streaming swap starts found in blocks',
+                                     {'native_scanner.enabled': d.block_scanner is not None}):
+                        swap_start_detector_from_block = SwapStartDetectorFromBlock(d)
+                        d.block_scanner.add_subscriber(swap_start_detector_from_block)
+                        swap_start_detector_from_block.add_subscriber(stream_swap_notifier)
 
             # Deprecated
             # if d.cfg.tx.refund.get('enabled', True):
@@ -436,6 +453,9 @@ class App(WithLogger):
             #     d.refund_notifier_tx.add_subscriber(d.alert_presenter)
 
             tasks.append(fetcher_tx)
+        else:
+            self.logger.warning('tx.enabled is false: swap, liquidity and donate alerts, DEX aggregator reports, '
+                                'swap volume and tx count recording are off.')
 
         if d.cfg.get('cap.enabled', True):
             fetcher_cap = CapInfoFetcher(d)
@@ -557,35 +577,36 @@ class App(WithLogger):
             if achievements_enabled:
                 wallet_counter.add_subscriber(achievements)
 
-        if d.cfg.get('trade_accounts.enabled', True):
+        if d.cfg.get('trade_accounts.enabled', True) and self._can_run(
+                'Trade account alerts', {'native_scanner.enabled': d.block_scanner is not None}):
             # Trade account actions
             traed = TradeAccEventDecoder(d.pool_cache)
             d.block_scanner.add_subscriber(traed)
 
-            traed.add_subscriber(d.volume_recorder)
-            traed.add_subscriber(d.tx_count_recorder)
+            self._record_volumes_from(traed)
 
             tr_acc_not = TradeAccTransactionNotifier(d)
             traed.add_subscriber(tr_acc_not)
             tr_acc_not.add_subscriber(d.alert_presenter)
 
-            traed.add_subscriber(achievements)
+            if achievements_enabled:
+                traed.add_subscriber(achievements)
 
-        if d.cfg.get('runepool.actions.enabled', True):
+        if d.cfg.get('runepool.actions.enabled', True) and self._can_run(
+                'RUNEPool alerts', {'native_scanner.enabled': d.block_scanner is not None}):
             runepool_decoder = RunePoolEventDecoder(d.db, d.pool_cache)
             d.block_scanner.add_subscriber(runepool_decoder)
 
-            runepool_decoder.add_subscriber(d.volume_recorder)
-            runepool_decoder.add_subscriber(d.tx_count_recorder)
+            self._record_volumes_from(runepool_decoder)
 
             runepool_not = RunePoolTransactionNotifier(d)
             runepool_decoder.add_subscriber(runepool_not)
             runepool_not.add_subscriber(d.alert_presenter)
 
-            if achievements:
+            if achievements_enabled:
                 runepool_decoder.add_subscriber(achievements)
 
-        if d.cfg.get('native_scanner.wasm.enabled', True):
+        if d.block_scanner and d.cfg.get('native_scanner.wasm.enabled', True):
             d.wasm_cache = WasmCache(d.thor_connector, db=d.db)
             wasm_recorder = CosmWasmRecorder(d.db)
             d.block_scanner.add_subscriber(wasm_recorder)

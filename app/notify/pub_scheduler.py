@@ -161,6 +161,7 @@ class PublicScheduler(WithLogger):
         })
         self.scheduler.add_listener(self._fail_listener, EVENT_JOB_MISSED | EVENT_JOB_ERROR)
         self._registered_jobs = {}
+        self._disabled_job_types: dict[str, str] = {}  # job type -> why it cannot run in this setup
         self._scheduled_jobs: List[SchedJobCfg] = []
         self.db_log = CircularLog(self.DB_KEY_PREFIX, db, max_lines=10_000)
         self._rpc = SimpleRPC(db, channel_prefix=self.DB_KEY_PREFIX)
@@ -257,7 +258,7 @@ class PublicScheduler(WithLogger):
 
         coro = self._registered_jobs.get(job_cfg.func)
         if not coro:
-            raise RuntimeError(f'Job function {job_cfg.func} is not registered; cannot run job {job_id}.')
+            raise RuntimeError(self._why_not_registered(job_cfg.func) + f'; cannot run job {job_id}.')
 
         self.logger.info(f'Job {job_id} scheduled to run now via control message!')
 
@@ -273,7 +274,7 @@ class PublicScheduler(WithLogger):
         self.logger.info(f'Function {func_name} is run by name')
         coro = self._registered_jobs.get(func_name)
         if not coro:
-            raise RuntimeError(f'Job function {func_name} is not registered; cannot run by function name.')
+            raise RuntimeError(self._why_not_registered(func_name) + '; cannot run by function name.')
         return await coro(None, with_retries=False, override_args=self._normalize_job_args(args), run_id=run_id,
                           mode=mode)
 
@@ -282,6 +283,16 @@ class PublicScheduler(WithLogger):
             'command': command,
             **kwargs
         }, timeout=timeout)
+
+    def disable_job_type(self, key, reason: str):
+        """The job type is known but cannot run here, e.g. its data source is turned off in the config."""
+        self._disabled_job_types[key] = reason
+        self.logger.warning(f'Job type {key} is turned off: {reason}.')
+
+    def _why_not_registered(self, func_name) -> str:
+        if reason := self._disabled_job_types.get(func_name):
+            return f'Job type {func_name} is turned off: {reason}'
+        return f'Job function {func_name} is not registered'
 
     async def register_job_type(self, key, func):
         if key in self._registered_jobs:
@@ -484,7 +495,11 @@ class PublicScheduler(WithLogger):
 
             coro = self._registered_jobs.get(job_cfg.func)
             if not coro:
-                self.logger.error(f"Job function '{job_cfg.func}' is not registered; skipping job '{job_cfg.id}'.")
+                if job_cfg.func in self._disabled_job_types:
+                    reason = self._why_not_registered(job_cfg.func)
+                    self.logger.warning(f"{reason}; job '{job_cfg.id}' is not scheduled.")
+                else:
+                    self.logger.error(f"Job function '{job_cfg.func}' is not registered; skipping job '{job_cfg.id}'.")
                 continue
 
             j = self.scheduler.add_job(

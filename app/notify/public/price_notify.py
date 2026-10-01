@@ -68,7 +68,9 @@ class PriceChangeNotifier(INotified, WithDelegates, WithLogger):
 
         hist_prices = await self.get_historical_price_dict()
         pool_prices, cex_prices, det_prices = await self.price_recorder.get_prices(self.price_graph_period)
-        volumes = await self.deps.volume_recorder.get_data_range_ago_n(self.price_graph_period, n=VOLUME_N_POINTS)
+        volume_recorder = self.deps.volume_recorder  # None when tx.enabled is false: a graph without volume bars
+        volumes = await volume_recorder.get_data_range_ago_n(self.price_graph_period, n=VOLUME_N_POINTS) \
+            if volume_recorder else []
         tcy_prices = await self.price_recorder.get_tcy_prices(self.price_graph_period)
 
         return AlertPrice(
