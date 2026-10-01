@@ -21,9 +21,11 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
 
                     if await self.cd.can_do():
                         await self.cd.do()
+                        await self.tracker.set_achievement_record(event)
                         await self.pass_data_to_listeners(event)
                     else:
-                        self.logger.warning(f'Cooldown is active. Skipping achievement event {event}')
+                        # the record is not saved, so it is announced on a later feed
+                        self.logger.warning(f'Cooldown is active. Postponing achievement event {event}')
 
         except Exception as e:
             # we don't let any exception in the Achievements module to break the whole system
@@ -32,7 +34,8 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.tracker = AchievementsTracker(deps.db)
+        stale_after = deps.cfg.as_interval('achievements.stale_after', '14d')
+        self.tracker = AchievementsTracker(deps.db, stale_after)
         self.extractor = AchievementsExtractor(deps)
 
         cd = deps.cfg.as_interval('achievements.cooldown.period', '10m')

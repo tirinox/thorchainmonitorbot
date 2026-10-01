@@ -111,6 +111,11 @@ class PublicAlertJobExecutor(WithLogger):
         else:
             self.logger.info(f'{what}: not saved after a {run.mode} run')
 
+    async def _feed_achievements(self, sender, data):
+        # a preview or a test send must not move the achievement records either
+        if achievements := self.deps.achievements:
+            await self._save_state('achievements', lambda: achievements.on_data(sender, data))
+
     async def job_tcy_summary(self, **job_args):
         data = await self.tcy_info_fetcher.fetch_and_remember()
         await self._send_alert(data, "tcy summary alert", job_args)
@@ -157,6 +162,7 @@ class PublicAlertJobExecutor(WithLogger):
             self.logger.warning(f'No previous pool data! Go on')
 
         await self._send_alert(data, "key metrics infographic", job_args)
+        await self._feed_achievements(self.key_stats_fetcher, data)
 
     async def job_top_pools(self, **job_args):
         fetcher = BestPoolsFetcher(self.deps)
@@ -188,6 +194,7 @@ class PublicAlertJobExecutor(WithLogger):
     async def job_trade_account_summary(self, **job_args):
         data: AlertTradeAccountStats = await self.trade_acc_fetcher.fetch_and_remember()
         await self._send_alert(data, "trade account stats", job_args)
+        await self._feed_achievements(self.trade_acc_fetcher, data)
 
     async def job_price_alert(self, price_graph_days: int = 7, **job_args):
         pn = PriceChangeNotifier(self.deps)

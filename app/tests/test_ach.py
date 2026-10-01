@@ -50,3 +50,106 @@ def test_anniversary_only_soon_after_the_date():
     assert _block_keys(datetime(2026, 4, 12, 12, 0).timestamp()) == {A.BLOCK_NUMBER: 24_000_000, A.ANNIVERSARY: 5}
     assert _block_keys(datetime(2026, 10, 1, 12, 0).timestamp()) == {A.BLOCK_NUMBER: 24_000_000}
     assert _block_keys(datetime(2026, 4, 9, 12, 0).timestamp()) == {A.BLOCK_NUMBER: 24_000_000}
+
+
+# ---------- tracker: records are saved only once sent, stale metrics catch up silently ----------
+
+import json
+
+import pytest
+
+from lib.date_utils import DAY
+from tests.fakes import FakeDB
+
+NOW = 1_790_000_000.0
+
+
+@pytest.fixture
+def tracker(monkeypatch):
+    import jobs.achievement.tracker as tracker_mod
+    monkeypatch.setattr(tracker_mod, 'now_ts', lambda: NOW)
+    return AchievementsTracker(FakeDB(), stale_after=14 * DAY)
+
+
+async def _put(tracker, **kw):
+    await tracker.set_achievement_record(Achievement(A.DAU, **kw))
+
+
+async def _stored(tracker):
+    return await tracker.get_achievement_record(A.DAU, '')
+
+
+@pytest.mark.asyncio
+async def test_tracker_first_feed_only_records(tracker):
+    assert await tracker.feed_data(Achievement(A.DAU, 1500)) is None
+    rec = await _stored(tracker)
+    assert (rec.value, rec.milestone, rec.last_seen_ts) == (1500, 1000, NOW)
+
+
+@pytest.mark.asyncio
+async def test_tracker_crossing_is_not_saved_until_sent(tracker):
+    await _put(tracker, value=1500, milestone=1000, timestamp=NOW - 30 * DAY, last_seen_ts=NOW - DAY)
+
+    ev = await tracker.feed_data(Achievement(A.DAU, 2100))
+    assert (ev.value, ev.milestone, ev.prev_milestone, ev.timestamp) == (2100, 2000, 1000, NOW)
+    # held back by the cooldown: nothing saved, so the next feed announces it again
+    assert (await _stored(tracker)).value == 1500
+    assert await tracker.feed_data(Achievement(A.DAU, 2100)) is not None
+
+    await tracker.set_achievement_record(ev)
+    assert await tracker.feed_data(Achievement(A.DAU, 2100)) is None
+
+
+@pytest.mark.asyncio
+async def test_tracker_stale_metric_catches_up_silently(tracker):
+    await _put(tracker, value=1500, milestone=1000, timestamp=NOW - 300 * DAY, last_seen_ts=NOW - 20 * DAY)
+
+    assert await tracker.feed_data(Achievement(A.DAU, 2100)) is None
+    rec = await _stored(tracker)
+    assert (rec.value, rec.milestone, rec.prev_milestone, rec.last_seen_ts) == (2100, 2000, 1000, NOW)
+
+
+@pytest.mark.asyncio
+async def test_tracker_record_from_before_last_seen_is_stale(tracker):
+    # a record saved by the old code has no last_seen_ts at all
+    old = Achievement(A.DAU, 1500, 1000, NOW - 300 * DAY)._asdict()
+    del old['last_seen_ts']
+    await tracker.db.redis.set(tracker.key(A.DAU), json.dumps(old))
+
+    assert await tracker.feed_data(Achievement(A.DAU, 2100)) is None
+    assert (await _stored(tracker)).milestone == 2000
+
+
+@pytest.mark.asyncio
+async def test_tracker_refreshes_last_seen_without_crossing(tracker):
+    await _put(tracker, value=1500, milestone=1000, last_seen_ts=NOW - 2 * DAY)
+    assert await tracker.feed_data(Achievement(A.DAU, 1600)) is None
+    rec = await _stored(tracker)
+    assert (rec.value, rec.last_seen_ts) == (1500, NOW)
+
+
+@pytest.mark.asyncio
+async def test_weekly_achievements_are_not_fed_in_preview():
+    from types import SimpleNamespace
+    from lib.logs import WithLogger
+    from lib.run_context import run_context, RunMode
+    from notify.pub_configure import PublicAlertJobExecutor
+
+    fed = []
+
+    async def on_data(sender, data):
+        fed.append(data)
+
+    executor = PublicAlertJobExecutor.__new__(PublicAlertJobExecutor)
+    WithLogger.__init__(executor)
+    executor.deps = SimpleNamespace(achievements=SimpleNamespace(on_data=on_data))
+
+    with run_context(RunMode.PREVIEW):
+        await executor._feed_achievements(None, 'weekly')
+    with run_context(RunMode.TEST):
+        await executor._feed_achievements(None, 'weekly')
+    assert fed == []
+
+    with run_context(RunMode.NORMAL):
+        await executor._feed_achievements(None, 'weekly')
+    assert fed == ['weekly']

@@ -68,6 +68,8 @@ async def demo_debug_logic(app: LpAppFramework):
         event, value = event.split()
         value = int(value)
         r = await at.feed_data(Achievement(event, value))
+        if r:
+            await at.set_achievement_record(r)
         print(f'Event: {r}')
 
 

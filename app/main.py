@@ -315,6 +315,8 @@ class App(WithLogger):
         achievements = AchievementsNotifier(d)
         if achievements_enabled:
             achievements.add_subscriber(d.alert_presenter)
+            # the weekly and trade account jobs feed it from the public scheduler
+            d.achievements = achievements
 
         if d.cfg.get('native_scanner.enabled', True):
             # The block scanner itself

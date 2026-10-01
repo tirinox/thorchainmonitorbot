@@ -43,6 +43,7 @@ class DepContainer:
     loc_man = None  # type: 'LocalizationManager'
     broadcaster = None  # type: 'Broadcaster'
     alert_presenter = None
+    achievements = None  # type: 'AchievementsNotifier'
     data_controller = None
     flagship: Flagship = None
 
