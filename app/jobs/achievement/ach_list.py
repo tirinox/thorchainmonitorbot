@@ -131,10 +131,10 @@ class Achievement(NamedTuple):
 
 # Card backgrounds (data/renderer/static/img/achievement/bg): one per category,
 # so the same kind of metric always looks the same
-BG_LIQUIDITY = 'nn_wreath_1.png'
-BG_NETWORK = 'nn_wreath_2.png'
-BG_SWAPS = 'nn_wreath_3.png'
-BG_USERS = 'nn_wreath_4.png'
+BG_LIQUIDITY = 'nn_wreath_liquidity.png'
+BG_NETWORK = 'nn_wreath_network.png'
+BG_SWAPS = 'nn_wreath_swaps.png'
+BG_USERS = 'nn_wreath_users.png'
 BG_RUNE = 'nn_wreath_rune.png'
 BG_REVENUE = 'nn_wreath_revenue.png'
 BG_BURN = 'nn_wreath_burn.png'  # kept for a burnt RUNE achievement, none uses it yet

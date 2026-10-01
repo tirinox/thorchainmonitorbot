@@ -24,10 +24,10 @@ class WreathStyle(NamedTuple):
 # Holes were measured on the pictures: rays cast from the middle stop where it gets brighter than the middle
 # by 30, a circle is fitted to the stops
 BACKGROUND_STYLE = {
-    BG_LIQUIDITY: WreathStyle('#3ee6c8', 0.501, 0.463, 0.165),
-    BG_NETWORK: WreathStyle('#6fe8cf', 0.500, 0.469, 0.173),
-    BG_SWAPS: WreathStyle('#4ffffa', 0.503, 0.448, 0.202),
-    BG_USERS: WreathStyle('#7cc7ff', 0.492, 0.466, 0.210),  # dark twigs fool the rays: radius set by eye
+    BG_LIQUIDITY: WreathStyle('#3ee6c8', 0.501, 0.461, 0.162),
+    BG_NETWORK: WreathStyle('#6fe8cf', 0.500, 0.471, 0.140),  # inside the warm halo, clear of the chevron
+    BG_SWAPS: WreathStyle('#4ffffa', 0.502, 0.449, 0.205),
+    BG_USERS: WreathStyle('#7cc7ff', 0.508, 0.443, 0.193),  # dark twigs fool the rays: picked by eye
     BG_RUNE: WreathStyle('#2ee6b8', 0.499, 0.496, 0.190),
     BG_REVENUE: WreathStyle('#e8c45a', 0.499, 0.445, 0.216),
     BG_BURN: WreathStyle('#ffb347', 0.487, 0.456, 0.162),
