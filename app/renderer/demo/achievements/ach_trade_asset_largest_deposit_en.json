@@ -13,7 +13,7 @@
     "hole_x": 0.501,
     "hole_y": 0.498,
     "hole_r": 0.193,
-    "mask": "round",
+    "base_color": "#030202",
     "frame_size": 860,
     "frame_top": 40,
     "shade_from": 58,

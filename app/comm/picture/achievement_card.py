@@ -17,9 +17,8 @@ class WreathStyle(NamedTuple):
     hole_x: float
     hole_y: float
     hole_r: float
-    # 'round': a soft round fade around the hole; 'edges': only the picture edges fade,
-    # for a background whose ornament spreads far from the ring
-    mask: str = 'round'
+    # the color at the picture edges: the card takes it, so the picture flows into the card without a seam
+    base: str = '#0a1015'
     # where the background sits on the card, px; a frame with something hanging under the ring
     # goes smaller and higher, so it stays above the title
     size: int = 860
@@ -30,21 +29,23 @@ class WreathStyle(NamedTuple):
 # Holes were measured on the pictures: rays cast from the middle stop where it gets brighter than the middle
 # by 30, a circle is fitted to the stops
 BACKGROUND_STYLE = {
-    BG_LIQUIDITY: WreathStyle('#3ee6c8', 0.501, 0.461, 0.162),
-    BG_NETWORK: WreathStyle('#6fe8cf', 0.500, 0.471, 0.140),  # inside the warm halo, clear of the chevron
-    BG_SWAPS: WreathStyle('#4ffffa', 0.502, 0.449, 0.205),
-    BG_USERS: WreathStyle('#7cc7ff', 0.508, 0.443, 0.193),  # dark twigs fool the rays: picked by eye
-    BG_RUNE: WreathStyle('#2ee6b8', 0.499, 0.496, 0.190),
+    BG_LIQUIDITY: WreathStyle('#3ee6c8', 0.501, 0.461, 0.162, base='#01040c'),
+    # inside the warm halo, clear of the chevron
+    BG_NETWORK: WreathStyle('#6fe8cf', 0.500, 0.471, 0.140, base='#04060e'),
+    BG_SWAPS: WreathStyle('#4ffffa', 0.502, 0.449, 0.205, base='#030708'),
+    # dark twigs fool the rays: picked by eye
+    BG_USERS: WreathStyle('#7cc7ff', 0.508, 0.443, 0.193, base='#060505'),
+    BG_RUNE: WreathStyle('#2ee6b8', 0.499, 0.496, 0.190, base='#080d16'),
     # the tankards and the clasped hands reach into the opening: these holes are set by eye above them
-    BG_REVENUE: WreathStyle('#e8c45a', 0.499, 0.392, 0.170, size=790, top=36, shade_from=70),
-    BG_AFFILIATE: WreathStyle('#f0c070', 0.498, 0.330, 0.165, size=820, top=64, shade_from=70),
-    BG_BURN: WreathStyle('#ffb347', 0.493, 0.466, 0.175),
-    BG_VAULT: WreathStyle('#ffcf7a', 0.512, 0.436, 0.186),
-    BG_STABLES: WreathStyle('#8ff0c0', 0.501, 0.472, 0.225, size=770, top=34, shade_from=72),
-    BG_TRADE: WreathStyle('#ff7a6b', 0.501, 0.498, 0.193),
-    BG_BTC: WreathStyle('#ffb84d', 0.499, 0.494, 0.189),
-    BG_ETH: WreathStyle('#b4a6ff', 0.500, 0.495, 0.188),
-    BG_ANNIVERSARY: WreathStyle('#f4e18d', 0.499, 0.495, 0.187, mask='edges'),
+    BG_REVENUE: WreathStyle('#e8c45a', 0.499, 0.392, 0.170, size=790, top=36, shade_from=70, base='#010a0b'),
+    BG_AFFILIATE: WreathStyle('#f0c070', 0.498, 0.330, 0.165, size=820, top=64, shade_from=70, base='#080805'),
+    BG_BURN: WreathStyle('#ffb347', 0.493, 0.466, 0.175, base='#0c0c0e'),
+    BG_VAULT: WreathStyle('#ffcf7a', 0.512, 0.436, 0.186, base='#06080e'),
+    BG_STABLES: WreathStyle('#8ff0c0', 0.501, 0.472, 0.225, size=770, top=34, shade_from=72, base='#090d0e'),
+    BG_TRADE: WreathStyle('#ff7a6b', 0.501, 0.498, 0.193, base='#030202'),
+    BG_BTC: WreathStyle('#ffb84d', 0.499, 0.494, 0.189, base='#080c12'),
+    BG_ETH: WreathStyle('#b4a6ff', 0.500, 0.495, 0.188, base='#090d16'),
+    BG_ANNIVERSARY: WreathStyle('#f4e18d', 0.499, 0.495, 0.187, base='#090d16'),
 }
 
 # sprite fonts in data/renderer/static/img/achievement/<font>/
@@ -113,7 +114,7 @@ def build_achievement_card(a: Achievement, loc: AchievementsLocalizationBase) ->
         'hole_x': style.hole_x,
         'hole_y': style.hole_y,
         'hole_r': style.hole_r,
-        'mask': style.mask,
+        'base_color': style.base,
         'frame_size': style.size,
         'frame_top': style.top,
         'shade_from': style.shade_from,

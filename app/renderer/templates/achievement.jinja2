@@ -6,6 +6,9 @@
     {% set bg_size = frame_size | default(860) %}
     {% set bg_top = frame_top | default(40) %}
     {% set shade = shade_from | default(58) %}
+    ## the card continues the background picture: its color is the one at the picture edges
+    {% set base = base_color | default('#0a1015') %}
+    {% set fade = 10 %}
     ## the wreath hole on the card, px
     {% set hole_cx = 512 + (hole_x - 0.5) * bg_size %}
     {% set hole_cy = bg_top + hole_y * bg_size %}
@@ -20,7 +23,7 @@
 
         .container.bg {
             background: radial-gradient(circle at {{ (hole_cx / 10.24) | round(1) }}% {{ (hole_cy / 10.24) | round(1) }}%, var(--tint-faint), transparent 55%),
-            #0a1015;
+            {{ base }};
         }
 
         .ach-bg {
@@ -30,35 +33,19 @@
             width: {{ bg_size }}px;
             height: {{ bg_size }}px;
             transform: translateX(-50%);
-        }
-
-        /* soft round edge: the square backgrounds have different base colors;
-           the picture edges fade too, for an ornament that reaches them (the arms of the affiliate frame) */
-        .ach-bg.mask-round {
-            -webkit-mask-image: radial-gradient(circle at {{ (hole_x * 100) | round(1) }}% {{ (hole_y * 100) | round(1) }}%, #000 52%, transparent 71%),
-            linear-gradient(to right, transparent, #000 12%, #000 88%, transparent),
-            linear-gradient(to bottom, transparent, #000 6%, #000 94%, transparent);
+            /* only the picture edges fade, into the card color taken from them: the picture flows into the card */
+            -webkit-mask-image: linear-gradient(to right, transparent, #000 {{ fade }}%, #000 {{ 100 - fade }}%, transparent),
+            linear-gradient(to bottom, transparent, #000 {{ fade }}%, #000 {{ 100 - fade }}%, transparent);
             -webkit-mask-composite: source-in;
-            mask-image: radial-gradient(circle at {{ (hole_x * 100) | round(1) }}% {{ (hole_y * 100) | round(1) }}%, #000 52%, transparent 71%),
-            linear-gradient(to right, transparent, #000 12%, #000 88%, transparent),
-            linear-gradient(to bottom, transparent, #000 6%, #000 94%, transparent);
-            mask-composite: intersect;
-        }
-
-        /* only the picture edges fade: the ornament may reach far from the ring */
-        .ach-bg.mask-edges {
-            -webkit-mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent),
-            linear-gradient(to bottom, transparent, #000 2%, #000 96%, transparent);
-            -webkit-mask-composite: source-in;
-            mask-image: linear-gradient(to right, transparent, #000 4%, #000 96%, transparent),
-            linear-gradient(to bottom, transparent, #000 2%, #000 96%, transparent);
+            mask-image: linear-gradient(to right, transparent, #000 {{ fade }}%, #000 {{ 100 - fade }}%, transparent),
+            linear-gradient(to bottom, transparent, #000 {{ fade }}%, #000 {{ 100 - fade }}%, transparent);
             mask-composite: intersect;
         }
 
         .ach-shade {
             position: absolute;
             inset: 0;
-            background: linear-gradient(to bottom, transparent {{ shade }}%, rgba(10, 16, 21, 0.82) {{ shade + 18 }}%, #0a1015 {{ shade + 32 }}%);
+            background: linear-gradient(to bottom, transparent {{ shade }}%, color-mix(in srgb, {{ base }} 82%, transparent) {{ shade + 18 }}%, {{ base }} {{ shade + 32 }}%);
         }
 
         .ach-brand {
@@ -260,7 +247,7 @@
         }
     </style>
 
-    <img class="ach-bg mask-{{ mask | default('round') }}" src="renderer/static/img/achievement/bg/{{ background }}" alt="">
+    <img class="ach-bg" src="renderer/static/img/achievement/bg/{{ background }}" alt="">
     <div class="ach-shade"></div>
 
     <div class="ach-brand">

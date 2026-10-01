@@ -43,6 +43,20 @@ def test_every_background_exists():
         assert os.path.isfile(f'{STATIC_ACH}/bg/{bg}'), bg
 
 
+def test_every_background_base_matches_its_edges():
+    # the card takes the base color, so a wrong one shows as a seam around the picture
+    import numpy as np
+    from PIL import Image
+
+    for bg, style in BACKGROUND_STYLE.items():
+        a = np.asarray(Image.open(f'{STATIC_ACH}/bg/{bg}').convert('RGB'), dtype=float)
+        border = np.concatenate([a[:24].reshape(-1, 3), a[-24:].reshape(-1, 3),
+                                 a[:, :24].reshape(-1, 3), a[:, -24:].reshape(-1, 3)])
+        edge = np.median(border, 0)
+        base = np.array([int(style.base[i:i + 2], 16) for i in (1, 3, 5)])
+        assert np.abs(edge - base).max() <= 3, (bg, style.base, edge)
+
+
 def test_every_glyph_exists():
     for file in RUNIC_GLYPHS.values():
         assert os.path.isfile(f'{STATIC_ACH}/runic/{file}'), file
