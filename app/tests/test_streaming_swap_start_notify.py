@@ -1,3 +1,4 @@
+import asyncio
 from types import SimpleNamespace
 
 import pytest
@@ -208,3 +209,55 @@ async def test_observed_quorum_swap_is_ignored_when_seen_again_in_later_blocks()
     assert repeated_swaps == []
 
 
+
+
+@pytest.mark.asyncio
+async def test_two_detectors_do_not_hide_observed_swaps_from_each_other():
+    # SwapExtractorBlock has a detector of its own and gets every block first
+    deps = make_deps(max_age='2d', last_block=26_101_917)
+    extractor_detector = SwapStartDetectorFromBlock(deps)
+    alert_detector = SwapStartDetectorFromBlock(deps, dedup_component=SwapStartDetectorFromBlock.ALERT_DEDUP_COMPONENT)
+    ph = make_price_holder()
+
+    first_block = make_block(make_observed_quorum_native_tx_from_sample(), block_no=26_101_907)
+    repeated_block = make_block(make_observed_quorum_native_tx_from_sample(), block_no=26_101_917)
+
+    assert len(await extractor_detector.detect_swaps(first_block, ph)) == 1
+    assert len(await alert_detector.detect_swaps(first_block, ph)) == 1
+
+    # ...and each of them still ignores the tx observed again in a later block
+    assert await extractor_detector.detect_swaps(repeated_block, ph) == []
+    assert await alert_detector.detect_swaps(repeated_block, ph) == []
+
+
+class Collector:
+    def __init__(self):
+        self.events = []
+
+    async def on_data(self, sender, data):
+        self.events.append(data)
+
+
+@pytest.mark.asyncio
+async def test_swap_start_is_announced_once_even_from_two_sources_at_once():
+    deps = make_deps(max_age='0')
+    notifier = StreamingSwapStartTxNotifier(deps)
+    collector = Collector()
+    notifier.add_subscriber(collector)
+
+    async def slow_load(event):
+        await asyncio.sleep(0.01)  # clout and quote requests
+        return event
+
+    notifier.load_extra_tx_information = slow_load
+
+    # the block detector and the streaming swap list report the same swap at the same moment
+    await asyncio.gather(
+        notifier.on_data(None, make_event(tx_id='same-tx')),
+        notifier.on_data(None, make_event(tx_id='same-tx')),
+    )
+    await notifier.on_data(None, make_event(tx_id='same-tx'))  # and once again later
+    assert [e.tx_id for e in collector.events] == ['same-tx']
+
+    await notifier.on_data(None, make_event(tx_id='other-tx'))
+    assert [e.tx_id for e in collector.events] == ['same-tx', 'other-tx']

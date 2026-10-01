@@ -26,10 +26,24 @@ def twitter_text_length(text):
 
 
 def twitter_cut_text(text, max_length):
-    text = twitter_replace_url_example(text)
+    # a link counts as a t.co one, but it is the real link that stays in the text;
+    # a link that does not fit is dropped as a whole, never cut in the middle
+    result, count, pos = '', 0, 0
+    for url in REGEX_URL.finditer(text):
+        for c in text[pos:url.start()]:
+            delta = twitter_glyph_length(c)
+            if count + delta > max_length:
+                return result
+            count += delta
+            result += c
 
-    result, count = '', 0
-    for c in text:
+        if count + TWITTER_T_CO_LENGTH > max_length:
+            return result
+        count += TWITTER_T_CO_LENGTH
+        result += url.group(0)
+        pos = url.end()
+
+    for c in text[pos:]:
         delta = twitter_glyph_length(c)
         if count + delta > max_length:
             break

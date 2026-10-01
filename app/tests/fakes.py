@@ -36,6 +36,13 @@ class FakeRedis:
             return 1
         raise TypeError('Unsupported hset call')
 
+    async def hsetnx(self, name, field, value):
+        bucket = self.hashes[name]
+        if field in bucket:
+            return 0
+        bucket[field] = value
+        return 1
+
     async def hget(self, name, field):
         return self.hashes.get(name, {}).get(field)
 
