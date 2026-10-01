@@ -66,9 +66,6 @@ class AchievementName:
     # trade assets
     TRADE_BALANCE_TOTAL_USD = 'trade_balance_total_usd'
     TRADE_ASSET_HOLDERS_COUNT = 'trade_asset_holders_count'
-    TRADE_ASSET_SWAPS_COUNT = 'trade_asset_swaps_count'
-    TRADE_ASSET_SWAPS_VOLUME = 'trade_asset_swaps_volume'
-    TRADE_ASSET_MOVE_COUNT = 'trade_asset_move_count'
     TRADE_ASSET_LARGEST_DEPOSIT = 'trade_asset_largest_deposit'
 
     @classmethod
@@ -270,10 +267,6 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade account balance', prefix='$', thresholds=10_000_000,
           background=BG_TRADE),
     ADesc(A.TRADE_ASSET_HOLDERS_COUNT, 'Trade asset holders', thresholds=100, background=BG_TRADE),
-    ADesc(A.TRADE_ASSET_SWAPS_COUNT, 'Trade asset swaps', thresholds=100_000, background=BG_TRADE),
-    ADesc(A.TRADE_ASSET_MOVE_COUNT, 'Trade account deposits & withdrawals', thresholds=10_000, background=BG_TRADE),
     ADesc(A.TRADE_ASSET_LARGEST_DEPOSIT, 'Largest trade asset deposit', prefix='$', thresholds=100_000,
-          background=BG_TRADE),
-    ADesc(A.TRADE_ASSET_SWAPS_VOLUME, 'Trade asset swap volume', prefix='$', thresholds=1_000_000,
           background=BG_TRADE),
 ]}

@@ -48,9 +48,6 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
 
         A.TRADE_BALANCE_TOTAL_USD: "Общий баланс торговых счетов",
         A.TRADE_ASSET_HOLDERS_COUNT: "Держателей торговых активов",
-        A.TRADE_ASSET_SWAPS_COUNT: "Свопов торговых активов",
-        A.TRADE_ASSET_SWAPS_VOLUME: "Объем свопов торговых активов",
-        A.TRADE_ASSET_MOVE_COUNT: "Операций торговых счетов",
         A.TRADE_ASSET_LARGEST_DEPOSIT: "Самый крупный депозит",
     }
 
