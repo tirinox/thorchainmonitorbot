@@ -13,6 +13,7 @@
     "hole_x": 0.501,
     "hole_y": 0.463,
     "hole_r": 0.165,
+    "mask": "round",
     "number_font": "runic",
     "number_label": "Более чем",
     "number_text": "$5M",

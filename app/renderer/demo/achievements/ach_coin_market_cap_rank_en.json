@@ -13,6 +13,7 @@
     "hole_x": 0.487,
     "hole_y": 0.456,
     "hole_r": 0.162,
+    "mask": "round",
     "number_font": "runic",
     "number_label": "Top",
     "number_text": "30",

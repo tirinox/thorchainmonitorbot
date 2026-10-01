@@ -13,6 +13,7 @@
     "hole_x": 0.503,
     "hole_y": 0.448,
     "hole_r": 0.202,
+    "mask": "round",
     "number_font": "runic",
     "number_label": "Over",
     "number_text": "$20M",

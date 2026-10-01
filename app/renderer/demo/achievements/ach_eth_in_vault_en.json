@@ -13,6 +13,7 @@
     "hole_x": 0.5,
     "hole_y": 0.495,
     "hole_r": 0.188,
+    "mask": "round",
     "number_font": "runic",
     "number_label": "Over",
     "number_text": "20K",
