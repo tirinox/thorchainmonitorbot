@@ -59,6 +59,8 @@ class AchievementsTracker(WithLogger):
         so an achievement held back by the cooldown is announced on a later feed instead of being lost.
         If the metric was not fed for longer than stale_after (the bot or its source was down),
         a crossed milestone is saved silently, so a restart does not flood the channels with old news.
+        An always_fresh metric (the anniversary) is fed only while it is news: it is announced
+        after any pause and even on its first feed.
         """
         if not event:
             self.logger.error(f'No event!')
@@ -79,7 +81,12 @@ class AchievementsTracker(WithLogger):
 
         current_milestone = event.get_previous_milestone()
 
+        always_fresh = event.descriptor.always_fresh
+
         record = await self.get_achievement_record(name, event.specialization)
+        if record is None and always_fresh:
+            # no record to compare with, but it is news anyway
+            record = Achievement(str(name), 0, specialization=event.specialization, descending=descending)
         if record is None:
             # first time, just write and return
             record = Achievement(
@@ -94,7 +101,7 @@ class AchievementsTracker(WithLogger):
             return
 
         crossed = self.is_crossed(record, event)
-        stale = now - record.last_seen_ts > self.stale_after
+        stale = not always_fresh and now - record.last_seen_ts > self.stale_after
 
         if not crossed:
             if now - record.last_seen_ts > self.LAST_SEEN_RESOLUTION:
