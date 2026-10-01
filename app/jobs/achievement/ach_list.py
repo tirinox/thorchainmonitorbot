@@ -66,9 +66,6 @@ class AchievementName:
     # trade assets
     TRADE_BALANCE_TOTAL_USD = 'trade_balance_total_usd'
     TRADE_ASSET_HOLDERS_COUNT = 'trade_asset_holders_count'
-    TRADE_ASSET_SWAPS_COUNT = 'trade_asset_swaps_count'
-    TRADE_ASSET_SWAPS_VOLUME = 'trade_asset_swaps_volume'
-    TRADE_ASSET_MOVE_COUNT = 'trade_asset_move_count'
     TRADE_ASSET_LARGEST_DEPOSIT = 'trade_asset_largest_deposit'
 
     @classmethod
@@ -78,6 +75,11 @@ class AchievementName:
 
 
 A = AchievementName
+
+# records of a single event: a feed carries the largest one of a batch, not a current level of anything
+SINGLE_EVENT_KEYS = {
+    A.MAX_SWAP_AMOUNT_USD, A.MAX_ADD_AMOUNT_USD, A.MAX_ADD_AMOUNT_USD_PER_POOL, A.TRADE_ASSET_LARGEST_DEPOSIT,
+}
 
 MILESTONES_NORMAL = Milestones()
 MILESTONES_EVERY_DIGIT = Milestones(Milestones.EVERY_DIGIT_PROGRESSION)
@@ -100,6 +102,7 @@ class Achievement(NamedTuple):
     specialization: str = ''
     descending: bool = False  # if True, then we need to check if value is less than milestone
     last_seen_ts: float = 0  # the last time this metric was fed to the tracker; 0 for records saved before it
+    silent: bool = False  # the milestone was saved without a message (a catch-up after an outage)
 
     @property
     def has_previous(self):
@@ -206,7 +209,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.TOTAL_POOLS, 'Total pools', more_than=False),
     ADesc(A.TOTAL_ACTIVE_POOLS, 'Active pools', more_than=False),
 
-    ADesc(A.SWAP_VOLUME_TOTAL_RUNE, 'Total swap volume', postfix=POSTFIX_RUNE, background=BG_SWAPS),
+    ADesc(A.SWAP_VOLUME_TOTAL_RUNE, 'Total swap volume', postfix=POSTFIX_RUNE, background=BG_TRADE),
 
     ADesc(A.MAX_SWAP_AMOUNT_USD, 'Largest single swap', prefix='$',
           thresholds=1_329_208, background=BG_SWAPS),
@@ -260,7 +263,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.STABLES_IN_VAULT, 'Stablecoins in vaults', prefix='$', background=BG_STABLES),
 
     ADesc(A.TOTAL_VALUE_LOCKED, 'Total value locked', prefix='$', thresholds=356_700_000, background=BG_VAULT),
-    ADesc(A.WEEKLY_SWAP_VOLUME, 'Weekly swap volume', prefix='$', thresholds=300_600_000, background=BG_SWAPS),
+    ADesc(A.WEEKLY_SWAP_VOLUME, 'Weekly swap volume', prefix='$', thresholds=300_600_000, background=BG_TRADE),
     ADesc(A.WEEKLY_PROTOCOL_REVENUE_USD, 'Weekly protocol revenue', prefix='$', thresholds=867_900,
           background=BG_REVENUE),
     ADesc(A.WEEKLY_AFFILIATE_REVENUE_USD, 'Weekly affiliate revenue', prefix='$', thresholds=60_300,
@@ -270,10 +273,6 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade account balance', prefix='$', thresholds=10_000_000,
           background=BG_TRADE),
     ADesc(A.TRADE_ASSET_HOLDERS_COUNT, 'Trade asset holders', thresholds=100, background=BG_TRADE),
-    ADesc(A.TRADE_ASSET_SWAPS_COUNT, 'Trade asset swaps', thresholds=100_000, background=BG_TRADE),
-    ADesc(A.TRADE_ASSET_MOVE_COUNT, 'Trade account deposits & withdrawals', thresholds=10_000, background=BG_TRADE),
     ADesc(A.TRADE_ASSET_LARGEST_DEPOSIT, 'Largest trade asset deposit', prefix='$', thresholds=100_000,
-          background=BG_TRADE),
-    ADesc(A.TRADE_ASSET_SWAPS_VOLUME, 'Trade asset swap volume', prefix='$', thresholds=1_000_000,
           background=BG_TRADE),
 ]}

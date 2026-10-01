@@ -88,6 +88,13 @@ export const api = {
     runs: () => request('GET', '/runs'),
     reloadScheduler: () => request('POST', '/scheduler/reload'),
 
+    achievements: () => request('GET', '/achievements'),
+    // {key, specialization, mode: 'next' | 'last' | 'value', value}; answers with a preview (see `preview`) at once
+    previewAchievement: (body) => request('POST', '/achievements/preview', {body}),
+    // stale: true => its next milestone is saved without a post; false => it is posted
+    setAchievementStale: (key, specialization, stale) =>
+        request('POST', '/achievements/stale', {body: {key, specialization, stale}}),
+
     logs: (filters) => request('GET', '/logs', {query: filters}),
 
     summary: () => request('GET', '/summary'),

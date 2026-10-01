@@ -1,20 +1,26 @@
 import json
 from typing import Optional
 
-from lib.date_utils import now_ts, HOUR, DAY
+from lib.date_utils import now_ts, MINUTE, HOUR, DAY
 from lib.db import DB
 from lib.logs import WithLogger
-from .ach_list import Achievement
+from .ach_list import Achievement, SINGLE_EVENT_KEYS
 
 
 class AchievementsTracker(WithLogger):
     # last_seen_ts is rewritten no more often than this, not on every block
     LAST_SEEN_RESOLUTION = HOUR
 
+    # The last fed value of every metric, for the dashboard: a record keeps only the value at its milestone.
+    # A hash of "name" or "name:specialization" => {"value", "ts", "peak", "peak_ts"}
+    LIVE_KEY = 'AchievementsLive'
+    LIVE_RESOLUTION = MINUTE
+
     def __init__(self, db: DB, stale_after: float = 14 * DAY):
         super().__init__()
         self.db = db
         self.stale_after = stale_after
+        self._live = {}
 
     @staticmethod
     def key(name, specialization=''):
@@ -24,13 +30,19 @@ class AchievementsTracker(WithLogger):
             return f'Achievements:{name}'
 
     @staticmethod
-    def meet_threshold(a: Achievement):
-        thresholds = a.descriptor.thresholds
+    def live_field(name, specialization=''):
+        return f'{name}:{specialization}' if specialization else str(name)
 
+    @staticmethod
+    def get_threshold(a: Achievement):
+        thresholds = a.descriptor.thresholds
         if a.specialization and isinstance(thresholds, dict):
-            threshold = thresholds.get(a.specialization)
-        else:
-            threshold = thresholds
+            return thresholds.get(a.specialization)
+        return thresholds
+
+    @classmethod
+    def meet_threshold(cls, a: Achievement):
+        threshold = cls.get_threshold(a)
 
         if threshold is None:
             return True
@@ -59,11 +71,13 @@ class AchievementsTracker(WithLogger):
             self.logger.debug(f'Achievement {name} has invalid ({value}) value! Skip it.')
             return
 
+        now = now_ts()
+        await self._track_live_value(event, now)
+
         if not self.meet_threshold(event):
             return
 
         current_milestone = event.get_previous_milestone()
-        now = now_ts()
 
         record = await self.get_achievement_record(name, event.specialization)
         if record is None:
@@ -79,8 +93,7 @@ class AchievementsTracker(WithLogger):
             self.logger.info(f'New achievement record created {record}')
             return
 
-        crossed = (not descending and current_milestone > record.value) or (
-                descending and current_milestone < record.value)
+        crossed = self.is_crossed(record, event)
         stale = now - record.last_seen_ts > self.stale_after
 
         if not crossed:
@@ -98,6 +111,7 @@ class AchievementsTracker(WithLogger):
             last_seen_ts=now,
         )
         if stale:
+            new_record = new_record._replace(silent=True)
             await self.set_achievement_record(new_record)
             self.logger.warning(f'Achievement {name} was not fed since {record.last_seen_ts}: '
                                 f'{new_record} saved silently')
@@ -105,6 +119,44 @@ class AchievementsTracker(WithLogger):
 
         self.logger.info(f'Achievement record updated {new_record}')
         return new_record
+
+    @staticmethod
+    def is_crossed(record: Achievement, event: Achievement) -> bool:
+        """Has the value of the event passed a milestone the record has not reached yet?"""
+        milestone = event.get_previous_milestone()
+        return milestone < record.value if event.descending else milestone > record.value
+
+    async def _track_live_value(self, event: Achievement, now: float):
+        # it only feeds the dashboard, so it must never get in the way of an announcement
+        try:
+            field = self.live_field(event.key, event.specialization)
+            live = self._live.get(field)
+            if live is None:
+                # the first feed after a start: pick up the peak and write right away
+                live = self._live[field] = {**(await self.get_live_value(event.key, event.specialization) or {}),
+                                            'ts': 0}
+
+            value, peak = int(event.value), live.get('peak')
+            is_peak = peak is None or (value < peak if event.descending else value > peak)
+            if is_peak:
+                live.update(peak=value, peak_ts=now)
+
+            # a counter sets a new peak on every feed, it can wait; a record event will not come again
+            urgent = is_peak and event.key in SINGLE_EVENT_KEYS
+            if not urgent and now - live['ts'] < self.LIVE_RESOLUTION:
+                return
+
+            live.update(value=value, ts=now)
+            await self.db.redis.hset(self.LIVE_KEY, field, json.dumps(live))
+        except Exception as e:
+            self.logger.warning(f'Failed to save the live value of {event.key!r}: {e!r}')
+
+    async def get_live_value(self, key, specialization='') -> Optional[dict]:
+        data = await self.db.redis.hget(self.LIVE_KEY, self.live_field(key, specialization))
+        try:
+            return json.loads(data)
+        except (TypeError, json.JSONDecodeError):
+            return None
 
     async def get_achievement_record(self, key, specialization) -> Optional[Achievement]:
         key = self.key(key, specialization)

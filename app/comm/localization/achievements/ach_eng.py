@@ -45,9 +45,6 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
 
         A.TRADE_BALANCE_TOTAL_USD: "Total trade account balance",
         A.TRADE_ASSET_HOLDERS_COUNT: "Trade asset holders",
-        A.TRADE_ASSET_SWAPS_COUNT: "Trade asset swaps",
-        A.TRADE_ASSET_SWAPS_VOLUME: "Trade asset swap volume",
-        A.TRADE_ASSET_MOVE_COUNT: "Trade account deposits & withdrawals",
         A.TRADE_ASSET_LARGEST_DEPOSIT: "Largest trade asset deposit",
     }
 

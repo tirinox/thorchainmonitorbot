@@ -153,3 +153,53 @@ async def test_weekly_achievements_are_not_fed_in_preview():
     with run_context(RunMode.NORMAL):
         await executor._feed_achievements(None, 'weekly')
     assert fed == ['weekly']
+
+
+# ---------- tracker: what the dashboard reads ----------
+
+@pytest.mark.asyncio
+async def test_tracker_marks_silent_catch_up(tracker):
+    await _put(tracker, value=1500, milestone=1000, timestamp=NOW - 300 * DAY, last_seen_ts=NOW - 20 * DAY)
+    await tracker.feed_data(Achievement(A.DAU, 2100))
+    assert (await _stored(tracker)).silent
+
+    # an announced one is not silent
+    ev = await tracker.feed_data(Achievement(A.DAU, 5100))
+    assert ev.milestone == 5000 and not ev.silent
+
+
+@pytest.mark.asyncio
+async def test_tracker_saves_live_value_even_below_threshold(tracker, monkeypatch):
+    import jobs.achievement.tracker as tracker_mod
+
+    assert await tracker.feed_data(Achievement(A.DAU, 250)) is None  # the cut-off is 300
+    assert await _stored(tracker) is None
+    assert await tracker.get_live_value(A.DAU) == {'value': 250, 'ts': NOW, 'peak': 250, 'peak_ts': NOW}
+
+    # not rewritten on every feed
+    await tracker.feed_data(Achievement(A.DAU, 260))
+    assert (await tracker.get_live_value(A.DAU))['value'] == 250
+
+    later = NOW + 2 * AchievementsTracker.LIVE_RESOLUTION
+    monkeypatch.setattr(tracker_mod, 'now_ts', lambda: later)
+    await tracker.feed_data(Achievement(A.DAU, 240))
+    assert await tracker.get_live_value(A.DAU) == {'value': 240, 'ts': later, 'peak': 260, 'peak_ts': NOW}
+
+
+@pytest.mark.asyncio
+async def test_tracker_saves_a_record_event_at_once(tracker):
+    # the largest swap of a batch will not be fed again, so its peak cannot wait for the next write
+    await tracker.feed_data(Achievement(A.MAX_SWAP_AMOUNT_USD, 2_000_000))
+    await tracker.feed_data(Achievement(A.MAX_SWAP_AMOUNT_USD, 9_000_000))
+    await tracker.feed_data(Achievement(A.MAX_SWAP_AMOUNT_USD, 10_000))
+    live = await tracker.get_live_value(A.MAX_SWAP_AMOUNT_USD)
+    assert (live['value'], live['peak']) == (9_000_000, 9_000_000)
+
+
+@pytest.mark.asyncio
+async def test_tracker_live_peak_survives_restart(tracker):
+    await tracker.feed_data(Achievement(A.COIN_MARKET_CAP_RANK, 30, descending=True))
+    restarted = AchievementsTracker(tracker.db)
+    await restarted.feed_data(Achievement(A.COIN_MARKET_CAP_RANK, 35, descending=True))
+    live = await restarted.get_live_value(A.COIN_MARKET_CAP_RANK)
+    assert (live['value'], live['peak']) == (35, 30)  # the best rank is the lowest

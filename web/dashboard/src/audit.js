@@ -12,6 +12,8 @@ const ACTIONS = {
     'scheduler.apply': {label: 'Applied config', icon: 'pi pi-check-circle', severity: 'info'},
     'flag.set': {label: 'Changed flag', icon: 'pi pi-flag', severity: 'info'},
     'flag.delete': {label: 'Deleted flag', icon: 'pi pi-trash', severity: 'danger'},
+    'achievement.stale': {label: 'Marked achievement stale', icon: 'pi pi-bell-slash', severity: 'warn'},
+    'achievement.fresh': {label: 'Cleared stale achievement', icon: 'pi pi-bell', severity: 'success'},
 }
 
 export function actionInfo(action) {

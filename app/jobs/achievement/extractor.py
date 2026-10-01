@@ -182,11 +182,6 @@ class AchievementsExtractor(WithLogger):
         return [
             Achievement(A.TRADE_ASSET_HOLDERS_COUNT, data.curr.vaults.total_traders),
             Achievement(A.TRADE_BALANCE_TOTAL_USD, int(data.curr.vaults.total_usd)),
-
-            # todo more
-            # Achievement(A.TRADE_ASSET_SWAPS_VOLUME, int()),
-            # Achievement(A.TRADE_ASSET_SWAPS_COUNT, int()),
-            # Achievement(A.TRADE_ASSET_MOVE_COUNT, int(),
         ]
 
     @staticmethod

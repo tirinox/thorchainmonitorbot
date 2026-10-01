@@ -47,6 +47,7 @@ function targetLink(entry) {
   if (!entry.target) return null
   if (entry.action.startsWith('flag.')) return {name: 'flags', query: {q: entry.target}}
   if (entry.action.startsWith('job.') && entry.action !== 'job.delete') return {name: 'jobs'}
+  if (entry.action.startsWith('achievement.')) return {name: 'achievements', query: {q: entry.target}}
   return null
 }
 
