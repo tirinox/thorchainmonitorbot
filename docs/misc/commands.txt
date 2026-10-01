@@ -17,5 +17,8 @@ pol - Protocol owned liquidity
 tradeacc - Trade account info
 burnedrune - Burned Rune info
 secured - Secured asset info
-limitswaps - Swap limits info
+limitswaps - Limit swap stats
+rapid - Rapid swap stats
+tcy - TCY info
 applayer - App layer info
+help - Help
