@@ -137,8 +137,8 @@ BG_SWAPS = 'nn_wreath_swaps.png'
 BG_USERS = 'nn_wreath_users.png'
 BG_RUNE = 'nn_wreath_rune.png'
 BG_REVENUE = 'nn_wreath_revenue.png'
-BG_BURN = 'nn_wreath_burn.png'  # kept for a burnt RUNE achievement, none uses it yet
-BG_VAULT = 'nn_wreath_saver.png'
+BG_BURN = 'nn_wreath_burnt.png'  # kept for a burnt RUNE achievement, none uses it yet
+BG_VAULT = 'nn_wreath_vault.png'
 BG_BTC = 'nn_wreath_btc_vault_2.png'
 BG_ETH = 'nn_wreath_eth_vault_2.png'
 BG_ANNIVERSARY = 'nn_wreath_ann_3.png'
@@ -255,7 +255,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.ETH_IN_VAULT, 'Ethereum in vaults', background=BG_ETH),
     ADesc(A.STABLES_IN_VAULT, 'Stablecoins in vaults', background=BG_VAULT),
 
-    ADesc(A.TOTAL_VALUE_LOCKED, 'Total value locked', prefix='$', thresholds=356_700_000),
+    ADesc(A.TOTAL_VALUE_LOCKED, 'Total value locked', prefix='$', thresholds=356_700_000, background=BG_VAULT),
     ADesc(A.WEEKLY_SWAP_VOLUME, 'Weekly swap volume', prefix='$', thresholds=300_600_000, background=BG_SWAPS),
     ADesc(A.WEEKLY_PROTOCOL_REVENUE_USD, 'Weekly protocol revenue', prefix='$', thresholds=867_900,
           background=BG_REVENUE),
@@ -263,11 +263,13 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
           background=BG_REVENUE),
 
     # trade assets
-    ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade account balance', prefix='$', thresholds=10_000_000),
+    ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade account balance', prefix='$', thresholds=10_000_000,
+          background=BG_VAULT),
     ADesc(A.TRADE_ASSET_HOLDERS_COUNT, 'Trade asset holders', thresholds=100, background=BG_USERS),
     ADesc(A.TRADE_ASSET_SWAPS_COUNT, 'Trade asset swaps', thresholds=100_000, background=BG_SWAPS),
     ADesc(A.TRADE_ASSET_MOVE_COUNT, 'Trade account deposits & withdrawals', thresholds=10_000, background=BG_SWAPS),
-    ADesc(A.TRADE_ASSET_LARGEST_DEPOSIT, 'Largest trade asset deposit', prefix='$', thresholds=100_000),
+    ADesc(A.TRADE_ASSET_LARGEST_DEPOSIT, 'Largest trade asset deposit', prefix='$', thresholds=100_000,
+          background=BG_VAULT),
     ADesc(A.TRADE_ASSET_SWAPS_VOLUME, 'Trade asset swap volume', prefix='$', thresholds=1_000_000,
           background=BG_SWAPS),
 ]}

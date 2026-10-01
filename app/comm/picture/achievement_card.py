@@ -30,8 +30,8 @@ BACKGROUND_STYLE = {
     BG_USERS: WreathStyle('#7cc7ff', 0.508, 0.443, 0.193),  # dark twigs fool the rays: picked by eye
     BG_RUNE: WreathStyle('#2ee6b8', 0.499, 0.496, 0.190),
     BG_REVENUE: WreathStyle('#e8c45a', 0.499, 0.445, 0.216),
-    BG_BURN: WreathStyle('#ffb347', 0.487, 0.456, 0.162),
-    BG_VAULT: WreathStyle('#ffcf7a', 0.511, 0.436, 0.188),
+    BG_BURN: WreathStyle('#ffb347', 0.493, 0.466, 0.175),
+    BG_VAULT: WreathStyle('#ffcf7a', 0.512, 0.436, 0.186),
     BG_BTC: WreathStyle('#ffb84d', 0.499, 0.494, 0.189),
     BG_ETH: WreathStyle('#b4a6ff', 0.500, 0.495, 0.188),
     BG_ANNIVERSARY: WreathStyle('#f4e18d', 0.499, 0.495, 0.187, mask='edges'),
