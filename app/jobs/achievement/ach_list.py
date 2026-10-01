@@ -178,19 +178,19 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
 
     ADesc(A.DAU, 'Daily active users', thresholds=300, background=BG_USERS),
     ADesc(A.MAU, 'Monthly active users', thresholds=6500, background=BG_USERS),
-    ADesc(A.WALLET_COUNT, 'Number of wallets', milestone_scale=MILESTONES_EVERY_DIGIT,
+    ADesc(A.WALLET_COUNT, 'Wallets', milestone_scale=MILESTONES_EVERY_DIGIT,
           thresholds=61000, background=BG_USERS),
-    ADesc(A.SWAP_COUNT_TOTAL, 'Total swap count', background=BG_SWAPS),
-    ADesc(A.SWAP_COUNT_24H, '24h swap count', background=BG_SWAPS),
-    ADesc(A.SWAP_COUNT_30D, 'Monthly swap count', background=BG_SWAPS),
+    ADesc(A.SWAP_COUNT_TOTAL, 'Total swaps', background=BG_SWAPS),
+    ADesc(A.SWAP_COUNT_24H, 'Swaps in 24h', background=BG_SWAPS),
+    ADesc(A.SWAP_COUNT_30D, 'Monthly swaps', background=BG_SWAPS),
 
-    ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Times liquidity added'),
-    ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Total add liquidity volume'),
+    ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Liquidity additions'),
+    ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Total liquidity added'),
     ADesc(A.DAILY_VOLUME, 'Daily volume', prefix='$', background=BG_SWAPS),
     ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond', background=BG_NETWORK),
     ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE, background=BG_NETWORK),
-    ADesc(A.NODE_COUNT, 'Total nodes count', more_than=False, background=BG_NETWORK),
-    ADesc(A.ACTIVE_NODE_COUNT, 'Active nodes count', more_than=False, background=BG_NETWORK),
+    ADesc(A.NODE_COUNT, 'Total node count', more_than=False, background=BG_NETWORK),
+    ADesc(A.ACTIVE_NODE_COUNT, 'Active node count', more_than=False, background=BG_NETWORK),
 
     ADesc(A.ANNIVERSARY, 'Anniversary', more_than=False,
           background=BG_ANNIVERSARY,
@@ -199,22 +199,22 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
           milestone_scale=MILESTONES_EVERY_INT,
           thresholds=1),
 
-    ADesc(A.BLOCK_NUMBER, 'Blocks generated', milestone_scale=MILESTONES_EVERY_DIGIT,
+    ADesc(A.BLOCK_NUMBER, 'Blocks produced', milestone_scale=MILESTONES_EVERY_DIGIT,
           thresholds=7_000_000, background=BG_NETWORK),
-    ADesc(A.DAILY_TX_COUNT, 'Daily TX count', background=BG_SWAPS),
+    ADesc(A.DAILY_TX_COUNT, 'Daily transactions', background=BG_SWAPS),
     ADesc(A.TOTAL_MIMIR_VOTES, 'Total Mimir votes', more_than=False, background=BG_NETWORK),
-    ADesc(A.MARKET_CAP_USD, 'Rune Total Market Cap', prefix='$', background=BG_RUNE),
+    ADesc(A.MARKET_CAP_USD, 'RUNE market cap', prefix='$', background=BG_RUNE),
     ADesc(A.TOTAL_POOLS, 'Total pools', more_than=False),
     ADesc(A.TOTAL_ACTIVE_POOLS, 'Active pools', more_than=False),
 
     ADesc(A.SWAP_VOLUME_TOTAL_RUNE, 'Total swap volume', postfix=POSTFIX_RUNE, background=BG_SWAPS),
 
-    ADesc(A.MAX_SWAP_AMOUNT_USD, 'Maximum swap volume', prefix='$',
+    ADesc(A.MAX_SWAP_AMOUNT_USD, 'Largest single swap', prefix='$',
           thresholds=1_329_208, background=BG_SWAPS),
-    ADesc(A.MAX_ADD_AMOUNT_USD, 'Maximum add liquidity volume', prefix='$',
+    ADesc(A.MAX_ADD_AMOUNT_USD, 'Largest single liquidity add', prefix='$',
           thresholds=32_788_247),
 
-    ADesc(A.MAX_ADD_AMOUNT_USD_PER_POOL, 'Added ::asset:: in a single TX', prefix='$',
+    ADesc(A.MAX_ADD_AMOUNT_USD_PER_POOL, 'Largest ::asset:: liquidity add', prefix='$',
           thresholds={
               'ETH.THOR-0XA5F2211B9B8170F694421F2046281775E8468044': 32788247, 'BTC.BTC': 8143923,
               'ETH.ETH': 7454157,
@@ -251,14 +251,14 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
               'ETH.CRV-0XD533A949740BB3306D119CC777FA900BA034CD52': 7
           }),
 
-    ADesc(A.COIN_MARKET_CAP_RANK, 'Market cap rank', milestone_scale=MILESTONES_EVERY_INT,
+    ADesc(A.COIN_MARKET_CAP_RANK, 'By market cap', milestone_scale=MILESTONES_EVERY_INT,
           thresholds=42, more_than=False, background=BG_RUNE),
 
-    ADesc(A.POL_VALUE_RUNE, 'POL maximum value', background=BG_VAULT),
+    ADesc(A.POL_VALUE_RUNE, 'POL value', background=BG_VAULT),
 
     ADesc(A.BTC_IN_VAULT, 'Bitcoin in vaults', background=BG_BTC),
     ADesc(A.ETH_IN_VAULT, 'Ethereum in vaults', background=BG_ETH),
-    ADesc(A.STABLES_IN_VAULT, 'Stable coins in vaults', background=BG_VAULT),
+    ADesc(A.STABLES_IN_VAULT, 'Stablecoins in vaults', background=BG_VAULT),
 
     ADesc(A.TOTAL_VALUE_LOCKED, 'Total value locked', prefix='$', thresholds=356_700_000),
     ADesc(A.WEEKLY_SWAP_VOLUME, 'Weekly swap volume', prefix='$', thresholds=300_600_000, background=BG_SWAPS),
@@ -268,12 +268,12 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
           background=BG_RUNE),
 
     # trade assets
-    ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade asset balance', prefix='$', thresholds=10_000_000),
+    ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade account balance', prefix='$', thresholds=10_000_000),
     ADesc(A.TRADE_ASSET_HOLDERS_COUNT, 'Trade asset holders', thresholds=100, background=BG_USERS),
     ADesc(A.TRADE_ASSET_SWAPS_COUNT, 'Trade asset swaps', thresholds=100_000, background=BG_SWAPS),
-    ADesc(A.TRADE_ASSET_MOVE_COUNT, 'Trade asset deposits/withdrawals', thresholds=10_000, background=BG_SWAPS),
+    ADesc(A.TRADE_ASSET_MOVE_COUNT, 'Trade account deposits & withdrawals', thresholds=10_000, background=BG_SWAPS),
     ADesc(A.TRADE_ASSET_LARGEST_DEPOSIT, 'Largest trade asset deposit', prefix='$', thresholds=100_000),
-    ADesc(A.TRADE_ASSET_SWAPS_VOLUME, 'Trade asset swaps volume', prefix='$', thresholds=1_000_000,
+    ADesc(A.TRADE_ASSET_SWAPS_VOLUME, 'Trade asset swap volume', prefix='$', thresholds=1_000_000,
           background=BG_SWAPS),
 
     # runepool

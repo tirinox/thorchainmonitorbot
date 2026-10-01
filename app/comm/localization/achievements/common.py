@@ -13,8 +13,8 @@ from models.asset import Asset
 class AchievementsLocalizationBase(abc.ABC):
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"
     DEVIATION_TO_SHOW_VALUE_PCT = 10
-    MORE_THAN = 'More than'
-    LESS_THAN = 'Less than'
+    MORE_THAN = 'Over'
+    LESS_THAN = 'Under'
     TRANSLATION_MAP = {}  # fill in
     DATE_TRANSLATOR = None  # for seconds_human
 
@@ -22,7 +22,7 @@ class AchievementsLocalizationBase(abc.ABC):
     CARD_RANK_LABEL = 'Top'
     CARD_PREVIOUS = 'Previous'
     CARD_NOW = 'Now'
-    CARD_NEXT = 'Next goal'
+    CARD_NEXT = 'Next milestone'
     MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
               'July', 'August', 'September', 'October', 'November', 'December']
 
@@ -82,7 +82,8 @@ class AchievementsLocalizationBase(abc.ABC):
         return text
 
     def seconds_human(self, seconds) -> str:
-        return seconds_human(seconds, translate=self.DATE_TRANSLATOR)
+        # "1 month 10 days" => "1 month, 10 days"
+        return re.sub(r'(\D) (\d)', r'\1, \2', seconds_human(seconds, translate=self.DATE_TRANSLATOR))
 
     def format_date(self, ts) -> str:
         d = datetime.fromtimestamp(ts)

@@ -20,7 +20,7 @@
         "src": "runic/bw_0.png"
       }
     ],
-    "title": "Market cap rank",
+    "title": "By market cap",
     "subtitle": "",
     "asset_logo": "",
     "date": "October 1, 2026",
@@ -28,10 +28,10 @@
       {
         "label": "Previous",
         "value": "#33",
-        "sub": "1 month 10 days ago"
+        "sub": "1 month, 10 days ago"
       },
       {
-        "label": "Next goal",
+        "label": "Next milestone",
         "value": "#29",
         "sub": ""
       }

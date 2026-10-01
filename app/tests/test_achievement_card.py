@@ -64,8 +64,8 @@ def test_round_milestones_lose_zero_fraction(en):
 
 def test_asset_name_is_short(en, ru):
     a = Achievement(A.MAX_ADD_AMOUNT_USD_PER_POOL, 8_200_000, 5_000_000, TS, specialization=USDC)
-    assert build_achievement_card(a, en)['title'] == 'Added ETH.USDC in a single TX'
-    assert 'ETH.USDC in a single TX' in en.notification_achievement_unlocked(a)
+    assert build_achievement_card(a, en)['title'] == 'Largest ETH.USDC liquidity add'
+    assert 'Largest ETH.USDC liquidity add' in en.notification_achievement_unlocked(a)
     assert '0XA0B8' not in ru.notification_achievement_unlocked(a)
 
     card = build_achievement_card(a, en)
@@ -75,14 +75,14 @@ def test_asset_name_is_short(en, ru):
 def test_card_default(en):
     a = Achievement(A.MARKET_CAP_USD, 2_134_000_000, 2_000_000_000, TS, 1_000_000_000, TS - 40 * DAY)
     card = build_achievement_card(a, en)
-    assert card['number_label'] == 'More than'
+    assert card['number_label'] == 'Over'
     assert card['number_text'] == '$2B'
     assert [g['src'] for g in card['glyphs']] == ['runic/bw_USD.png', 'runic/bw_2.png', 'runic/bw_B.png']
     assert card['date'] == 'October 1, 2026'
     assert card['stats'] == [
-        {'label': 'Previous', 'value': '$1B', 'sub': '1 month 10 days ago'},
+        {'label': 'Previous', 'value': '$1B', 'sub': '1 month, 10 days ago'},
         {'label': 'Now', 'value': '$2,134,000,000', 'sub': ''},
-        {'label': 'Next goal', 'value': '$5B', 'sub': ''},
+        {'label': 'Next milestone', 'value': '$5B', 'sub': ''},
     ]
 
 
@@ -90,7 +90,7 @@ def test_card_first_milestone_has_no_previous(en):
     a = Achievement(A.RUNEPOOL_VALUE_USD, 20_000_000, 20_000_000, TS)
     card = build_achievement_card(a, en)
     # "Now" equals the milestone, so only the next goal is left
-    assert card['stats'] == [{'label': 'Next goal', 'value': '$50M', 'sub': ''}]
+    assert card['stats'] == [{'label': 'Next milestone', 'value': '$50M', 'sub': ''}]
 
 
 def test_card_rank(en):
@@ -98,6 +98,8 @@ def test_card_rank(en):
     card = build_achievement_card(a, en)
     assert card['number_label'] == 'Top'
     assert card['number_text'] == '30'
+    assert card['title'] == 'By market cap'
+    assert 'RUNE is now the <b>#30</b> coin by market cap!' in en.notification_achievement_unlocked(a)
     assert [s['value'] for s in card['stats']] == ['#33', '#29']
 
     top1 = Achievement(A.COIN_MARKET_CAP_RANK, 1, 2, TS, 2, TS - 40 * DAY, descending=True)

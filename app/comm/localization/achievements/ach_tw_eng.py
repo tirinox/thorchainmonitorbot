@@ -12,7 +12,7 @@ class AchievementsTwitterEnglishLocalization(AchievementsEnglishLocalization):
             # special case for anniversary
             msg += f"Happy Birthday! It's been {milestone_str} years since the first block!"
         elif a.key == A.COIN_MARKET_CAP_RANK:
-            msg += f".@THORChain Rune is #{milestone_str} largest coin by market cap!"
+            msg += f"RUNE is now the #{milestone_str} coin by market cap!"
             if a.has_previous:
                 msg += f'\nPreviously #{prev_milestone_str} ({ago} ago)'
         else:
