@@ -4,6 +4,7 @@ import logging
 from dashboard.audit import AuditLog
 from dashboard.events import EventHub
 from dashboard.runs import RunManager
+from jobs.achievement.notifier import AchievementsSettings
 from lib.depcont import DepContainer
 from lib.money import DepthCurve
 from notify.dup_stop import TxDeduplicator
@@ -41,6 +42,9 @@ class DashboardContext:
         self.events = EventHub(d.db)
         self.runs = RunManager(d.pub_scheduler, d.db)
         self.audit = AuditLog(d.db)
+
+        # read once: a key missing from the config is reported on every read
+        self.achievement_settings = AchievementsSettings.load(d.cfg)
 
     @property
     def deps(self) -> DepContainer:

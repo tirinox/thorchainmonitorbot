@@ -1,9 +1,35 @@
+from typing import NamedTuple
+
 from lib.cooldown import Cooldown
+from lib.config import Config
+from lib.db import DB
 from lib.delegates import WithDelegates, INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from .extractor import AchievementsExtractor
 from .tracker import AchievementsTracker
+
+
+class AchievementsSettings(NamedTuple):
+    """The `achievements` section of the config; the dashboard shows it too"""
+    enabled: bool
+    stale_after: float
+    cooldown_period: float
+    hits_before_cd: int
+
+    COOLDOWN_NAME = 'Achievements:Notification'
+
+    @classmethod
+    def load(cls, cfg: Config) -> 'AchievementsSettings':
+        return cls(
+            enabled=cfg.as_bool('achievements.enabled', True),
+            stale_after=cfg.as_interval('achievements.stale_after', '14d'),
+            cooldown_period=cfg.as_interval('achievements.cooldown.period', '10m'),
+            hits_before_cd=cfg.as_int('achievements.cooldown.hits_before_cd', 3),
+        )
+
+    def make_cooldown(self, db: DB) -> Cooldown:
+        return Cooldown(db, self.COOLDOWN_NAME, self.cooldown_period, self.hits_before_cd)
 
 
 class AchievementsNotifier(WithLogger, WithDelegates, INotified):
@@ -34,10 +60,7 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        stale_after = deps.cfg.as_interval('achievements.stale_after', '14d')
-        self.tracker = AchievementsTracker(deps.db, stale_after)
+        settings = AchievementsSettings.load(deps.cfg)
+        self.tracker = AchievementsTracker(deps.db, settings.stale_after)
         self.extractor = AchievementsExtractor(deps)
-
-        cd = deps.cfg.as_interval('achievements.cooldown.period', '10m')
-        max_times = deps.cfg.as_int('achievements.cooldown.hits_before_cd', 3)
-        self.cd = Cooldown(self.deps.db, 'Achievements:Notification', cd, max_times)
+        self.cd = settings.make_cooldown(deps.db)

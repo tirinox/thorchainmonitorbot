@@ -1,8 +1,8 @@
 # Bot dashboard
 
 Admin UI for the bot: a status page with health checks, overview (block scanner, fetchers, dedup, curve,
-RUNE transfers, users), scheduled jobs (list / create / edit / run now / apply), scheduler logs, an activity
-log of who changed what, and feature flags.
+RUNE transfers, users), scheduled jobs (list / create / edit / run now / apply), achievements, scheduler logs,
+an activity log of who changed what, and feature flags.
 
 - Frontend: Vue 3 + PrimeVue 4 (MIT, pinned `<5`: PrimeVue 5 needs a commercial license key) + Vite, plain JS.
 - Backend: FastAPI app in `app/dashboard/`, entry point `app/dashboard_api.py`. It serves `/api/*` and the built SPA.
@@ -38,6 +38,27 @@ http://localhost:8501/dashboard/.
   form; `GET /api/jobs?tz=<IANA zone>` adds the viewer's local equivalents of fixed cron times.
 - The UI shows absolute times in the browser's zone or in UTC (toggle in the sidebar, remembered per
   browser). Every relative time ("5 min ago") shows the exact moment on hover.
+
+## Achievements
+
+- `GET /api/achievements` lists every achievement of `jobs/achievement/ach_list.py`: its last milestone and
+  whether it was posted, the value now, the progress to the next milestone, its cut-off (threshold) and
+  milestone scale, plus the post limit (cooldown) and `stale_after` from the `achievements` config section.
+  A per-pool achievement gets a row per pool it has data for.
+- The dashboard only reads what the bot's `AchievementsTracker` saves: the records (`Achievements:<key>`,
+  the value at the last milestone) and the last fed values (hash `AchievementsLive`, rewritten at most once
+  a minute, also for metrics under their cut-off). A record's `silent` flag marks a milestone saved without a
+  post (a catch-up after `stale_after`). Until the bot has fed a metric, "now" is the value at its milestone.
+- Statuses (`app/dashboard/services/achievements.py`, `build_row` is pure): `tracking`, `pending` (past the
+  next milestone, the post is held back by the cooldown), `stale` (the next milestone will be silent),
+  `below_threshold`, `no_data`.
+- `POST /api/achievements/stale` (`{key, specialization, stale}`) makes the tracker take a metric for stale
+  or for fresh by rewriting the record's `last_seen_ts` (0 or now); it is audited. A fresh metric already
+  past its next milestone is posted on the next feed. A feed that crosses nothing clears a stale mark.
+- `POST /api/achievements/preview` builds the post for every public channel in the dashboard process itself
+  (the alert presenter under `Broadcaster.capture`, the card from the renderer) and stores it like a job
+  preview. Modes: `next` (the next milestone), `last` (the saved record), `value` (any value of the metric).
+  Nothing is sent and the records are not touched.
 
 ## Status page and activity log
 
