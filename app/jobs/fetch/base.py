@@ -72,6 +72,11 @@ class DataController(WithLogger):
         if not entity:
             return
         name = entity.name
+        if (existing := self._tracker.get(name)) is not None and existing is not entity:
+            # a later instance of the same class is a helper made on the fly; replacing the running fetcher
+            # with it would show the running one as never started on the dashboard
+            self.logger.warning(f'{name} is already registered ({id(existing)}); keeping it, not {id(entity)}')
+            return
         self._tracker[name] = entity
         self.logger.info(f'Registered: {entity} ({id(entity)})')
 
@@ -81,7 +86,8 @@ class DataController(WithLogger):
 
         if not entity:
             return
-        self._tracker.pop(entity.name)
+        if self._tracker.get(entity.name) is entity:
+            self._tracker.pop(entity.name)
 
     @property
     def summary(self) -> Dict[str, WatchedEntity]:

@@ -10,8 +10,10 @@ from models.net_stats import NetworkStats
 
 
 class NetworkStatisticsFetcher(BaseFetcher):
-    def __init__(self, deps: DepContainer, sleep_period=0):
-        sleep_period = sleep_period or parse_timespan_to_seconds(deps.cfg.net_summary.fetch_period)
+    def __init__(self, deps: DepContainer, sleep_period=None):
+        # None: the period from the config; 0: a one-off fetcher, not registered in the DataController
+        if sleep_period is None:
+            sleep_period = parse_timespan_to_seconds(deps.cfg.net_summary.fetch_period)
         super().__init__(deps, sleep_period)
         self.step_sleep = deps.cfg.sleep_step
         self.swap_stats_days = 15
