@@ -248,8 +248,9 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         prev_names_dict = {tn.thorname: tn for tn in
                            prev_week_interval.thornames} if prev_week_interval.thornames else {}
 
-        curr_aff_revenue = curr_week_interval.volume_usd
-        prev_aff_revenue = prev_week_interval.volume_usd
+        # Midgard gives the affiliates' volumeUSD (their fee earnings) in cents: Int64(e2) in its spec
+        curr_aff_revenue = curr_week_interval.volume_usd / 100
+        prev_aff_revenue = prev_week_interval.volume_usd / 100
         top_affiliates = []
 
         ns = self.deps.name_service
@@ -257,8 +258,8 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         for affiliate in curr_week_interval.thornames:
             prev_record = prev_names_dict.get(affiliate.thorname)
             top_affiliates.append(AffiliateCollector(
-                total_usd=affiliate.volume_usd,
-                prev_total_usd=(prev_record.volume_usd if prev_record else 0.0),
+                total_usd=affiliate.volume_usd / 100,
+                prev_total_usd=(prev_record.volume_usd / 100 if prev_record else 0.0),
                 thorname=affiliate.thorname,
                 display_name=ns.get_affiliate_name(affiliate.thorname),
                 count=affiliate.count,

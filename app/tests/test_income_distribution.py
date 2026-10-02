@@ -262,7 +262,8 @@ async def test_previous_week_with_gaps_gives_no_delta():
 
 @pytest.mark.asyncio
 async def test_affiliates_of_the_current_and_previous_week_are_not_swapped():
-    midgard = _FakeMidgard(0, {}, affiliates_by_start={START_TS: 700, START_TS - WEEK: 300})
+    # Midgard reports the affiliates' volumeUSD in cents
+    midgard = _FakeMidgard(0, {}, affiliates_by_start={START_TS: 70000, START_TS - WEEK: 30000})
     top, curr_usd, prev_usd = await _make_fetcher(midgard).get_top_affiliates(START_TS, START_TS + WEEK)
     assert (curr_usd, prev_usd) == (700, 300)
     assert (top[0].total_usd, top[0].prev_total_usd) == (700, 300)
