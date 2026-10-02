@@ -935,35 +935,13 @@ class RussianLocalization(BaseLocalization):
         )
 
     def notification_text_trade_account_summary(self, e: AlertTradeAccountStats):
-        top_n = 5
-        top_vaults_str = self._top_trade_vaults(e, top_n)
-
-        delta_holders = bracketify(
-            up_down_arrow(e.prev.vaults.total_traders, e.curr.vaults.total_traders, int_delta=True)) if e.prev else ''
-
-        delta_balance = bracketify(
-            up_down_arrow(e.prev.vaults.total_usd, e.curr.vaults.total_usd, percent_delta=True)) if e.prev else ''
-
-        tr_swap_volume_curr, tr_swap_volume_prev = e.curr_and_prev_trade_volume_usd
-        delta_volume = bracketify(
-            up_down_arrow(tr_swap_volume_prev, tr_swap_volume_curr, percent_delta=True)) if e.prev else ''
-
+        days, value_delta, holders_delta, volume, volume_delta = self._trade_acc_summary_numbers(e)
+        period = 'за сутки' if days == 1 else f'за {days} дн.'
         return (
-            f"⚖️ <b>Сводка по торговым счетам за сутки</b>\n"
-            f"Всего держателей: {bold(pretty_money(e.curr.vaults.total_traders))}"
-            f" {delta_holders}\n"
-            f"Всего торговых активов: {bold(short_dollar(e.curr.vaults.total_usd))}"
-            f" {delta_balance}\n"
-            f"Депозиты: {bold(short_money(e.curr.trade_deposit_count, integer=True))}"
-            f" {bracketify(short_dollar(e.curr.trade_deposit_vol_usd))}\n"
-            f"Выводы: {bold(short_money(e.curr.trade_withdrawal_count, integer=True))}"
-            f" {bracketify(short_dollar(e.curr.trade_withdrawal_vol_usd))}\n"
-            f"Объем торгов: {bold(short_dollar(tr_swap_volume_curr))} {delta_volume}\n"
-            f"Количество обменов: {bold(short_money(e.curr.trade_swap_count, integer=True))}"
-            f" {bracketify(up_down_arrow(e.prev.trade_swap_count, e.curr.trade_swap_count, int_delta=True))}\n"
-            f"\n"
-            f"Наиболее используемые:\n"
-            f"{top_vaults_str}"
+            f"⚖️ <b>Сводка по торговым счетам {period}</b>\n"
+            f"💰 {bold(short_dollar(e.curr.vaults.total_usd))} на торговых счетах {value_delta}\n"
+            f"👥 {bold(pretty_money(e.curr.vaults.total_traders))} держателей {holders_delta}\n"
+            f"📈 {bold(short_dollar(volume))} объём торгов {volume_delta}"
         )
 
     # ------- NETWORK NODES -------

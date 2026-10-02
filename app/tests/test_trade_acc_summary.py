@@ -142,16 +142,30 @@ def test_template_renders_the_demo(renderer):
     assert 'others' in html  # more assets than the list shows
 
 
-@pytest.mark.parametrize('loc_path', [
-    'comm.localization.eng_base.BaseLocalization',
-    'comm.localization.rus.RussianLocalization',
+@pytest.mark.parametrize('loc_path, day_title, week_title', [
+    ('comm.localization.eng_base.BaseLocalization', 'summary 24H', 'summary 7D'),
+    ('comm.localization.rus.RussianLocalization', 'за сутки', 'за 7 дн.'),
+    ('comm.localization.twitter_eng.TwitterEnglishLocalization', 'summary 24H', 'summary 7D'),
 ])
-def test_caption_fits_a_photo(loc_path):
+def test_caption_is_short(loc_path, day_title, week_title):
     import importlib
     module, cls_name = loc_path.rsplit('.', 1)
     cls = getattr(importlib.import_module(module), cls_name)
     loc = cls.__new__(cls)
+
     text = loc.notification_text_trade_account_summary(_alert())
-    assert 'BTC' in text
+    # only the headline numbers, the rest is on the infographic
+    assert len(text.splitlines()) == 4
+    assert day_title in text
+    assert 'BTC' not in text  # no list of the top assets
     assert '$270.0K' in text  # the total value of the trade assets is in dollars
-    assert len(text) < 1024  # Telegram photo caption limit
+    assert '(↑ +92.9%)' in text  # against $140K at the start of the period
+    assert '(↑ +3)' in text  # holders
+    assert '(↑ +33.3%)' in text  # trade volume, $400 against $300
+
+    # no snapshot of the vaults at the start of the period: no deltas of the vaults, no crash
+    text = loc.notification_text_trade_account_summary(_alert(with_previous=False))
+    assert '(↑ +92.9%)' not in text and '(↑ +3)' not in text
+    assert '(↑ +33.3%)' in text
+
+    assert week_title in loc.notification_text_trade_account_summary(_alert()._replace(period_sec=7 * DAY))

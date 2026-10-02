@@ -858,40 +858,14 @@ class TwitterEnglishLocalization(BaseLocalization):
         return text
 
     def notification_text_trade_account_summary(self, e: AlertTradeAccountStats):
-        top_vaults_str = self._top_trade_vaults(e, 4, formatting=False)
-
-        delta_holders = bracketify(
-            up_down_arrow(e.prev.vaults.total_traders, e.curr.vaults.total_traders, int_delta=True)) if e.prev else ''
-
-        delta_balance = bracketify(
-            up_down_arrow(e.prev.vaults.total_usd, e.curr.vaults.total_usd, percent_delta=True)) if e.prev else ''
-
-        tr_swap_volume_curr, tr_swap_volume_prev = e.curr_and_prev_trade_volume_usd
-        delta_volume = bracketify(
-            up_down_arrow(tr_swap_volume_prev, tr_swap_volume_curr, percent_delta=True)) if e.prev else ''
-
-        parts = [
-            (
-                f"⚖️ Trade assets summary 24H\n\n"
-                f"Total holders: {pretty_money(e.curr.vaults.total_traders)}"
-                f" {delta_holders}\n"
-                f"Total trade assets: {short_dollar(e.curr.vaults.total_usd)}"
-                f" {delta_balance}\n"
-                f"Deposits: {short_money(e.curr.trade_deposit_count, integer=True)}"
-                f" {bracketify(short_dollar(e.curr.trade_deposit_vol_usd))}\n"
-                f"Withdrawals: {short_money(e.curr.trade_withdrawal_count, integer=True)}"
-                f" {bracketify(short_dollar(e.curr.trade_withdrawal_vol_usd))}\n"
-                f"Trade volume: {short_dollar(tr_swap_volume_curr)} {delta_volume}\n"
-                f"Swaps of trade assets: {short_money(e.curr.trade_swap_count, integer=True)}"
-                f" {bracketify(up_down_arrow(e.prev.trade_swap_count, e.curr.trade_swap_count, int_delta=True))}\n"
-            ),
-            (
-                f"Highest used:\n"
-                f"{top_vaults_str}"
-            )
-        ]
-
-        return self.smart_split(parts)
+        days, value_delta, holders_delta, volume, volume_delta = self._trade_acc_summary_numbers(e)
+        period = '24H' if days == 1 else f'{days}D'
+        return (
+            f"⚖️ Trade assets summary {period}\n"
+            f"💰 {short_dollar(e.curr.vaults.total_usd)} in trade accounts {value_delta}\n"
+            f"👥 {pretty_money(e.curr.vaults.total_traders)} holders {holders_delta}\n"
+            f"📈 {short_dollar(volume)} trade volume {volume_delta}"
+        )
 
     # ------- RUNEPOOL --------
 

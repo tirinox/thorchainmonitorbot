@@ -421,8 +421,9 @@ class MetricsDialog(BaseDialog):
             await message.answer(self.loc.TEXT_WEEKLY_STATS_NO_DATA, disable_notification=True)
             return
 
+        photo, photo_name = await self.deps.alert_presenter.render_trade_account_summary(self.loc, event)
         text = self.loc.notification_text_trade_account_summary(event)
-        await message.answer(text, disable_notification=True)
+        await message.answer_photo(img_to_bio(photo, photo_name), caption=text, disable_notification=True)
 
     async def show_rune_burned(self, message: Message):
         await self.start_typing(message)

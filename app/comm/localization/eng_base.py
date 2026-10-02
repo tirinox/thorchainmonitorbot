@@ -18,7 +18,7 @@ from lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link, thorchain_net_address, \
     thorchain_net_tx
 from lib.money import format_percent, pretty_money, short_address, short_money, \
-    calc_percent_change, pretty_dollar, short_dollar, \
+    pretty_dollar, short_dollar, \
     RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
 from lib.texts import progressbar, link, pre, code, bold, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text, comma_join, \
@@ -2382,68 +2382,29 @@ class BaseLocalization(ABC):  # == English
         )
         return from_link, to_link, amt_str
 
-    def _top_trade_vaults(self, e: AlertTradeAccountStats, top_n, formatting=True):
-        top_vaults = e.curr.vaults.top_by_usd_value(top_n)
-        top_vaults_str = ''
-
-        asset_f = ital if formatting else identity
-        amount_f = bold if formatting else identity
-
-        for i, vault in enumerate(top_vaults, start=1):
-            asset = vault.asset
-            usd = e.curr.vaults.usd_units(asset)
-
-            if e.prev:
-                prev_usd = e.prev.vaults.usd_units(asset)
-                prev_usd_change = up_down_arrow(prev_usd, usd, percent_delta=True)
-            else:
-                prev_usd_change = ''
-
-            if calc_percent_change(vault.depth_float, usd) > 0.5:
-                usd_str = short_dollar(usd)
-            else:
-                usd_str = ''
-
-            extra = ', '.join(filter(bool, (usd_str, prev_usd_change)))
-
-            asset_str = asset_f(self.pretty_asset(asset, abbr=False))
-            top_vaults_str += (
-                f'{i}. '
-                f'{asset_str}: {amount_f(short_money(vault.depth_float))}  |'
-                f'  {bracketify(extra)}\n'
-            )
-        return top_vaults_str
+    @staticmethod
+    def _trade_acc_summary_numbers(e: AlertTradeAccountStats):
+        """The caption keeps only the headline numbers; the rest is on the infographic"""
+        prev_vaults = e.prev.vaults if e.prev else None
+        volume_curr, volume_prev = e.curr_and_prev_trade_volume_usd
+        return (
+            max(1, round(e.period_sec / DAY)),
+            up_down_arrow(prev_vaults.total_usd if prev_vaults else None, e.curr.vaults.total_usd,
+                          percent_delta=True, brackets=True),
+            up_down_arrow(prev_vaults.total_traders if prev_vaults else None, e.curr.vaults.total_traders,
+                          int_delta=True, brackets=True),
+            volume_curr,
+            up_down_arrow(volume_prev, volume_curr, percent_delta=True, brackets=True),
+        )
 
     def notification_text_trade_account_summary(self, e: AlertTradeAccountStats):
-        top_n = 5
-        top_vaults_str = self._top_trade_vaults(e, top_n)
-
-        delta_holders = bracketify(
-            up_down_arrow(e.prev.vaults.total_traders, e.curr.vaults.total_traders, int_delta=True)) if e.prev else ''
-
-        delta_balance = bracketify(
-            up_down_arrow(e.prev.vaults.total_usd, e.curr.vaults.total_usd, percent_delta=True)) if e.prev else ''
-
-        tr_swap_volume_curr, tr_swap_volume_prev = e.curr_and_prev_trade_volume_usd
-        delta_volume = bracketify(
-            up_down_arrow(tr_swap_volume_prev, tr_swap_volume_curr, percent_delta=True)) if e.prev else ''
-
+        days, value_delta, holders_delta, volume, volume_delta = self._trade_acc_summary_numbers(e)
+        period = '24H' if days == 1 else f'{days}D'
         return (
-            f"⚖️ <b>Trade assets summary 24H</b>\n\n"
-            f"Total holders: {bold(pretty_money(e.curr.vaults.total_traders))}"
-            f" {delta_holders}\n"
-            f"Total trade assets: {bold(short_dollar(e.curr.vaults.total_usd))}"
-            f" {delta_balance}\n"
-            f"Deposits: {bold(short_money(e.curr.trade_deposit_count, integer=True))}"
-            f" {bracketify(short_dollar(e.curr.trade_deposit_vol_usd))}\n"
-            f"Withdrawals: {bold(short_money(e.curr.trade_withdrawal_count, integer=True))}"
-            f" {bracketify(short_dollar(e.curr.trade_withdrawal_vol_usd))}\n"
-            f"Trade volume: {bold(short_dollar(tr_swap_volume_curr))} {delta_volume}\n"
-            f"Swaps of trade assets: {bold(short_money(e.curr.trade_swap_count, integer=True))}"
-            f" {bracketify(up_down_arrow(e.prev.trade_swap_count, e.curr.trade_swap_count, int_delta=True))}\n"
-            f"\n"
-            f"Highest used:\n"
-            f"{top_vaults_str}"
+            f"⚖️ <b>Trade assets summary {period}</b>\n"
+            f"💰 {bold(short_dollar(e.curr.vaults.total_usd))} in trade accounts {value_delta}\n"
+            f"👥 {bold(pretty_money(e.curr.vaults.total_traders))} holders {holders_delta}\n"
+            f"📈 {bold(short_dollar(volume))} trade volume {volume_delta}"
         )
 
     # ------ RunePool ------
