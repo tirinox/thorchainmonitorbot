@@ -1,3 +1,4 @@
+import math
 from typing import NamedTuple, Union, Optional
 
 from jobs.achievement.milestones import Milestones, MilestonesEveryInt
@@ -118,7 +119,8 @@ class Achievement(NamedTuple):
             raise Exception(f'No description for achievement: {self.key!r}')
 
         if self.descending:
-            v = provider.next(self.value)
+            # the lowest milestone not below the value: rank 29 is milestone 29, and 50 is already "top 50"
+            v = provider.next(math.ceil(self.value) - 1)
         else:
             v = provider.previous(self.value)
 

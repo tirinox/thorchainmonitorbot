@@ -247,6 +247,75 @@ async def test_tracker_live_peak_survives_restart(tracker):
     assert (live['value'], live['peak']) == (35, 30)  # the best rank is the lowest
 
 
+# ---------- tracker: descending metrics (lower is better) ----------
+
+async def _announced(tracker, key, values):
+    out = []
+    for value in values:
+        if ev := await tracker.feed_data(Achievement(key, value, descending=True)):
+            await tracker.set_achievement_record(ev)
+            out.append((ev.value, ev.milestone, ev.prev_milestone))
+    return out
+
+
+@pytest.mark.asyncio
+async def test_tracker_every_place_of_the_rank_is_a_milestone(tracker):
+    # the first feed only records; the milestone is the rank itself, not the rank plus one
+    assert await _announced(tracker, A.COIN_MARKET_CAP_RANK, [30, 29, 28, 27, 26]) == [
+        (29, 29, 30), (28, 28, 29), (27, 27, 28), (26, 26, 27),
+    ]
+    record = await tracker.get_achievement_record(A.COIN_MARKET_CAP_RANK, '')
+    assert (record.value, record.milestone, record.get_next_milestone()) == (26, 26, 25)
+
+    # the same rank or a worse one is no news
+    assert await _announced(tracker, A.COIN_MARKET_CAP_RANK, [26, 27, 30, 26]) == []
+
+
+@pytest.fixture
+def test_descending_key(monkeypatch):
+    # its default cut-off of 0 lets no descending value in
+    from jobs.achievement.ach_list import ACHIEVEMENT_DESC_MAP
+    desc = ACHIEVEMENT_DESC_MAP[A.TEST_DESCENDING]._replace(thresholds=None)
+    monkeypatch.setitem(ACHIEVEMENT_DESC_MAP, A.TEST_DESCENDING, desc)
+    return A.TEST_DESCENDING
+
+
+@pytest.mark.asyncio
+async def test_tracker_descending_on_the_normal_scale(tracker, test_descending_key):
+    # 120 is in the top 200; touching a milestone counts, like 2000 does for a growing metric
+    values = [120, 101, 100, 60, 51, 50, 49, 21, 20, 2, 1]
+    assert await _announced(tracker, A.TEST_DESCENDING, values) == [
+        (100, 100, 200), (50, 50, 100), (20, 20, 50), (2, 2, 20), (1, 1, 2),
+    ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('key, values', [
+    (A.COIN_MARKET_CAP_RANK, range(42, 0, -1)),
+    (A.TEST_DESCENDING, range(1200, 0, -7)),
+])
+async def test_tracker_descending_announces_exactly_at_the_next_milestone(tracker, test_descending_key, key, values):
+    announced = 0
+    for value in values:
+        record = await tracker.get_achievement_record(key, '')
+        ev = await tracker.feed_data(Achievement(key, value, descending=True))
+        if record:
+            assert bool(ev) == (value <= record.get_next_milestone()), (value, record)
+        if ev:
+            await tracker.set_achievement_record(ev)
+            announced += 1
+    assert announced > 5
+
+
+@pytest.mark.asyncio
+async def test_tracker_old_rank_record_is_not_announced_again(tracker):
+    # saved before the fix: the milestone is the rank plus one
+    await tracker.set_achievement_record(
+        Achievement(A.COIN_MARKET_CAP_RANK, 28, 29, NOW - DAY, 31, NOW - 9 * DAY, descending=True, last_seen_ts=NOW))
+    assert await _announced(tracker, A.COIN_MARKET_CAP_RANK, [28, 29, 28]) == []
+    assert await _announced(tracker, A.COIN_MARKET_CAP_RANK, [27]) == [(27, 27, 29)]
+
+
 @pytest.mark.asyncio
 async def test_anniversary_is_announced_every_year(monkeypatch):
     # fed only in the week after the date, its last feed is a year old every time: it must not be taken

@@ -108,7 +108,7 @@ def test_card_first_milestone_has_no_previous(en):
 
 
 def test_card_rank(en):
-    a = Achievement(A.COIN_MARKET_CAP_RANK, 30, 31, TS, 33, TS - 40 * DAY, descending=True)
+    a = Achievement(A.COIN_MARKET_CAP_RANK, 30, 30, TS, 33, TS - 40 * DAY, descending=True)
     card = build_achievement_card(a, en)
     assert card['number_label'] == 'Top'
     assert card['number_text'] == '30'
@@ -116,7 +116,7 @@ def test_card_rank(en):
     assert 'RUNE is now the <b>#30</b> coin by market cap!' in en.notification_achievement_unlocked(a)
     assert [s['value'] for s in card['stats']] == ['#33', '#29']
 
-    top1 = Achievement(A.COIN_MARKET_CAP_RANK, 1, 2, TS, 2, TS - 40 * DAY, descending=True)
+    top1 = Achievement(A.COIN_MARKET_CAP_RANK, 1, 1, TS, 2, TS - 40 * DAY, descending=True)
     assert [s['value'] for s in build_achievement_card(top1, en)['stats']] == ['#2']
 
 

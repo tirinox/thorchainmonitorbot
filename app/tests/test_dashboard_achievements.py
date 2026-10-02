@@ -91,14 +91,23 @@ def test_row_of_a_record_event_uses_its_peak():
 
 
 def test_row_rank_goes_down():
-    record = Achievement(A.COIN_MARKET_CAP_RANK, 30, 31, NOW - DAY, descending=True, last_seen_ts=NOW - HOUR)
+    record = Achievement(A.COIN_MARKET_CAP_RANK, 30, 30, NOW - DAY, descending=True, last_seen_ts=NOW - HOUR)
     r = row(A.COIN_MARKET_CAP_RANK, record, live_value(30))
     assert r['descending']
     assert (r['milestone']['text'], r['current']['text'], r['next']['text']) == ('#30', '#30', '#29')
-    assert r['progress'] == 0.0
+    assert (r['status'], r['progress']) == (AchStatus.TRACKING, 0.0)
     assert r['scale'] == 'every_int'
 
+    # one place up is the next milestone already
+    r = row(A.COIN_MARKET_CAP_RANK, record, live_value(29))
+    assert (r['status'], r['progress']) == (AchStatus.PENDING, 1.0)
+
     assert row(A.COIN_MARKET_CAP_RANK, record, live_value(50))['status'] == AchStatus.BELOW_THRESHOLD  # under top 42
+
+    # a record saved when the milestone was the rank plus one reads the same
+    old = record._replace(milestone=31)
+    r = row(A.COIN_MARKET_CAP_RANK, old, live_value(30))
+    assert (r['milestone']['text'], r['next']['text'], r['status'], r['progress']) == ('#30', '#29', AchStatus.TRACKING, 0.0)
 
 
 def test_row_anniversary_counts_by_the_calendar():
@@ -151,7 +160,12 @@ def test_preview_event_without_a_record():
     assert make_preview_event(A.SWAP_COUNT_TOTAL, '', PreviewMode.NEXT, None, None, None, NOW).milestone == 2000
 
     rank = make_preview_event(A.COIN_MARKET_CAP_RANK, '', PreviewMode.NEXT, None, None, None, NOW)
-    assert rank.descending and rank.value == 41
+    assert rank.descending and (rank.value, rank.milestone) == (41, 41)
+
+    # the next place after the recorded one, with that one as the previous
+    record = Achievement(A.COIN_MARKET_CAP_RANK, 30, 30, NOW - DAY, descending=True)
+    rank = make_preview_event(A.COIN_MARKET_CAP_RANK, '', PreviewMode.NEXT, None, record, 30, NOW)
+    assert (rank.value, rank.milestone, rank.prev_milestone, rank.previous_ts) == (29, 29, 30, NOW - DAY)
 
 
 def test_preview_event_errors():
