@@ -445,7 +445,7 @@
 
                     <div class="metric-value-block">
                         <div class="metric-value">
-                            {{ short_dollar(current.earnings.affiliate_revenue * 0.01) }}
+                            {{ short_dollar(current.earnings.affiliate_revenue) }}
                         </div>
                         <div class="metric-delta">
                             {% with curr=current.earnings.affiliate_revenue, prev=previous.earnings.affiliate_revenue %}
@@ -468,7 +468,7 @@
                                 <div class="affiliate-name">{{ aff["display_name"] }}</div>
 
                                 <div class="affiliate-volume">
-                                    {{ short_dollar(aff.total_usd * 0.01) }}
+                                    {{ short_dollar(aff.total_usd) }}
                                 </div>
                                 <div class="affiliate-delta">
                                     {% with curr=aff.total_usd, prev=aff.prev_total_usd %}

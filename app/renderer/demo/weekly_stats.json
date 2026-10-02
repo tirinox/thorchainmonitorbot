@@ -38,7 +38,7 @@
         "liquidity_earnings": 74725.03611511001,
         "liquidity_fees": 361320.05162245146,
         "bonding_earnings": 264007.6182540092,
-        "affiliate_revenue": 25196433.0
+        "affiliate_revenue": 251964.33
       },
       "total_volume_usd": 260483897.13,
       "btc_total_amount": 255.84029247,
@@ -89,7 +89,7 @@
         "liquidity_earnings": 33579.6402218,
         "liquidity_fees": 153470.66336617398,
         "bonding_earnings": 113319.39942846695,
-        "affiliate_revenue": 30175077.0
+        "affiliate_revenue": 301750.77
       },
       "total_volume_usd": 170078051.25,
       "btc_total_amount": 273.56860619,
@@ -106,133 +106,133 @@
     },
     "top_affiliates": [
       {
-        "total_usd": 16234347.0,
+        "total_usd": 162343.47,
         "count": 657,
-        "prev_total_usd": 16677399.0,
+        "prev_total_usd": 166773.99,
         "prev_count": 2101,
         "thorname": "ll",
         "display_name": "Ledger Live",
         "logo": "https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/ledgerlive/logo.svg"
       },
       {
-        "total_usd": 3132316.0,
+        "total_usd": 31323.16,
         "count": 5028,
-        "prev_total_usd": 6784517.0,
+        "prev_total_usd": 67845.17,
         "prev_count": 8304,
         "thorname": "t1",
         "display_name": "THORSwap",
         "logo": "https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorswap/logo.svg"
       },
       {
-        "total_usd": 1134074.0,
+        "total_usd": 11340.74,
         "count": 133,
-        "prev_total_usd": 665423.0,
+        "prev_total_usd": 6654.23,
         "prev_count": 221,
         "thorname": "bgw",
         "display_name": "Bitget",
         "logo": "renderer/static/img/ecosystem/bitget.png"
       },
       {
-        "total_usd": 861456.0,
+        "total_usd": 8614.56,
         "count": 586,
-        "prev_total_usd": 670909.0,
+        "prev_total_usd": 6709.09,
         "prev_count": 753,
         "thorname": "-_",
         "display_name": "SwapKit",
         "logo": "renderer/static/img/ecosystem/swapkit.png"
       },
       {
-        "total_usd": 693873.0,
+        "total_usd": 6938.73,
         "count": 281,
-        "prev_total_usd": 1961989.0,
+        "prev_total_usd": 19619.89,
         "prev_count": 315,
         "thorname": "t",
         "display_name": "THORSwap",
         "logo": "https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorswap/logo.svg"
       },
       {
-        "total_usd": 629744.0,
+        "total_usd": 6297.44,
         "count": 70,
-        "prev_total_usd": 671408.0,
+        "prev_total_usd": 6714.08,
         "prev_count": 81,
         "thorname": "dx",
         "display_name": "Asgardex",
         "logo": "https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/asgardex/logo.png"
       },
       {
-        "total_usd": 581596.0,
+        "total_usd": 5815.96,
         "count": 136,
-        "prev_total_usd": 584073.0,
+        "prev_total_usd": 5840.73,
         "prev_count": 151,
         "thorname": "wr",
         "display_name": "THORWallet",
         "logo": "https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/thorwallet/logo.png"
       },
       {
-        "total_usd": 576398.0,
+        "total_usd": 5763.98,
         "count": 404,
-        "prev_total_usd": 671891.0,
+        "prev_total_usd": 6718.91,
         "prev_count": 440,
         "thorname": "ej",
         "display_name": "Edge",
         "logo": "https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/edgewallet/logo.svg"
       },
       {
-        "total_usd": 484506.0,
+        "total_usd": 4845.06,
         "count": 65,
-        "prev_total_usd": 693886.0,
+        "prev_total_usd": 6938.86,
         "prev_count": 69,
         "thorname": "ss",
         "display_name": "ShapeShift",
         "logo": "renderer/static/img/ecosystem/fox.png"
       },
       {
-        "total_usd": 201279.0,
+        "total_usd": 2012.79,
         "count": 11,
-        "prev_total_usd": 3121.0,
+        "prev_total_usd": 31.21,
         "prev_count": 3,
         "thorname": "CS",
         "display_name": "CacaoSwap",
         "logo": "https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/cacaoswap/logo.svg"
       },
       {
-        "total_usd": 142047.0,
+        "total_usd": 1420.47,
         "count": 56,
-        "prev_total_usd": 220690.0,
+        "prev_total_usd": 2206.9,
         "prev_count": 100,
         "thorname": "vi",
         "display_name": "Vultisig",
         "logo": "renderer/static/img/ecosystem/vult.svg"
       },
       {
-        "total_usd": 139269.0,
+        "total_usd": 1392.69,
         "count": 379,
-        "prev_total_usd": 229002.0,
+        "prev_total_usd": 2290.02,
         "prev_count": 492,
         "thorname": "rj",
         "display_name": "Rujira",
         "logo": "renderer/static/img/ecosystem/rujira.png"
       },
       {
-        "total_usd": 70725.0,
+        "total_usd": 707.25,
         "count": 47,
-        "prev_total_usd": 44392.0,
+        "prev_total_usd": 443.92,
         "prev_count": 41,
         "thorname": "va",
         "display_name": "Vultisig",
         "logo": "renderer/static/img/ecosystem/vult.svg"
       },
       {
-        "total_usd": 68121.0,
+        "total_usd": 681.21,
         "count": 8,
-        "prev_total_usd": 78733.0,
+        "prev_total_usd": 787.33,
         "prev_count": 11,
         "thorname": "v0",
         "display_name": "Vultisig",
         "logo": "renderer/static/img/ecosystem/vult.svg"
       },
       {
-        "total_usd": 40362.0,
+        "total_usd": 403.62,
         "count": 1,
         "prev_total_usd": 0.0,
         "prev_count": 0,
@@ -241,115 +241,115 @@
         "logo": ""
       },
       {
-        "total_usd": 37429.0,
+        "total_usd": 374.29,
         "count": 17,
-        "prev_total_usd": 15847.0,
+        "prev_total_usd": 158.47,
         "prev_count": 9,
         "thorname": "leo",
         "display_name": "LeoDex",
         "logo": "renderer/static/img/ecosystem/leodex.png"
       },
       {
-        "total_usd": 32786.0,
+        "total_usd": 327.86,
         "count": 48,
-        "prev_total_usd": 38592.0,
+        "prev_total_usd": 385.92,
         "prev_count": 57,
         "thorname": "hrz_ios",
         "display_name": "Hrz_ios",
         "logo": ""
       },
       {
-        "total_usd": 31560.0,
+        "total_usd": 315.6,
         "count": 15,
-        "prev_total_usd": 26548.0,
+        "prev_total_usd": 265.48,
         "prev_count": 26,
         "thorname": "KNS",
         "display_name": "Keystone",
         "logo": "renderer/static/img/ecosystem/key-stone.png"
       },
       {
-        "total_usd": 26518.0,
+        "total_usd": 265.18,
         "count": 65,
-        "prev_total_usd": 27806.0,
+        "prev_total_usd": 278.06,
         "prev_count": 26,
         "thorname": "-",
         "display_name": "-",
         "logo": ""
       },
       {
-        "total_usd": 18525.0,
+        "total_usd": 185.25,
         "count": 9,
-        "prev_total_usd": 1125.0,
+        "prev_total_usd": 11.25,
         "prev_count": 5,
         "thorname": "ro",
         "display_name": "Rango Exchange",
         "logo": "renderer/static/img/ecosystem/rango.png"
       },
       {
-        "total_usd": 16150.0,
+        "total_usd": 161.5,
         "count": 58,
-        "prev_total_usd": 20870.0,
+        "prev_total_usd": 208.7,
         "prev_count": 103,
         "thorname": "hrz",
         "display_name": "Hrz",
         "logo": ""
       },
       {
-        "total_usd": 12643.0,
+        "total_usd": 126.43,
         "count": 26,
-        "prev_total_usd": 28976.0,
+        "prev_total_usd": 289.76,
         "prev_count": 40,
         "thorname": "g1",
         "display_name": "G1",
         "logo": ""
       },
       {
-        "total_usd": 8537.0,
+        "total_usd": 85.37,
         "count": 20,
-        "prev_total_usd": 13853.0,
+        "prev_total_usd": 138.53,
         "prev_count": 29,
         "thorname": "ns",
         "display_name": "Ns",
         "logo": ""
       },
       {
-        "total_usd": 7198.0,
+        "total_usd": 71.98,
         "count": 47,
-        "prev_total_usd": 1971.0,
+        "prev_total_usd": 19.71,
         "prev_count": 47,
         "thorname": "zengo",
         "display_name": "Zengo",
         "logo": "https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/zengo/logo.svg"
       },
       {
-        "total_usd": 4191.0,
+        "total_usd": 41.91,
         "count": 40,
-        "prev_total_usd": 9607.0,
+        "prev_total_usd": 96.07,
         "prev_count": 51,
         "thorname": "ahi",
         "display_name": "Ahi",
         "logo": ""
       },
       {
-        "total_usd": 3581.0,
+        "total_usd": 35.81,
         "count": 76,
-        "prev_total_usd": 8485.0,
+        "prev_total_usd": 84.85,
         "prev_count": 126,
         "thorname": "tps",
         "display_name": "TokenPocket",
         "logo": "renderer/static/img/ecosystem/tps.png"
       },
       {
-        "total_usd": 1557.0,
+        "total_usd": 15.57,
         "count": 18,
-        "prev_total_usd": 6045.0,
+        "prev_total_usd": 60.45,
         "prev_count": 53,
         "thorname": "OKY",
         "display_name": "OneKey",
         "logo": "renderer/static/img/ecosystem/onekey.png"
       },
       {
-        "total_usd": 1302.0,
+        "total_usd": 13.02,
         "count": 2,
         "prev_total_usd": 0.0,
         "prev_count": 0,
@@ -358,25 +358,25 @@
         "logo": ""
       },
       {
-        "total_usd": 1261.0,
+        "total_usd": 12.61,
         "count": 4,
-        "prev_total_usd": 295.0,
+        "prev_total_usd": 2.95,
         "prev_count": 2,
         "thorname": "tcb",
         "display_name": "Tcb",
         "logo": ""
       },
       {
-        "total_usd": 1180.0,
+        "total_usd": 11.8,
         "count": 4,
-        "prev_total_usd": 2415.0,
+        "prev_total_usd": 24.15,
         "prev_count": 4,
         "thorname": "fv",
         "display_name": "Fv",
         "logo": ""
       },
       {
-        "total_usd": 728.0,
+        "total_usd": 7.28,
         "count": 1,
         "prev_total_usd": 0.0,
         "prev_count": 0,
@@ -385,7 +385,7 @@
         "logo": ""
       },
       {
-        "total_usd": 405.0,
+        "total_usd": 4.05,
         "count": 4,
         "prev_total_usd": 0.0,
         "prev_count": 0,
@@ -394,16 +394,16 @@
         "logo": ""
       },
       {
-        "total_usd": 266.0,
+        "total_usd": 2.66,
         "count": 7,
-        "prev_total_usd": 527.0,
+        "prev_total_usd": 5.27,
         "prev_count": 17,
         "thorname": "rapidoswaps",
         "display_name": "Rapidoswaps",
         "logo": ""
       },
       {
-        "total_usd": 129.0,
+        "total_usd": 1.29,
         "count": 3,
         "prev_total_usd": 0.0,
         "prev_count": 1,
@@ -412,7 +412,7 @@
         "logo": ""
       },
       {
-        "total_usd": 95.0,
+        "total_usd": 0.95,
         "count": 1,
         "prev_total_usd": 0.0,
         "prev_count": 0,
@@ -421,16 +421,16 @@
         "logo": ""
       },
       {
-        "total_usd": 88.0,
+        "total_usd": 0.88,
         "count": 5,
-        "prev_total_usd": 15.0,
+        "prev_total_usd": 0.15,
         "prev_count": 2,
         "thorname": "dh",
         "display_name": "Dh",
         "logo": ""
       },
       {
-        "total_usd": 77.0,
+        "total_usd": 0.77,
         "count": 2,
         "prev_total_usd": 0.0,
         "prev_count": 0,
@@ -439,25 +439,25 @@
         "logo": ""
       },
       {
-        "total_usd": 47.0,
+        "total_usd": 0.47,
         "count": 3,
-        "prev_total_usd": 5.0,
+        "prev_total_usd": 0.05,
         "prev_count": 1,
         "thorname": "moca",
         "display_name": "Moca",
         "logo": "renderer/static/img/ecosystem/moca.png"
       },
       {
-        "total_usd": 40.0,
+        "total_usd": 0.4,
         "count": 2,
-        "prev_total_usd": 512.0,
+        "prev_total_usd": 5.12,
         "prev_count": 15,
         "thorname": "sy",
         "display_name": "Symbiosis",
         "logo": "https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/symbiosis/logo.svg"
       },
       {
-        "total_usd": 13.0,
+        "total_usd": 0.13,
         "count": 1,
         "prev_total_usd": 0.0,
         "prev_count": 0,
@@ -466,25 +466,25 @@
         "logo": ""
       },
       {
-        "total_usd": 9.0,
+        "total_usd": 0.09,
         "count": 1,
-        "prev_total_usd": 323.0,
+        "prev_total_usd": 3.23,
         "prev_count": 1,
         "thorname": "cakewallet",
         "display_name": "Cake Wallet",
         "logo": "https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/cakewallet/logo.png"
       },
       {
-        "total_usd": 3.0,
+        "total_usd": 0.03,
         "count": 1,
-        "prev_total_usd": 78.0,
+        "prev_total_usd": 0.78,
         "prev_count": 1,
         "thorname": "dz",
         "display_name": "Dz",
         "logo": ""
       },
       {
-        "total_usd": 2.0,
+        "total_usd": 0.02,
         "count": 1,
         "prev_total_usd": 0.0,
         "prev_count": 0,
