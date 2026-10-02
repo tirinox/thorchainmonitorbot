@@ -186,6 +186,9 @@ class Config(SubConfig):
             ref_env.thornode_url = strip_trailing_slash(node_url)
 
         rpc_url = self.as_str('thor.node.rpc_node_url', '')
+        if backup:
+            # without its own RPC the backup has none while the main node is down: no block height for the scanner
+            rpc_url = self.as_str('thor.node.backup_rpc_node_url', '') or rpc_url
         if rpc_url:
             ref_env.rpc_url = strip_trailing_slash(rpc_url)
 

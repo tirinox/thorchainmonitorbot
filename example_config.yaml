@@ -52,6 +52,9 @@ thor:
     rpc_node_url: "https://gateway.liquify.com/chain/thorchain_rpc/"
     # archive for pruned heights (current chain only, >= 17562001); older ones are rebuilt from Midgard
     backup_node_url: "https://gateway.liquify.com/chain/thorchain_api/"
+    # RPC of the backup node (last block height for the scanner); rpc_node_url if not set.
+    # Give it another host than rpc_node_url, or there is no RPC while that node is down
+    backup_rpc_node_url: "https://gateway.liquify.com/chain/thorchain_rpc/"
 
   midgard:
     tries: 3

@@ -110,3 +110,25 @@ def test_no_config_file(tmp_path, monkeypatch):
     monkeypatch.setattr(sys, 'argv', ['dbg_tool.py', 'thor1address'])
     with pytest.raises(FileNotFoundError, match='No config file'):
         Config()
+
+
+def _node_cfg(**node):
+    return Config(data={'thor': {'network_id': 'mainnet', 'node': {
+        'node_url': 'http://ours:1317',
+        'rpc_node_url': 'http://ours:27147',
+        'backup_node_url': 'https://backup/api',
+        **node,
+    }}})
+
+
+def test_backup_node_has_its_own_rpc():
+    c = _node_cfg(backup_rpc_node_url='https://backup/rpc/')
+    assert c.get_thor_env_by_network_id().rpc_url == 'http://ours:27147'
+
+    backup = c.get_thor_env_by_network_id(backup=True)
+    assert backup.thornode_url == 'https://backup/api'
+    assert backup.rpc_url == 'https://backup/rpc'
+
+
+def test_backup_node_rpc_falls_back_to_main_rpc():
+    assert _node_cfg().get_thor_env_by_network_id(backup=True).rpc_url == 'http://ours:27147'
