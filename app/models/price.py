@@ -215,6 +215,18 @@ class PriceHolder(INotified):
     def find_pool(self, asset):
         return self.pool_info_map.get(asset)
 
+    def find_l1_pool(self, asset: str) -> Optional[PoolInfo]:
+        """The pool a swap of any form of the asset (L1, trade, secured, synth) goes through; None for RUNE"""
+        if not asset or is_rune(asset):
+            return None
+        pool_name = Asset.to_L1_pool_name(asset)
+        return self.find_pool(pool_name) or self.find_pool(self.pool_fuzzy_first(pool_name))
+
+    def shallowest_pool_on_route(self, in_asset: str, out_asset: str) -> Optional[PoolInfo]:
+        """Of the 1 or 2 pools a swap in_asset -> out_asset goes through, the one with the least RUNE depth"""
+        pools = [p for p in (self.find_l1_pool(in_asset), self.find_l1_pool(out_asset)) if p and p.balance_rune]
+        return min(pools, key=lambda p: p.balance_rune, default=None)
+
     @property
     def total_pooled_value_usd(self):
         return self.total_pooled_value_rune * self.usd_per_rune

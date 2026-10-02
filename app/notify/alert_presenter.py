@@ -390,6 +390,11 @@ class AlertPresenter(INotified, WithLogger):
             "swap_quantity": data.quantity,
             "swap_interval": data.interval,
             "total_estimated_time_sec": data.expected_total_swap_sec,
+
+            # swap volume / depth of the shallowest pool on the route, %
+            "pool_depth_usd": data.pool_depth_usd,
+            "pool_depth_asset_name": Asset(data.pool_depth_asset).name if data.pool_depth_asset else '',
+            "volume_to_pool_depth_percent": data.volume_to_pool_depth_percent,
         }
         photo = await self.renderer.render('swap_start.jinja2', parameters)
         photo_name = 'swap_start.png'

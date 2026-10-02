@@ -21,6 +21,9 @@
         "swap_quantity": 7,
         "swap_interval": 1,
         "total_estimated_time_sec": 42,
+        "pool_depth_usd": 61300000,
+        "pool_depth_asset_name": "USDC",
+        "volume_to_pool_depth_percent": 0.00112409,
         "_width": 1280,
         "_height": 720
     },

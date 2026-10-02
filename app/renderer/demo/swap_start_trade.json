@@ -24,6 +24,9 @@
 
     "swap_quantity": 33,
     "swap_interval": 6,
-    "total_estimated_time_sec": 34344
+    "total_estimated_time_sec": 34344,
+    "pool_depth_usd": 38100000,
+    "pool_depth_asset_name": "DOGE",
+    "volume_to_pool_depth_percent": 24.4182
   }
 }

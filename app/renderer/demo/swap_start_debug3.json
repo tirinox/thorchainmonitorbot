@@ -20,7 +20,10 @@
         "affiliate_fee": 0.0,
         "swap_quantity": 1440,
         "swap_interval": 10,
-        "total_estimated_time_sec": 86484
+        "total_estimated_time_sec": 86484,
+        "pool_depth_usd": 1250000,
+        "pool_depth_asset_name": "SNX",
+        "volume_to_pool_depth_percent": 4.72194
     },
     "correlation_id": "b'72bb8ccd2c327dd913ed0396'"
 }
