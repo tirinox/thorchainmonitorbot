@@ -90,16 +90,23 @@ def _fit_circle(pts):
     return c[0], c[1], np.sqrt(c[2] + c[0] ** 2 + c[1] ** 2)
 
 
+MIN_HOLE_POINTS = 20  # of the 180 rays: fewer stops do not make a circle
+
+
 def find_hole(path, brighter_by=30, start=(0.5, 0.47)):
     """
     Rays from the middle stop where the picture gets brighter than the middle by `brighter_by`;
-    a circle is fitted to the stops, outliers dropped. Returns (x, y, r) as fractions of the picture size.
+    a circle is fitted to the stops, outliers dropped. Returns (x, y, r) as fractions of the picture size,
+    or None when there is no hole at this threshold: too few rays stop (the middle is as bright as the ornament,
+    or the fit drifted out of the opening onto it).
     """
     lum = np.asarray(Image.open(path).convert('L').filter(ImageFilter.GaussianBlur(4)), dtype=float)
     h, w = lum.shape
     x0, y0 = w * start[0], h * start[1]
     r = 0
     for _ in range(4):
+        if not (30 <= x0 < w - 30 and 30 <= y0 < h - 30):
+            return None
         thr = np.median(lum[int(y0) - 30:int(y0) + 30, int(x0) - 30:int(x0) + 30]) + brighter_by
         pts = []
         for ang in np.linspace(0, 2 * np.pi, 180, endpoint=False):
@@ -110,11 +117,15 @@ def find_hole(path, brighter_by=30, start=(0.5, 0.47)):
                 if lum[y, x] > thr:
                     pts.append((x, y))
                     break
+        if len(pts) < MIN_HOLE_POINTS:
+            return None
         pts = np.array(pts, float)
         x0, y0, r = _fit_circle(pts)
         for _ in range(3):
             d = np.hypot(pts[:, 0] - x0, pts[:, 1] - y0) - r
             keep = np.abs(d) < 2.5 * np.median(np.abs(d)) + 4
+            if keep.sum() < MIN_HOLE_POINTS:
+                break
             x0, y0, r = _fit_circle(pts[keep])
     return x0 / w, y0 / h, r / w
 
@@ -141,7 +152,11 @@ def cmd_measure(args):
         print(f'  ornament from {top:.3f} to {bottom:.3f} of the height')
         circles = []
         for brighter_by, color in ((15, 'red'), (30, 'lime'), (50, 'magenta')):
-            x, y, r = find_hole(path, brighter_by)
+            hole = find_hole(path, brighter_by)
+            if hole is None:
+                print(f'  hole at +{brighter_by}: not found')
+                continue
+            x, y, r = hole
             circles.append((x, y, r, color))
             print(f'  hole at +{brighter_by}: x={x:.3f} y={y:.3f} r={r:.3f}')
         if args.overlay:
@@ -175,6 +190,8 @@ def cmd_preview(args):
 
     for path in args.images:
         hole = args.hole or find_hole(path)
+        if hole is None:
+            sys.exit(f'{path}: no hole found at +30, pass it with --hole X Y R')
         tmp = f'zz_preview_{os.path.basename(path)}'  # the renderer serves only its static dir
         shutil.copy(path, os.path.join(BG_DIR, tmp))
         try:
