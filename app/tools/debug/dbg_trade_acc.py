@@ -1,4 +1,5 @@
 import asyncio
+import json
 import pprint
 
 from comm.localization.eng_base import BaseLocalization
@@ -8,8 +9,11 @@ from jobs.scanner.trade_acc import TradeAccEventDecoder
 from lib.texts import sep
 from lib.utils import load_pickle, save_pickle
 from models.trade_acc import AlertTradeAccountAction
+from notify.channel import BoardMessage
 from notify.public.trade_acc_notify import TradeAccSummaryNotifier, TradeAccTransactionNotifier
 from tools.lib.lp_common import LpAppFramework
+
+DEMO_DATA_FILENAME = './renderer/demo/trade_asset_summary.json'
 
 
 async def demo_trade_balance(app: LpAppFramework):
@@ -143,6 +147,25 @@ async def demo_trade_acc_summary_single(app: LpAppFramework, reset_cache=False):
         print('No data!')
 
 
+async def demo_save_infographic_json(app: LpAppFramework):
+    """Live data for the renderer gallery (http://127.0.0.1:8404/render/demo); the flows need the bot's own Redis"""
+    data = await TradeAccountFetcher(app.deps).fetch()
+    with open(DEMO_DATA_FILENAME, 'w') as f:
+        json.dump({'template_name': 'trade_asset_summary.jinja2', 'parameters': data.to_dict()}, f, indent=2)
+    print(f'Saved to {DEMO_DATA_FILENAME}')
+
+
+async def demo_send_infographic(app: LpAppFramework):
+    data = await TradeAccountFetcher(app.deps).fetch()
+    loc = app.deps.loc_man.default
+    img, img_name = await app.deps.alert_presenter.render_trade_account_summary(loc, data)
+    await app.deps.broadcaster.broadcast_to_all(
+        "debug:trade_account:summary",
+        BoardMessage.make_photo(img, caption=loc.notification_text_trade_account_summary(data),
+                                photo_file_name=img_name)
+    )
+
+
 async def run():
     app = LpAppFramework()
     async with app:
@@ -158,6 +181,8 @@ async def run():
         # await demo_top_trade_asset_holders(app)
 
         # await demo_trade_acc_summary_continuous(app)
+        # await demo_save_infographic_json(app)
+        # await demo_send_infographic(app)
         await demo_trade_acc_summary_single(app, reset_cache=False)
         # await demo_trade_acc_decode_continuous(app, 19973890)
         # await demo_trade_acc_decode_continuous(app, 20950594 - 1000)

@@ -2432,7 +2432,7 @@ class BaseLocalization(ABC):  # == English
             f"⚖️ <b>Trade assets summary 24H</b>\n\n"
             f"Total holders: {bold(pretty_money(e.curr.vaults.total_traders))}"
             f" {delta_holders}\n"
-            f"Total trade assets: {bold(short_money(e.curr.vaults.total_usd))}"
+            f"Total trade assets: {bold(short_dollar(e.curr.vaults.total_usd))}"
             f" {delta_balance}\n"
             f"Deposits: {bold(short_money(e.curr.trade_deposit_count, integer=True))}"
             f" {bracketify(short_dollar(e.curr.trade_deposit_vol_usd))}\n"

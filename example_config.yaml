@@ -669,6 +669,7 @@ trade_accounts:
     fetch_period: 5m
     cooldown: 7d
     tally_period: 7d
+    chart_days: 14  # days of the trade volume chart on the infographic
 
 
 runepool:

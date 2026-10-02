@@ -1,0 +1,628 @@
+{
+  "template_name": "trade_asset_summary.jinja2",
+  "parameters": {
+    "period_seconds": 86400,
+    "period_days": 1,
+    "current": {
+      "value_usd": 8741528.640273424,
+      "holders": 619,
+      "unique_holders": 179,
+      "asset_count": 42,
+      "trade_volume_usd": 18044238.35,
+      "all_swap_volume_usd": 32379400.49,
+      "swap_count": 26115,
+      "all_swap_count": 31540,
+      "deposit_count": 41,
+      "deposit_usd": 1284300.0,
+      "withdrawal_count": 33,
+      "withdrawal_usd": 917450.0
+    },
+    "previous": {
+      "value_usd": 8515806.100250103,
+      "holders": 612,
+      "unique_holders": 177,
+      "asset_count": 41,
+      "trade_volume_usd": 21939708.05,
+      "all_swap_volume_usd": 38106230.45,
+      "swap_count": 24730,
+      "all_swap_count": 29870,
+      "deposit_count": 36,
+      "deposit_usd": 806120.0,
+      "withdrawal_count": 38,
+      "withdrawal_usd": 1103900.0
+    },
+    "assets": [
+      {
+        "asset": "BTC~BTC",
+        "pool": "BTC.BTC",
+        "name": "BTC",
+        "amount": 43.59261836,
+        "value_usd": 3717017.7876388156,
+        "holders": 58,
+        "share": 42.52137058173102,
+        "prev_amount": 45.748538090000004,
+        "prev_value_usd": 3838555.730771174,
+        "prev_holders": 58
+      },
+      {
+        "asset": "ETH~ETH",
+        "pool": "ETH.ETH",
+        "name": "ETH",
+        "amount": 587.68387493,
+        "value_usd": 1583270.5740568468,
+        "holders": 59,
+        "share": 18.11205613126406,
+        "prev_amount": 528.69295844,
+        "prev_value_usd": 1415678.9341726438,
+        "prev_holders": 59
+      },
+      {
+        "asset": "ETH~WBTC-0X2260FAC5E5542A773AA44FBCFEDF7C193BC2C599",
+        "pool": "ETH.WBTC-0X2260FAC5E5542A773AA44FBCFEDF7C193BC2C599",
+        "name": "ETH.WBTC",
+        "amount": 7.38292175,
+        "value_usd": 629299.1097206468,
+        "holders": 14,
+        "share": 7.198959536909588,
+        "prev_amount": 7.40834791,
+        "prev_value_usd": 621083.2374181427,
+        "prev_holders": 14
+      },
+      {
+        "asset": "LTC~LTC",
+        "pool": "LTC.LTC",
+        "name": "LTC",
+        "amount": 7937.57182904,
+        "value_usd": 558344.2324593036,
+        "holders": 26,
+        "share": 6.387260803412975,
+        "prev_amount": 7057.2837512900005,
+        "prev_value_usd": 472996.6561816727,
+        "prev_holders": 24
+      },
+      {
+        "asset": "ETH~USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7",
+        "pool": "ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7",
+        "name": "ETH.USDT",
+        "amount": 491735.16825989,
+        "value_usd": 491522.0846594279,
+        "holders": 49,
+        "share": 5.622839035210823,
+        "prev_amount": 367956.00920936,
+        "prev_value_usd": 367967.65501705144,
+        "prev_holders": 49
+      },
+      {
+        "asset": "BSC~BNB",
+        "pool": "BSC.BNB",
+        "name": "BNB",
+        "amount": 484.32061658000003,
+        "value_usd": 374604.64924787945,
+        "holders": 21,
+        "share": 4.285344871170751,
+        "prev_amount": 493.73013624000004,
+        "prev_value_usd": 378077.07433819433,
+        "prev_holders": 21
+      },
+      {
+        "asset": "ETH~USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+        "pool": "ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+        "name": "ETH.USDC",
+        "amount": 313949.51554839,
+        "value_usd": 313795.2376169544,
+        "holders": 52,
+        "share": 3.589706680948874,
+        "prev_amount": 307317.36487241,
+        "prev_value_usd": 307533.06785764033,
+        "prev_holders": 52
+      },
+      {
+        "asset": "TRON~USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T",
+        "pool": "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T",
+        "name": "TRON.USDT",
+        "amount": 235792.2806463,
+        "value_usd": 235782.62495240755,
+        "holders": 15,
+        "share": 2.697269947342214,
+        "prev_amount": 203738.11252066,
+        "prev_value_usd": 203731.65605987422,
+        "prev_holders": 15
+      },
+      {
+        "asset": "BCH~BCH",
+        "pool": "BCH.BCH",
+        "name": "BCH",
+        "amount": 635.1007722200001,
+        "value_usd": 199367.8111260434,
+        "holders": 21,
+        "share": 2.280697339450774,
+        "prev_amount": 682.42752766,
+        "prev_value_usd": 209613.30084078273,
+        "prev_holders": 20
+      },
+      {
+        "asset": "AVAX~AVAX",
+        "pool": "AVAX.AVAX",
+        "name": "AVAX",
+        "amount": 11868.96485668,
+        "value_usd": 132417.22471741922,
+        "holders": 18,
+        "share": 1.5148062789310655,
+        "prev_amount": 10686.40919744,
+        "prev_value_usd": 116064.31937583633,
+        "prev_holders": 18
+      },
+      {
+        "asset": "DOGE~DOGE",
+        "pool": "DOGE.DOGE",
+        "name": "DOGE",
+        "amount": 1347586.48044333,
+        "value_usd": 128425.23415181582,
+        "holders": 19,
+        "share": 1.4691393168941085,
+        "prev_amount": 1331102.95924377,
+        "prev_value_usd": 125237.23456236748,
+        "prev_holders": 20
+      },
+      {
+        "asset": "XRP~XRP",
+        "pool": "XRP.XRP",
+        "name": "XRP",
+        "amount": 56551.84051722,
+        "value_usd": 85194.13187462081,
+        "holders": 12,
+        "share": 0.9745907767449247,
+        "prev_amount": 73761.19241794001,
+        "prev_value_usd": 109367.52567207006,
+        "prev_holders": 11
+      },
+      {
+        "asset": "AVAX~USDC-0XB97EF9EF8734C71904D8002F8B6BC66DD9C48A6E",
+        "pool": "AVAX.USDC-0XB97EF9EF8734C71904D8002F8B6BC66DD9C48A6E",
+        "name": "AVAX.USDC",
+        "amount": 40712.15353125,
+        "value_usd": 40713.81987969403,
+        "holders": 21,
+        "share": 0.46575171866531284,
+        "prev_amount": 40156.299271460004,
+        "prev_value_usd": 40176.67979802925,
+        "prev_holders": 21
+      },
+      {
+        "asset": "BSC~USDT-0X55D398326F99059FF775485246999027B3197955",
+        "pool": "BSC.USDT-0X55D398326F99059FF775485246999027B3197955",
+        "name": "BSC.USDT",
+        "amount": 37957.1294586,
+        "value_usd": 37977.76333374499,
+        "holders": 22,
+        "share": 0.43445219819764946,
+        "prev_amount": 38843.31351909,
+        "prev_value_usd": 38801.4986920867,
+        "prev_holders": 22
+      },
+      {
+        "asset": "AVAX~USDT-0X9702230A8EA53601F5CD2DC00FDBC13D4DF4A8C7",
+        "pool": "AVAX.USDT-0X9702230A8EA53601F5CD2DC00FDBC13D4DF4A8C7",
+        "name": "AVAX.USDT",
+        "amount": 25497.34556293,
+        "value_usd": 25483.401064641635,
+        "holders": 17,
+        "share": 0.2915211070434078,
+        "prev_amount": 25626.24793384,
+        "prev_value_usd": 25600.85590981228,
+        "prev_holders": 17
+      },
+      {
+        "asset": "TRON~TRX",
+        "pool": "TRON.TRX",
+        "name": "TRON.TRX",
+        "amount": 74333.03723663,
+        "value_usd": 24986.667651951404,
+        "holders": 6,
+        "share": 0.28583865225624716,
+        "prev_amount": 94291.06919638,
+        "prev_value_usd": 31451.41599479478,
+        "prev_holders": 5
+      },
+      {
+        "asset": "ETH~DAI-0X6B175474E89094C44DA98B954EEDEAC495271D0F",
+        "pool": "ETH.DAI-0X6B175474E89094C44DA98B954EEDEAC495271D0F",
+        "name": "ETH.DAI",
+        "amount": 24507.52756642,
+        "value_usd": 24513.151553845943,
+        "holders": 18,
+        "share": 0.2804217953472175,
+        "prev_amount": 29923.61619456,
+        "prev_value_usd": 29945.450559588688,
+        "prev_holders": 18
+      },
+      {
+        "asset": "GAIA~ATOM",
+        "pool": "GAIA.ATOM",
+        "name": "ATOM",
+        "amount": 10874.54155514,
+        "value_usd": 18735.780268975373,
+        "holders": 13,
+        "share": 0.21433070850625666,
+        "prev_amount": 9749.99372076,
+        "prev_value_usd": 16638.671214279268,
+        "prev_holders": 13
+      },
+      {
+        "asset": "BASE~USDC-0X833589FCD6EDB6E08F4C7C32D4F71B54BDA02913",
+        "pool": "BASE.USDC-0X833589FCD6EDB6E08F4C7C32D4F71B54BDA02913",
+        "name": "BASE.USDC",
+        "amount": 18594.75331094,
+        "value_usd": 18596.44580538636,
+        "holders": 16,
+        "share": 0.21273677145791156,
+        "prev_amount": 61959.57194735,
+        "prev_value_usd": 61862.36171613464,
+        "prev_holders": 16
+      },
+      {
+        "asset": "BSC~BTCB-0X7130D2A12B9BCBFAE4F2634D864A1EE1CE3EAD9C",
+        "pool": "BSC.BTCB-0X7130D2A12B9BCBFAE4F2634D864A1EE1CE3EAD9C",
+        "name": "BSC.BTCB",
+        "amount": 0.19649315,
+        "value_usd": 16747.188313484123,
+        "holders": 12,
+        "share": 0.19158191893723855,
+        "prev_amount": 0.19206568000000002,
+        "prev_value_usd": 16118.087402743713,
+        "prev_holders": 12
+      },
+      {
+        "asset": "BASE~ETH",
+        "pool": "BASE.ETH",
+        "name": "BASE.ETH",
+        "amount": 5.76517589,
+        "value_usd": 15556.230535258164,
+        "holders": 11,
+        "share": 0.17795778261926035,
+        "prev_amount": 8.49605263,
+        "prev_value_usd": 22733.14046649224,
+        "prev_holders": 11
+      },
+      {
+        "asset": "BSC~USDC-0X8AC76A51CC950D9822D68B83FE1AD97B32CD580D",
+        "pool": "BSC.USDC-0X8AC76A51CC950D9822D68B83FE1AD97B32CD580D",
+        "name": "BSC.USDC",
+        "amount": 12372.92844014,
+        "value_usd": 12332.573886573915,
+        "holders": 18,
+        "share": 0.14108028920429377,
+        "prev_amount": 12372.92844014,
+        "prev_value_usd": 12296.58165638797,
+        "prev_holders": 18
+      },
+      {
+        "asset": "ETH~THOR-0XA5F2211B9B8170F694421F2046281775E8468044",
+        "pool": "ETH.THOR-0XA5F2211B9B8170F694421F2046281775E8468044",
+        "name": "ETH.THOR",
+        "amount": 309946.18048934,
+        "value_usd": 11854.034248057833,
+        "holders": 10,
+        "share": 0.13560596476735964,
+        "prev_amount": 309946.18048934,
+        "prev_value_usd": 12057.06759304918,
+        "prev_holders": 10
+      },
+      {
+        "asset": "SOL~SOL",
+        "pool": "SOL.SOL",
+        "name": "SOL.SOL",
+        "amount": 66.51328124,
+        "value_usd": 10295.689600637288,
+        "holders": 9,
+        "share": 0.1177790524325875,
+        "prev_amount": 66.41428124000001,
+        "prev_value_usd": 10250.361509481716,
+        "prev_holders": 8
+      },
+      {
+        "asset": "BSC~ETH-0X2170ED0880AC9A755FD29B2688956BD959F933F8",
+        "pool": "BSC.ETH-0X2170ED0880AC9A755FD29B2688956BD959F933F8",
+        "name": "BSC.ETH",
+        "amount": 3.29699315,
+        "value_usd": 8888.065417751082,
+        "holders": 7,
+        "share": 0.10167632897526119,
+        "prev_amount": 3.25366915,
+        "prev_value_usd": 8709.875925748114,
+        "prev_holders": 7
+      },
+      {
+        "asset": "BASE~VVV-0XACFE6019ED1A7DC6F7B508C02D1B04EC88CC21BF",
+        "pool": "BASE.VVV-0XACFE6019ED1A7DC6F7B508C02D1B04EC88CC21BF",
+        "name": "BASE.VVV",
+        "amount": 243.95878694,
+        "value_usd": 7104.522412053134,
+        "holders": 3,
+        "share": 0.08127322696538021,
+        "prev_amount": 223.58284,
+        "prev_value_usd": 6033.7876044537725,
+        "prev_holders": 3
+      },
+      {
+        "asset": "ETH~AAVE-0X7FC66500C84A76AD7E9C93437BFC5AC33E2DDAE9",
+        "pool": "ETH.AAVE-0X7FC66500C84A76AD7E9C93437BFC5AC33E2DDAE9",
+        "name": "ETH.AAVE",
+        "amount": 37.12947853,
+        "value_usd": 6825.570563881727,
+        "holders": 5,
+        "share": 0.07808211635245792,
+        "prev_amount": 30.67629686,
+        "prev_value_usd": 5125.1028109221,
+        "prev_holders": 5
+      },
+      {
+        "asset": "BSC~BUSD-0XE9E7CEA3DEDCA5984780BAFC599BD69ADD087D56",
+        "pool": "BSC.BUSD-0XE9E7CEA3DEDCA5984780BAFC599BD69ADD087D56",
+        "name": "BSC.BUSD",
+        "amount": 4301.92113674,
+        "value_usd": 4287.3171899610525,
+        "holders": 7,
+        "share": 0.04904539430562285,
+        "prev_amount": 4405.41177938,
+        "prev_value_usd": 4391.664207327149,
+        "prev_holders": 7
+      },
+      {
+        "asset": "ETH~USDP-0X8E870D67F660D95D5BE530380D0EC0BD388289E1",
+        "pool": "ETH.USDP-0X8E870D67F660D95D5BE530380D0EC0BD388289E1",
+        "name": "ETH.USDP",
+        "amount": 2314.82911344,
+        "value_usd": 2310.6238791310693,
+        "holders": 7,
+        "share": 0.02643272102874213,
+        "prev_amount": 2376.07124999,
+        "prev_value_usd": 2369.153627434917,
+        "prev_holders": 7
+      },
+      {
+        "asset": "ETH~LUSD-0X5F98805A4E8BE255A32880FDEC7F6728C6568BA0",
+        "pool": "ETH.LUSD-0X5F98805A4E8BE255A32880FDEC7F6728C6568BA0",
+        "name": "ETH.LUSD",
+        "amount": 1982.05405109,
+        "value_usd": 1977.767859204518,
+        "holders": 9,
+        "share": 0.022624965730738095,
+        "prev_amount": 2023.38940384,
+        "prev_value_usd": 2016.7616097426758,
+        "prev_holders": 9
+      },
+      {
+        "asset": "ETH~GUSD-0X056FD409E1D7A124BD7017459DFEA2F387B6D5CD",
+        "pool": "ETH.GUSD-0X056FD409E1D7A124BD7017459DFEA2F387B6D5CD",
+        "name": "ETH.GUSD",
+        "amount": 1181.7724658500001,
+        "value_usd": 1179.2874110733615,
+        "holders": 8,
+        "share": 0.013490631439908831,
+        "prev_amount": 1221.13675626,
+        "prev_value_usd": 1217.493616861374,
+        "prev_holders": 8
+      },
+      {
+        "asset": "AVAX~SOL-0XFE6B19286885A4F7F55ADAD09C3CD1F906D2478F",
+        "pool": "AVAX.SOL-0XFE6B19286885A4F7F55ADAD09C3CD1F906D2478F",
+        "name": "AVAX.SOL",
+        "amount": 6.20637844,
+        "value_usd": 1005.2490034106112,
+        "holders": 3,
+        "share": 0.011499693529336401,
+        "prev_amount": 6.20637844,
+        "prev_value_usd": 1002.3152115802628,
+        "prev_holders": 3
+      },
+      {
+        "asset": "ETH~YFI-0X0BC529C00C6401AEF6D220BE8C6EA1667F6AD93E",
+        "pool": "ETH.YFI-0X0BC529C00C6401AEF6D220BE8C6EA1667F6AD93E",
+        "name": "ETH.YFI",
+        "amount": 0.134909,
+        "value_usd": 483.33864685670557,
+        "holders": 2,
+        "share": 0.005529223397265988,
+        "prev_amount": 0.134909,
+        "prev_value_usd": 481.9280361793215,
+        "prev_holders": 2
+      },
+      {
+        "asset": "BSC~TWT-0X4B0F1812E5DF2A09796481FF14017E6005508003",
+        "pool": "BSC.TWT-0X4B0F1812E5DF2A09796481FF14017E6005508003",
+        "name": "BSC.TWT",
+        "amount": 447.9278717,
+        "value_usd": 341.30457240683637,
+        "holders": 13,
+        "share": 0.003904403754217532,
+        "prev_amount": 447.9278717,
+        "prev_value_usd": 340.30848384358603,
+        "prev_holders": 13
+      },
+      {
+        "asset": "ETH~VTHOR-0X815C23ECA83261B6EC689B60CC4A58B54BC24D8D",
+        "pool": "ETH.VTHOR-0X815C23ECA83261B6EC689B60CC4A58B54BC24D8D",
+        "name": "ETH.VTHOR",
+        "amount": 696.55691642,
+        "value_usd": 155.73324893742713,
+        "holders": 2,
+        "share": 0.0017815333604232863,
+        "prev_amount": 696.55691642,
+        "prev_value_usd": 155.2787455494631,
+        "prev_holders": 2
+      },
+      {
+        "asset": "ETH~LINK-0X514910771AF9CA656AF840DFF83E8264ECF986CA",
+        "pool": "ETH.LINK-0X514910771AF9CA656AF840DFF83E8264ECF986CA",
+        "name": "ETH.LINK",
+        "amount": 7.47384279,
+        "value_usd": 124.2110346578896,
+        "holders": 3,
+        "share": 0.0014209303632048095,
+        "prev_amount": 7.47384279,
+        "prev_value_usd": 123.84852817046281,
+        "prev_holders": 3
+      },
+      {
+        "asset": "ZEC~ZEC",
+        "pool": "ZEC.ZEC",
+        "name": "ZEC",
+        "amount": 0.00917625,
+        "value_usd": 12.183557768487713,
+        "holders": 2,
+        "share": 0.00013937559744821274,
+        "prev_amount": null,
+        "prev_value_usd": null,
+        "prev_holders": null
+      },
+      {
+        "asset": "ETH~TGT-0X108A850856DB3F85D0269A2693D896B394C80325",
+        "pool": "ETH.TGT-0X108A850856DB3F85D0269A2693D896B394C80325",
+        "name": "ETH.TGT",
+        "amount": 0.71829805,
+        "value_usd": 0.0086642906536125,
+        "holders": 3,
+        "share": 9.911642471426477e-08,
+        "prev_amount": 0.71829805,
+        "prev_value_usd": 0.008639006562252501,
+        "prev_holders": 3
+      },
+      {
+        "asset": "ETH~SNX-0XC011A73EE8576FB46F5E1C5751CA3B9FE0AF2A6F",
+        "pool": "ETH.SNX-0XC011A73EE8576FB46F5E1C5751CA3B9FE0AF2A6F",
+        "name": "ETH.SNX",
+        "amount": 0.01058157,
+        "value_usd": 0.0083446061028327,
+        "holders": 3,
+        "share": 9.545934637093052e-08,
+        "prev_amount": 0.01058157,
+        "prev_value_usd": 0.0083202526194777,
+        "prev_holders": 3
+      },
+      {
+        "asset": "ETH~DPI-0X1494CA1F11D487C2BBE4543E90080AEBA4BA3C2B",
+        "pool": "ETH.DPI-0X1494CA1F11D487C2BBE4543E90080AEBA4BA3C2B",
+        "name": "ETH.DPI",
+        "amount": 2.0100000000000002e-06,
+        "value_usd": 0.00010299973637940002,
+        "holders": 4,
+        "share": 1.178280603061415e-09,
+        "prev_amount": 2.0100000000000002e-06,
+        "prev_value_usd": 0.00010269913446750002,
+        "prev_holders": 4
+      },
+      {
+        "asset": "ETH~FOX-0XC770EEFAD204B5180DF6A14EE197D99D808EE52D",
+        "pool": "ETH.FOX-0XC770EEFAD204B5180DF6A14EE197D99D808EE52D",
+        "name": "ETH.FOX",
+        "amount": 0.0,
+        "value_usd": 0.0,
+        "holders": 0,
+        "share": 0.0,
+        "prev_amount": 0.0,
+        "prev_value_usd": 0.0,
+        "prev_holders": 0
+      },
+      {
+        "asset": "ETH~XRUNE-0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C",
+        "pool": "ETH.XRUNE-0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C",
+        "name": "ETH.XRUNE",
+        "amount": 0.0,
+        "value_usd": 0.0,
+        "holders": 0,
+        "share": 0.0,
+        "prev_amount": 0.0,
+        "prev_value_usd": 0.0,
+        "prev_holders": 0
+      }
+    ],
+    "daily": [
+      {
+        "date": "2026-09-18",
+        "trade_volume_usd": 8120300.51,
+        "all_swap_volume_usd": 14517565.59,
+        "trade_swap_count": 40904
+      },
+      {
+        "date": "2026-09-19",
+        "trade_volume_usd": 14541592.97,
+        "all_swap_volume_usd": 27259120.82,
+        "trade_swap_count": 34175
+      },
+      {
+        "date": "2026-09-20",
+        "trade_volume_usd": 13150260.030000001,
+        "all_swap_volume_usd": 23308888.78,
+        "trade_swap_count": 31852
+      },
+      {
+        "date": "2026-09-21",
+        "trade_volume_usd": 30390011.15,
+        "all_swap_volume_usd": 58507443.21,
+        "trade_swap_count": 81542
+      },
+      {
+        "date": "2026-09-22",
+        "trade_volume_usd": 16865234.16,
+        "all_swap_volume_usd": 26753400.72,
+        "trade_swap_count": 69102
+      },
+      {
+        "date": "2026-09-23",
+        "trade_volume_usd": 12910203.86,
+        "all_swap_volume_usd": 21287639.54,
+        "trade_swap_count": 42828
+      },
+      {
+        "date": "2026-09-24",
+        "trade_volume_usd": 24986820.61,
+        "all_swap_volume_usd": 48727698.05,
+        "trade_swap_count": 77213
+      },
+      {
+        "date": "2026-09-25",
+        "trade_volume_usd": 116814694.96000001,
+        "all_swap_volume_usd": 213728977.76,
+        "trade_swap_count": 182489
+      },
+      {
+        "date": "2026-09-26",
+        "trade_volume_usd": 258486524.60000002,
+        "all_swap_volume_usd": 467996007.14,
+        "trade_swap_count": 244670
+      },
+      {
+        "date": "2026-09-27",
+        "trade_volume_usd": 112069104.50999999,
+        "all_swap_volume_usd": 189606744.26,
+        "trade_swap_count": 134782
+      },
+      {
+        "date": "2026-09-28",
+        "trade_volume_usd": 131944996.0,
+        "all_swap_volume_usd": 245184027.97,
+        "trade_swap_count": 105490
+      },
+      {
+        "date": "2026-09-29",
+        "trade_volume_usd": 137381793.14,
+        "all_swap_volume_usd": 264717766.77,
+        "trade_swap_count": 93201
+      },
+      {
+        "date": "2026-09-30",
+        "trade_volume_usd": 21939708.05,
+        "all_swap_volume_usd": 38106230.45,
+        "trade_swap_count": 55426
+      },
+      {
+        "date": "2026-10-01",
+        "trade_volume_usd": 18044238.35,
+        "all_swap_volume_usd": 32379400.49,
+        "trade_swap_count": 50611
+      }
+    ],
+    "chart_days": 14
+  }
+}

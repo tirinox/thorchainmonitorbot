@@ -17,6 +17,7 @@ TEMPLATE_GROUPS = {
     'rune_transfer_stats.jinja2': 'RUNE transfers',
     'pol_summary_adr024.jinja2': 'POL summary',
     'secured_asset_summary.jinja2': 'Secured assets',
+    'trade_asset_summary.jinja2': 'Trade assets',
     'tcy_info.jinja2': 'TCY',
     'rujira.jinja2': 'Rujira',
     'app_layer_stats.jinja2': 'App layer',

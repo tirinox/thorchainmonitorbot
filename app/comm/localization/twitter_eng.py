@@ -875,7 +875,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f"⚖️ Trade assets summary 24H\n\n"
                 f"Total holders: {pretty_money(e.curr.vaults.total_traders)}"
                 f" {delta_holders}\n"
-                f"Total trade assets: {short_money(e.curr.vaults.total_usd)}"
+                f"Total trade assets: {short_dollar(e.curr.vaults.total_usd)}"
                 f" {delta_balance}\n"
                 f"Deposits: {short_money(e.curr.trade_deposit_count, integer=True)}"
                 f" {bracketify(short_dollar(e.curr.trade_deposit_vol_usd))}\n"

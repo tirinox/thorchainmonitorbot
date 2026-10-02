@@ -1,0 +1,533 @@
+{% set _width, _height = set_viewport_size(1440, 1180) %}
+{% extends "base.jinja2" %}
+
+{% block content %}
+{% set assets     = assets or [] %}
+{% set daily      = daily or [] %}
+{% set prev       = previous or {} %}
+{% set days       = period_days | default(1) | int %}
+{% set max_assets = max_assets | default(6) | int %}
+{% set max_shares = 5 %}
+{% set palette    = ['#33FF99', '#23DCC8', '#f5c518', '#7aa2ff', '#ff7f8a', '#c58bff'] %}
+{% set others_color = '#5f7d86' %}
+{% set period_label = '24H' if days <= 1 else days ~ ' days' %}
+
+{# ── helpers ─────────────────────────────────────────────── #}
+{% macro sign_class(v) -%}
+  {%- set p = v | float -%}
+  {%- if p > 0.05 -%}delta-pos{%- elif p < -0.05 -%}delta-neg{%- else -%}delta-zero{%- endif -%}
+{%- endmacro %}
+
+{% macro signed_pct(v, digits=1) -%}
+  {%- set p = v | float -%}
+  {%- if p > 0 -%}+{%- endif -%}{{ ('%.' ~ digits ~ 'f') | format(p) }}%
+{%- endmacro %}
+
+{# relative change of curr against prev; nothing if prev is unknown or the change is tiny #}
+{% macro pct_delta(curr, old, cls='delta') -%}
+  {%- if old and curr is not none -%}
+    {%- set p = ((curr | float) / (old | float) - 1) * 100 -%}
+    {%- if p > 0.05 or p < -0.05 -%}
+      <span class="{{ cls }} {{ sign_class(p) }}">{{ signed_pct(p) }}</span>
+    {%- endif -%}
+  {%- endif -%}
+{%- endmacro %}
+
+{# absolute change of an integer, e.g. +7 holders #}
+{% macro int_delta(curr, old, cls='delta') -%}
+  {%- if old is not none and curr is not none and curr != old -%}
+    {%- set d = (curr | int) - (old | int) -%}
+    <span class="{{ cls }} {{ sign_class(d) }}">{{ '+' if d > 0 else '' }}{{ short_money(d, integer=True) }}</span>
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro share_of(part, whole) -%}
+  {%- if whole -%}{{ '%.1f' | format((part | float) / (whole | float) * 100) }}%{%- else -%}N/A{%- endif -%}
+{%- endmacro %}
+
+{% macro ticker(name) -%}
+  {{- name.split('.')[-1] -}}
+{%- endmacro %}
+
+{% macro ddmm(date) -%}
+  {{- date[8:10] }}.{{ date[5:7] -}}
+{%- endmacro %}
+
+<style>
+  /* ── period pill ─────────────────────────────────────── */
+  .period-pill {
+    position: absolute;
+    top: 39px; right: 34px;
+    padding: 13px 20px;
+    border-radius: 14px;
+    background: rgba(18,34,37,.85);
+    border: 1px solid rgba(55,255,173,.16);
+    text-align: right;
+    min-width: 280px;
+  }
+  .period-main {
+    font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 3px;
+    text-transform: uppercase; letter-spacing: .1em;
+  }
+  .period-sub {
+    font-size: 17px; color: #97b8b0;
+    text-transform: uppercase; letter-spacing: .08em;
+  }
+
+  /* ── main layout ─────────────────────────────────────── */
+  .layout {
+    position: absolute;
+    top: 140px; left: 30px; right: 30px; bottom: 50px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  /* ── stat cards ──────────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .card {
+    padding: 18px 22px 16px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(18,29,35,.94), rgba(10,16,21,.95));
+    border: 1px solid rgba(255,255,255,.05);
+  }
+  .card-title {
+    color: #91a3a9; font-size: 19px; text-transform: uppercase;
+    letter-spacing: .14em; font-weight: 400; margin-bottom: 9px; white-space: nowrap;
+  }
+  .card-value-row { display: flex; align-items: flex-end; gap: 12px; white-space: nowrap; }
+  .card-value {
+    color: #fff; font-size: 54px; font-weight: 800; line-height: 1;
+    text-shadow: rgba(35,220,200,.14) 0 0 16px;
+  }
+  .card-sub { margin-top: 9px; font-size: 21px; color: #9eb3ba; white-space: nowrap; }
+  .card-sub b { color: #dbe6ea; font-weight: 700; }
+  .delta      { font-size: 25px; font-weight: 800; letter-spacing: .03em; padding-bottom: 4px; }
+  .delta-pos  { color: #33FF99; text-shadow: rgba(51,255,153,.22) 0 0 14px; }
+  .delta-neg  { color: #ff7f8a; text-shadow: rgba(255,127,138,.22) 0 0 14px; }
+  .delta-zero { color: #9ca7ad; }
+
+  /* ── content row ─────────────────────────────────────── */
+  .content-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(500px, 1fr);
+    gap: 16px; flex: 1; min-height: 0;
+  }
+  .panel {
+    border-radius: 20px; padding: 18px 22px 16px;
+    background: linear-gradient(180deg, rgba(15,24,30,.97), rgba(9,14,19,.98));
+    border: 1px solid rgba(255,255,255,.05);
+    min-height: 0;
+  }
+  .panel-title {
+    color: #fff; font-size: 27px; font-weight: 800;
+    letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .panel-title small { font-size: 18px; color: #8ea4ab; font-weight: 400; margin-left: 10px; }
+
+  /* ── chart ───────────────────────────────────────────── */
+  .chart-shell { display: flex; flex-direction: column; height: 100%; }
+  .legend-row  { display: flex; gap: 20px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 8px; color: #b4c4c9; font-size: 18px; }
+  .legend-dot  { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+  .legend-line { width: 22px; height: 4px; border-radius: 2px; flex-shrink: 0; background: rgba(255,195,60,.85); }
+  .chart-wrap  { flex: 1; position: relative; min-height: 0; }
+  .chart-footer {
+    display: grid; grid-template-columns: repeat(3, minmax(0,1fr));
+    gap: 10px; margin-top: 12px;
+  }
+  .mini-stat  { border-radius: 13px; padding: 9px 14px; background: rgba(255,255,255,.03); }
+  .mini-label { font-size: 16px; color: #9eb3ba; text-transform: uppercase;
+                letter-spacing: .09em; margin-bottom: 4px; white-space: nowrap; }
+  .mini-value { font-size: 27px; color: #fff; font-weight: 800; white-space: nowrap; }
+  .mini-value small { font-size: 18px; color: #8ea4ab; font-weight: 600; }
+
+  /* ── top assets ──────────────────────────────────────── */
+  .assets-shell { display: flex; flex-direction: column; height: 100%; }
+  .assets-list  { display: flex; flex-direction: column; gap: 7px; margin-top: 8px; }
+  .asset-row {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    gap: 12px; align-items: center;
+    padding: 8px 14px 8px 8px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.03);
+    border-left: 4px solid transparent;
+  }
+  .asset-logo {
+    width: 46px; height: 46px; border-radius: 50%;
+    border: 1px solid rgba(156,161,159,.4);
+  }
+  .asset-name {
+    color: #fff; font-size: 25px; font-weight: 800; letter-spacing: .03em; line-height: 1.1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .asset-sub   { color: #8ea4ab; font-size: 17px; margin-top: 2px; white-space: nowrap; }
+  .asset-sub b { color: #cfe9e1; font-weight: 700; }
+  .asset-right { text-align: right; white-space: nowrap; }
+  .asset-value { color: #fff; font-size: 26px; font-weight: 800; line-height: 1.1; }
+  .asset-delta { font-size: 17px; font-weight: 700; margin-top: 2px; min-height: 20px; }
+  .others-badge {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.12);
+    color: #8ea4ab; font-size: 16px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .asset-row-others .asset-name { color: #8ea4ab; font-style: italic; }
+
+  .shares { margin-top: auto; padding-top: 12px; }
+  .shares-label {
+    font-size: 16px; color: #6ae9e0; text-transform: uppercase;
+    letter-spacing: .12em; margin-bottom: 7px;
+  }
+  .shares-bar {
+    display: flex; height: 22px; border-radius: 8px; overflow: hidden; gap: 2px;
+    background: rgba(255,255,255,.04);
+  }
+  .shares-seg { height: 100%; min-width: 3px; }
+  .shares-legend {
+    display: flex; flex-wrap: wrap; gap: 5px 18px; margin-top: 9px;
+    font-size: 19px; color: #b4c4c9;
+  }
+  .shares-legend span { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+  .shares-legend b { color: #fff; font-weight: 700; }
+
+  .empty-state {
+    color: #637870; font-size: 22px; margin-top: 24px;
+    text-align: center; text-transform: uppercase; letter-spacing: .06em;
+  }
+
+  /* ── flows strip ─────────────────────────────────────── */
+  .flows-strip {
+    display: grid;
+    grid-template-columns: auto repeat(3, minmax(0, 1fr));
+    align-items: center;
+    padding: 14px 22px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(18,29,35,.94), rgba(10,16,21,.95));
+    border: 1px solid rgba(55,255,173,.16);
+  }
+  .flows-badge {
+    display: flex; flex-direction: column; gap: 3px;
+    padding-right: 28px;
+    border-right: 1px solid rgba(255,255,255,.07);
+    white-space: nowrap;
+  }
+  .flows-badge-title {
+    color: #33FF99; font-size: 24px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: .14em;
+  }
+  .flows-badge-hint { font-size: 16px; color: #8ea4ab; }
+  .flow-cell {
+    padding: 0 24px;
+    border-right: 1px solid rgba(255,255,255,.06);
+  }
+  .flow-cell:last-child { border-right: none; }
+  .flow-label {
+    font-size: 18px; color: #9eb3ba; text-transform: uppercase;
+    letter-spacing: .09em; margin-bottom: 4px; white-space: nowrap;
+  }
+  .flow-value-row { display: flex; align-items: baseline; gap: 10px; white-space: nowrap; }
+  .flow-value { font-size: 34px; color: #fff; font-weight: 800; line-height: 1; }
+  .flow-value small { font-size: 20px; color: #8ea4ab; font-weight: 600; }
+  .flow-value.delta-pos { color: #33FF99; }
+  .flow-value.delta-neg { color: #ff7f8a; }
+  .flow-delta { font-size: 19px; }
+</style>
+
+{# ── header ───────────────────────────────────────────────── #}
+{% with title="TRADE ASSETS" %}
+  {% include "components/header.jinja2" %}
+{% endwith %}
+
+<div class="period-pill shadow-box">
+  <div class="period-main">Last {{ period_label }}</div>
+  <div class="period-sub">Trade accounts overview</div>
+</div>
+
+<div class="layout">
+
+  {# ── stat cards ────────────────────────────────────────── #}
+  <div class="stats-grid">
+
+    <div class="card shadow-box">
+      <div class="card-title">💰 Total value</div>
+      <div class="card-value-row">
+        <div class="card-value">{{ short_dollar(current.value_usd or 0) }}</div>
+        {{ pct_delta(current.value_usd, prev.get('value_usd')) }}
+      </div>
+      <div class="card-sub">in <b>{{ current.asset_count or 0 }}</b> trade assets</div>
+    </div>
+
+    <div class="card shadow-box">
+      <div class="card-title">👥 Holders</div>
+      <div class="card-value-row">
+        <div class="card-value">{{ short_money(current.holders or 0, integer=True) }}</div>
+        {{ int_delta(current.holders, prev.get('holders')) }}
+      </div>
+      <div class="card-sub"><b>{{ short_money(current.unique_holders or 0, integer=True) }}</b> unique addresses</div>
+    </div>
+
+    <div class="card shadow-box">
+      <div class="card-title">📈 Trade volume</div>
+      <div class="card-value-row">
+        <div class="card-value">{{ short_dollar(current.trade_volume_usd) }}</div>
+        {{ pct_delta(current.trade_volume_usd, prev.get('trade_volume_usd')) }}
+      </div>
+      <div class="card-sub"><b>{{ share_of(current.trade_volume_usd, current.all_swap_volume_usd) }}</b> of all swap volume</div>
+    </div>
+
+    <div class="card shadow-box">
+      <div class="card-title">🔄 Trade swaps</div>
+      <div class="card-value-row">
+        <div class="card-value">{{ short_money(current.swap_count, integer=True) }}</div>
+        {{ pct_delta(current.swap_count, prev.get('swap_count')) }}
+      </div>
+      <div class="card-sub"><b>{{ share_of(current.swap_count, current.all_swap_count) }}</b> of all swaps</div>
+    </div>
+
+  </div>
+
+  {# ── content row ───────────────────────────────────────── #}
+  <div class="content-row">
+
+    {# chart panel #}
+    <div class="panel chart-shell shadow-box">
+      <div class="panel-title">📊 Trade volume <small>last {{ daily | length }} days</small></div>
+
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-dot" style="background: #33FF99"></div>Volume of trade asset swaps</div>
+        <div class="legend-item"><div class="legend-line"></div>Share of all swap volume</div>
+      </div>
+
+      <div class="chart-wrap">
+        <canvas id="volumeChart"></canvas>
+      </div>
+
+      {% set vols = daily | map(attribute='trade_volume_usd') | list %}
+      {% set all_vols = daily | map(attribute='all_swap_volume_usd') | list %}
+      <div class="chart-footer">
+        <div class="mini-stat">
+          <div class="mini-label">∼ Avg / day</div>
+          <div class="mini-value">{{ short_dollar((vols | sum) / (vols | length)) if vols else 'N/A' }}</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-label">🔺 Peak day</div>
+          {% if vols %}
+            {% set peak = daily | sort(attribute='trade_volume_usd') | last %}
+            <div class="mini-value">{{ short_dollar(peak.trade_volume_usd) }} <small>{{ ddmm(peak.date) }}</small></div>
+          {% else %}
+            <div class="mini-value">N/A</div>
+          {% endif %}
+        </div>
+        <div class="mini-stat">
+          <div class="mini-label">% Share of volume</div>
+          <div class="mini-value">{{ share_of(vols | sum, all_vols | sum) }}</div>
+        </div>
+      </div>
+    </div>
+
+    {# top assets panel #}
+    <div class="panel assets-shell shadow-box">
+      <div class="panel-title">🏆 Top trade assets</div>
+
+      {% if assets %}
+        <div class="assets-list">
+          {% for a in assets[:max_assets] %}
+            <div class="asset-row" style="border-left-color: {{ palette[loop.index0 % (palette | length)] if loop.index0 < max_shares else 'transparent' }}">
+              <img class="asset-logo" src="renderer/logo/{{ a.pool }}.png" alt="{{ a.name }}"
+                   onerror="this.src='renderer/logo/unknown.png'">
+              <div>
+                <div class="asset-name">{{ a.name }}</div>
+                <div class="asset-sub">
+                  <b>{{ short_money(a.amount) }}</b> {{ ticker(a.name) }} ·
+                  <b>{{ short_money(a.holders, integer=True) }}</b> holders
+                  {{ int_delta(a.holders, a.prev_holders, 'asset-delta') }}
+                </div>
+              </div>
+              <div class="asset-right">
+                <div class="asset-value">{{ short_dollar(a.value_usd) }}</div>
+                <div class="asset-delta">{{ pct_delta(a.value_usd, a.prev_value_usd, 'asset-delta') }}</div>
+              </div>
+            </div>
+          {% endfor %}
+
+          {% set rest = assets[max_assets:] %}
+          {% if rest %}
+            {% set other = namespace(value=0.0, prev_value=0.0, holders=0) %}
+            {% for a in rest %}
+              {% set other.value = other.value + (a.value_usd | float) %}
+              {% set other.prev_value = other.prev_value + ((a.prev_value_usd if a.prev_value_usd is not none else a.value_usd) | float) %}
+              {% set other.holders = other.holders + (a.holders | int) %}
+            {% endfor %}
+            <div class="asset-row asset-row-others">
+              <div class="others-badge">+{{ rest | length }}</div>
+              <div>
+                <div class="asset-name">{{ rest | length }} others</div>
+                <div class="asset-sub"><b>{{ short_money(other.holders, integer=True) }}</b> holders</div>
+              </div>
+              <div class="asset-right">
+                <div class="asset-value">{{ short_dollar(other.value) }}</div>
+                <div class="asset-delta">{{ pct_delta(other.value, other.prev_value, 'asset-delta') }}</div>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+        {# share of the total value #}
+        {% set top_share = namespace(sum=0.0) %}
+        <div class="shares">
+          <div class="shares-label">Share of value</div>
+          <div class="shares-bar">
+            {% for a in assets[:max_shares] %}
+              {% set top_share.sum = top_share.sum + (a.share | float) %}
+              <div class="shares-seg" style="width: {{ a.share }}%; background: {{ palette[loop.index0] }}"></div>
+            {% endfor %}
+            {% if assets | length > max_shares %}
+              <div class="shares-seg" style="flex: 1; background: {{ others_color }}"></div>
+            {% endif %}
+          </div>
+          <div class="shares-legend">
+            {% for a in assets[:max_shares] %}
+              <span><i class="legend-dot" style="background: {{ palette[loop.index0] }}"></i><b>{{ '%.0f' | format(a.share) }}%</b> {{ ticker(a.name) }}</span>
+            {% endfor %}
+            {% if assets | length > max_shares %}
+              <span><i class="legend-dot" style="background: {{ others_color }}"></i><b>{{ '%.0f' | format(100 - top_share.sum) }}%</b> others</span>
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-state">No data</div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  {# ── flows strip ───────────────────────────────────────── #}
+  {% set net = (current.deposit_usd | float) - (current.withdrawal_usd | float) %}
+  <div class="flows-strip shadow-box">
+    <div class="flows-badge">
+      <div class="flows-badge-title">🔃 Flows</div>
+      <div class="flows-badge-hint">in and out of trade accounts</div>
+    </div>
+    <div class="flow-cell">
+      <div class="flow-label">📥 Deposits</div>
+      <div class="flow-value-row">
+        <div class="flow-value">{{ short_dollar(current.deposit_usd) }} <small>× {{ short_money(current.deposit_count, integer=True) }}</small></div>
+        {{ pct_delta(current.deposit_usd, prev.get('deposit_usd'), 'delta flow-delta') }}
+      </div>
+    </div>
+    <div class="flow-cell">
+      <div class="flow-label">📤 Withdrawals</div>
+      <div class="flow-value-row">
+        <div class="flow-value">{{ short_dollar(current.withdrawal_usd) }} <small>× {{ short_money(current.withdrawal_count, integer=True) }}</small></div>
+        {{ pct_delta(current.withdrawal_usd, prev.get('withdrawal_usd'), 'delta flow-delta') }}
+      </div>
+    </div>
+    <div class="flow-cell">
+      <div class="flow-label">⚖️ Net flow</div>
+      <div class="flow-value-row">
+        <div class="flow-value {{ sign_class(net) }}">{{ '+' if net > 0 else '' }}{{ short_dollar(net) }}</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const dailyRaw  = {{ daily | tojson }};
+  const periodDays = {{ days }};
+  const labels    = dailyRaw.map(d => { const [, mo, day] = d.date.split('-'); return `${day}.${mo}`; });
+  const volData   = dailyRaw.map(d => d.trade_volume_usd || 0);
+  const shareData = dailyRaw.map(d => d.all_swap_volume_usd ? d.trade_volume_usd / d.all_swap_volume_usd * 100 : null);
+
+  const money = (v, digits = 0) => {
+    if (v >= 1_000_000_000) return '$' + (v / 1_000_000_000).toFixed(1) + 'B';
+    if (v >= 1_000_000)     return '$' + (v / 1_000_000).toFixed(digits) + 'M';
+    if (v >= 1_000)         return '$' + (v / 1_000).toFixed(digits) + 'K';
+    return '$' + v;
+  };
+
+  Chart.defaults.font.family = 'ThorFontLight, sans-serif';
+  Chart.defaults.color = '#b7c8cc';
+
+  const ctx = document.getElementById('volumeChart').getContext('2d');
+
+  const gradPeriod = ctx.createLinearGradient(0, 0, 0, 500);
+  gradPeriod.addColorStop(0, 'rgba(51,255,153,.85)');
+  gradPeriod.addColorStop(1, 'rgba(51,255,153,.25)');
+
+  const gradPast = ctx.createLinearGradient(0, 0, 0, 500);
+  gradPast.addColorStop(0, 'rgba(35,220,200,.45)');
+  gradPast.addColorStop(1, 'rgba(35,220,200,.05)');
+
+  // the days of the reported period are brighter
+  const inPeriod = i => i >= dailyRaw.length - periodDays;
+
+  // the volume of the last day above its bar
+  const lastDayLabel = {
+    id: 'lastDayLabel',
+    afterDatasetsDraw(chart) {
+      const bars = chart.getDatasetMeta(1).data;
+      const last = bars.length - 1;
+      if (last < 0) return;
+      const c = chart.ctx;
+      c.save();
+      c.font = '800 20px ThorFontLight, sans-serif';
+      c.fillStyle = '#33FF99';
+      c.textAlign = 'center';
+      c.shadowColor = 'rgba(51,255,153,.35)';
+      c.shadowBlur = 10;
+      c.fillText(money(volData[last], 1), bars[last].x, bars[last].y - 10);
+      c.restore();
+    }
+  };
+
+  new Chart(ctx, {
+    plugins: [lastDayLabel],
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'line', label: 'Share',
+          data: shareData,
+          borderColor: 'rgba(255,195,60,.85)', backgroundColor: 'rgba(255,195,60,.85)',
+          pointRadius: 3, borderWidth: 2.5, tension: 0.35, fill: false,
+          yAxisID: 'yShare', order: 1,
+        },
+        {
+          type: 'bar', label: 'Volume',
+          data: volData,
+          backgroundColor: volData.map((_, i) => inPeriod(i) ? gradPeriod : gradPast),
+          borderColor: volData.map((_, i) => inPeriod(i) ? '#33FF99' : '#23DCC8'),
+          borderWidth: 1.5, borderRadius: 8,
+          barPercentage: 0.72, categoryPercentage: 0.8,
+          yAxisID: 'yVol', order: 2,
+        },
+      ]
+    },
+    options: {
+      maintainAspectRatio: false, responsive: true, animation: false,
+      layout: { padding: { top: 26 } },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#9db0b5', font: { size: 16 }, maxRotation: 0, autoSkipPadding: 14 } },
+        yVol: {
+          position: 'left', beginAtZero: true,
+          grid: { color: 'rgba(255,255,255,.07)' },
+          ticks: { color: '#8fe6bc', font: { size: 18 }, maxTicksLimit: 6, callback: v => money(v) }
+        },
+        yShare: {
+          position: 'right', min: 0, max: 100,
+          grid: { drawOnChartArea: false },
+          ticks: { color: 'rgba(255,195,60,.85)', font: { size: 18 }, stepSize: 25, callback: v => v + '%' }
+        },
+      }
+    }
+  });
+</script>
+
+{% endblock %}

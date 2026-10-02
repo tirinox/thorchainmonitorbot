@@ -952,7 +952,7 @@ class RussianLocalization(BaseLocalization):
             f"⚖️ <b>Сводка по торговым счетам за сутки</b>\n"
             f"Всего держателей: {bold(pretty_money(e.curr.vaults.total_traders))}"
             f" {delta_holders}\n"
-            f"Всего торговых активов: {bold(short_money(e.curr.vaults.total_usd))}"
+            f"Всего торговых активов: {bold(short_dollar(e.curr.vaults.total_usd))}"
             f" {delta_balance}\n"
             f"Депозиты: {bold(short_money(e.curr.trade_deposit_count, integer=True))}"
             f" {bracketify(short_dollar(e.curr.trade_deposit_vol_usd))}\n"

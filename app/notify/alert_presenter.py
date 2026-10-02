@@ -546,12 +546,23 @@ class AlertPresenter(INotified, WithLogger):
             name_map
         )
 
+    async def render_trade_account_summary(self, loc: BaseLocalization, data: AlertTradeAccountStats):
+        photo = await self.renderer.render('trade_asset_summary.jinja2', data.to_dict())
+        photo_name = 'trade_asset_summary.png'
+        return photo, photo_name
+
     async def _handle_trade_account_summary(self, data: AlertTradeAccountStats):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_trade_account_summary(data)
+            photo, photo_name = await self.render_trade_account_summary(loc, data)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
         await self.deps.broadcaster.broadcast_to_all(
             "public:trade_account:summary",
-            BaseLocalization.notification_text_trade_account_summary,
-            data,
-        )
+            message_gen)
 
     async def _handle_runepool_action(self, data: AlertRunePoolAction):
         name_map = await self.load_names([data.actor, data.destination_address])

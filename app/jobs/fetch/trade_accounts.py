@@ -7,6 +7,7 @@ from lib.constants import RUNE_DECIMALS
 from lib.date_utils import DAY
 from lib.depcont import DepContainer
 from lib.utils import parallel_run_in_groups
+from models.swap_history import SwapHistoryResponse
 from models.trade_acc import AlertTradeAccountStats, TradeAccountVaults, TradeAccountStats
 
 
@@ -16,6 +17,7 @@ class TradeAccountFetcher(BaseFetcher):
         super().__init__(deps, sleep_period=period)
         self.deps = deps
         self.tally_period_sec = deps.cfg.as_interval('trade_accounts.summary.tally_period', '7d')
+        self.chart_days = deps.cfg.as_int('trade_accounts.summary.chart_days', 14)
 
     async def _get_traders(self, trade_units: List[ThorTradeUnits], height):
         traders_list = await parallel_run_in_groups([
@@ -89,11 +91,19 @@ class TradeAccountFetcher(BaseFetcher):
         tx_counter: TxCountRecorder = self.deps.tx_count_recorder
         tx_count_stats: TxCountStats = await tx_counter.get_stats(tally_days)
 
+        # one query for both: the current and previous periods and the longer history for the chart
         days = round(self.tally_period_sec / DAY) * 2 + 1
-        swap_stats = await self.deps.midgard_connector.query_swap_stats(count=days, interval='day')
+        history = await self.deps.midgard_connector.query_swap_stats(
+            count=max(days, self.chart_days + 1), interval='day')
+        if not history or not history.intervals:
+            raise ValueError('No swap history from Midgard')
+        swap_stats = SwapHistoryResponse(intervals=history.intervals[-days:], meta=history.meta)
 
         return AlertTradeAccountStats(
             curr=TradeAccountStats(tx_count_stats.curr, curr_volume_stats, current),
             prev=TradeAccountStats(tx_count_stats.prev, prev_volume_stats, previous),
             swap_stats=swap_stats,
+            period_sec=self.tally_period_sec,
+            daily_history=history,
+            chart_days=self.chart_days,
         )

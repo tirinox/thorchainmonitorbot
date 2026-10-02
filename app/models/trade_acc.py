@@ -1,8 +1,9 @@
+from datetime import datetime, timezone
 from typing import NamedTuple, List, Optional
 
 from api.aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount, float_to_thor
-from lib.date_utils import now_ts
-from .asset import normalize_asset
+from lib.date_utils import now_ts, DAY
+from .asset import normalize_asset, Asset
 from .memo import ActionType
 from .pool_info import PoolInfoMap
 from .swap_history import SwapHistoryResponse
@@ -90,16 +91,46 @@ class TradeAccountVaults(NamedTuple):
     def total_traders(self) -> int:
         return sum(len(t) for t in self.pool2traders.values())
 
+    @property
+    def unique_traders(self) -> int:
+        """One address holding several trade assets is counted once"""
+        return len({t.owner for traders in self.pool2traders.values() for t in traders})
+
     def usd_units(self, asset) -> Optional[float]:
         pool = self.pools.get(normalize_asset(asset))
-        if pool:
-            return self.pool2acc.get(pool.asset).depth_float * pool.usd_per_asset
+        # None for an asset that had no trade units at that moment, e.g. at the start of the period
+        if pool and (unit := self.pool2acc.get(pool.asset)):
+            return unit.depth_float * pool.usd_per_asset
 
     def top_by_usd_value(self, n: int) -> List[ThorTradeUnits]:
         try:
             return sorted(self.pool2acc.values(), key=lambda x: self.usd_units(x.asset), reverse=True)[:n]
         except (TypeError, ValueError):
             return []
+
+    def holders_of(self, asset) -> int:
+        return len(self.pool2traders.get(asset, []))
+
+    def asset_rows(self, prev: Optional['TradeAccountVaults'] = None) -> List[dict]:
+        """Every trade asset by its USD value, the largest first, for the infographic"""
+        rows = []
+        for unit in self.top_by_usd_value(len(self.pool2acc)):
+            pool_name = self.pools[normalize_asset(unit.asset)].asset
+            value_usd = self.usd_units(unit.asset) or 0.0
+            prev_unit = prev.pool2acc.get(pool_name) if prev else None
+            rows.append({
+                'asset': unit.asset,
+                'pool': pool_name,
+                'name': Asset(pool_name).pretty_str,
+                'amount': unit.depth_float,
+                'value_usd': value_usd,
+                'holders': self.holders_of(unit.asset),
+                'share': value_usd / self.total_usd * 100.0 if self.total_usd else 0.0,
+                'prev_amount': prev_unit.depth_float if prev_unit else None,
+                'prev_value_usd': prev.usd_units(prev_unit.asset) if prev_unit else None,
+                'prev_holders': prev.holders_of(prev_unit.asset) if prev_unit else None,
+            })
+        return rows
 
 
 class TradeAccountStats(NamedTuple):
@@ -131,11 +162,37 @@ class TradeAccountStats(NamedTuple):
     def trade_withdrawal_vol_usd(self):
         return self.tx_volume.get(TxMetricType.usd_key(TxMetricType.TRADE_WITHDRAWAL), 0.0)
 
+    @property
+    def all_swap_count(self):
+        return self.tx_count.get(TxMetricType.SWAP, 0)
+
+    def to_dict(self, trade_volume_usd: float, all_swap_volume_usd: float) -> dict:
+        v = self.vaults
+        return {
+            # the vault fields are None when there was no snapshot of the vaults at the start of the period
+            'value_usd': v.total_usd if v else None,
+            'holders': v.total_traders if v else None,
+            'unique_holders': v.unique_traders if v else None,
+            'asset_count': len(v.pool2acc) if v else None,
+            'trade_volume_usd': trade_volume_usd,
+            'all_swap_volume_usd': all_swap_volume_usd,
+            'swap_count': self.trade_swap_count,
+            'all_swap_count': self.all_swap_count,
+            'deposit_count': self.trade_deposit_count,
+            'deposit_usd': self.trade_deposit_vol_usd,
+            'withdrawal_count': self.trade_withdrawal_count,
+            'withdrawal_usd': self.trade_withdrawal_vol_usd,
+        }
+
 
 class AlertTradeAccountStats(NamedTuple):
     curr: TradeAccountStats
     prev: TradeAccountStats
     swap_stats: SwapHistoryResponse
+    period_sec: float = DAY
+    # longer daily history from Midgard for the chart of the infographic
+    daily_history: Optional[SwapHistoryResponse] = None
+    chart_days: int = 14
 
     @property
     def curr_and_prev_trade_volume_usd(self):
@@ -145,3 +202,35 @@ class AlertTradeAccountStats(NamedTuple):
             (curr_from_trade + curr_to_trade),
             (prev_from_trade + prev_to_trade)
         )
+
+    @property
+    def curr_and_prev_all_swap_volume_usd(self):
+        return self.swap_stats.curr_and_prev_interval("total_volume_usd")
+
+    def daily_rows(self) -> List[dict]:
+        if not self.daily_history or not self.daily_history.intervals:
+            return []
+        return [
+            {
+                'date': datetime.fromtimestamp(day.start_time, tz=timezone.utc).date().isoformat(),
+                'trade_volume_usd': day.to_trade_volume_usd + day.from_trade_volume_usd,
+                'all_swap_volume_usd': day.total_volume_usd,
+                'trade_swap_count': day.to_trade_count + day.from_trade_count,
+            }
+            for day in self.daily_history.last_whole_intervals(self.chart_days)
+        ]
+
+    def to_dict(self) -> dict:
+        """Plain JSON for the trade_asset_summary.jinja2 infographic"""
+        curr_trade_vol, prev_trade_vol = self.curr_and_prev_trade_volume_usd
+        curr_all_vol, prev_all_vol = self.curr_and_prev_all_swap_volume_usd
+        prev_vaults = self.prev.vaults if self.prev else None
+        return {
+            'period_seconds': self.period_sec,
+            'period_days': max(1, round(self.period_sec / DAY)),
+            'current': self.curr.to_dict(curr_trade_vol, curr_all_vol),
+            'previous': self.prev.to_dict(prev_trade_vol, prev_all_vol) if self.prev else None,
+            'assets': self.curr.vaults.asset_rows(prev_vaults),
+            'daily': self.daily_rows(),
+            'chart_days': self.chart_days,
+        }
