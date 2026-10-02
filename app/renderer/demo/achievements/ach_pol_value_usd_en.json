@@ -20,28 +20,7 @@
     "number_font": "runic",
     "number_label": "Over",
     "number_text": "$500K",
-    "glyphs": [
-      {
-        "kind": "tall",
-        "src": "runic/bw_USD.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_5.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_K.png"
-      }
-    ],
+    "glyphs": [],
     "title": "POL value",
     "subtitle": "",
     "asset_logo": "",

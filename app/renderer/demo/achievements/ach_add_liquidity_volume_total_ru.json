@@ -20,23 +20,7 @@
     "number_font": "runic",
     "number_label": "Более чем",
     "number_text": "5B ᚱ",
-    "glyphs": [
-      {
-        "kind": "glyph",
-        "src": "runic/bw_5.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_B.png"
-      },
-      {
-        "kind": "space"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_R.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Общий объем добавленной ликвидности",
     "subtitle": "",
     "asset_logo": "",

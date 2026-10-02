@@ -20,28 +20,7 @@
     "number_font": "runic",
     "number_label": "Over",
     "number_text": "$100B",
-    "glyphs": [
-      {
-        "kind": "tall",
-        "src": "runic/bw_USD.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_1.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_B.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Total swap volume",
     "subtitle": "",
     "asset_logo": "",

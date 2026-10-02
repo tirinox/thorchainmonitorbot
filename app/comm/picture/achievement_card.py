@@ -5,7 +5,6 @@ from jobs.achievement.ach_list import Achievement, A, NUMBER_FONT_BALLOON, BG_LI
     BG_USERS, BG_RUNE, BG_REVENUE, BG_AFFILIATE, BG_BURN, BG_VAULT, BG_STABLES, BG_TRADE, BG_POL, BG_BTC, BG_ETH, \
     BG_ANNIVERSARY
 from lib.date_utils import today_str, now_ts
-from lib.money import RAIDO_GLYPH
 from models.asset import Asset
 
 ACHIEVEMENT_TEMPLATE = 'achievement.jinja2'
@@ -50,29 +49,14 @@ BACKGROUND_STYLE = {
     BG_ANNIVERSARY: WreathStyle('#f4e18d', 0.499, 0.495, 0.187, base='#090d16'),
 }
 
-# sprite fonts in data/renderer/static/img/achievement/<font>/
-RUNIC_GLYPHS = {
-    **{c: f'bw_{c}.png' for c in '0123456789ABCDEGHKLMNORTVX'},
-    '$': 'bw_USD.png',
-    RAIDO_GLYPH: 'bw_R.png',
-    '.': 'bw__.png',
-}
+# the anniversary digits are pictures: data/renderer/static/img/achievement/balloon/; other numbers are text
 BALLOON_GLYPHS = {c: f'{c}.png' for c in '0123456789'}
 
 
 def number_glyphs(text: str, font: str) -> list:
-    table = BALLOON_GLYPHS if font == NUMBER_FONT_BALLOON else RUNIC_GLYPHS
-    glyphs = []
-    for ch in text:
-        if ch == ' ':
-            glyphs.append({'kind': 'space'})
-        elif file := table.get(ch.upper()):
-            kind = {'.': 'dot', '$': 'tall'}.get(ch, 'glyph')
-            glyphs.append({'kind': kind, 'src': f'{font}/{file}'})
-        else:
-            # no sprite for it (e.g. "-"): the regular font draws it
-            glyphs.append({'kind': 'text', 'text': ch})
-    return glyphs
+    if font != NUMBER_FONT_BALLOON:
+        return []
+    return [{'kind': 'glyph', 'src': f'{font}/{BALLOON_GLYPHS[ch]}'} for ch in text if ch in BALLOON_GLYPHS]
 
 
 def _stat(label, value, sub=''):

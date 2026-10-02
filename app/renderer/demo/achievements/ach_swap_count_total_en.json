@@ -20,20 +20,7 @@
     "number_font": "runic",
     "number_label": "Over",
     "number_text": "20M",
-    "glyphs": [
-      {
-        "kind": "glyph",
-        "src": "runic/bw_2.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_M.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Total swaps",
     "subtitle": "",
     "asset_logo": "",

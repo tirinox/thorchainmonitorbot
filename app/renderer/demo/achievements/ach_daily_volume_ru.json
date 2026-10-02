@@ -20,28 +20,7 @@
     "number_font": "runic",
     "number_label": "Более чем",
     "number_text": "$200M",
-    "glyphs": [
-      {
-        "kind": "tall",
-        "src": "runic/bw_USD.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_2.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_M.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Объем свопов за день",
     "subtitle": "",
     "asset_logo": "",

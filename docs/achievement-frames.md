@@ -11,7 +11,7 @@ This guide is how to make a new frame or repaint an old one so it fits the set.
 | Frame pictures | `app/data/renderer/static/img/achievement/bg/*.png` (1024×1024 RGB) |
 | Frame constants (`BG_*`) and which achievement uses which frame (`background=`) | `app/jobs/achievement/ach_list.py` |
 | Per-frame layout and colors (`WreathStyle`, `BACKGROUND_STYLE`) | `app/comm/picture/achievement_card.py` |
-| Card template | `app/renderer/templates/achievement.jinja2` |
+| Card template | `app/renderer/templates/achievement.jinja2`; the number is set in Norse Bold (`app/data/renderer/static/fonts/NorseBold.otf`) as polished metal of the frame's `tint`, centered in the hole with its label above; the anniversary keeps the balloon digit pictures (`img/achievement/balloon/`) |
 | Generate, measure and preview frames | `app/tools/achievement_frame.py` |
 | Renderer gallery demos | `make renderer-demos`, then http://127.0.0.1:8404/render/demo |
 | Checks (every frame exists, has a style, its base color matches its edges) | `app/tests/test_achievement_card.py` |
@@ -106,7 +106,7 @@ All commands run from `app/` with `PYTHONPATH=.`. The preview needs the renderer
 
 | Field | What it is | How to set it |
 |---|---|---|
-| `tint` | Glow of the number and the date | A light color of the frame's palette |
+| `tint` | Color of the number's metal and glow, and of the date | A light color of the frame's palette |
 | `hole_x`, `hole_y`, `hole_r` | The circle the number (with its "Over" label) is fitted into, as fractions of the picture size | `measure`, the **+30** line. If the three lines disagree, check the overlay and pick by eye: dark twigs, a glowing halo or an object reaching into the opening fool the rays. With an object in the opening, put a smaller circle in the free part above it |
 | `base` | Picture edge color: the card is painted with it, so the picture flows into the card | `measure`, "base". A test checks it against the file |
 | `size`, `top` | Where the picture sits on the card, px (default 860 and 40) | Make it smaller and lower when the ornament reaches the date line (top ~0.05) or something hangs low (bottom over ~0.85). The title starts at ~794 px |

@@ -20,20 +20,7 @@
     "number_font": "runic",
     "number_label": "Over",
     "number_text": "20K",
-    "glyphs": [
-      {
-        "kind": "glyph",
-        "src": "runic/bw_2.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_K.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Ethereum in vaults",
     "subtitle": "",
     "asset_logo": "",

@@ -20,24 +20,7 @@
     "number_font": "runic",
     "number_label": "Over",
     "number_text": "700K",
-    "glyphs": [
-      {
-        "kind": "glyph",
-        "src": "runic/bw_7.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_K.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Wallets",
     "subtitle": "",
     "asset_logo": "",

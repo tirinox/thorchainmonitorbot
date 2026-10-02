@@ -6,7 +6,7 @@ import pytest
 from comm.localization.achievements.ach_eng import AchievementsEnglishLocalization
 from comm.localization.achievements.ach_rus import AchievementsRussianLocalization
 from comm.localization.achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
-from comm.picture.achievement_card import build_achievement_card, BACKGROUND_STYLE, RUNIC_GLYPHS, BALLOON_GLYPHS
+from comm.picture.achievement_card import build_achievement_card, BACKGROUND_STYLE, BALLOON_GLYPHS
 from jobs.achievement.ach_list import A, Achievement, ACHIEVEMENT_DESC_MAP, AchievementName
 from lib.date_utils import DAY
 
@@ -58,8 +58,6 @@ def test_every_background_base_matches_its_edges():
 
 
 def test_every_glyph_exists():
-    for file in RUNIC_GLYPHS.values():
-        assert os.path.isfile(f'{STATIC_ACH}/runic/{file}'), file
     for file in BALLOON_GLYPHS.values():
         assert os.path.isfile(f'{STATIC_ACH}/balloon/{file}'), file
 
@@ -91,7 +89,7 @@ def test_card_default(en):
     card = build_achievement_card(a, en)
     assert card['number_label'] == 'Over'
     assert card['number_text'] == '$2B'
-    assert [g['src'] for g in card['glyphs']] == ['runic/bw_USD.png', 'runic/bw_2.png', 'runic/bw_B.png']
+    assert card['glyphs'] == []  # set in a font, only the anniversary digits are pictures
     assert card['date'] == 'October 1, 2026'
     assert card['stats'] == [
         {'label': 'Previous', 'value': '$1B', 'sub': '1 month, 10 days ago'},

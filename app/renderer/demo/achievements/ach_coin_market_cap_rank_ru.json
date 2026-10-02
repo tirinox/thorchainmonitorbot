@@ -20,16 +20,7 @@
     "number_font": "runic",
     "number_label": "Топ",
     "number_text": "30",
-    "glyphs": [
-      {
-        "kind": "glyph",
-        "src": "runic/bw_3.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Место по капитализации",
     "subtitle": "",
     "asset_logo": "",

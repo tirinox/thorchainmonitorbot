@@ -20,20 +20,7 @@
     "number_font": "runic",
     "number_label": "",
     "number_text": "100",
-    "glyphs": [
-      {
-        "kind": "glyph",
-        "src": "runic/bw_1.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Число активных нод",
     "subtitle": "",
     "asset_logo": "",

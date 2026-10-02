@@ -20,16 +20,7 @@
     "number_font": "runic",
     "number_label": "Over",
     "number_text": "1M",
-    "glyphs": [
-      {
-        "kind": "glyph",
-        "src": "runic/bw_1.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_M.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Monthly swaps",
     "subtitle": "",
     "asset_logo": "",

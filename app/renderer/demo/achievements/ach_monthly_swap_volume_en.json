@@ -20,20 +20,7 @@
     "number_font": "runic",
     "number_label": "Over",
     "number_text": "$2B",
-    "glyphs": [
-      {
-        "kind": "tall",
-        "src": "runic/bw_USD.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_2.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_B.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Monthly swap volume",
     "subtitle": "",
     "asset_logo": "",

@@ -20,16 +20,7 @@
     "number_font": "runic",
     "number_label": "",
     "number_text": "50",
-    "glyphs": [
-      {
-        "kind": "glyph",
-        "src": "runic/bw_5.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_0.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Всего пулов",
     "subtitle": "",
     "asset_logo": "",

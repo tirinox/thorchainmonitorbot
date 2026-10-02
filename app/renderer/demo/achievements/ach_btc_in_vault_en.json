@@ -20,16 +20,7 @@
     "number_font": "runic",
     "number_label": "Over",
     "number_text": "2K",
-    "glyphs": [
-      {
-        "kind": "glyph",
-        "src": "runic/bw_2.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_K.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Bitcoin in vaults",
     "subtitle": "",
     "asset_logo": "",

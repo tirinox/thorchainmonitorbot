@@ -20,16 +20,7 @@
     "number_font": "runic",
     "number_label": "",
     "number_text": "2K",
-    "glyphs": [
-      {
-        "kind": "glyph",
-        "src": "runic/bw_2.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_K.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Всего голосов за Mimir",
     "subtitle": "",
     "asset_logo": "",

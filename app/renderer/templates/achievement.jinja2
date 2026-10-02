@@ -87,18 +87,26 @@
             text-shadow: 0 0 8px #000, 0 0 3px #000, 0 0 1px #000;
         }
 
+        @font-face {
+            font-family: NorseBold;
+            src: url(renderer/static/fonts/NorseBold.otf);
+        }
+
+        /* the number itself sits in the middle of the hole; its label hangs above it */
         .ach-number-box {
             position: absolute;
             left: {{ hole_cx }}px;
             top: {{ hole_cy }}px;
             transform: translate(-50%, -50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
         }
 
         .ach-number-label {
+            position: absolute;
+            left: 50%;
+            bottom: 100%;
+            transform: translateX(-50%);
+            margin-bottom: 2px;
+            white-space: nowrap;
             font-size: 28px;
             font-weight: 700;
             letter-spacing: 0.08em;
@@ -106,48 +114,56 @@
             text-shadow: 0 0 10px var(--tint), 0 0 2px #000;
         }
 
+        /* the number: Norse Bold in polished metal of the frame color. A gradient face can not carry a shadow,
+           so the element itself is the shadow and glow, and the face lies over it as ::after */
         .ach-number {
+            position: relative;
+            font-family: NorseBold, ThorFont, sans-serif;
+            font-size: 170px; /* shrunk by fitNumber() */
+            line-height: 0.9;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            padding: 0 0.04em;
+            color: transparent;
+            text-shadow: 0 0.035em 0.02em #000, 0 0 0.12em var(--tint-soft), 0 0 0.3em var(--tint-soft);
+        }
+
+        .ach-number::after {
+            content: attr(data-text);
+            position: absolute;
+            inset: 0;
+            padding: inherit;
+            background-image: linear-gradient(180deg,
+            #ffffff 0%,
+            color-mix(in srgb, var(--tint) 30%, #fff) 36%,
+            var(--tint) 50%,
+            color-mix(in srgb, var(--tint) 55%, #000) 66%,
+            color-mix(in srgb, var(--tint) 75%, #fff) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: none; /* inherited, it would cover the gradient */
+            -webkit-text-stroke: 0.012em color-mix(in srgb, var(--tint) 30%, #000);
+        }
+
+        /* the anniversary keeps its balloon digits */
+        .ach-number.balloon {
             display: flex;
             align-items: center;
             gap: 0.05em;
-            font-size: 150px; /* = glyph height; shrunk by fitNumber() */
-            line-height: 1;
-            white-space: nowrap;
-        }
-
-        .ach-number img {
-            height: 1em;
-            display: block;
-        }
-
-        .ach-number .tall {
-            height: 1.17em;
-        }
-
-        .ach-number .dot {
-            width: 0.26em;
-            object-fit: cover;
-        }
-
-        .ach-number .space {
-            width: 0.2em;
-        }
-
-        .ach-number .text {
-            font-size: 0.8em;
-            font-weight: 800;
-            color: #fff;
-        }
-
-        .ach-number.runic img, .ach-number.runic .text {
-            filter: drop-shadow(0 0 3px var(--tint)) drop-shadow(0 0 14px var(--tint));
-        }
-
-        .ach-number.balloon {
             font-size: 300px; /* a balloon digit may float a bit over the ring: see fitNumber() */
+            line-height: 1;
+            padding: 0;
+            text-shadow: none;
+        }
+
+        .ach-number.balloon::after {
+            content: none;
         }
 
         .ach-number.balloon img {
+            height: 1em;
+            display: block;
             filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.6));
         }
 
@@ -262,17 +278,15 @@
         {% if number_label %}
             <div class="ach-number-label">{{ number_label }}</div>
         {% endif %}
-        <div class="ach-number {{ number_font }}" id="ach-number">
-            {% for g in glyphs %}
-                {% if g.kind == 'space' %}
-                    <span class="space"></span>
-                {% elif g.kind == 'text' %}
-                    <span class="text">{{ g.text }}</span>
-                {% else %}
-                    <img class="{{ g.kind }}" src="renderer/static/img/achievement/{{ g.src }}" alt="">
-                {% endif %}
-            {% endfor %}
-        </div>
+        {% if number_font == 'balloon' %}
+            <div class="ach-number balloon" id="ach-number">
+                {% for g in glyphs %}
+                    <img src="renderer/static/img/achievement/{{ g.src }}" alt="">
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="ach-number" id="ach-number" data-text="{{ number_text }}">{{ number_text }}</div>
+        {% endif %}
     </div>
 
     <div class="ach-bottom {{ '' if stats else 'no-stats' }}">
@@ -308,7 +322,7 @@
         // until every corner of both is inside the hole, with some room left to the ring
         function fitNumber() {
             const cx = {{ hole_cx }}, cy = {{ hole_cy }};
-            // runic glyphs keep clear of the ring; a balloon digit may float a bit over it
+            // the number keeps clear of the ring; a balloon digit may float a bit over it
             const maxDistance = {{ hole_radius }} * {{ 1.15 if number_font == 'balloon' else 0.9 }};
             const box = document.getElementById('ach-number-box');
             const number = document.getElementById('ach-number');

@@ -20,16 +20,7 @@
     "number_font": "runic",
     "number_label": "Более чем",
     "number_text": "1K",
-    "glyphs": [
-      {
-        "kind": "glyph",
-        "src": "runic/bw_1.png"
-      },
-      {
-        "kind": "glyph",
-        "src": "runic/bw_K.png"
-      }
-    ],
+    "glyphs": [],
     "title": "Держателей торговых активов",
     "subtitle": "",
     "asset_logo": "",
