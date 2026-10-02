@@ -36,7 +36,7 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         A.MAX_SWAP_AMOUNT_USD: "Максимальный объем обмена",
         A.MAX_ADD_AMOUNT_USD: "Максимальный объем добавления",
         A.COIN_MARKET_CAP_RANK: "Место по капитализации",
-        A.POL_VALUE_RUNE: "POL вклад в Rune",
+        A.POL_VALUE_USD: "Стоимость POL",
         A.BTC_IN_VAULT: "Bitcoin в хранилище",
         A.ETH_IN_VAULT: "Ethereum в хранилище",
         A.STABLES_IN_VAULT: "Стейблы в хранилище",

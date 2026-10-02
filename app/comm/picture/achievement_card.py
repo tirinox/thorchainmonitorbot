@@ -2,7 +2,7 @@ from typing import NamedTuple
 
 from comm.localization.achievements.common import AchievementsLocalizationBase
 from jobs.achievement.ach_list import Achievement, A, NUMBER_FONT_BALLOON, BG_LIQUIDITY, BG_NETWORK, BG_SWAPS, \
-    BG_USERS, BG_RUNE, BG_REVENUE, BG_AFFILIATE, BG_BURN, BG_VAULT, BG_STABLES, BG_TRADE, BG_BTC, BG_ETH, \
+    BG_USERS, BG_RUNE, BG_REVENUE, BG_AFFILIATE, BG_BURN, BG_VAULT, BG_STABLES, BG_TRADE, BG_POL, BG_BTC, BG_ETH, \
     BG_ANNIVERSARY
 from lib.date_utils import today_str, now_ts
 from lib.money import RAIDO_GLYPH
@@ -43,6 +43,8 @@ BACKGROUND_STYLE = {
     BG_VAULT: WreathStyle('#ffcf7a', 0.512, 0.436, 0.186, base='#06080e'),
     BG_STABLES: WreathStyle('#8ff0c0', 0.501, 0.472, 0.225, size=770, top=34, shade_from=72, base='#090d0e'),
     BG_TRADE: WreathStyle('#ff7a6b', 0.501, 0.498, 0.193, base='#030202'),
+    # the roots reach the top of the picture: smaller and lower, clear of the date
+    BG_POL: WreathStyle('#ffcf7a', 0.499, 0.373, 0.172, size=800, top=80, base='#0c0704'),
     BG_BTC: WreathStyle('#ffb84d', 0.499, 0.494, 0.189, base='#080c12'),
     BG_ETH: WreathStyle('#b4a6ff', 0.500, 0.495, 0.188, base='#090d16'),
     BG_ANNIVERSARY: WreathStyle('#f4e18d', 0.499, 0.495, 0.187, base='#090d16'),

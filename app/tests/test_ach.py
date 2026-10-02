@@ -338,3 +338,10 @@ async def test_anniversary_is_announced_every_year(monkeypatch):
 
     # one post a year, on the day; always fresh, it is news even without a record to compare with
     assert announced == [('2026-04-10', 5, 0), ('2027-04-10', 6, 5), ('2028-04-10', 7, 6)]
+
+
+def test_pol_reserve_feeds_its_value_in_usd():
+    from types import SimpleNamespace
+    from jobs.achievement.extractor import AchievementsExtractor
+    pol = SimpleNamespace(current=SimpleNamespace(value_usd=657_389.4))
+    assert [(a.key, a.value) for a in AchievementsExtractor.on_pol_reserve(pol)] == [(A.POL_VALUE_USD, 657_389)]
