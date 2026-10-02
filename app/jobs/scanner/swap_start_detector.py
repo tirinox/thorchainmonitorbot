@@ -4,7 +4,7 @@ from typing import Optional, Iterable
 from jobs.scanner.native_scan import BlockResult
 from jobs.scanner.event_db import EventDbTxDeduplicator
 from jobs.scanner.tx import NativeThorTx, ThorObservedTx
-from lib.constants import NATIVE_RUNE_SYMBOL, thor_to_float, THOR_BLOCK_TIME
+from lib.constants import NATIVE_RUNE_SYMBOL, thor_to_float, THOR_BLOCK_TIME, Chains
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
@@ -143,8 +143,10 @@ class SwapStartDetectorFromBlock(INotified, WithDelegates, WithLogger):
             in_pool_info = self.ph.find_pool(in_pool_name)
             volume_usd = in_amount * in_pool_info.usd_per_asset
 
-            if is_deposit and not in_asset.is_synth:
-                # It is not a synth, but it is deposited by a native tx? hm... is it real? Ah, must be TRADE ASSET!
+            if is_deposit and in_asset.chain != Chains.THOR and not (
+                    in_asset.is_synth or in_asset.is_trade or in_asset.is_secured):
+                # An L1 asset cannot be deposited by a native tx: written without its "~" it must be a trade asset.
+                # A secured asset ("ETH-USDC") or a THOR token ("THOR.TCY") is what it says
                 in_asset.is_trade = True
 
         return AlertSwapStart(

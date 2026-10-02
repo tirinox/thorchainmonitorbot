@@ -4,8 +4,8 @@ from typing import NamedTuple, List, Optional
 
 from jobs.scanner.block_result import ThorEvent
 from models.asset import is_rune, is_trade_asset, Asset
-from models.events import EventSwap, EventStreamingSwap, EventOutbound, parse_swap_and_out_event, TypeEventSwapAndOut, \
-    EventTradeAccountDeposit
+from models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
+    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit
 from models.memo import ActionType
 from models.memo import THORMemo
 from models.s_swap import StreamingSwap, RapidSwapStats
@@ -89,9 +89,28 @@ class SwapProps(NamedTuple):
     def find_events(self, klass):
         return (e for e in self.events if isinstance(e, klass))
 
+    @staticmethod
+    def _outbound_key(memo: str, asset: str, to_address: str):
+        return (memo or '').split(':')[0].upper(), (asset or '').upper(), (to_address or '').lower()
+
+    @property
+    def pending_outbounds(self) -> set:
+        """The outbounds the chain scheduled (memo kind, asset, recipient) that have not gone out yet."""
+        sent = {self._outbound_key(ev.memo, ev.asset, ev.to_address) for ev in self.true_outbounds}
+        scheduled = {
+            self._outbound_key(ev.memo, ev.coin_asset, ev.to_address)
+            for ev in self.find_events(EventScheduledOutbound) if ev.is_outbound_memo or ev.is_refund_memo
+        }
+        return scheduled - sent
+
     @property
     def is_finished(self) -> bool:
         # todo: new algorithm for detecting finished swaps
+
+        # When a streaming swap swaps only a part, the rest is refunded to L1. That refund is scheduled with the
+        # output, but goes out later than an output in RUNE or in an account, which is paid at once
+        if self.pending_outbounds:
+            return False
 
         if self.is_output_l1_asset:
             # if output is L1 asset, we wait to outbound
@@ -153,12 +172,20 @@ class SwapProps(NamedTuple):
         else:
             max_amount = 0
 
+        # what goes to the swap's destination, refund address or sender is the user's, even when it is RUNE among
+        # an L1 refund; the guesses below are for a destination given by a THORName
+        own = {a.lower() for a in (self.memo.dest_address, self.memo.refund_address) if a} if self.memo else set()
+        if self.from_address:
+            own.add(self.from_address.lower())
+
         pre_results = []
         for outbound in outbounds:
             amount, asset = outbound.amount_asset
             coins = [ThorCoin(amount, asset)]
 
-            if all_are_rune:
+            if (outbound.to_address or '').lower() in own:
+                is_affiliate = False
+            elif all_are_rune:
                 is_affiliate = int(amount) != max_amount
             elif is_rune(asset):
                 is_affiliate = True
