@@ -36,6 +36,40 @@
             {#filter: hue-rotate(24deg);#}
         }
 
+        /* room for the pool depth line: both volume blocks go up, the affiliates go down */
+        .route-box .asset-part {
+            margin-top: 34px;
+        }
+
+        .route-box .affiliate-part {
+            margin-top: 6px;
+        }
+
+        .pool-depth-ratio {
+            color: #bbb;
+            font-weight: normal;
+            font-size: 30px;
+            white-space: nowrap;
+            padding-top: 4px;
+        }
+
+        .pool-depth-ratio strong {
+            font-family: ThorFont, sans-serif;
+            font-size: 36px;
+        }
+
+        .ratio-low {
+            color: #00CCFF;
+        }
+
+        .ratio-mid {
+            color: #FFD84D;
+        }
+
+        .ratio-high {
+            color: #FF7A45;
+        }
+
         .arrow-pending {
             width: 200px;
             padding: 0;
@@ -64,6 +98,23 @@
                     <div class="usd-volume">
                         ({{ short_dollar(volume_usd) }})
                     </div>
+                    {% set ratio = volume_to_pool_depth_percent | default(0) %}
+                    {% if ratio > 0 %}
+                        <div class="pool-depth-ratio" id="pool-depth-ratio">
+                            <strong class="{{ 'ratio-high' if ratio >= 10 else ('ratio-mid' if ratio >= 1 else 'ratio-low') }}">
+                                {%- if ratio < 0.01 -%}
+                                    &lt;0.01
+                                {%- elif ratio < 1 -%}
+                                    {{ '%.2f' % ratio }}
+                                {%- elif ratio < 10 -%}
+                                    {{ '%.1f' % ratio }}
+                                {%- else -%}
+                                    {{ '%.0f' % ratio }}
+                                {%- endif -%}%
+                            </strong>
+                            of {{ pool_depth_asset_name ~ ' ' if pool_depth_asset_name else '' }}pool depth
+                        </div>
+                    {% endif %}
                 </div>
             </div>
 

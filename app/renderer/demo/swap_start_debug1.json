@@ -21,6 +21,9 @@
         "swap_quantity": 352,
         "swap_interval": 10,
         "total_estimated_time_sec": 22860,
+        "pool_depth_usd": 5820000,
+        "pool_depth_asset_name": "LTC",
+        "volume_to_pool_depth_percent": 12.2631,
         "_width": 1280,
         "_height": 720
     },

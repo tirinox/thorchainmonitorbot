@@ -25,6 +25,9 @@
 
     "swap_quantity": 333,
     "swap_interval": 12,
-    "total_estimated_time_sec": 4242
+    "total_estimated_time_sec": 4242,
+    "pool_depth_usd": 52400000,
+    "pool_depth_asset_name": "USDT",
+    "volume_to_pool_depth_percent": 17.7545
   }
 }

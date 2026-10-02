@@ -121,7 +121,17 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
             self.logger.warning(f'Failed to load clout for {event.tx_id}: {e}')
 
         await self.load_quote(event)
+        await self.load_pool_depth(event)
         return event
+
+    async def load_pool_depth(self, event: AlertSwapStart):
+        try:
+            ph = await self.deps.pool_cache.get()
+            if pool := ph.shallowest_pool_on_route(event.in_asset, event.out_asset):
+                event.pool_depth_usd = pool.usd_depth(ph.usd_per_rune)
+                event.pool_depth_asset = pool.asset
+        except Exception as e:
+            self.logger.warning(f'Failed to load pool depth for {event.tx_id}: {e!r}')
 
     async def load_quote(self, event: AlertSwapStart):
         try:

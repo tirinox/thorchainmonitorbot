@@ -121,10 +121,18 @@ class AlertSwapStart:
     interval: Optional[int] = 1
     is_limit: Optional[bool] = False
     adv_swap_queue: bool = True  # Mimir EnableAdvSwapQueue when the swap was seen
+    # USD depth (both sides) of the shallowest pool on the swap route and that pool's name; 0 when unknown
+    pool_depth_usd: float = 0.0
+    pool_depth_asset: str = ''
 
     @property
     def in_amount_float(self) -> float:
         return thor_to_float(self.in_amount)
+
+    @property
+    def volume_to_pool_depth_percent(self) -> float:
+        """Swap volume as a % of the shallowest pool's depth on the route; 0 when the depth is unknown"""
+        return 100.0 * self.volume_usd / self.pool_depth_usd if self.pool_depth_usd > 0 else 0.0
 
     @property
     def is_streaming(self):
