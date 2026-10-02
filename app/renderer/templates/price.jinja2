@@ -138,6 +138,25 @@
         .m {
             margin: 7px 0 7px 0;
         }
+
+        /* the chain list must fit one line even with 13+ chains */
+        .chain-state-container {
+            margin-top: 2%;
+            padding: 10px 16px;
+            column-gap: 12px;
+        }
+
+        .chain-state-name {
+            font-size: 20px;
+            margin-right: 0;
+        }
+
+        .chain-state-status {
+            width: 12px;
+            height: 12px;
+            margin-top: 0;
+            margin-right: 6px;
+        }
     </style>
 
     <script src="renderer/static/js/lightweight-charts.standalone.production.js"></script>
@@ -178,7 +197,7 @@
             <div id="price-chart"></div>
         </div>
 
-        <div class="chain-state-container cbox" style="margin-top: 2%;">
+        <div class="chain-state-container cbox">
             {% for c in chain_state %}
                 <div class="chain-state">
                     <div class="chain-state-status {{ c[1] }}"></div>

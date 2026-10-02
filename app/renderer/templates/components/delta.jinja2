@@ -65,8 +65,9 @@
         {% endif %}
         {% set arrow = 'up' if price_change > 0 else 'down' %}
         {% set color = 'up-arrow' if price_change > 0 else 'down-arrow' %}
-        {% set price_change = price_change | round(2) %}
+        {# the sign of the exact change: rounded, +$0.004 of a $0.79 price would be 0 and get a down arrow #}
         {% set arrow_symbol = '▲' if price_change > 0 else '▼' %}
+        {% set price_change = price_change | round(2) %}
     {% endif %}
 {% else %}
     {% set arrow_symbol = '' %}
