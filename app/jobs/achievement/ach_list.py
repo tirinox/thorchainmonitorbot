@@ -52,7 +52,7 @@ class AchievementName:
     MAX_SWAP_AMOUNT_USD = 'max_swap_amount_usd'
     MAX_ADD_AMOUNT_USD = 'max_add_amount_usd'
 
-    POL_VALUE_RUNE = 'pol_value_rune'
+    POL_VALUE_USD = 'pol_value_usd'
 
 
     # from weekly chart:
@@ -148,6 +148,7 @@ BG_BURN = 'nn_wreath_burnt.png'  # kept for a burnt RUNE achievement, none uses 
 BG_VAULT = 'nn_wreath_vault.png'
 BG_STABLES = 'nn_wreath_stables_chains.png'
 BG_TRADE = 'nn_wreath_trade.png'
+BG_POL = 'nn_wreath_pol_roots.png'
 BG_BTC = 'nn_wreath_btc_vault_2.png'
 BG_ETH = 'nn_wreath_eth_vault_2.png'
 BG_ANNIVERSARY = 'nn_wreath_ann_3.png'
@@ -228,7 +229,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.COIN_MARKET_CAP_RANK, 'By market cap', milestone_scale=MILESTONES_EVERY_INT,
           thresholds=42, more_than=False, background=BG_RUNE),
 
-    ADesc(A.POL_VALUE_RUNE, 'POL value', postfix=POSTFIX_RUNE, background=BG_VAULT),
+    ADesc(A.POL_VALUE_USD, 'POL value', prefix='$', background=BG_POL),
 
     ADesc(A.BTC_IN_VAULT, 'Bitcoin in vaults', background=BG_BTC),
     ADesc(A.ETH_IN_VAULT, 'Ethereum in vaults', background=BG_ETH),

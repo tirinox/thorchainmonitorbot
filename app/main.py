@@ -29,7 +29,6 @@ from jobs.fetch.chains import ChainStateFetcher
 from jobs.fetch.mimir import ConstMimirFetcher
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from jobs.fetch.node_info import NodeInfoFetcher
-from jobs.fetch.pol import POLAndRunePoolFetcher
 from jobs.fetch.pool_price import PoolFetcher
 from jobs.fetch.queue import QueueFetcher
 from jobs.fetch.rune_market import RuneMarketInfoFetcher
@@ -610,11 +609,6 @@ class App(WithLogger):
             d.wasm_cache = WasmCache(d.thor_connector, db=d.db)
             wasm_recorder = CosmWasmRecorder(d.db)
             d.block_scanner.add_subscriber(wasm_recorder)
-
-        pol_fetcher = POLAndRunePoolFetcher(d)
-        tasks.append(pol_fetcher)
-        if achievements_enabled:
-            pol_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('chain_id.enabled', True):
             chain_id_job = ChainIdFetcher(d)

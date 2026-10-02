@@ -14,7 +14,7 @@ from models.mimir import MimirTuple
 from models.net_stats import NetworkStats
 from models.node_info import NodeSetChanges
 from models.price import RuneMarketInfo
-from models.runepool import AlertPOLState
+from models.pol_reserve import AlertPolReserveStats
 from models.trade_acc import AlertTradeAccountStats, AlertTradeAccountAction
 from models.tx import ThorAction
 from .ach_list import A, EventTestAchievement, Achievement
@@ -46,8 +46,8 @@ class AchievementsExtractor(WithLogger):
         elif is_list_of_type(data, ThorAction):
             usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
             kv_events = self.on_thor_tx_list(data, usd_per_rune)
-        elif isinstance(data, AlertPOLState):
-            kv_events = self.on_thor_pol(data)
+        elif isinstance(data, AlertPolReserveStats):
+            kv_events = self.on_pol_reserve(data)
         elif isinstance(data, AlertKeyStats):
             kv_events = self.on_weekly_stats(data)
         elif isinstance(data, EventTestAchievement):
@@ -155,9 +155,10 @@ class AchievementsExtractor(WithLogger):
         ]
 
     @staticmethod
-    def on_thor_pol(pol: AlertPOLState):
+    def on_pol_reserve(pol: AlertPolReserveStats):
+        # the system income funded POL (ADR-024)
         return [
-            Achievement(A.POL_VALUE_RUNE, int(pol.current.rune_value))
+            Achievement(A.POL_VALUE_USD, int(pol.current.value_usd)),
         ]
 
     @staticmethod

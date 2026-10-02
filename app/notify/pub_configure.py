@@ -113,7 +113,7 @@ class PublicAlertJobExecutor(WithLogger):
 
     async def _feed_achievements(self, sender, data):
         # a preview or a test send must not move the achievement records either
-        if achievements := self.deps.achievements:
+        if achievements := getattr(self.deps, 'achievements', None):
             await self._save_state('achievements', lambda: achievements.on_data(sender, data))
 
     async def job_tcy_summary(self, **job_args):
@@ -133,6 +133,7 @@ class PublicAlertJobExecutor(WithLogger):
         data.previous = await pvdb.get()
 
         await self._send_alert(data, "POL (ADR-024) summary infographic", job_args)
+        await self._feed_achievements(self.pol_reserve_fetcher, data)
 
         await self._save_state('POL reserve state', lambda: pvdb.set(data.current))
 

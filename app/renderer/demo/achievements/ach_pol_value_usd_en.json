@@ -2,28 +2,32 @@
   "template_name": "achievement.jinja2",
   "meta": {
     "title": "POL value",
-    "subtitle": "20M ᚱ",
+    "subtitle": "$500K",
     "lang": "en",
     "order": 25
   },
   "parameters": {
-    "key": "pol_value_rune",
-    "background": "nn_wreath_vault.png",
+    "key": "pol_value_usd",
+    "background": "nn_wreath_pol_roots.png",
     "tint": "#ffcf7a",
-    "hole_x": 0.512,
-    "hole_y": 0.436,
-    "hole_r": 0.186,
-    "base_color": "#06080e",
-    "frame_size": 860,
-    "frame_top": 40,
+    "hole_x": 0.499,
+    "hole_y": 0.373,
+    "hole_r": 0.172,
+    "base_color": "#0c0704",
+    "frame_size": 800,
+    "frame_top": 80,
     "shade_from": 58,
     "number_font": "runic",
     "number_label": "Over",
-    "number_text": "20M ᚱ",
+    "number_text": "$500K",
     "glyphs": [
       {
+        "kind": "tall",
+        "src": "runic/bw_USD.png"
+      },
+      {
         "kind": "glyph",
-        "src": "runic/bw_2.png"
+        "src": "runic/bw_5.png"
       },
       {
         "kind": "glyph",
@@ -31,14 +35,11 @@
       },
       {
         "kind": "glyph",
-        "src": "runic/bw_M.png"
-      },
-      {
-        "kind": "space"
+        "src": "runic/bw_0.png"
       },
       {
         "kind": "glyph",
-        "src": "runic/bw_R.png"
+        "src": "runic/bw_K.png"
       }
     ],
     "title": "POL value",
@@ -48,17 +49,17 @@
     "stats": [
       {
         "label": "Previous",
-        "value": "10M ᚱ",
+        "value": "$200K",
         "sub": "3 months, 2 days ago"
       },
       {
         "label": "Now",
-        "value": "21,500,000 ᚱ",
+        "value": "$657,000",
         "sub": ""
       },
       {
         "label": "Next milestone",
-        "value": "50M ᚱ",
+        "value": "$1M",
         "sub": ""
       }
     ]
