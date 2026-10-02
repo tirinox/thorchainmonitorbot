@@ -270,3 +270,7 @@ affiliates:
   - name: THORDEX
     logo: thordex.png
     codes: [tdex]
+
+  - name: Tangem
+    logo: https://raw.githubusercontent.com/ViewBlock/cryptometa/master/data/thorchain/ecosystem/tangem/logo.svg
+    codes: [tan]
