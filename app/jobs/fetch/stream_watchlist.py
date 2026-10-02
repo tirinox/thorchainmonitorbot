@@ -208,13 +208,18 @@ class StreamingSwapStartDetectorFromList(INotified, WithDelegates, WithLogger):
         details = await self.deps.thor_connector.query_tx_details(s.tx_id)
 
         tx_contents = safe_get(details, 'tx', 'tx')
+        if not tx_contents:
+            # no node gave the tx: e.g. ours was down or lagged behind the one that listed the swap
+            self.logger.warning(f'No details of the streaming swap {s.tx_id}: {details!r:.200}. Skipping it.')
+            return
+
         memo = THORMemo.parse_memo(raw_tx_memo := tx_contents.get('memo', ''), no_raise=True)
         from_address = tx_contents.get('from_address', '')
 
         block_height = details.get('consensus_height', s.last_height)
-        coin = safe_get(details, 'tx', 'tx', 'coins', 0)
-        asset, amount = coin['asset'], coin['amount'] if coin else (None, 0.0)
-        price_source_asset = ph.get_asset_price_in_usd(asset)
+        coin = safe_get(tx_contents, 'coins', 0)
+        asset, amount = (coin['asset'], coin['amount']) if coin else (None, 0)
+        price_source_asset = ph.get_asset_price_in_usd(asset) or 0.0
         volume_usd = thor_to_float(amount) * price_source_asset
 
         await self.pass_data_to_listeners(AlertSwapStart(

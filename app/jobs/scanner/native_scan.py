@@ -163,10 +163,9 @@ class BlockScanner(BaseFetcher):
                             self._last_block = last_av_b
                             self._this_block_attempts = 0
                         elif block_result.is_ahead:
-                            self.logger.warning(f'We are running ahead of real block height. '
-                                                f'{self._last_block = },'
-                                                f'{last_av_b = }')
-                            await self.ensure_last_block(reset=True)
+                            # The block is not there yet: wait for it. Do not jump to the node's tip,
+                            # that skipped the blocks in between when our node was down or lagged behind.
+                            self.logger.debug(f'Block #{self._last_block} is not produced yet. Waiting for it.')
                             break
                         else:
                             self._on_error_block(block_result)

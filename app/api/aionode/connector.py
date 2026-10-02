@@ -163,7 +163,8 @@ class ThorConnector:
 
     async def query_tx_details(self, tx_hash: str):
         url = self.env.path_tx_details.format(txid=tx_hash)
-        data = await self._request(url)
+        # a node that lags behind answers "tx doesn't exist" (code 3): ask the next one then
+        data = await self._request(url, treat_empty_as_ok=False)
         return data
 
     async def query_tx_simple(self, tx_hash: str):
