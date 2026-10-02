@@ -1,0 +1,85 @@
+# A frozen copy of the production settings the replayed detectors and notifiers read (config.yaml, 2026-10-01).
+# The corpus decides "posted or not" by these values, so a change of the live config does not move it.
+# Change it on purpose, and then review the alert snapshots of the cases it changes.
+thor:
+  stable_coins:
+  - ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48
+  - ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7
+  - ETH.DAI-0X6B175474E89094C44DA98B954EEDEAC495271D0F
+  - ETH.LUSD-0X5F98805A4E8BE255A32880FDEC7F6728C6568BA0
+  - AVAX.USDC-0XB97EF9EF8734C71904D8002F8B6BC66DD9C48A6E
+  - AVAX.USDT-0X9702230A8EA53601F5CD2DC00FDBC13D4DF4A8C7
+  - BSC.USDC-0X8AC76A51CC950D9822D68B83FE1AD97B32CD580D
+  - BSC.USDT-0X55D398326F99059FF775485246999027B3197955
+tx:
+  enabled: true
+  max_age: 600d
+  fetch_period: 10s
+  tx_per_batch: 50
+  max_page_deep: 3
+  max_tx_per_single_message: 6
+  announce_pending_after_blocks: 100
+  ignore_donates: true
+  add_date_if_older_than: 2h
+  curve:
+  - depth: 10k
+    percent: 12
+  - depth: 100k
+    percent: 8
+  - depth: 1m
+    percent: 4
+  - depth: 10m
+    percent: 2
+  estimated_savings_vs_cex_enabled: false
+  liquidity:
+    enabled: true
+    min_usd_total: 103000
+    curve_mult: 8.0e-05
+    also_trigger_when:
+      ilp_paid_usd_greater: 50
+      affiliate_fee_usd_greater: 50
+  swap:
+    enabled: true
+    min_usd_total: 1000
+    curve_mult: 0.05
+    twitter:
+      remove_links_below_usd: 1000000
+    hide_arbitrage_bots: false
+    also_trigger_when:
+      dex_aggregator_used:
+        min_usd_total: 100
+      affiliate_fee_usd_greater: 1000
+      streaming_swap:
+        volume_greater: 5000
+        notify_start: true
+      trade_asset_swap:
+        volume_greater: 5000
+    streaming_watchlist:
+      enabled: true
+      period: 4s
+  donate:
+    enabled: true
+    min_usd_total: 100000
+    curve_mult: 0.001
+  refund:
+    enabled: true
+    min_usd_total: 500000
+    curve_mult: 0.01
+    cooldown: 20m
+  dex_aggregator_update:
+    enabled: false
+    cooldown: 7d
+  show_add_more: false
+names:
+  arb_bot_detector:
+    min_sequence: 10000
+native_scanner:
+  reserve_address: thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt
+  prohibited_addresses:
+  - thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt
+  - thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv
+  - thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y
+  db:
+    ttl: 7d
+price:
+  pool_cache_max_age: 3000d

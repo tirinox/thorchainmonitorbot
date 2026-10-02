@@ -44,7 +44,7 @@ from notify.public.tx_notify import SwapTxNotifier
 from tests.fakes import FakeDB, FakeRedis
 
 CORPUS_DIR = Path(__file__).with_name('tx_corpus')
-CONFIG_PATH = CORPUS_DIR / 'config.yaml'
+CONFIG_PATH = CORPUS_DIR / 'thresholds.yaml'
 CASE_SUFFIX = '.json.gz'
 
 
