@@ -30,16 +30,27 @@
     "top": 40,
     "shade_from": 58
   },
-  "nn_wreath_users.png": {
-    "tint": "#7cc7ff",
-    "hole_x": 0.508,
-    "hole_y": 0.443,
-    "hole_r": 0.187,
-    "base": "#060505",
-    "size": 860,
-    "top": 40,
+  "nn_wreath_users_day.png": {
+    "tint": "#ffd98a",
+    "hole_x": 0.5,
+    "hole_y": 0.391,
+    "hole_r": 0.157,
+    "base": "#0c0c0d",
+    "size": 800,
+    "top": 85,
     "shade_from": 58,
-    "note": "dark twigs fool the rays: picked by eye"
+    "note": "the horns reach the top of the picture: smaller and lower, clear of the date"
+  },
+  "nn_wreath_users_night.png": {
+    "tint": "#cfdcff",
+    "hole_x": 0.499,
+    "hole_y": 0.39,
+    "hole_r": 0.157,
+    "base": "#090d18",
+    "size": 800,
+    "top": 85,
+    "shade_from": 58,
+    "note": "the night twin of the day frame; the horns reach the top of the picture: smaller and lower, clear of the date"
   },
   "nn_wreath_rune.png": {
     "tint": "#2ee6b8",

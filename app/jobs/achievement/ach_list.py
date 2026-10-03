@@ -140,7 +140,8 @@ class Achievement(NamedTuple):
 BG_LIQUIDITY = 'nn_wreath_liquidity.png'
 BG_NETWORK = 'nn_wreath_network.png'
 BG_SWAPS = 'nn_wreath_swaps.png'
-BG_USERS = 'nn_wreath_users.png'
+BG_USERS = 'nn_wreath_users_day.png'
+BG_USERS_NIGHT = 'nn_wreath_users_night.png'  # the monthly twin of the daily frame
 BG_RUNE = 'nn_wreath_rune.png'
 BG_REVENUE = 'nn_wreath_revenue_toast.png'
 BG_AFFILIATE = 'nn_wreath_affiliate_grip.png'
@@ -188,7 +189,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.TEST_DESCENDING, 'Test descending'),
 
     ADesc(A.DAU, 'Daily active users', thresholds=300, background=BG_USERS),
-    ADesc(A.MAU, 'Monthly active users', thresholds=6500, background=BG_USERS),
+    ADesc(A.MAU, 'Monthly active users', thresholds=6500, background=BG_USERS_NIGHT),
     ADesc(A.WALLET_COUNT, 'Wallets', milestone_scale=MILESTONES_EVERY_DIGIT,
           thresholds=61000, background=BG_USERS),
     ADesc(A.SWAP_COUNT_TOTAL, 'Total swaps', background=BG_SWAPS),
