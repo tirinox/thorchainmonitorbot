@@ -17,6 +17,7 @@ from starlette.responses import JSONResponse, RedirectResponse
 from .const import DEVICE_SCALE_FACTOR
 from .demo import demo_template_parameters, load_demo
 from .engine import RendererEngine
+from .frames import save_style, tuner_html, STYLE_FILE
 from .gallery import gallery_html
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
@@ -138,6 +139,38 @@ async def render_just_html(name: str, req: Request):
 
     rendered_html = renderer.render_template_to_html(template_name, parameters, override_resource_dir='')
     return Response(content=rendered_html.html_content, media_type="text/html")
+
+
+@app.post("/render/html", include_in_schema=False)
+async def render_template_html(request: RenderRequest):
+    """The HTML of a template with any parameters, as the gallery shows a demo: for the live previews of the tuner"""
+    try:
+        result = renderer.render_template_to_html(request.template_name, request.parameters,
+                                                  override_resource_dir='')
+    except TemplateNotFound:
+        return Response(status_code=404, content=f"Template '{request.template_name}' not found.")
+    return Response(content=result.html_content, media_type="text/html")
+
+
+@app.get("/render/frames", include_in_schema=False)
+@app.get("/render/frames/", include_in_schema=False)
+async def frame_tuner():
+    """The achievement frame tuner: set the hole and the placement of each frame by eye and save them"""
+    return Response(content=tuner_html(), media_type="text/html")
+
+
+@app.put("/render/frames/{frame}", include_in_schema=False)
+async def save_frame_style(frame: str, request: Request):
+    """Saves the style of a frame into the style file and the achievement demos on this frame"""
+    # a custom header makes a browser ask first, so no other site can post here through the user's browser
+    if request.headers.get('x-frame-tuner') != '1':
+        return JSONResponse(status_code=403, content={'message': 'X-Frame-Tuner: 1 header is required'})
+    try:
+        style, demos = save_style(frame, await request.json())
+    except ValueError as e:
+        return JSONResponse(status_code=400, content={'message': str(e)})
+    logging.info(f'Frame tuner: saved {frame} {style}; demos updated: {demos}')
+    return JSONResponse({'style': style, 'demos': demos, 'file': STYLE_FILE})
 
 
 @app.post("/render", response_class=Response, responses={200: {"content": {"image/png": {}}}})

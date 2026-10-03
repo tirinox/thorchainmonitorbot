@@ -1,9 +1,9 @@
+import json
+import os
 from typing import NamedTuple
 
 from comm.localization.achievements.common import AchievementsLocalizationBase
-from jobs.achievement.ach_list import Achievement, A, NUMBER_FONT_BALLOON, BG_LIQUIDITY, BG_NETWORK, BG_SWAPS, \
-    BG_USERS, BG_RUNE, BG_REVENUE, BG_AFFILIATE, BG_BURN, BG_VAULT, BG_STABLES, BG_TRADE, BG_POL, BG_BTC, BG_ETH, \
-    BG_ANNIVERSARY
+from jobs.achievement.ach_list import Achievement, A, NUMBER_FONT_BALLOON, BG_LIQUIDITY
 from lib.date_utils import today_str, now_ts
 from models.asset import Asset
 
@@ -25,29 +25,21 @@ class WreathStyle(NamedTuple):
     shade_from: int = 58  # % of the card height where the shade under the title starts
 
 
-# Holes were measured on the pictures: rays cast from the middle stop where it gets brighter than the middle
-# by 30, a circle is fitted to the stops
-BACKGROUND_STYLE = {
-    BG_LIQUIDITY: WreathStyle('#3ee6c8', 0.501, 0.461, 0.162, base='#01040c'),
-    # inside the warm halo, clear of the chevron
-    BG_NETWORK: WreathStyle('#6fe8cf', 0.500, 0.471, 0.140, base='#04060e'),
-    BG_SWAPS: WreathStyle('#4ffffa', 0.502, 0.449, 0.205, base='#030708'),
-    # dark twigs fool the rays: picked by eye
-    BG_USERS: WreathStyle('#7cc7ff', 0.508, 0.443, 0.193, base='#060505'),
-    BG_RUNE: WreathStyle('#2ee6b8', 0.499, 0.496, 0.190, base='#080d16'),
-    # the tankards and the clasped hands reach into the opening: these holes are set by eye above them
-    BG_REVENUE: WreathStyle('#e8c45a', 0.499, 0.392, 0.170, size=790, top=36, shade_from=70, base='#010a0b'),
-    BG_AFFILIATE: WreathStyle('#f0c070', 0.498, 0.330, 0.165, size=820, top=64, shade_from=70, base='#080805'),
-    BG_BURN: WreathStyle('#ffb347', 0.493, 0.466, 0.175, base='#0c0c0e'),
-    BG_VAULT: WreathStyle('#ffcf7a', 0.512, 0.436, 0.186, base='#06080e'),
-    BG_STABLES: WreathStyle('#8ff0c0', 0.501, 0.472, 0.225, size=770, top=34, shade_from=72, base='#090d0e'),
-    BG_TRADE: WreathStyle('#ff7a6b', 0.501, 0.498, 0.193, base='#030202'),
-    # the roots reach the top of the picture: smaller and lower, clear of the date
-    BG_POL: WreathStyle('#ffcf7a', 0.499, 0.373, 0.172, size=800, top=80, base='#0c0704'),
-    BG_BTC: WreathStyle('#ffb84d', 0.499, 0.494, 0.189, base='#080c12'),
-    BG_ETH: WreathStyle('#b4a6ff', 0.500, 0.495, 0.188, base='#090d16'),
-    BG_ANNIVERSARY: WreathStyle('#f4e18d', 0.499, 0.495, 0.187, base='#090d16'),
-}
+# The style of every frame, keyed by its picture (the BG_* constants). The frame tuner of the renderer gallery
+# (/render/frames) writes this file: the hole starts from an automatic guess and is set by eye; docs/achievement-frames.md
+FRAME_STYLE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'data', 'renderer',
+                                'achievement_frames.json')
+
+
+def load_frame_styles(path=FRAME_STYLE_FILE) -> dict:
+    with open(path, encoding='utf-8') as f:
+        raw = json.load(f)
+    # "note" is for people: why the hole sits where it does
+    return {bg: WreathStyle(**{k: v for k, v in style.items() if k in WreathStyle._fields})
+            for bg, style in raw.items()}
+
+
+BACKGROUND_STYLE = load_frame_styles()
 
 # the anniversary digits are pictures: data/renderer/static/img/achievement/balloon/; other numbers are text
 BALLOON_GLYPHS = {c: f'{c}.png' for c in '0123456789'}

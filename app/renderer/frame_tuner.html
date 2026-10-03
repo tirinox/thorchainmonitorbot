@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Frame tuner</title>
+    <style>
+        @font-face {
+            font-family: ThorFont;
+            src: url(/static/fonts/ThorFont.ttf);
+        }
+
+        @font-face {
+            font-family: Exo2;
+            src: url(/static/fonts/Exo2-VariableFont_wght.ttf);
+            font-weight: 100 900;
+        }
+
+        :root {
+            --table: #0e1b1e;
+            --panel: #13252a;
+            --panel-hi: #1a3138;
+            --line: #24414a;
+            --ink: #e4f1ee;
+            --ink-soft: #9db7b2;
+            --ink-faint: #6b8a85;
+            --accent: #23dcc8;
+            --accent-ink: #062320;
+            --warn: #f2b45c;
+            --bad: #ff7a6b;
+            --radius: 10px;
+            --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            background: var(--table);
+            color: var(--ink);
+            font-family: Exo2, system-ui, sans-serif;
+            font-size: 14px;
+            line-height: 1.4;
+            display: grid;
+            grid-template-rows: auto minmax(0, 1fr);
+        }
+
+        button, input, select {
+            font: inherit;
+            color: inherit;
+        }
+
+        kbd, code {
+            font-family: var(--mono);
+            font-size: 11px;
+        }
+
+        kbd {
+            padding: 0 4px;
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            color: var(--ink-faint);
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        /* ---- top bar ---- */
+        .bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 16px;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .brand {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            margin-right: auto;
+            min-width: 0;
+        }
+
+        .brand a {
+            color: var(--ink-faint);
+            text-decoration: none;
+        }
+
+        .brand a:hover {
+            color: var(--accent);
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-family: ThorFont, Exo2, sans-serif;
+            font-weight: normal;
+            font-size: 24px;
+            white-space: nowrap;
+        }
+
+        .brand code {
+            color: var(--ink-soft);
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .seg {
+            display: inline-flex;
+            padding: 3px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .seg button {
+            padding: 3px 10px;
+            border: 0;
+            border-radius: 5px;
+            background: transparent;
+            color: var(--ink-soft);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .seg button:hover {
+            color: var(--ink);
+        }
+
+        .seg button[aria-pressed="true"] {
+            background: var(--accent);
+            color: var(--accent-ink);
+            font-weight: 600;
+        }
+
+        .btn {
+            padding: 5px 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--panel);
+            color: var(--ink-soft);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn:hover:not(:disabled) {
+            color: var(--ink);
+            border-color: var(--accent);
+        }
+
+        .btn:disabled {
+            opacity: .45;
+            cursor: default;
+        }
+
+        .btn.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--accent-ink);
+            font-weight: 700;
+        }
+
+        .btn.primary:hover:not(:disabled) {
+            color: var(--accent-ink);
+            filter: brightness(1.1);
+        }
+
+        .state {
+            font-size: 13px;
+            color: var(--ink-faint);
+            white-space: nowrap;
+        }
+
+        .state.dirty {
+            color: var(--warn);
+        }
+
+        /* ---- layout: frames | stage + strip | controls ---- */
+        .layout {
+            display: grid;
+            grid-template-columns: 200px minmax(0, 1fr) 330px;
+            min-height: 0;
+        }
+
+        .frames {
+            overflow-y: auto;
+            padding: 10px 8px 24px;
+            border-right: 1px solid var(--line);
+        }
+
+        .fr {
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr);
+            grid-template-rows: auto auto;
+            column-gap: 10px;
+            align-items: center;
+            width: 100%;
+            padding: 6px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            background: transparent;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .fr:hover {
+            background: var(--panel);
+        }
+
+        .fr[aria-current="true"] {
+            background: var(--panel-hi);
+            border-color: var(--accent);
+        }
+
+        .fr img {
+            grid-row: 1 / 3;
+            width: 44px;
+            height: 44px;
+            border-radius: 6px;
+            object-fit: cover;
+            background: #000;
+        }
+
+        .fr-name {
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .fr-meta {
+            font-size: 12px;
+            color: var(--ink-faint);
+            white-space: nowrap;
+        }
+
+        .fr.new .fr-meta {
+            color: var(--warn);
+        }
+
+        .fr.dirty .fr-name::after {
+            content: " •";
+            color: var(--warn);
+        }
+
+        .work {
+            display: grid;
+            grid-template-rows: minmax(0, 1fr) auto;
+            grid-template-columns: minmax(0, 1fr);
+            min-width: 0;
+            min-height: 0;
+        }
+
+        /* the stage shows a 1024×1024 world (the card, its PNG or the bare picture) through a camera */
+        .stage {
+            position: relative;
+            overflow: hidden;
+            min-height: 320px;
+            background: #071012;
+            touch-action: none;
+            user-select: none;
+        }
+
+        .world {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1024px;
+            height: 1024px;
+            transform-origin: 0 0;
+            box-shadow: 0 0 0 1px var(--line), 0 20px 60px rgba(0, 0, 0, .5);
+            background: #0a1015;
+        }
+
+        .world > * {
+            position: absolute;
+            inset: 0;
+            width: 1024px;
+            height: 1024px;
+        }
+
+        .host {
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        /* two iframes: one shown, the next render loads into the other and they swap, so it never blinks */
+        .host iframe {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1024px;
+            height: 1024px;
+            border: 0;
+            visibility: hidden;
+        }
+
+        .host iframe.on {
+            visibility: visible;
+        }
+
+        .world img {
+            display: block;
+            pointer-events: none;
+        }
+
+        .overlay {
+            overflow: visible;
+            pointer-events: none;
+        }
+
+        .overlay * {
+            vector-effect: non-scaling-stroke;
+            fill: none;
+        }
+
+        .ov-pic {
+            stroke: rgba(255, 255, 255, .28);
+            stroke-dasharray: 6 6;
+            stroke-width: 1;
+        }
+
+        .ov-saved {
+            stroke: rgba(255, 255, 255, .45);
+            stroke-dasharray: 3 5;
+            stroke-width: 1.5;
+        }
+
+        .ov-auto {
+            stroke: #ff5ce1;
+            stroke-dasharray: 8 4;
+            stroke-width: 2;
+        }
+
+        .ov-fit {
+            stroke: color-mix(in srgb, var(--accent) 70%, transparent);
+            stroke-dasharray: 2 4;
+            stroke-width: 1.5;
+        }
+
+        .ov-hole, .ov-cross {
+            stroke: var(--accent);
+            stroke-width: 2;
+        }
+
+        .ov-handle {
+            fill: var(--accent) !important;
+            stroke: #04110f;
+            stroke-width: 1.5;
+        }
+
+        .stage-msg {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            background: rgba(0, 0, 0, .7);
+            color: var(--ink-soft);
+            text-align: center;
+            white-space: pre-wrap;
+        }
+
+        .stage-msg.err {
+            color: var(--bad);
+            font: 12px var(--mono);
+            text-align: left;
+        }
+
+        .stage-hint {
+            position: absolute;
+            left: 12px;
+            bottom: 10px;
+            color: var(--ink-faint);
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        .legend {
+            position: absolute;
+            right: 12px;
+            bottom: 10px;
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+            color: var(--ink-faint);
+            pointer-events: none;
+        }
+
+        .legend i {
+            display: inline-block;
+            width: 16px;
+            height: 0;
+            margin-right: 5px;
+            vertical-align: middle;
+            border-top: 2px solid var(--accent);
+        }
+
+        .legend .l-fit {
+            border-top-style: dotted;
+        }
+
+        .legend .l-saved {
+            border-top: 2px dashed rgba(255, 255, 255, .5);
+        }
+
+        /* ---- the strip: every content preset at once, cropped to the hole ---- */
+        .strip-wrap {
+            min-width: 0;
+            border-top: 1px solid var(--line);
+            padding: 8px 14px 12px;
+        }
+
+        .strip-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 8px;
+            color: var(--ink-faint);
+            font-size: 12px;
+        }
+
+        .strip-head .seg button {
+            padding: 1px 8px;
+            font-size: 12px;
+        }
+
+        .strip {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(92px, 150px);
+            gap: 10px;
+            overflow-x: auto;
+            justify-content: start;
+        }
+
+        .sp {
+            min-width: 0;
+            cursor: pointer;
+        }
+
+        .sp-box {
+            position: relative;
+            aspect-ratio: 1;
+            overflow: hidden;
+            border-radius: 6px;
+            background: #0a1015;
+            border: 2px solid transparent;
+        }
+
+        .sp-box .host {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1024px;
+            height: 1024px;
+            transform-origin: 0 0;
+        }
+
+        .sp[aria-pressed="true"] .sp-box {
+            border-color: var(--accent);
+        }
+
+        .sp:hover .sp-box {
+            border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+        }
+
+        .sp-cap {
+            display: flex;
+            gap: 6px;
+            align-items: baseline;
+            margin-top: 4px;
+            font-size: 12px;
+            color: var(--ink-soft);
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .sp-cap span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ---- controls ---- */
+        .panel {
+            overflow-y: auto;
+            padding: 6px 16px 28px;
+            border-left: 1px solid var(--line);
+        }
+
+        .group {
+            padding: 12px 0 14px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .group:last-child {
+            border-bottom: 0;
+        }
+
+        .group h2 {
+            margin: 0 0 10px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--ink-faint);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 54px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .row > label {
+            color: var(--ink-soft);
+        }
+
+        .row input[type=number], .row input[type=text], select {
+            width: 100%;
+            min-width: 0;
+            padding: 5px 8px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            font-family: var(--mono);
+            font-size: 13px;
+        }
+
+        select {
+            font-family: inherit;
+        }
+
+        .row input:focus, select:focus {
+            border-color: var(--accent);
+            outline: none;
+        }
+
+        .nudge {
+            display: inline-flex;
+            gap: 4px;
+        }
+
+        .nudge button, .pad button {
+            width: 30px;
+            height: 28px;
+            padding: 0;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: var(--panel);
+            color: var(--ink-soft);
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .nudge button:hover, .pad button:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .nudge button:active, .pad button:active {
+            background: var(--panel-hi);
+        }
+
+        .hole-pad {
+            display: flex;
+            gap: 18px;
+            align-items: center;
+            margin: 4px 0 10px;
+        }
+
+        .pad {
+            display: grid;
+            grid-template-columns: repeat(3, 34px);
+            grid-template-rows: repeat(3, 32px);
+            gap: 4px;
+        }
+
+        .pad button {
+            width: 34px;
+            height: 32px;
+        }
+
+        .pad .up {
+            grid-area: 1 / 2;
+        }
+
+        .pad .left {
+            grid-area: 2 / 1;
+        }
+
+        .pad .right {
+            grid-area: 2 / 3;
+        }
+
+        .pad .down {
+            grid-area: 3 / 2;
+        }
+
+        .radius-pad {
+            display: grid;
+            gap: 4px;
+            justify-items: center;
+            color: var(--ink-faint);
+            font-size: 12px;
+        }
+
+        .radius-pad button {
+            width: 44px;
+            height: 32px;
+            font-size: 18px;
+        }
+
+        .readout {
+            color: var(--ink-faint);
+            font-size: 12px;
+            font-family: var(--mono);
+        }
+
+        .hint {
+            margin: 8px 0 0;
+            color: var(--ink-faint);
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .autos {
+            display: grid;
+            gap: 6px;
+        }
+
+        .auto {
+            display: grid;
+            grid-template-columns: 40px minmax(0, 1fr);
+            gap: 8px;
+            align-items: center;
+            padding: 6px 8px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: var(--panel);
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .auto:hover:not(:disabled), .auto:focus-visible {
+            border-color: #ff5ce1;
+        }
+
+        .auto:disabled {
+            opacity: .5;
+            cursor: default;
+        }
+
+        .auto b {
+            color: #ff5ce1;
+            font-weight: 600;
+        }
+
+        .auto code {
+            color: var(--ink-soft);
+        }
+
+        .color {
+            display: grid;
+            grid-template-columns: 54px 34px minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .color > label {
+            color: var(--ink-soft);
+        }
+
+        .color input[type=color] {
+            width: 34px;
+            height: 30px;
+            padding: 0;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: none;
+            cursor: pointer;
+        }
+
+        .color input[type=text] {
+            width: 100%;
+            padding: 5px 8px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            font: 13px var(--mono);
+        }
+
+        .measured {
+            margin: 2px 0 0 62px;
+            color: var(--ink-faint);
+            font-size: 12px;
+        }
+
+        .link {
+            padding: 0;
+            border: 0;
+            background: none;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .note input {
+            width: 100%;
+            padding: 6px 8px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+        }
+
+        .custom {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .custom label {
+            display: grid;
+            gap: 3px;
+            color: var(--ink-faint);
+            font-size: 12px;
+        }
+
+        .custom input {
+            width: 100%;
+            padding: 5px 8px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 6px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .actions .btn {
+            flex: 1;
+        }
+
+        .saved-to {
+            margin-top: 8px;
+            color: var(--ink-faint);
+            font-size: 12px;
+        }
+
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 22px;
+            z-index: 20;
+            max-width: min(640px, calc(100vw - 32px));
+            padding: 10px 16px;
+            border: 1px solid var(--accent);
+            border-radius: var(--radius);
+            background: var(--panel-hi);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, .5);
+            transform: translate(-50%, 20px);
+            opacity: 0;
+            transition: opacity .2s, transform .2s;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .toast.err {
+            border-color: var(--bad);
+            color: var(--bad);
+        }
+
+        @media (max-width: 1100px) {
+            .layout {
+                grid-template-columns: 170px minmax(0, 1fr) 300px;
+            }
+        }
+
+        @media (max-width: 860px) {
+            body {
+                display: block;
+                height: auto;
+            }
+
+            .bar {
+                padding: 12px 16px;
+            }
+
+            .layout {
+                display: block;
+            }
+
+            .frames {
+                display: flex;
+                gap: 4px;
+                overflow-x: auto;
+                border-right: 0;
+                border-bottom: 1px solid var(--line);
+            }
+
+            .fr {
+                flex: none;
+                width: 190px;
+            }
+
+            .stage {
+                height: min(100vw, 560px);
+            }
+
+            .panel {
+                border-left: 0;
+            }
+
+            .stage-hint, .legend {
+                display: none;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .toast {
+                transition: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header class="bar">
+    <div class="brand">
+        <a href="/render/demo" title="Back to the gallery">← Gallery</a>
+        <h1>Frame tuner</h1>
+        <code id="frame-file"></code>
+    </div>
+    <div class="seg" role="group" aria-label="Language" data-pref="lang">
+        <button data-v="en">EN</button>
+        <button data-v="ru">RU</button>
+    </div>
+    <div class="seg" role="group" aria-label="View" data-pref="view"
+         title="Card: live HTML. PNG: through Playwright, like the bot. Picture: the bare frame with the circles">
+        <button data-v="card">Card</button>
+        <button data-v="png">PNG</button>
+        <button data-v="picture">Picture</button>
+    </div>
+    <div class="seg" role="group" aria-label="Zoom" data-pref="zoom" title="Zoom (Z)">
+        <button data-v="off">Whole</button>
+        <button data-v="on">Hole</button>
+    </div>
+    <div class="seg" role="group" aria-label="Guides" data-pref="guides" title="Circles over the card (G)">
+        <button data-v="on">Guides</button>
+        <button data-v="off">Clean</button>
+    </div>
+    <span class="state" id="state" aria-live="polite"></span>
+    <button class="btn" id="revert" title="Back to the saved style">Revert</button>
+    <button class="btn primary" id="save" title="Save into the style file (⌘S)">Save</button>
+</header>
+
+<div class="layout">
+    <nav class="frames" id="frames" aria-label="Frames"></nav>
+
+    <main class="work">
+        <div class="stage" id="stage">
+            <div class="world" id="world">
+                <div class="host" id="main-host"></div>
+                <img id="png" alt="" hidden>
+                <img id="picture" alt="" hidden>
+                <svg class="overlay" id="overlay" viewBox="0 0 1024 1024" aria-hidden="true">
+                    <rect class="ov-pic" id="ov-pic"/>
+                    <circle class="ov-saved" id="ov-saved"/>
+                    <circle class="ov-fit" id="ov-fit"/>
+                    <circle class="ov-auto" id="ov-auto"/>
+                    <circle class="ov-hole" id="ov-hole"/>
+                    <path class="ov-cross" id="ov-cross"/>
+                    <g id="ov-handles"></g>
+                </svg>
+            </div>
+            <div class="stage-msg" id="stage-msg" hidden></div>
+            <div class="stage-hint">Drag to move the hole, drag its edge to resize</div>
+            <div class="legend" id="legend">
+                <span><i></i>hole</span>
+                <span><i class="l-fit"></i>number fits inside</span>
+                <span id="legend-saved"><i class="l-saved"></i>saved</span>
+            </div>
+        </div>
+
+        <div class="strip-wrap">
+            <div class="strip-head">
+                <span>Content presets: click one or press its number</span>
+                <div class="seg" role="group" aria-label="Preset previews" data-pref="crop">
+                    <button data-v="hole">Hole</button>
+                    <button data-v="card">Card</button>
+                </div>
+            </div>
+            <div class="strip" id="strip"></div>
+        </div>
+    </main>
+
+    <aside class="panel" id="panel">
+        <section class="group" aria-labelledby="h-hole">
+            <h2 id="h-hole">Hole</h2>
+            <div class="hole-pad">
+                <div class="pad">
+                    <button class="up" data-nudge="hole_y" data-by="-1" aria-label="Move the hole up">↑</button>
+                    <button class="left" data-nudge="hole_x" data-by="-1" aria-label="Move the hole left">←</button>
+                    <button class="right" data-nudge="hole_x" data-by="1" aria-label="Move the hole right">→</button>
+                    <button class="down" data-nudge="hole_y" data-by="1" aria-label="Move the hole down">↓</button>
+                </div>
+                <div class="radius-pad">
+                    <button data-nudge="hole_r" data-by="1" aria-label="Bigger hole">+</button>
+                    <span>size</span>
+                    <button data-nudge="hole_r" data-by="-1" aria-label="Smaller hole">−</button>
+                </div>
+            </div>
+            <div class="row">
+                <label for="f-hole_x">X</label>
+                <input type="number" id="f-hole_x" data-field="hole_x" step="0.001">
+                <span class="readout" id="px-x"></span>
+            </div>
+            <div class="row">
+                <label for="f-hole_y">Y</label>
+                <input type="number" id="f-hole_y" data-field="hole_y" step="0.001">
+                <span class="readout" id="px-y"></span>
+            </div>
+            <div class="row">
+                <label for="f-hole_r">Radius</label>
+                <input type="number" id="f-hole_r" data-field="hole_r" step="0.001">
+                <span class="readout" id="px-r"></span>
+            </div>
+            <p class="hint">
+                Fractions of the picture; px of the 1024 picture on the right.<br>
+                <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd> move,
+                <kbd>+</kbd><kbd>−</kbd> or <kbd>⌥↑</kbd><kbd>⌥↓</kbd> size,
+                <kbd>⇧</kbd> ×10<br>
+                <kbd>⌘Z</kbd> undo, <kbd>[</kbd><kbd>]</kbd> frames, <kbd>⌘S</kbd> save
+            </p>
+        </section>
+
+        <section class="group" aria-labelledby="h-auto">
+            <h2 id="h-auto">Auto guess</h2>
+            <div class="autos" id="autos"></div>
+            <p class="hint">Rays from the middle stop where the picture gets brighter than the middle by 15, 30 or 50,
+                like <code>achievement_frame.py measure</code>. Hover to see, click to take.</p>
+        </section>
+
+        <section class="group" aria-labelledby="h-place">
+            <h2 id="h-place">Placement on the card</h2>
+            <div class="row">
+                <label for="f-size">Size</label>
+                <input type="number" id="f-size" data-field="size" step="2">
+                <span class="nudge"><button data-nudge="size" data-by="-10" aria-label="Smaller picture">−</button><button
+                        data-nudge="size" data-by="10" aria-label="Bigger picture">+</button></span>
+            </div>
+            <div class="row">
+                <label for="f-top">Top</label>
+                <input type="number" id="f-top" data-field="top" step="2">
+                <span class="nudge"><button data-nudge="top" data-by="-4" aria-label="Picture up">↑</button><button
+                        data-nudge="top" data-by="4" aria-label="Picture down">↓</button></span>
+            </div>
+            <div class="row">
+                <label for="f-shade_from">Shade</label>
+                <input type="number" id="f-shade_from" data-field="shade_from" step="1">
+                <span class="nudge"><button data-nudge="shade_from" data-by="-2" aria-label="Shade starts higher">↑</button><button
+                        data-nudge="shade_from" data-by="2" aria-label="Shade starts lower">↓</button></span>
+            </div>
+            <p class="hint">Size and top in card px (the card is 1024), the shade under the title starts at this % of the
+                card height.</p>
+        </section>
+
+        <section class="group" aria-labelledby="h-colors">
+            <h2 id="h-colors">Colors</h2>
+            <div class="color">
+                <label for="c-tint">Tint</label>
+                <input type="color" id="c-tint" data-color="tint" aria-label="Tint">
+                <input type="text" id="t-tint" data-color="tint" spellcheck="false" aria-label="Tint hex">
+                <span></span>
+            </div>
+            <div class="color">
+                <label for="c-base">Base</label>
+                <input type="color" id="c-base" data-color="base" aria-label="Base">
+                <input type="text" id="t-base" data-color="base" spellcheck="false" aria-label="Base hex">
+                <span></span>
+            </div>
+            <div class="measured" id="measured-base"></div>
+        </section>
+
+        <section class="group note" aria-labelledby="h-note">
+            <h2 id="h-note">Note</h2>
+            <input type="text" id="f-note" placeholder="Why the hole sits where it does" aria-labelledby="h-note">
+        </section>
+
+        <section class="group" aria-labelledby="h-content">
+            <h2 id="h-content">Content</h2>
+            <div class="row" style="grid-template-columns: 1fr">
+                <select id="demo" aria-label="Achievement whose title and stats the card shows"></select>
+            </div>
+            <div class="custom">
+                <label>Custom label <input type="text" id="custom-label" spellcheck="false"></label>
+                <label>Custom number <input type="text" id="custom-text" spellcheck="false"></label>
+            </div>
+        </section>
+
+        <section class="group">
+            <div class="actions">
+                <button class="btn" id="revert-2">Revert</button>
+                <button class="btn primary" id="save-2">Save</button>
+            </div>
+            <div class="saved-to" id="saved-to"></div>
+        </section>
+    </aside>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script id="catalog" type="application/json">__CATALOG__</script>
+<script>
+    (() => {
+        const C = JSON.parse(document.getElementById('catalog').textContent);
+        const FRAMES = C.frames, DEMOS = C.demos, FIELDS = C.fields, LIMITS = C.limits;
+        const $ = id => document.getElementById(id);
+        const enc = encodeURIComponent;
+        const WORLD = 1024;  // the card is 1024×1024; the bare picture is shown at the same size
+        const STEP = 0.001;  // one press: about a pixel of the picture
+        // the labels over the number, as the localizations print them
+        const LABELS = {en: {over: 'Over', top: 'Top'}, ru: {over: 'Более чем', top: 'Топ'}};
+        const PRESETS = [
+            {id: 'demo', name: 'As posted'},
+            {id: 'short', label: '', text: '100'},
+            {id: 'rank', label: 'top', text: '30'},
+            {id: 'k', label: 'over', text: '2K'},
+            {id: 'long', label: 'over', text: '$500M'},
+            {id: 'rune', label: 'over', text: '50M ᚱ'},
+            {id: 'custom', name: 'Custom'},
+        ];
+        const custom = {label: 'Over', text: '$2.5B'};
+
+        const store = {
+            get(k, def) {
+                try {
+                    return localStorage.getItem('tuner.' + k) || def;
+                } catch (e) {
+                    return def;
+                }
+            },
+            set(k, v) {
+                try {
+                    localStorage.setItem('tuner.' + k, v);
+                } catch (e) {
+                }
+            }
+        };
+        const prefs = {
+            lang: store.get('lang', 'en'), view: store.get('view', 'card'), zoom: store.get('zoom', 'off'),
+            guides: store.get('guides', 'on'), crop: store.get('crop', 'hole'),
+        };
+        let preset = store.get('preset', 'demo');
+        if (!PRESETS.some(p => p.id === preset)) preset = 'demo';
+
+        function el(tag, attrs = {}, ...kids) {
+            const e = document.createElement(tag);
+            for (const [k, v] of Object.entries(attrs)) {
+                if (k === 'class') e.className = v;
+                else if (k === 'text') e.textContent = v;
+                else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+                else e.setAttribute(k, v);
+            }
+            kids.forEach(c => c && e.append(c));
+            return e;
+        }
+
+        const svg = (tag, attrs) => {
+            const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+            for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+            return e;
+        };
+
+        function toast(text, bad = false) {
+            const t = $('toast');
+            t.textContent = text;
+            t.classList.toggle('err', bad);
+            t.classList.add('show');
+            clearTimeout(toast.timer);
+            toast.timer = setTimeout(() => t.classList.remove('show'), bad ? 7000 : 4000);
+        }
+
+        // ---- styles ----
+        function tidy(s) {
+            const o = {...s};
+            for (const [k, [lo, hi]] of Object.entries(LIMITS)) {
+                let v = +o[k];
+                if (!Number.isFinite(v)) v = lo;
+                v = Math.min(hi, Math.max(lo, v));
+                o[k] = k.startsWith('hole_') ? Math.round(v * 1000) / 1000 : Math.round(v);
+            }
+            return o;
+        }
+
+        const styleKey = s => JSON.stringify(FIELDS.map(k => s?.[k] ?? ''));
+
+        // a frame => its draft: the style being tuned, the saved one, the undo history
+        const drafts = new Map();
+        let frame = null;  // the catalog entry of the frame on the stage
+        const cur = () => frame && drafts.get(frame.file);
+        const isDirty = d => !!d?.style && styleKey(d.style) !== styleKey(d.saved);
+
+        // ---- the auto guess: achievement_frame.py find_hole and edge_color, ported ----
+        const analyses = new Map();  // file => Promise of {holes: {15, 30, 50}, base}
+
+        function analyse(f) {
+            if (!analyses.has(f.file)) {
+                analyses.set(f.file, new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        try {
+                            resolve(measurePicture(img));
+                        } catch (e) {
+                            reject(e);
+                        }
+                    };
+                    img.onerror = () => reject(new Error(`can not load ${f.url}`));
+                    img.src = f.url;
+                }));
+            }
+            return analyses.get(f.file);
+        }
+
+        function measurePicture(img) {
+            const w = img.naturalWidth, h = img.naturalHeight;
+            const canvas = el('canvas', {width: w, height: h});
+            const g = canvas.getContext('2d', {willReadFrequently: true});
+            g.drawImage(img, 0, 0);
+            const rgba = g.getImageData(0, 0, w, h).data;
+            // PIL's convert('L')
+            const lum = new Float32Array(w * h);
+            for (let i = 0, j = 0; i < lum.length; i++, j += 4) {
+                lum[i] = (rgba[j] * 19595 + rgba[j + 1] * 38470 + rgba[j + 2] * 7471 + 0x8000) >> 16;
+            }
+            const blurred = gaussianBlur(lum, w, h, 4);
+            const holes = {};
+            for (const by of [15, 30, 50]) holes[by] = findHole(blurred, w, h, by);
+            return {holes, base: edgeColor(rgba, w, h, 24)};
+        }
+
+        // PIL's GaussianBlur(radius): three extended box blurs each way (Gwosdek et al.), edges repeated
+        function gaussianBlur(src, w, h, radius, passes = 3) {
+            const sigma2 = radius * radius / passes;
+            const L = Math.sqrt(12 * sigma2 + 1);
+            const l = Math.floor((L - 1) / 2);
+            const r = l + (2 * l + 1) * (l * (l + 1) - 3 * sigma2) / (6 * (sigma2 - (l + 1) * (l + 1)));
+            const a = Float32Array.from(src), b = new Float32Array(w * h);
+            for (let pass = 0; pass < passes; pass++) {
+                boxLine(a, b, w, h, 1, w, r);  // along the rows
+                boxLine(b, a, h, w, w, 1, r);  // along the columns
+            }
+            return a;
+        }
+
+        // n lines of len values: value i of line k sits at k * lineStep + i * step
+        function boxLine(src, dst, len, n, step, lineStep, r) {
+            const l = Math.floor(r), frac = r - l, norm = 1 / (2 * r + 1);
+            const at = (base, i) => src[base + Math.min(len - 1, Math.max(0, i)) * step];
+            for (let k = 0; k < n; k++) {
+                const base = k * lineStep;
+                let acc = 0;
+                for (let i = -l; i <= l; i++) acc += at(base, i);
+                for (let i = 0; i < len; i++) {
+                    dst[base + i * step] = (acc + frac * (at(base, i - l - 1) + at(base, i + l + 1))) * norm;
+                    acc += at(base, i + l + 1) - at(base, i - l);
+                }
+            }
+        }
+
+        function median(values) {
+            const v = Float64Array.from(values).sort();
+            const n = v.length;
+            return n % 2 ? v[(n - 1) / 2] : (v[n / 2 - 1] + v[n / 2]) / 2;
+        }
+
+        // x² + y² = 2ax + 2by + c by least squares, around the mean of the points for precision
+        function fitCircle(pts) {
+            const n = pts.length;
+            let mx = 0, my = 0;
+            for (const [x, y] of pts) {
+                mx += x;
+                my += y;
+            }
+            mx /= n;
+            my /= n;
+            const M = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], R = [0, 0, 0];
+            for (const [x, y] of pts) {
+                const row = [2 * (x - mx), 2 * (y - my), 1], z = (x - mx) ** 2 + (y - my) ** 2;
+                for (let i = 0; i < 3; i++) {
+                    R[i] += row[i] * z;
+                    for (let j = 0; j < 3; j++) M[i][j] += row[i] * row[j];
+                }
+            }
+            const det = m => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+                - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+                + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+            const D = det(M);
+            const solve = i => det(M.map((row, k) => row.map((v, j) => j === i ? R[k] : v))) / D;
+            const a = solve(0), b = solve(1), c = solve(2);
+            return [a + mx, b + my, Math.sqrt(c + a * a + b * b)];
+        }
+
+        const MIN_HOLE_POINTS = 20;
+
+        function findHole(lum, w, h, brighterBy, start = [0.5, 0.47]) {
+            let x0 = w * start[0], y0 = h * start[1], r = 0;
+            for (let it = 0; it < 4; it++) {
+                if (!(x0 >= 30 && x0 < w - 30 && y0 >= 30 && y0 < h - 30)) return null;
+                const win = [], xi = Math.trunc(x0), yi = Math.trunc(y0);
+                for (let y = yi - 30; y < yi + 30; y++) for (let x = xi - 30; x < xi + 30; x++) win.push(lum[y * w + x]);
+                const thr = median(win) + brighterBy;
+                const pts = [];
+                for (let i = 0; i < 180; i++) {
+                    const ang = 2 * Math.PI * i / 180, cos = Math.cos(ang), sin = Math.sin(ang);
+                    for (let d = 10; d < Math.trunc(w * 0.44); d++) {
+                        const x = Math.trunc(x0 + cos * d), y = Math.trunc(y0 + sin * d);
+                        if (!(x >= 0 && x < w && y >= 0 && y < h)) break;
+                        if (lum[y * w + x] > thr) {
+                            pts.push([x, y]);
+                            break;
+                        }
+                    }
+                }
+                if (pts.length < MIN_HOLE_POINTS) return null;
+                [x0, y0, r] = fitCircle(pts);
+                for (let k = 0; k < 3; k++) {
+                    const dev = pts.map(([x, y]) => Math.hypot(x - x0, y - y0) - r);
+                    const limit = 2.5 * median(dev.map(Math.abs)) + 4;
+                    const keep = pts.filter((_, i) => Math.abs(dev[i]) < limit);
+                    if (keep.length < MIN_HOLE_POINTS) break;
+                    [x0, y0, r] = fitCircle(keep);
+                }
+            }
+            return Number.isFinite(r) ? [x0 / w, y0 / h, r / w] : null;
+        }
+
+        // the median color of the picture border, numpy style: the card takes it as its base (a test checks it)
+        function edgeColor(rgba, w, h, border) {
+            const hist = [new Uint32Array(256), new Uint32Array(256), new Uint32Array(256)];
+            let n = 0;
+            const add = (x, y) => {
+                const j = (y * w + x) * 4;
+                hist[0][rgba[j]]++;
+                hist[1][rgba[j + 1]]++;
+                hist[2][rgba[j + 2]]++;
+                n++;
+            };
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    if (y < border || y >= h - border) add(x, y);
+                }
+                for (let x = 0; x < border; x++) add(x, y);
+                for (let x = w - border; x < w; x++) add(x, y);
+            }
+            const kth = (hs, k) => {
+                let acc = 0;
+                for (let v = 0; v < 256; v++) if ((acc += hs[v]) > k) return v;
+                return 255;
+            };
+            const med = hs => n % 2 ? kth(hs, (n - 1) / 2) : (kth(hs, n / 2 - 1) + kth(hs, n / 2)) / 2;
+            return '#' + hist.map(hs => Math.trunc(med(hs)).toString(16).padStart(2, '0')).join('');
+        }
+
+        // ---- previews ----
+        async function fetchHtml(parameters) {
+            const r = await fetch('/render/html', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({template_name: C.template, parameters})
+            });
+            const text = await r.text();
+            if (!r.ok) throw new Error(text);
+            return text;
+        }
+
+        // one card: renders go one at a time, the latest wish wins, and a new render swaps in only when loaded
+        class LivePreview {
+            constructor(host, onShown) {
+                this.host = host;
+                this.onShown = onShown;
+                this.frames = [0, 1].map(() => host.appendChild(el('iframe', {
+                    tabindex: '-1', title: 'Card preview', scrolling: 'no', 'aria-hidden': 'true'
+                })));
+                this.front = 0;
+                this.want = null;
+                this.wantKey = this.loadingKey = this.shownKey = '';
+                this.busy = false;
+            }
+
+            show(parameters) {
+                const key = JSON.stringify(parameters);
+                if (key === (this.want ? this.wantKey : this.busy ? this.loadingKey : this.shownKey)) return;
+                this.want = parameters;
+                this.wantKey = key;
+                if (!this.busy) this.pump();
+            }
+
+            async pump() {
+                this.busy = true;
+                while (this.want) {
+                    const parameters = this.want, key = this.loadingKey = this.wantKey;
+                    this.want = null;
+                    try {
+                        await this.load(await fetchHtml(parameters));
+                        this.shownKey = key;
+                        this.onShown?.(parameters, null);
+                    } catch (e) {
+                        this.shownKey = '';
+                        this.onShown?.(parameters, e);
+                    }
+                }
+                this.busy = false;
+            }
+
+            load(html) {
+                return new Promise(resolve => {
+                    const back = this.frames[1 - this.front];
+                    let done = false;
+                    const swap = () => {
+                        if (done) return;
+                        done = true;
+                        back.onload = null;
+                        requestAnimationFrame(() => {
+                            back.classList.add('on');
+                            this.frames[this.front].classList.remove('on');
+                            this.front = 1 - this.front;
+                            resolve();
+                        });
+                    };
+                    back.onload = swap;
+                    setTimeout(swap, 4000);  // a resource that never loads must not stop the previews
+                    back.srcdoc = html;
+                });
+            }
+        }
+
+        // ---- frames list ----
+        const shortName = file => file.replace(/^nn_wreath_/, '').replace(/\.png$/, '');
+        const achievementsOf = f => new Set(f.users.map(n => n.replace(/_(en|ru)$/, ''))).size;
+        const frameItems = new Map();
+
+        for (const f of FRAMES) {
+            const n = achievementsOf(f);
+            const meta = !f.style ? 'new: no style yet' : n ? `${n} achievement${n > 1 ? 's' : ''}` : 'not used yet';
+            const item = el('button', {class: 'fr' + (f.style ? '' : ' new'), title: f.file, onclick: () => selectFrame(f)},
+                el('img', {src: f.url, alt: '', loading: 'lazy'}),
+                el('span', {class: 'fr-name', text: shortName(f.file)}),
+                el('span', {class: 'fr-meta', text: meta}));
+            frameItems.set(f.file, item);
+            $('frames').append(item);
+        }
+
+        // ---- base demo: the achievement whose title and stats the card shows ----
+        const demoCache = new Map();
+        let base = null;  // the loaded demo
+        let demoName = '';
+
+        async function loadDemo(name) {
+            if (!demoCache.has(name)) {
+                demoCache.set(name, fetch(`/render/demo-json/${enc(name)}`).then(r => {
+                    if (!r.ok) throw new Error(`no demo ${name}`);
+                    return r.json();
+                }));
+            }
+            try {
+                return await demoCache.get(name);
+            } catch (e) {
+                demoCache.delete(name);
+                throw e;
+            }
+        }
+
+        function defaultDemo(f, lang) {
+            const own = f.users.find(n => n.endsWith('_' + lang));
+            return own || (DEMOS.find(d => d.lang === lang) || DEMOS[0])?.name || '';
+        }
+
+        function fillDemoSelect() {
+            const sel = $('demo');
+            sel.replaceChildren();
+            const inLang = DEMOS.filter(d => d.lang === prefs.lang);
+            const own = inLang.filter(d => d.frame === frame.file), other = inLang.filter(d => d.frame !== frame.file);
+            const group = (label, list) => list.length &&
+                el('optgroup', {label}, ...list.map(d => el('option', {value: d.name, text: d.title})));
+            sel.append(...[group('On this frame', own), group('Other achievements', other)].filter(Boolean));
+            sel.value = demoName;
+        }
+
+        async function setDemo(name) {
+            demoName = name;
+            $('demo').value = name;
+            writeHash();
+            try {
+                const demo = await loadDemo(name);
+                if (demoName !== name) return;
+                base = demo;
+                $('stage-msg').hidden = true;
+                refresh();
+            } catch (e) {
+                showMessage(e.message, true);
+            }
+        }
+
+        // ---- selecting a frame ----
+        async function selectFrame(f) {
+            frame = f;
+            frameItems.forEach((item, file) => item.setAttribute('aria-current', file === f.file));
+            frameItems.get(f.file).scrollIntoView({block: 'nearest', inline: 'nearest'});
+            $('frame-file').textContent = f.file;
+            $('picture').src = f.url;
+            hoverAuto(null);
+
+            const keep = demoName && DEMOS.some(d => d.name === demoName && d.lang === prefs.lang)
+                && (f.users.includes(demoName) || !f.users.length) ? demoName : '';
+            demoName = keep || defaultDemo(f, prefs.lang);
+            fillDemoSelect();
+
+            const analysis = analyse(f);
+            fillAutos(null);
+            analysis.then(a => frame === f && fillAutos(a), e => frame === f && fillAutos(null, e));
+
+            if (!drafts.has(f.file)) {
+                if (f.style) {
+                    drafts.set(f.file, {style: {...f.style}, saved: f.style, initial: f.style, undo: [], redo: [], t: 0});
+                } else {
+                    // a new picture: the hole and the base are measured
+                    showMessage('Measuring the picture…');
+                    let a = null;
+                    try {
+                        a = await analysis;
+                    } catch (e) {
+                        showMessage(e.message, true);
+                    }
+                    if (frame !== f) return;
+                    const [x, y, r] = (a && (a.holes[30] || a.holes[15] || a.holes[50])) || [0.5, 0.47, 0.18];
+                    const style = tidy({...C.new_style, base: a?.base || C.new_style.base, hole_x: x, hole_y: y, hole_r: r});
+                    if (!drafts.has(f.file)) {
+                        drafts.set(f.file, {style, saved: null, initial: style, undo: [], redo: [], t: 0});
+                    }
+                }
+            }
+            $('stage-msg').hidden = true;
+            recenter();
+            await setDemo(demoName);
+        }
+
+        function stepFrame(delta) {
+            const i = FRAMES.indexOf(frame);
+            selectFrame(FRAMES[(i + delta + FRAMES.length) % FRAMES.length]);
+        }
+
+        function writeHash() {
+            if (frame) history.replaceState(null, '', `#frame=${enc(frame.file)}&demo=${enc(demoName)}`);
+        }
+
+        function showMessage(text, bad = false) {
+            const m = $('stage-msg');
+            m.textContent = text;
+            m.classList.toggle('err', bad);
+            m.hidden = false;
+        }
+
+        // ---- changing the style ----
+        function pushUndo(d, coalesce) {
+            const now = performance.now();
+            if (!coalesce || now - d.t > 700) {
+                d.undo.push(d.style);
+                if (d.undo.length > 300) d.undo.shift();
+                d.redo = [];
+            }
+            d.t = now;
+        }
+
+        // mode: 'coalesce' joins quick presses into one undo step, 'step' is a step of its own, 'none' keeps history
+        function change(patch, mode = 'coalesce') {
+            const d = cur();
+            if (!d?.style) return;
+            const next = tidy({...d.style, ...patch});
+            if (styleKey(next) === styleKey(d.style)) return;
+            if (mode !== 'none') pushUndo(d, mode === 'coalesce');
+            d.style = next;
+            refresh();
+        }
+
+        function nudge(field, by) {
+            const d = cur();
+            if (!d?.style) return;
+            const step = field.startsWith('hole_') ? STEP : 1;
+            change({[field]: d.style[field] + by * step});
+        }
+
+        function undo() {
+            const d = cur();
+            if (!d?.undo.length) return;
+            d.redo.push(d.style);
+            d.style = d.undo.pop();
+            d.t = 0;
+            refresh();
+        }
+
+        function redo() {
+            const d = cur();
+            if (!d?.redo.length) return;
+            d.undo.push(d.style);
+            d.style = d.redo.pop();
+            d.t = 0;
+            refresh();
+        }
+
+        function revert() {
+            const d = cur();
+            const to = d && (d.saved || d.initial);
+            if (!to || styleKey(to) === styleKey(d.style)) return;
+            pushUndo(d, false);
+            d.style = {...to};
+            refresh();
+        }
+
+        let saving = false;
+
+        async function save() {
+            const d = cur(), f = frame;
+            if (!d?.style || saving) return;
+            if (!isDirty(d)) {
+                toast('Nothing to save: the style is as saved');
+                return;
+            }
+            saving = true;
+            refresh();
+            try {
+                const r = await fetch(`/render/frames/${enc(f.file)}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json', 'X-Frame-Tuner': '1'},
+                    body: JSON.stringify(d.style)
+                });
+                let res;
+                try {
+                    res = await r.json();
+                } catch (e) {
+                    throw new Error(`${r.status} ${r.statusText}`);
+                }
+                if (!r.ok) throw new Error(res.message || `${r.status} ${r.statusText}`);
+                d.saved = f.style = res.style;
+                if (styleKey(d.style) !== styleKey(res.style)) d.style = {...res.style};
+                demoCache.clear();
+                frameItems.get(f.file).classList.remove('new');
+                frameItems.get(f.file).querySelector('.fr-meta').textContent =
+                    achievementsOf(f) ? `${achievementsOf(f)} achievement${achievementsOf(f) > 1 ? 's' : ''}` : 'not used yet';
+                const demos = res.demos.length ? `, ${res.demos.length} demo${res.demos.length > 1 ? 's' : ''} updated` : '';
+                toast(`Saved ${f.file} to ${res.file}${demos}. The bot takes it on restart.`);
+            } catch (e) {
+                toast(`Not saved: ${e.message}`, true);
+            } finally {
+                saving = false;
+                refresh();
+            }
+        }
+
+        // ---- card parameters ----
+        function presetContent(id) {
+            const p = PRESETS.find(x => x.id === id);
+            if (id === 'demo') return {label: base?.parameters.number_label ?? '', text: base?.parameters.number_text ?? ''};
+            if (id === 'custom') return {...custom};
+            return {label: p.label ? LABELS[prefs.lang][p.label] : '', text: p.text};
+        }
+
+        function paramsFor(id) {
+            const d = cur();
+            const p = structuredClone(base.parameters);
+            p.background = frame.file;
+            for (const [field, param] of Object.entries(C.card_parameters)) p[param] = d.style[field];
+            if (id !== 'demo') {
+                const {label, text} = presetContent(id);
+                p.number_label = label;
+                p.number_text = text;
+                // the anniversary digits are pictures (number_glyphs of achievement_card.py)
+                p.glyphs = p.number_font === 'balloon'
+                    ? [...text].filter(c => c >= '0' && c <= '9').map(c => ({kind: 'glyph', src: `balloon/${c}.png`}))
+                    : [];
+            }
+            return p;
+        }
+
+        // the hole in world units: on the card it follows the placement, on the bare picture it does not
+        function holeIn(view, s) {
+            if (view === 'picture') {
+                return {cx: s.hole_x * WORLD, cy: s.hole_y * WORLD, r: s.hole_r * WORLD, unit: WORLD};
+            }
+            return {cx: WORLD / 2 + (s.hole_x - 0.5) * s.size, cy: s.top + s.hole_y * s.size, r: s.hole_r * s.size, unit: s.size};
+        }
+
+        const viewMap = () => prefs.view === 'picture' ? 'picture' : 'card';
+        // achievement.jinja2 fitNumber(): the number keeps inside 0.9 of the hole, a balloon digit may reach 1.15
+        const fitFactor = () => base?.parameters.number_font === 'balloon' ? 1.15 : 0.9;
+
+        // ---- stage ----
+        const mainPreview = new LivePreview($('main-host'), (parameters, err) => {
+            if (err) showMessage(`The card did not render:\n${err.message}`.slice(0, 1500), true);
+            else if ($('stage-msg').classList.contains('err')) $('stage-msg').hidden = true;
+        });
+        let camera = {s: 1, tx: 0, ty: 0};
+        let zoomRef = null;  // the hole the zoomed camera looks at: it stays put while the hole moves
+
+        function recenter() {
+            const d = cur();
+            zoomRef = d?.style ? holeIn(viewMap(), d.style) : null;
+            layoutStage();
+        }
+
+        function layoutStage() {
+            const stage = $('stage');
+            const W = stage.clientWidth, H = stage.clientHeight;
+            let rx = 0, ry = 0, rw = WORLD, rh = WORLD;
+            if (prefs.zoom === 'on' && zoomRef) {
+                const m = zoomRef.r * 1.7;
+                [rx, ry, rw, rh] = [zoomRef.cx - m, zoomRef.cy - m, 2 * m, 2 * m];
+            }
+            const pad = 14;
+            const s = Math.max(0.05, Math.min((W - pad * 2) / rw, (H - pad * 2) / rh));
+            camera = {s, tx: (W - rw * s) / 2 - rx * s, ty: (H - rh * s) / 2 - ry * s};
+            $('world').style.transform = `translate(${camera.tx}px, ${camera.ty}px) scale(${s})`;
+            drawOverlay();
+        }
+
+        new ResizeObserver(layoutStage).observe($('stage'));
+
+        function setCircle(id, c) {
+            const e = $(id);
+            e.style.display = c ? '' : 'none';
+            if (c) {
+                e.setAttribute('cx', c.cx);
+                e.setAttribute('cy', c.cy);
+                e.setAttribute('r', Math.max(0, c.r));
+            }
+        }
+
+        let autoHover = null;  // [x, y, r] of the auto guess under the mouse
+
+        function drawOverlay() {
+            const d = cur();
+            const on = prefs.guides === 'on' && !!d?.style;
+            $('overlay').style.display = on ? '' : 'none';
+            $('legend').hidden = !on;
+            if (!on) return;
+            const s = d.style, view = viewMap(), h = holeIn(view, s), k = 1 / camera.s;
+            setCircle('ov-hole', h);
+            setCircle('ov-fit', {...h, r: h.r * fitFactor()});
+            const dirty = isDirty(d) && d.saved;
+            setCircle('ov-saved', dirty ? holeIn(view, d.saved) : null);
+            $('legend-saved').hidden = !dirty;
+            setCircle('ov-auto', autoHover && holeIn(view, {...s, hole_x: autoHover[0], hole_y: autoHover[1], hole_r: autoHover[2]}));
+            const pic = $('ov-pic');
+            pic.style.display = view === 'card' ? '' : 'none';
+            Object.entries({x: WORLD / 2 - s.size / 2, y: s.top, width: s.size, height: s.size})
+                .forEach(([a, v]) => pic.setAttribute(a, v));
+            const L = 12 * k;
+            $('ov-cross').setAttribute('d', `M${h.cx - L} ${h.cy}H${h.cx + L}M${h.cx} ${h.cy - L}V${h.cy + L}`);
+            $('ov-handles').replaceChildren(...[[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) =>
+                svg('circle', {class: 'ov-handle', cx: h.cx + dx * h.r, cy: h.cy + dy * h.r, r: 4.5 * k})));
+        }
+
+        function showView() {
+            $('main-host').hidden = prefs.view !== 'card';
+            $('png').hidden = prefs.view !== 'png';
+            $('picture').hidden = prefs.view !== 'picture';
+        }
+
+        // dragging: anywhere moves the hole by the drag, its edge resizes it
+        let drag = null;
+
+        function worldPoint(e) {
+            const r = $('stage').getBoundingClientRect();
+            return {x: (e.clientX - r.left - camera.tx) / camera.s, y: (e.clientY - r.top - camera.ty) / camera.s};
+        }
+
+        function grip(p) {
+            const h = holeIn(viewMap(), cur().style);
+            const dx = p.x - h.cx, dy = p.y - h.cy;
+            if (Math.abs(Math.hypot(dx, dy) - h.r) * camera.s > 9) return 'move';
+            const ang = (Math.atan2(dy, dx) * 180 / Math.PI + 180) % 180;  // 0..180
+            return ang < 22.5 || ang >= 157.5 ? 'ew-resize' : ang < 67.5 ? 'nwse-resize' : ang < 112.5 ? 'ns-resize' : 'nesw-resize';
+        }
+
+        $('stage').addEventListener('pointerdown', e => {
+            const d = cur();
+            if (!d?.style || e.button !== 0) return;
+            const p = worldPoint(e), how = grip(p);
+            drag = {resize: how !== 'move', p0: p, s0: d.style, h0: holeIn(viewMap(), d.style), pushed: false};
+            $('stage').setPointerCapture(e.pointerId);
+            e.preventDefault();
+            document.activeElement?.blur?.();
+        });
+        $('stage').addEventListener('pointermove', e => {
+            const d = cur();
+            if (!d?.style) return;
+            const p = worldPoint(e);
+            if (!drag) {
+                $('stage').style.cursor = grip(p);
+                return;
+            }
+            if (!drag.pushed) {
+                pushUndo(d, false);
+                drag.pushed = true;
+            }
+            const {s0, h0, p0} = drag;
+            if (drag.resize) {
+                change({hole_r: Math.hypot(p.x - h0.cx, p.y - h0.cy) / h0.unit}, 'none');
+            } else {
+                change({hole_x: s0.hole_x + (p.x - p0.x) / h0.unit, hole_y: s0.hole_y + (p.y - p0.y) / h0.unit}, 'none');
+            }
+        });
+        const endDrag = () => drag = null;
+        $('stage').addEventListener('pointerup', endDrag);
+        $('stage').addEventListener('pointercancel', endDrag);
+
+        // ---- PNG view ----
+        let pngTimer = 0, pngSeq = 0, pngKey = '';
+
+        function schedulePng(parameters) {
+            const key = JSON.stringify(parameters);
+            if (key === pngKey) return;
+            clearTimeout(pngTimer);
+            pngTimer = setTimeout(async () => {
+                const seq = ++pngSeq;
+                setState('Rendering the PNG…');
+                try {
+                    const r = await fetch('/render', {
+                        method: 'POST', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({template_name: C.template, parameters})
+                    });
+                    if (!r.ok) throw new Error(await r.text());
+                    const blob = await r.blob();
+                    if (seq !== pngSeq) return;
+                    const old = $('png').src;
+                    $('png').src = URL.createObjectURL(blob);
+                    if (old.startsWith('blob:')) URL.revokeObjectURL(old);
+                    pngKey = key;
+                    $('stage-msg').hidden = true;
+                } catch (e) {
+                    if (seq === pngSeq) showMessage(`The PNG did not render:\n${e.message}`.slice(0, 1500), true);
+                } finally {
+                    if (seq === pngSeq) setState();
+                }
+            }, 350);
+        }
+
+        // ---- the preset strip ----
+        const strip = new Map();  // preset id => {item, box, host, live, shown}
+
+        function cropStrip(sp) {
+            const B = sp.box.clientWidth;
+            if (!B || !sp.shown) return;
+            const p = sp.shown;
+            if (prefs.crop === 'card') {
+                sp.host.style.transform = `scale(${B / WORLD})`;
+                return;
+            }
+            // the hole the shown card was rendered with, and a bit of the ring around it
+            const h = holeIn('card', {hole_x: p.hole_x, hole_y: p.hole_y, hole_r: p.hole_r, size: p.frame_size, top: p.frame_top});
+            const m = h.r * 1.45, s = B / (2 * m);
+            sp.host.style.transform = `translate(${-(h.cx - m) * s}px, ${-(h.cy - m) * s}px) scale(${s})`;
+        }
+
+        const stripObserver = new ResizeObserver(() => strip.forEach(cropStrip));
+
+        PRESETS.forEach((p, i) => {
+            const host = el('div', {class: 'host'});
+            const box = el('div', {class: 'sp-box'}, host);
+            const name = el('span');
+            const item = el('div', {
+                class: 'sp', role: 'button', tabindex: '0', onclick: () => selectPreset(p.id),
+                onkeydown: e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectPreset(p.id);
+                    }
+                }
+            }, box, el('div', {class: 'sp-cap'}, el('kbd', {text: i + 1}), name));
+            const sp = {item, box, host, name, shown: null};
+            sp.live = new LivePreview(host, (parameters, err) => {
+                if (err) return;
+                sp.shown = parameters;
+                cropStrip(sp);
+            });
+            strip.set(p.id, sp);
+            stripObserver.observe(box);
+            $('strip').append(item);
+        });
+
+        function selectPreset(id) {
+            preset = id;
+            store.set('preset', id);
+            refresh();
+        }
+
+        let stripTimer = 0;
+
+        // ---- everything after a change ----
+        function setState(text) {
+            const d = cur(), dirty = isDirty(d);
+            const st = $('state');
+            st.textContent = text || (!d?.style ? '' : saving ? 'Saving…' : !d.saved ? 'New frame: not saved yet'
+                : dirty ? 'Unsaved changes' : 'Saved');
+            st.classList.toggle('dirty', !text && (dirty || (d?.style && !d.saved)));
+        }
+
+        function syncPanel() {
+            const d = cur(), s = d?.style;
+            if (!s) return;
+            document.querySelectorAll('[data-field]').forEach(inp => {
+                if (inp === document.activeElement) return;
+                const v = s[inp.dataset.field];
+                inp.value = inp.dataset.field.startsWith('hole_') ? v.toFixed(3) : v;
+            });
+            $('px-x').textContent = `${Math.round(s.hole_x * WORLD)} px`;
+            $('px-y').textContent = `${Math.round(s.hole_y * WORLD)} px`;
+            $('px-r').textContent = `${Math.round(s.hole_r * WORLD)} px`;
+            for (const k of ['tint', 'base']) {
+                if ($('t-' + k) !== document.activeElement) $('t-' + k).value = s[k];
+                $('c-' + k).value = s[k];
+            }
+            if ($('f-note') !== document.activeElement) $('f-note').value = s.note || '';
+            const dirty = isDirty(d);
+            for (const id of ['save', 'save-2']) $(id).disabled = saving || !dirty;
+            for (const id of ['revert', 'revert-2']) $(id).disabled = saving || !dirty || (!d.saved && styleKey(s) === styleKey(d.initial));
+            frameItems.forEach((item, file) => item.classList.toggle('dirty', isDirty(drafts.get(file))));
+            $('saved-to').textContent = `Saves to ${C.style_file} and the achievement demos on this frame.`;
+            measuredBase();
+            setState();
+        }
+
+        function refresh() {
+            const d = cur();
+            syncPanel();
+            drawOverlay();
+            showView();
+            for (const [id, sp] of strip) {
+                sp.item.setAttribute('aria-pressed', id === preset);
+                const {label, text} = presetContent(id);
+                const name = PRESETS.find(p => p.id === id).name;
+                sp.name.textContent = [name, label, text].filter(Boolean).join(' · ');
+                sp.name.parentElement.title = sp.name.textContent;
+            }
+            if (!d?.style || !base) return;
+            const main = paramsFor(preset);
+            if (prefs.view === 'card') mainPreview.show(main);
+            else if (prefs.view === 'png') schedulePng(main);
+            // the main card first, the strip a moment later
+            clearTimeout(stripTimer);
+            stripTimer = setTimeout(() => strip.forEach((sp, id) => sp.live.show(paramsFor(id))), 160);
+        }
+
+        // ---- the auto guess panel ----
+        let analysisNow = null;
+
+        function fillAutos(a, err) {
+            analysisNow = a;
+            const box = $('autos');
+            box.replaceChildren();
+            if (err) {
+                box.append(el('div', {class: 'hint', text: `Could not measure: ${err.message}`}));
+                return;
+            }
+            for (const by of [15, 30, 50]) {
+                const hole = a?.holes[by];
+                const btn = el('button', {class: 'auto'},
+                    el('b', {text: `+${by}`}),
+                    el('code', {text: !a ? 'measuring…' : hole ? hole.map(v => v.toFixed(3)).join('  ') : 'not found'}));
+                if (!hole) btn.disabled = true;
+                if (hole) {
+                    btn.addEventListener('click', () => change({hole_x: hole[0], hole_y: hole[1], hole_r: hole[2]}, 'step'));
+                    btn.addEventListener('mouseenter', () => hoverAuto(hole));
+                    btn.addEventListener('mouseleave', () => hoverAuto(null));
+                    btn.addEventListener('focus', () => hoverAuto(hole));
+                    btn.addEventListener('blur', () => hoverAuto(null));
+                }
+                box.append(btn);
+            }
+            measuredBase();
+        }
+
+        function hoverAuto(hole) {
+            autoHover = hole;
+            drawOverlay();
+        }
+
+        function measuredBase() {
+            const box = $('measured-base');
+            const s = cur()?.style;
+            box.replaceChildren();
+            if (!analysisNow || !s) return;
+            const m = analysisNow.base;
+            if (m === s.base) {
+                box.textContent = `Matches the picture edges (${m})`;
+                return;
+            }
+            box.append(`Picture edges: ${m} `,
+                el('button', {class: 'link', text: 'use it', onclick: () => change({base: m}, 'step')}));
+        }
+
+        // ---- controls ----
+        for (const [k, [lo, hi]] of Object.entries(LIMITS)) {
+            $('f-' + k).min = lo;
+            $('f-' + k).max = hi;
+        }
+        document.querySelectorAll('[data-field]').forEach(inp => {
+            inp.addEventListener('input', () => {
+                if (inp.value !== '' && Number.isFinite(+inp.value)) change({[inp.dataset.field]: +inp.value});
+            });
+            inp.addEventListener('blur', syncPanel);
+        });
+
+        document.querySelectorAll('[data-color]').forEach(inp => {
+            inp.addEventListener('input', () => {
+                const v = inp.value.trim().toLowerCase();
+                if (/^#[0-9a-f]{6}$/.test(v)) change({[inp.dataset.color]: v});
+            });
+            inp.addEventListener('blur', syncPanel);
+        });
+
+        $('f-note').addEventListener('input', e => change({note: e.target.value}));
+
+        // the buttons repeat while held
+        document.querySelectorAll('[data-nudge]').forEach(btn => {
+            let t1 = 0, t2 = 0;
+            const stop = () => {
+                clearTimeout(t1);
+                clearInterval(t2);
+            };
+            const go = shift => nudge(btn.dataset.nudge, +btn.dataset.by * (shift ? 10 : 1));
+            btn.addEventListener('pointerdown', e => {
+                if (e.button) return;
+                e.preventDefault();  // keeps the focus, so the keys keep working
+                stop();
+                btn.setPointerCapture(e.pointerId);  // the release comes here wherever it happens
+                go(e.shiftKey);
+                t1 = setTimeout(() => t2 = setInterval(() => go(e.shiftKey), 45), 380);
+            });
+            ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => btn.addEventListener(ev, stop));
+            addEventListener('blur', stop);
+            btn.addEventListener('click', e => {
+                if (e.detail === 0) go(e.shiftKey);  // Enter or Space
+            });
+        });
+
+        $('demo').addEventListener('change', e => setDemo(e.target.value));
+        $('custom-label').value = custom.label;
+        $('custom-text').value = custom.text;
+        for (const k of ['label', 'text']) {
+            $('custom-' + k).addEventListener('input', e => {
+                custom[k] = e.target.value;
+                preset = 'custom';
+                refresh();
+            });
+        }
+
+        for (const id of ['save', 'save-2']) $(id).addEventListener('click', save);
+        for (const id of ['revert', 'revert-2']) $(id).addEventListener('click', revert);
+
+        function setPref(k, v) {
+            prefs[k] = v;
+            store.set(k, v);
+            document.querySelectorAll(`.seg[data-pref="${k}"] button`).forEach(b =>
+                b.setAttribute('aria-pressed', b.dataset.v === v));
+            if (k === 'lang' && frame) {
+                // the same achievement in the other language
+                const twin = demoName.replace(/_(en|ru)$/, '_' + v);
+                demoName = DEMOS.some(d => d.name === twin) ? twin : defaultDemo(frame, v);
+                fillDemoSelect();
+                setDemo(demoName);  // it refreshes when the demo is in
+                return;
+            }
+            if (k === 'view') {
+                pngKey = '';
+                recenter();
+            }
+            if (k === 'zoom') recenter();
+            if (k === 'crop') strip.forEach(cropStrip);
+            refresh();
+        }
+
+        document.querySelectorAll('.seg[data-pref]').forEach(seg => {
+            const k = seg.dataset.pref;
+            seg.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === prefs[k]));
+            seg.addEventListener('click', e => {
+                const b = e.target.closest('button');
+                if (b) setPref(k, b.dataset.v);
+            });
+        });
+
+        addEventListener('keydown', e => {
+            const mod = e.metaKey || e.ctrlKey;
+            const key = e.key.toLowerCase();
+            if (mod && key === 's') {
+                e.preventDefault();
+                save();
+                return;
+            }
+            if (e.target.closest?.('input, select, textarea')) return;  // the fields step their own values
+            if (mod && (key === 'z' || key === 'y')) {
+                e.preventDefault();
+                (key === 'y' || e.shiftKey) ? redo() : undo();
+                return;
+            }
+            if (mod) return;
+            const k = e.shiftKey ? 10 : 1;
+            switch (e.key) {
+                case 'ArrowLeft':
+                    nudge('hole_x', -k);
+                    break;
+                case 'ArrowRight':
+                    nudge('hole_x', k);
+                    break;
+                case 'ArrowUp':
+                    e.altKey ? nudge('hole_r', k) : nudge('hole_y', -k);
+                    break;
+                case 'ArrowDown':
+                    e.altKey ? nudge('hole_r', -k) : nudge('hole_y', k);
+                    break;
+                case '+':
+                case '=':
+                    nudge('hole_r', k);
+                    break;
+                case '-':
+                case '_':
+                    nudge('hole_r', -k);
+                    break;
+                case '[':
+                case '{':
+                    stepFrame(-1);
+                    break;
+                case ']':
+                case '}':
+                    stepFrame(1);
+                    break;
+                default:
+                    if (key === 'z') setPref('zoom', prefs.zoom === 'on' ? 'off' : 'on');
+                    else if (key === 'g') setPref('guides', prefs.guides === 'on' ? 'off' : 'on');
+                    else if (/^[1-9]$/.test(e.key) && PRESETS[+e.key - 1]) selectPreset(PRESETS[+e.key - 1].id);
+                    else return;
+            }
+            e.preventDefault();
+        });
+
+        addEventListener('beforeunload', e => {
+            if ([...drafts.values()].some(isDirty)) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        // ---- start: the frame from the address, as the gallery links it ----
+        function fromHash() {
+            const hash = new URLSearchParams(location.hash.slice(1));
+            const f = FRAMES.find(f => f.file === hash.get('frame')) || frame || FRAMES[0];
+            const demo = DEMOS.find(d => d.name === hash.get('demo'));
+            if (demo) {
+                demoName = demo.name;
+                prefs.lang = demo.lang;
+                document.querySelectorAll('.seg[data-pref="lang"] button').forEach(b =>
+                    b.setAttribute('aria-pressed', b.dataset.v === demo.lang));
+            }
+            if (f && (f !== frame || (demo && demo.name !== $('demo').value))) selectFrame(f);
+        }
+
+        addEventListener('hashchange', fromHash);
+        if (FRAMES.length) fromHash();
+        else showMessage('No frame pictures in data/renderer/static/img/achievement/bg');
+    })();
+</script>
+</body>
+</html>

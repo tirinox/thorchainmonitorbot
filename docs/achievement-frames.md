@@ -10,11 +10,12 @@ This guide is how to make a new frame or repaint an old one so it fits the set.
 |---|---|
 | Frame pictures | `app/data/renderer/static/img/achievement/bg/*.png` (1024×1024 RGB) |
 | Frame constants (`BG_*`) and which achievement uses which frame (`background=`) | `app/jobs/achievement/ach_list.py` |
-| Per-frame layout and colors (`WreathStyle`, `BACKGROUND_STYLE`) | `app/comm/picture/achievement_card.py` |
+| Per-frame layout and colors (`WreathStyle`) | `app/data/renderer/achievement_frames.json`, keyed by the picture file; `app/comm/picture/achievement_card.py` reads it into `BACKGROUND_STYLE` |
+| Set the hole and the placement by eye, and save them | the frame tuner of the renderer gallery: http://127.0.0.1:8404/render/frames (`app/renderer/frame_tuner.html`, `app/renderer/frames.py`) |
 | Card template | `app/renderer/templates/achievement.jinja2`; the number is set in Norse Bold (`app/data/renderer/static/fonts/NorseBold.otf`) as polished metal of the frame's `tint`, centered in the hole with its label above; the anniversary keeps the balloon digit pictures (`img/achievement/balloon/`) |
 | Generate, measure and preview frames | `app/tools/achievement_frame.py` |
 | Renderer gallery demos | `make renderer-demos`, then http://127.0.0.1:8404/render/demo |
-| Checks (every frame exists, has a style, its base color matches its edges) | `app/tests/test_achievement_card.py` |
+| Checks (every frame exists, has a style, its base color matches its edges; the style file is as the tuner writes it) | `app/tests/test_achievement_card.py`, `app/tests/test_frame_tuner.py` |
 
 ## Design rules
 
@@ -94,25 +95,51 @@ All commands run from `app/` with `PYTHONPATH=.`. The preview needs the renderer
    ```
    Use `--hole X Y R` and `--size/--top/--shade` to try the layout.
 4. **Install** the chosen picture under a **new file name** (`nn_wreath_<category>.png`, or `_2`, `_3` when replacing). Never overwrite a file the renderer has served: its browser keeps the old picture cached. `git rm` the replaced file.
-5. **Wire it in:**
-   - a `BG_*` constant in `ach_list.py` and `background=BG_*` on the achievements;
-   - a `WreathStyle` line in `BACKGROUND_STYLE` (see below).
-6. **Check:**
+5. **Tune it** in the frame tuner (below): a new picture comes first in its list with the hole and the base measured;
+   set the hole by eye and **Save**. That writes its entry in `achievement_frames.json`.
+6. **Wire it in:** a `BG_*` constant in `ach_list.py` and `background=BG_*` on the achievements. Then
+   `make renderer-demos`, so the gallery has demos on the new frame.
+7. **Check:**
    - `python -m pytest tests/test_achievement_card.py`;
    - `make renderer-demos`;
    - look at a few cards in EN and RU, including a long title and a long number.
+
+## Frame tuner
+
+The gallery's **Frame tuner** button opens http://127.0.0.1:8404/render/frames (or `make renderer-dev`); **Tune frame**
+in the viewer of an achievement demo opens its frame with that achievement.
+
+- **Frames** on the left: every picture in the `bg` folder. One without a style yet is marked *new* and starts from the
+  automatic guess: the hole at +30 (as `measure` finds it; the tuner runs the same rays in the browser) and the base from
+  the edges.
+- **The stage** shows the card live (**Card**), the real PNG through Playwright (**PNG**), or the bare picture
+  (**Picture**). **Hole** zooms to the hole. The circles: the hole, the dotted circle the number is fitted into
+  (0.9 of the hole, 1.15 for the balloon digits) and the saved hole while it differs.
+- **Moving the hole:** drag anywhere on the stage to move it, drag its edge to resize; the arrows move it by 0.001
+  (about a pixel of the picture), `+`/`−` or `⌥↑`/`⌥↓` resize it, Shift ×10; the buttons on the right repeat while
+  held. The **Auto guess** buttons put the hole at +15, +30 or +50 (hover to see the circle first).
+- **Placement and colors:** `size`, `top`, `shade_from`, `tint`, `base` and a **note** on why the hole sits where it
+  does.
+- **Content presets** under the stage show the same frame with short and long numbers at once, cropped to the hole:
+  the achievement as posted, `100`, `Top 30`, `Over 2K`, `Over $500M`, `Over 50M ᚱ` and a custom one; `1`–`7` pick the
+  big one. EN/RU switches the labels and the texts, the **Content** list picks the achievement whose title and stats
+  the card shows.
+- **Save** (`⌘S`) writes the frame into `achievement_frames.json` and into the achievement demos on this frame, so the
+  gallery shows it at once. The bot reads the file at start: restart it to take the change. `⌘Z` undoes, **Revert**
+  goes back to the saved style; `[` and `]` step through the frames, and switching frames keeps unsaved drafts.
 
 ## WreathStyle fields
 
 | Field | What it is | How to set it |
 |---|---|---|
 | `tint` | Color of the number's metal and glow, and of the date | A light color of the frame's palette |
-| `hole_x`, `hole_y`, `hole_r` | The circle the number (with its "Over" label) is fitted into, as fractions of the picture size | `measure`, the **+30** line. If the three lines disagree, check the overlay and pick by eye: dark twigs, a glowing halo or an object reaching into the opening fool the rays. With an object in the opening, put a smaller circle in the free part above it |
+| `hole_x`, `hole_y`, `hole_r` | The circle the number (with its "Over" label) is fitted into, as fractions of the picture size | The frame tuner: it starts from the **+30** guess of `measure`; set it by eye with the content presets. Dark twigs, a glowing halo or an object reaching into the opening fool the rays. With an object in the opening, put a smaller circle in the free part above it |
 | `base` | Picture edge color: the card is painted with it, so the picture flows into the card | `measure`, "base". A test checks it against the file |
 | `size`, `top` | Where the picture sits on the card, px (default 860 and 40) | Make it smaller and lower when the ornament reaches the date line (top ~0.05) or something hangs low (bottom over ~0.85). The title starts at ~794 px |
 | `shade_from` | Card height % where the shade under the title starts (default 58) | Raise to ~70 when a low object would be dimmed |
 
 The picture fades into `base` at its edges (10%); there is no round mask any more, so ornament may reach far from the ring.
+The file keeps every field of every frame, and a `note` where the hole was set by eye for a reason.
 
 ## The frames
 

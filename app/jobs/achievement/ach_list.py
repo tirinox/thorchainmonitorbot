@@ -205,7 +205,6 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.ANNIVERSARY, 'Anniversary', more_than=False,
           background=BG_ANNIVERSARY,
           number_font=NUMBER_FONT_BALLOON,
-          tint='#f4e18d',
           milestone_scale=MILESTONES_EVERY_INT,
           thresholds=1,
           always_fresh=True),  # fed only within ANNIVERSARY_WINDOW, a year after the previous feed

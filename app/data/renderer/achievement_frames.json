@@ -1,0 +1,157 @@
+{
+  "nn_wreath_liquidity.png": {
+    "tint": "#3ee6c8",
+    "hole_x": 0.501,
+    "hole_y": 0.461,
+    "hole_r": 0.162,
+    "base": "#01040c",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58
+  },
+  "nn_wreath_network.png": {
+    "tint": "#6fe8cf",
+    "hole_x": 0.5,
+    "hole_y": 0.471,
+    "hole_r": 0.14,
+    "base": "#04060e",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58,
+    "note": "inside the warm halo, clear of the chevron"
+  },
+  "nn_wreath_swaps.png": {
+    "tint": "#4ffffa",
+    "hole_x": 0.502,
+    "hole_y": 0.449,
+    "hole_r": 0.205,
+    "base": "#030708",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58
+  },
+  "nn_wreath_users.png": {
+    "tint": "#7cc7ff",
+    "hole_x": 0.508,
+    "hole_y": 0.443,
+    "hole_r": 0.193,
+    "base": "#060505",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58,
+    "note": "dark twigs fool the rays: picked by eye"
+  },
+  "nn_wreath_rune.png": {
+    "tint": "#2ee6b8",
+    "hole_x": 0.499,
+    "hole_y": 0.496,
+    "hole_r": 0.19,
+    "base": "#080d16",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58
+  },
+  "nn_wreath_revenue_toast.png": {
+    "tint": "#e8c45a",
+    "hole_x": 0.499,
+    "hole_y": 0.392,
+    "hole_r": 0.17,
+    "base": "#010a0b",
+    "size": 790,
+    "top": 36,
+    "shade_from": 70,
+    "note": "the tankards reach into the opening: the hole is set by eye above them"
+  },
+  "nn_wreath_affiliate_grip.png": {
+    "tint": "#f0c070",
+    "hole_x": 0.498,
+    "hole_y": 0.33,
+    "hole_r": 0.165,
+    "base": "#080805",
+    "size": 820,
+    "top": 64,
+    "shade_from": 70,
+    "note": "the clasped hands reach into the opening: the hole is set by eye above them"
+  },
+  "nn_wreath_burnt.png": {
+    "tint": "#ffb347",
+    "hole_x": 0.493,
+    "hole_y": 0.466,
+    "hole_r": 0.175,
+    "base": "#0c0c0e",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58
+  },
+  "nn_wreath_vault.png": {
+    "tint": "#ffcf7a",
+    "hole_x": 0.512,
+    "hole_y": 0.436,
+    "hole_r": 0.186,
+    "base": "#06080e",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58
+  },
+  "nn_wreath_stables_chains.png": {
+    "tint": "#8ff0c0",
+    "hole_x": 0.501,
+    "hole_y": 0.472,
+    "hole_r": 0.225,
+    "base": "#090d0e",
+    "size": 770,
+    "top": 34,
+    "shade_from": 72
+  },
+  "nn_wreath_trade.png": {
+    "tint": "#ff7a6b",
+    "hole_x": 0.501,
+    "hole_y": 0.498,
+    "hole_r": 0.193,
+    "base": "#030202",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58
+  },
+  "nn_wreath_pol_roots.png": {
+    "tint": "#ffcf7a",
+    "hole_x": 0.499,
+    "hole_y": 0.373,
+    "hole_r": 0.172,
+    "base": "#0c0704",
+    "size": 800,
+    "top": 80,
+    "shade_from": 58,
+    "note": "the roots reach the top of the picture: smaller and lower, clear of the date"
+  },
+  "nn_wreath_btc_vault_2.png": {
+    "tint": "#ffb84d",
+    "hole_x": 0.499,
+    "hole_y": 0.494,
+    "hole_r": 0.189,
+    "base": "#080c12",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58
+  },
+  "nn_wreath_eth_vault_2.png": {
+    "tint": "#b4a6ff",
+    "hole_x": 0.5,
+    "hole_y": 0.495,
+    "hole_r": 0.188,
+    "base": "#090d16",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58
+  },
+  "nn_wreath_ann_3.png": {
+    "tint": "#f4e18d",
+    "hole_x": 0.499,
+    "hole_y": 0.495,
+    "hole_r": 0.187,
+    "base": "#090d16",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58
+  }
+}
