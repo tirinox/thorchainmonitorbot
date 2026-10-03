@@ -124,6 +124,17 @@
     "shade_from": 58,
     "note": "the roots reach the top of the picture: smaller and lower, clear of the date"
   },
+  "nn_wreath_nodes_fleet.png": {
+    "tint": "#cfe2ff",
+    "hole_x": 0.5,
+    "hole_y": 0.405,
+    "hole_r": 0.155,
+    "base": "#040c17",
+    "size": 820,
+    "top": 70,
+    "shade_from": 58,
+    "note": "the calm water between the bows; the top ship reaches the date: smaller and lower"
+  },
   "nn_wreath_btc_vault_2.png": {
     "tint": "#ffb84d",
     "hole_x": 0.499,

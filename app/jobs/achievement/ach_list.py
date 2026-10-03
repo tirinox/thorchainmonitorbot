@@ -149,6 +149,7 @@ BG_VAULT = 'nn_wreath_vault.png'
 BG_STABLES = 'nn_wreath_stables_chains.png'
 BG_TRADE = 'nn_wreath_trade.png'
 BG_POL = 'nn_wreath_pol_roots.png'
+BG_NODES = 'nn_wreath_nodes_fleet.png'
 BG_BTC = 'nn_wreath_btc_vault_2.png'
 BG_ETH = 'nn_wreath_eth_vault_2.png'
 BG_ANNIVERSARY = 'nn_wreath_ann_3.png'
@@ -202,7 +203,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond', postfix=POSTFIX_RUNE, background=BG_NETWORK),
     ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE, background=BG_NETWORK),
     ADesc(A.NODE_COUNT, 'Total node count', more_than=False, background=BG_NETWORK, enabled=False),
-    ADesc(A.ACTIVE_NODE_COUNT, 'Active node count', more_than=False, background=BG_NETWORK),
+    ADesc(A.ACTIVE_NODE_COUNT, 'Active node count', more_than=False, background=BG_NODES),
 
     ADesc(A.ANNIVERSARY, 'Anniversary', more_than=False,
           background=BG_ANNIVERSARY,
