@@ -140,7 +140,8 @@ class Achievement(NamedTuple):
 BG_LIQUIDITY = 'nn_wreath_liquidity.png'
 BG_NETWORK = 'nn_wreath_network.png'
 BG_SWAPS = 'nn_wreath_swaps.png'
-BG_USERS = 'nn_wreath_users.png'
+BG_USERS = 'nn_wreath_users_day.png'
+BG_USERS_NIGHT = 'nn_wreath_users_night.png'  # the monthly twin of the daily frame
 BG_RUNE = 'nn_wreath_rune.png'
 BG_REVENUE = 'nn_wreath_revenue_toast.png'
 BG_AFFILIATE = 'nn_wreath_affiliate_grip.png'
@@ -150,6 +151,7 @@ BG_STABLES = 'nn_wreath_stables_chains.png'
 BG_TRADE = 'nn_wreath_trade.png'
 BG_POL = 'nn_wreath_pol_roots.png'
 BG_NODES = 'nn_wreath_nodes_fleet.png'
+BG_BLOCKS = 'nn_wreath_blocks_forge.png'
 BG_BTC = 'nn_wreath_btc_vault_2.png'
 BG_ETH = 'nn_wreath_eth_vault_2.png'
 BG_ANNIVERSARY = 'nn_wreath_ann_3.png'
@@ -187,7 +189,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.TEST_DESCENDING, 'Test descending'),
 
     ADesc(A.DAU, 'Daily active users', thresholds=300, background=BG_USERS),
-    ADesc(A.MAU, 'Monthly active users', thresholds=6500, background=BG_USERS),
+    ADesc(A.MAU, 'Monthly active users', thresholds=6500, background=BG_USERS_NIGHT),
     ADesc(A.WALLET_COUNT, 'Wallets', milestone_scale=MILESTONES_EVERY_DIGIT,
           thresholds=61000, background=BG_USERS),
     ADesc(A.SWAP_COUNT_TOTAL, 'Total swaps', background=BG_SWAPS),
@@ -200,8 +202,8 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.DAILY_VOLUME, 'Daily swap volume', prefix='$', thresholds=50_000_000, background=BG_TRADE),
     ADesc(A.MONTHLY_SWAP_VOLUME, 'Monthly swap volume', prefix='$', thresholds=1_000_000_000,
           background=BG_TRADE),
-    ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond', postfix=POSTFIX_RUNE, background=BG_NETWORK),
-    ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE, background=BG_NETWORK),
+    ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond', postfix=POSTFIX_RUNE, background=BG_NODES),
+    ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE, background=BG_NODES),
     ADesc(A.NODE_COUNT, 'Total node count', more_than=False, background=BG_NETWORK, enabled=False),
     ADesc(A.ACTIVE_NODE_COUNT, 'Active node count', more_than=False, background=BG_NODES),
 
@@ -213,7 +215,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
           always_fresh=True),  # fed only within ANNIVERSARY_WINDOW, a year after the previous feed
 
     ADesc(A.BLOCK_NUMBER, 'Blocks produced', milestone_scale=MILESTONES_EVERY_DIGIT,
-          thresholds=7_000_000, background=BG_NETWORK),
+          thresholds=7_000_000, background=BG_BLOCKS),
     ADesc(A.DAILY_TX_COUNT, 'Daily transactions', background=BG_SWAPS),
     ADesc(A.TOTAL_MIMIR_VOTES, 'Total Mimir votes', more_than=False, background=BG_NETWORK),
     ADesc(A.MARKET_CAP_USD, 'RUNE market cap', prefix='$', background=BG_RUNE),

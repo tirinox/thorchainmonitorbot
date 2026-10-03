@@ -19,7 +19,7 @@ This guide is how to make a new frame or repaint an old one so it fits the set.
 
 ## Design rules
 
-- **Each frame has its own idea and silhouette.** A frame names its category at a glance and must not look like any other frame. The set already has runic metal rings (BTC, ETH, RUNE), leafy wreaths, a flame vortex, a thorny lightning wreath, a vault door, a chain circle, two dragons, a knot of world-tree roots, a circle of longships, braided cords with a handshake, a fire ring and a balloon ring. A new frame takes a new shape: say in the prompt which shapes it must **not** be.
+- **Each frame has its own idea and silhouette.** A frame names its category at a glance and must not look like any other frame. The set already has runic metal rings (BTC, ETH, RUNE), leafy wreaths, a flame vortex, a crown of horned helmets, a vault door, a chain circle, two dragons, a knot of world-tree roots, a circle of longships, a ring of forged stone blocks, braided cords with a handshake, a fire ring and a balloon ring. A new frame takes a new shape: say in the prompt which shapes it must **not** be.
 - **One palette per frame**, different from its neighbours. The palette also sets the `tint` (the glow of the number).
 - **Painterly, premium, detailed:** fantasy digital art with real material depth, Norse/Celtic motifs where they fit. Never flat, cartoonish, plastic or icon-like.
 - **No text, letters or numbers** in the picture. Symbols only when they are the point of the frame: ₿ on the BTC frame, the Ethereum crystal, ᚱ on the RUNE crystal, `$` on the stablecoin coins.
@@ -148,7 +148,8 @@ The file keeps every field of every frame, and a `note` where the hole was set b
 | `BG_LIQUIDITY` | `nn_wreath_liquidity.png` | Celtic knotwork ring with ivory antlers, leaves, a knot shield-heart below | teal, jade, ivory |
 | `BG_NETWORK` | `nn_wreath_network.png` | Braided wreath with feathers, a knot on top, a chevron shield and bronze rings | sage, muted teal, beige |
 | `BG_SWAPS` | `nn_wreath_swaps.png` | Stone and steel ring in a whirl of turquoise flame with silver arrow-blades | cyan, electric blue |
-| `BG_USERS` | `nn_wreath_users.png` | Thorny branch wreath charged with lightning, white crystal spikes | dark wood, green, electric blue |
+| `BG_USERS` | `nn_wreath_users_day.png` | A crown of Viking helmets under the sun, some horned, a gilded helmet with big ram horns leading below | dark iron, gilding, bone, golden daylight |
+| `BG_USERS_NIGHT` | `nn_wreath_users_night.png` | The same helmets under the moon (the monthly twin of the daily one) | dark iron, silver, ivory, night blue |
 | `BG_RUNE` | `nn_wreath_rune.png` | Gunmetal and obsidian runic ring, crystal with ᚱ, lightning | turquoise, green |
 | `BG_REVENUE` | `nn_wreath_revenue_toast.png` | Harvest wreath of wheat, laurel and olive with coins, two tankards clashing below | gold, emerald |
 | `BG_AFFILIATE` | `nn_wreath_affiliate_grip.png` | Braided leather cords with oath rings turning into two Viking forearms in a grip | leather brown, silver, gold |
@@ -157,6 +158,7 @@ The file keeps every field of every frame, and a `note` where the hole was set b
 | `BG_STABLES` | `nn_wreath_stables_chains.png` | Rusted chipped iron chains with dollar coins, a big `$` coin locking them | rust, dark iron, dollar green |
 | `BG_TRADE` | `nn_wreath_trade.png` | Gold and ruby dragons chasing each other, passing coins | gold, ruby |
 | `BG_NODES` | `nn_wreath_nodes_fleet.png` | A Viking fleet from above: eight longships sailing in a circle, oars out like rays, striped sails, white wakes | dark oak, indigo and bone sails, navy sea |
+| `BG_BLOCKS` | `nn_wreath_blocks_forge.png` | Thor's forge: a ring of cut basalt blocks with knotwork, molten gold seams and sparks, Mjolnir on an anvil below | basalt, molten gold, dark iron |
 | `BG_POL` | `nn_wreath_pol_roots.png` | Knotted silver roots of Yggdrasil with glowing amber sap, a knot holding an amber pool below | silver bark, amber, umber |
 | `BG_BTC` | `nn_wreath_btc_vault_2.png` | Bronze runic ring under a ₿ medallion | bronze, gold, orange |
 | `BG_ETH` | `nn_wreath_eth_vault_2.png` | Silver runic ring under a violet Ethereum crystal (BTC's twin) | silver, violet |
