@@ -345,3 +345,13 @@ def test_pol_reserve_feeds_its_value_in_usd():
     from jobs.achievement.extractor import AchievementsExtractor
     pol = SimpleNamespace(current=SimpleNamespace(value_usd=657_389.4))
     assert [(a.key, a.value) for a in AchievementsExtractor.on_pol_reserve(pol)] == [(A.POL_VALUE_USD, 657_389)]
+
+
+@pytest.mark.asyncio
+async def test_disabled_achievement_is_ignored(tracker):
+    # the total node count is off for now: its feeds neither post nor move its record
+    await tracker.set_achievement_record(Achievement(A.NODE_COUNT, 90, 50, NOW - 30 * DAY, last_seen_ts=NOW - DAY))
+    assert await tracker.feed_data(Achievement(A.NODE_COUNT, 120)) is None
+    assert (await tracker.get_achievement_record(A.NODE_COUNT, '')).value == 90
+    assert await tracker.feed_data(Achievement(A.ACTIVE_NODE_COUNT, 120)) is None  # creates its first record
+    assert await tracker.get_achievement_record(A.ACTIVE_NODE_COUNT, '') is not None

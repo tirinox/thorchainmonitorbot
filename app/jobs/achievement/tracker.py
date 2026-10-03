@@ -69,6 +69,9 @@ class AchievementsTracker(WithLogger):
         name, value, descending = event.key, event.value, event.descending
         assert name
 
+        if not event.descriptor.enabled:
+            return
+
         if not value or value <= 0.0:
             self.logger.debug(f'Achievement {name} has invalid ({value}) value! Skip it.')
             return
