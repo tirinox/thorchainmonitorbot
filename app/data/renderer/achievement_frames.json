@@ -186,5 +186,15 @@
     "size": 860,
     "top": 40,
     "shade_from": 58
+  },
+  "nn_wreath_pools.png": {
+    "tint": "#e6f2ff",
+    "hole_x": 0.502,
+    "hole_y": 0.396,
+    "hole_r": 0.151,
+    "base": "#070a0f",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58
   }
 }
