@@ -12,7 +12,7 @@ This guide is how to make a new frame or repaint an old one so it fits the set.
 | Frame constants (`BG_*`) and which achievement uses which frame (`background=`) | `app/jobs/achievement/ach_list.py` |
 | Per-frame layout and colors (`WreathStyle`) | `app/data/renderer/achievement_frames.json`, keyed by the picture file; `app/comm/picture/achievement_card.py` reads it into `BACKGROUND_STYLE` |
 | Set the hole and the placement by eye, and save them | the frame tuner of the renderer gallery: http://127.0.0.1:8404/render/frames (`app/renderer/frame_tuner.html`, `app/renderer/frames.py`) |
-| Card template | `app/renderer/templates/achievement.jinja2`; the number is set in Norse Bold (`app/data/renderer/static/fonts/NorseBold.otf`) as polished metal of the frame's `tint`, centered in the hole with its label above; the anniversary keeps the balloon digit pictures (`img/achievement/balloon/`) |
+| Card template | `app/renderer/templates/achievement.jinja2`; the number is set in Norse Bold (`app/data/renderer/static/fonts/NorseBold.otf`) as polished metal of the frame's `tint`, as large as fits the hole (`fitNumber()`: every corner of its glyphs and its label within 0.9 of the hole radius) and centered by its glyphs, with its label above; the anniversary keeps the balloon digit pictures (`img/achievement/balloon/`) |
 | Generate, measure and preview frames | `app/tools/achievement_frame.py` |
 | Renderer gallery demos | `make renderer-demos`, then http://127.0.0.1:8404/render/demo |
 | Checks (every frame exists, has a style, its base color matches its edges; the style file is as the tuner writes it) | `app/tests/test_achievement_card.py`, `app/tests/test_frame_tuner.py` |
