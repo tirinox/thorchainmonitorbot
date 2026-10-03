@@ -151,7 +151,7 @@ The file keeps every field of every frame, and a `note` where the hole was set b
 | `BG_USERS` | `nn_wreath_users_day.png` | A crown of Viking helmets under the sun, some horned, a gilded helmet with big ram horns leading below | dark iron, gilding, bone, golden daylight |
 | `BG_USERS_NIGHT` | `nn_wreath_users_night.png` | The same helmets under the moon (the monthly twin of the daily one) | dark iron, silver, ivory, night blue |
 | `BG_RUNE` | `nn_wreath_rune.png` | Gunmetal and obsidian runic ring, crystal with ᚱ, lightning | turquoise, green |
-| `BG_REVENUE` | `nn_wreath_revenue_toast.png` | Harvest wreath of wheat, laurel and olive with coins, two tankards clashing below | gold, emerald |
+| `BG_REVENUE` | `nn_wreath_revenue_hoard.png` | A Viking silver hoard in a ring: arm rings, hacksilver, ingots, coins, garnet brooches, a cup; a folding balance scale below. No wheat: a wheat wreath reads as the Soviet emblem | silver, some gold, bronze, garnet |
 | `BG_AFFILIATE` | `nn_wreath_affiliate_grip.png` | Braided leather cords with oath rings turning into two Viking forearms in a grip | leather brown, silver, gold |
 | `BG_BURN` | `nn_wreath_burnt.png` | Wreath of branches and feathers in roaring fire over coals (for burnt RUNE, unused yet) | orange, amber, red |
 | `BG_VAULT` | `nn_wreath_vault.png` | Bronze and steel vault door ring with bolts and amber lamps, icy spikes | bronze, amber, turquoise ice |
