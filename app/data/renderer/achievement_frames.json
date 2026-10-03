@@ -1,9 +1,9 @@
 {
   "nn_wreath_liquidity.png": {
     "tint": "#3ee6c8",
-    "hole_x": 0.503,
-    "hole_y": 0.482,
-    "hole_r": 0.177,
+    "hole_x": 0.5,
+    "hole_y": 0.465,
+    "hole_r": 0.173,
     "base": "#01040c",
     "size": 860,
     "top": 40,
@@ -11,9 +11,9 @@
   },
   "nn_wreath_network.png": {
     "tint": "#6fe8cf",
-    "hole_x": 0.503,
-    "hole_y": 0.481,
-    "hole_r": 0.189,
+    "hole_x": 0.499,
+    "hole_y": 0.461,
+    "hole_r": 0.16,
     "base": "#04060e",
     "size": 860,
     "top": 40,
@@ -23,7 +23,7 @@
   "nn_wreath_swaps.png": {
     "tint": "#4ffffa",
     "hole_x": 0.504,
-    "hole_y": 0.471,
+    "hole_y": 0.464,
     "hole_r": 0.21,
     "base": "#030708",
     "size": 860,
@@ -138,7 +138,7 @@
   "nn_wreath_nodes_fleet.png": {
     "tint": "#cfe2ff",
     "hole_x": 0.501,
-    "hole_y": 0.413,
+    "hole_y": 0.427,
     "hole_r": 0.155,
     "base": "#040c17",
     "size": 820,

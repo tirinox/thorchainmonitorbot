@@ -11,7 +11,7 @@
     "background": "nn_wreath_nodes_fleet.png",
     "tint": "#cfe2ff",
     "hole_x": 0.501,
-    "hole_y": 0.413,
+    "hole_y": 0.427,
     "hole_r": 0.155,
     "base_color": "#040c17",
     "frame_size": 820,
