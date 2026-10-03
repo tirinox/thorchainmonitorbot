@@ -126,8 +126,8 @@
   },
   "nn_wreath_nodes_fleet.png": {
     "tint": "#cfe2ff",
-    "hole_x": 0.5,
-    "hole_y": 0.405,
+    "hole_x": 0.501,
+    "hole_y": 0.413,
     "hole_r": 0.155,
     "base": "#040c17",
     "size": 820,
