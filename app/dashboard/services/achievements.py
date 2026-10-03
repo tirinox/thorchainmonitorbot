@@ -33,6 +33,7 @@ SAMPLE_VALUE = 1000  # for the preview of a metric nothing is known about
 
 
 class AchStatus:
+    DISABLED = 'disabled'  # turned off in ach_list.py: the tracker ignores it
     NO_DATA = 'no_data'  # the bot has never fed this metric
     BELOW_THRESHOLD = 'below_threshold'  # under its cut-off: the tracker ignores it
     TRACKING = 'tracking'
@@ -138,7 +139,9 @@ def build_row(key: str, spec: str, record: Optional[Achievement], live: Optional
 
     stale = bool(record and not desc.always_fresh and now - record.last_seen_ts > stale_after)
 
-    if not record and not live:
+    if not desc.enabled:
+        status = AchStatus.DISABLED
+    elif not record and not live:
         status = AchStatus.NO_DATA
     elif not meets_threshold:
         status = AchStatus.BELOW_THRESHOLD

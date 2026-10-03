@@ -317,3 +317,8 @@ def test_anniversary_is_never_stale():
     r = row(A.ANNIVERSARY, record, now=half_past_five)
     assert (r['stale'], r['can_be_stale'], r['status']) == (False, False, AchStatus.TRACKING)
     assert row(A.DAU)['can_be_stale'] is True
+
+
+def test_disabled_achievement_row():
+    assert row(A.NODE_COUNT)['status'] == AchStatus.DISABLED
+    assert row(A.ACTIVE_NODE_COUNT)['status'] == AchStatus.NO_DATA

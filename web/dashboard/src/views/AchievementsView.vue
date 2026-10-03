@@ -31,6 +31,7 @@ const STATUS = {
   stale: {label: 'stale', severity: 'warn'},
   below_threshold: {label: 'below cut-off', severity: 'secondary'},
   no_data: {label: 'no data', severity: 'secondary'},
+  disabled: {label: 'off', severity: 'secondary'},
 }
 
 function statusTip(item) {
@@ -43,6 +44,8 @@ function statusTip(item) {
           : 'Past its next milestone. The post is held back by the post limit and goes out on a later feed.'
     case 'stale':
       return `Not fed for more than ${durationHuman(settings.value.stale_after)}. Its next milestone will be saved without a post.`
+    case 'disabled':
+      return 'Turned off in ach_list.py: the bot ignores it and keeps its last milestone as it is.'
     case 'below_threshold':
       return 'Under its cut-off: the bot ignores it until it gets there. Passing the cut-off starts tracking, without a post.'
     default:

@@ -172,6 +172,8 @@ class AchievementDescription(NamedTuple):
     tint: Optional[str] = None  # overrides the glow color of the background
     # its source feeds it only while it is news, so the tracker neither holds it as stale nor needs a first record
     always_fresh: bool = False
+    # False turns an achievement off: the tracker ignores its feeds and keeps its record as it is
+    enabled: bool = True
 
 
 ADesc = AchievementDescription
@@ -199,7 +201,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
           background=BG_TRADE),
     ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond', postfix=POSTFIX_RUNE, background=BG_NETWORK),
     ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE, background=BG_NETWORK),
-    ADesc(A.NODE_COUNT, 'Total node count', more_than=False, background=BG_NETWORK),
+    ADesc(A.NODE_COUNT, 'Total node count', more_than=False, background=BG_NETWORK, enabled=False),
     ADesc(A.ACTIVE_NODE_COUNT, 'Active node count', more_than=False, background=BG_NETWORK),
 
     ADesc(A.ANNIVERSARY, 'Anniversary', more_than=False,
