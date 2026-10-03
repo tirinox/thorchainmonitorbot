@@ -139,7 +139,8 @@ class Achievement(NamedTuple):
 # so the same kind of metric always looks the same
 BG_LIQUIDITY = 'nn_wreath_liquidity.png'
 BG_NETWORK = 'nn_wreath_network.png'
-BG_SWAPS = 'nn_wreath_swaps.png'
+BG_SWAPS = 'nn_wreath_swaps_2.png'
+BG_SWAP_VOLUME = 'nn_wreath_swap_volume.png'  # the gold twin of the swaps frame: volumes in money
 BG_USERS = 'nn_wreath_users_day.png'
 BG_USERS_NIGHT = 'nn_wreath_users_night.png'  # the monthly twin of the daily frame
 BG_RUNE = 'nn_wreath_rune.png'
@@ -200,9 +201,9 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Liquidity additions'),
     ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Total liquidity added', postfix=POSTFIX_RUNE),
     # swap volumes in USD from Midgard's swap history: the last whole day, the last 30 whole days, all of it
-    ADesc(A.DAILY_VOLUME, 'Daily swap volume', prefix='$', thresholds=50_000_000, background=BG_TRADE),
+    ADesc(A.DAILY_VOLUME, 'Daily swap volume', prefix='$', thresholds=50_000_000, background=BG_SWAP_VOLUME),
     ADesc(A.MONTHLY_SWAP_VOLUME, 'Monthly swap volume', prefix='$', thresholds=1_000_000_000,
-          background=BG_TRADE),
+          background=BG_SWAP_VOLUME),
     ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond', postfix=POSTFIX_RUNE, background=BG_NODES),
     ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE, background=BG_NODES),
     ADesc(A.NODE_COUNT, 'Total node count', more_than=False, background=BG_NETWORK, enabled=False),
@@ -224,7 +225,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.TOTAL_ACTIVE_POOLS, 'Active pools', more_than=False, background=BG_POOLS),
 
     ADesc(A.SWAP_VOLUME_TOTAL_USD, 'Total swap volume', prefix='$', milestone_scale=MILESTONES_EVERY_DIGIT,
-          thresholds=100_000_000_000, background=BG_TRADE),
+          thresholds=100_000_000_000, background=BG_SWAP_VOLUME),
 
     ADesc(A.MAX_SWAP_AMOUNT_USD, 'Largest single swap', prefix='$',
           thresholds=1_329_208, background=BG_SWAPS),
@@ -241,7 +242,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.STABLES_IN_VAULT, 'Stablecoins in vaults', prefix='$', background=BG_STABLES),
 
     ADesc(A.TOTAL_VALUE_LOCKED, 'Total value locked', prefix='$', thresholds=356_700_000, background=BG_VAULT),
-    ADesc(A.WEEKLY_SWAP_VOLUME, 'Weekly swap volume', prefix='$', thresholds=300_600_000, background=BG_TRADE),
+    ADesc(A.WEEKLY_SWAP_VOLUME, 'Weekly swap volume', prefix='$', thresholds=300_600_000, background=BG_SWAP_VOLUME),
     ADesc(A.WEEKLY_PROTOCOL_REVENUE_USD, 'Weekly protocol revenue', prefix='$', thresholds=867_900,
           background=BG_REVENUE),
     ADesc(A.WEEKLY_AFFILIATE_REVENUE_USD, 'Weekly affiliate revenue', prefix='$', thresholds=60_300,
