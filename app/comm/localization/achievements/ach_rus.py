@@ -48,7 +48,7 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
 
         A.TRADE_BALANCE_TOTAL_USD: "Общий баланс торговых счетов",
         A.TRADE_ASSET_HOLDERS_COUNT: "Держателей торговых активов",
-        A.TRADE_ASSET_LARGEST_DEPOSIT: "Самый крупный депозит",
+        A.TRADE_ASSET_LARGEST_DEPOSIT: "Самый крупный депозит на торговый счёт",
     }
 
     MORE_THAN = 'Более чем'

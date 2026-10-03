@@ -1,7 +1,7 @@
 {
   "template_name": "achievement.jinja2",
   "meta": {
-    "title": "Самый крупный депозит",
+    "title": "Самый крупный депозит на торговый счёт",
     "subtitle": "$2M",
     "lang": "ru",
     "order": 35
@@ -21,7 +21,7 @@
     "number_label": "Более чем",
     "number_text": "$2M",
     "glyphs": [],
-    "title": "Самый крупный депозит",
+    "title": "Самый крупный депозит на торговый счёт",
     "subtitle": "",
     "asset_logo": "",
     "date": "1 октября 2026",
