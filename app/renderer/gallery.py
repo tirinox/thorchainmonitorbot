@@ -48,7 +48,8 @@ def demo_catalog(renderer: RendererEngine) -> list:
     items = []
     for name in available_demo_templates():
         item = {'name': name, 'template': '', 'group': DEBUG_GROUP, 'title': name, 'subtitle': '',
-                'lang': 'ru' if name.endswith('_ru') else 'en', 'order': 0, 'w': 1280, 'h': 720, 'error': ''}
+                'lang': 'ru' if name.endswith('_ru') else 'en', 'order': 0, 'w': 1280, 'h': 720, 'error': '',
+                'frame': ''}
         try:
             demo = load_demo(name)
             template = demo['template_name']
@@ -61,6 +62,8 @@ def demo_catalog(renderer: RendererEngine) -> list:
                 lang=meta.get('lang') or item['lang'],
                 order=meta.get('order', 0),
             )
+            if template == 'achievement.jinja2':
+                item['frame'] = demo['parameters'].get('background', '')  # for the frame tuner
             item['w'], item['h'] = renderer.measure_template(template, demo['parameters'])
         except Exception as e:
             item['error'] = f'{type(e).__name__}: {e}'

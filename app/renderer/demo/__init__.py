@@ -4,10 +4,10 @@ import os
 DEMO_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def _demo_files() -> dict:
+def demo_files(demo_dir=DEMO_DIR) -> dict:
     """Demo name => path to its JSON file; subfolders (e.g. the generated achievements/) are scanned too"""
     files = {}
-    for root, _, names in os.walk(DEMO_DIR):
+    for root, _, names in os.walk(demo_dir):
         for f in names:
             if f.endswith('.json'):
                 files[f[:-5]] = os.path.join(root, f)
@@ -16,7 +16,7 @@ def _demo_files() -> dict:
 
 def load_demo(name: str) -> dict:
     """The whole demo: template_name, parameters and the optional meta (title, subtitle, lang, order)"""
-    path = _demo_files().get(name)
+    path = demo_files().get(name)
     if not path:
         return {}
     with open(path) as f:
@@ -31,4 +31,4 @@ def demo_template_parameters(name: str):
 
 
 def available_demo_templates():
-    return list(_demo_files())
+    return list(demo_files())

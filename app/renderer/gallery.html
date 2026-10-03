@@ -605,6 +605,8 @@
             <button data-v="m">M</button>
             <button data-v="l">L</button>
         </div>
+        <a class="btn" href="/render/frames" title="Set the hole and the placement of the achievement frames">Frame
+            tuner</a>
     </div>
     <nav class="rail" id="rail" aria-label="Sections"></nav>
 </header>
@@ -626,6 +628,7 @@
             <button class="btn" id="v-reload" title="Re-render after editing the template (R)">Reload</button>
             <a class="btn" id="v-open" target="_blank" rel="noopener">Open</a>
             <a class="btn" id="v-json" target="_blank" rel="noopener">Parameters</a>
+            <a class="btn" id="v-tune" title="Open this frame in the frame tuner">Tune frame</a>
             <button class="btn" id="v-close" title="Esc">Close</button>
         </div>
         <div class="v-stage" id="v-stage">
@@ -868,6 +871,8 @@
             $('v-sub').textContent = [d.name, d.template, `${d.w}×${d.h}`, d.lang.toUpperCase()].filter(Boolean).join(', ');
             $('v-open').href = viewMode === 'png' ? pngUrl(d) : htmlUrl(d);
             $('v-json').href = jsonUrl(d);
+            $('v-tune').hidden = !d.frame;
+            $('v-tune').href = d.frame ? `/render/frames#frame=${enc(d.frame)}&demo=${enc(d.name)}` : '';
             const i = visible.indexOf(d);
             $('v-status').textContent = i >= 0 ? `${i + 1} of ${visible.length}` : '';
             $('v-mode').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === viewMode));
