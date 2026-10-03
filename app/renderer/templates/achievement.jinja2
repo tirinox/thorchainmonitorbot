@@ -119,7 +119,7 @@
         .ach-number {
             position: relative;
             font-family: NorseBold, ThorFont, sans-serif;
-            font-size: 170px; /* shrunk by fitNumber() */
+            font-size: 170px; /* grown or shrunk to the hole by fitNumber() */
             line-height: 0.9;
             letter-spacing: 0.02em;
             white-space: nowrap;
@@ -151,7 +151,7 @@
             display: flex;
             align-items: center;
             gap: 0.05em;
-            font-size: 300px; /* a balloon digit may float a bit over the ring: see fitNumber() */
+            font-size: 300px; /* fitted by fitNumber(): a balloon digit may float a bit over the ring */
             line-height: 1;
             padding: 0;
             text-shadow: none;
@@ -318,31 +318,70 @@
     </div>
 
     <script>
-        // the number and its label sit in the middle of the wreath hole: shrink the number
-        // until every corner of both is inside the hole, with some room left to the ring
+        // the number and its label sit in the middle of the wreath hole: the number takes the largest size
+        // at which every corner of it and its label is inside the hole, with some room left to the ring
         function fitNumber() {
             const cx = {{ hole_cx }}, cy = {{ hole_cy }};
+            const balloon = {{ 'true' if number_font == 'balloon' else 'false' }};
             // the number keeps clear of the ring; a balloon digit may float a bit over it
-            const maxDistance = {{ hole_radius }} * {{ 1.15 if number_font == 'balloon' else 0.9 }};
+            const maxDistance = {{ hole_radius }} * (balloon ? 1.15 : 0.9);
+            const [minSize, maxSize] = balloon ? [80, 420] : [40, 360];
             const box = document.getElementById('ach-number-box');
             const number = document.getElementById('ach-number');
+            const label = box.querySelector('.ach-number-label');
+            const ctx = document.createElement('canvas').getContext('2d');
 
-            const farthestCorner = (el) => {
-                const r = el.getBoundingClientRect();
-                const dx = Math.max(Math.abs(r.left - cx), Math.abs(r.right - cx));
-                const dy = Math.max(Math.abs(r.top - cy), Math.abs(r.bottom - cy));
-                return Math.hypot(dx, dy);
+            // the glyphs themselves: the line box of Norse Bold has room under the digits and they reach
+            // a bit over its top, so a text number is measured and centered by its ink, from the font metrics
+            const inkOf = (r) => {
+                if (balloon) {
+                    return {left: r.left, right: r.right, top: r.top, bottom: r.bottom};
+                }
+                const cs = getComputedStyle(number);
+                ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+                ctx.letterSpacing = cs.letterSpacing;
+                const m = ctx.measureText(number.dataset.text);
+                const ascent = m.fontBoundingBoxAscent, descent = m.fontBoundingBoxDescent;
+                const baseline = r.top + (r.height - ascent - descent) / 2 + ascent;
+                const start = r.left + parseFloat(cs.paddingLeft);
+                return {
+                    left: start - m.actualBoundingBoxLeft, right: start + m.actualBoundingBoxRight,
+                    top: baseline - m.actualBoundingBoxAscent, bottom: baseline + m.actualBoundingBoxDescent
+                };
             };
 
-            // the label keeps its size, so the box shifts as the number shrinks: a few passes to settle
-            for (let pass = 0; pass < 8; pass++) {
-                const distance = Math.max(...[...box.children].map(farthestCorner));
-                if (distance <= maxDistance) {
-                    break;
+            // lays the number out at this size: returns how far its farthest corner is and where it moves to
+            const layout = (size) => {
+                number.style.fontSize = size + 'px';
+                box.style.transform = 'translate(-50%, -50%)';
+                const r = number.getBoundingClientRect();
+                const ink = inkOf(r);
+                const rects = [ink];
+                if (label) {
+                    // the label grows a little with a big number and hangs just over the ink
+                    label.style.fontSize = Math.min(40, Math.max(28, size * 0.165)) + 'px';
+                    label.style.marginBottom = (r.top - ink.top + 2) + 'px';
+                    rects.push(label.getBoundingClientRect());
                 }
-                const size = parseFloat(getComputedStyle(number).fontSize);
-                number.style.fontSize = (size * Math.max(0.6, maxDistance / distance)) + 'px';
+                const dx = cx - (ink.left + ink.right) / 2, dy = cy - (ink.top + ink.bottom) / 2;
+                const distance = Math.max(...rects.map(q => Math.hypot(
+                    Math.max(Math.abs(q.left + dx - cx), Math.abs(q.right + dx - cx)),
+                    Math.max(Math.abs(q.top + dy - cy), Math.abs(q.bottom + dy - cy)))));
+                return {distance, dx, dy};
+            };
+
+            // the label keeps a size of its own, so the distance is not proportional to the size: a bisection
+            let lo = minSize, hi = maxSize;
+            if (layout(hi).distance <= maxDistance) {
+                lo = hi;
+            } else {
+                while (hi - lo > 0.5) {
+                    const mid = (lo + hi) / 2;
+                    if (layout(mid).distance <= maxDistance) lo = mid; else hi = mid;
+                }
             }
+            const {dx, dy} = layout(lo);
+            box.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
         }
 
         // the title: one line if it fits without getting too small, otherwise at most two lines
@@ -379,10 +418,11 @@
             });
         }
 
-        window.addEventListener('load', () => {
+        // the number is measured by the font, so it waits for the fonts
+        window.addEventListener('load', () => document.fonts.ready.then(() => {
             fitNumber();
             fitTitle();
             fitStats();
-        });
+        }));
     </script>
 {% endblock %}
