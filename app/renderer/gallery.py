@@ -25,6 +25,7 @@ TEMPLATE_GROUPS = {
     'rapid_swap_stats.jinja2': 'Rapid swaps',
     'mimir_voting.jinja2': 'Mimir voting',
     'chain_halt.jinja2': 'Chain halt',
+    'nodes.jinja2': 'Nodes',
 }
 DEBUG_GROUP = 'Debug'
 DEBUG_TEMPLATES = {'foo.jinja2', 'example.jinja2'}

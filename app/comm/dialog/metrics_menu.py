@@ -3,7 +3,7 @@ from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
 from comm.localization.manager import BaseLocalization
-from comm.picture.nodes_pictures import NodePictureGenerator
+from comm.picture.nodes_card import NODES_CHART_PERIOD
 from comm.picture.queue_picture import queue_graph
 from comm.picture.supply_picture import SupplyPictureGenerator
 from comm.telegram.inline_list import TelegramInlineList
@@ -188,11 +188,15 @@ class MetricsDialog(BaseDialog):
                 await message.answer(message_text, disable_web_page_preview=True, disable_notification=True)
 
         # generate a beautiful masterpiece :)
-        chart_pts = await NodeChurnNotifier(self.deps).load_last_statistics(NodePictureGenerator.CHART_PERIOD)
-        gen = NodePictureGenerator(result_network_info, chart_pts, self.loc)
-        pic = await gen.generate()
+        chart_pts = await NodeChurnNotifier(self.deps).load_last_statistics(NODES_CHART_PERIOD)
+        try:
+            usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+        except RuntimeError:
+            usd_per_rune = 0.0
+        pic, pic_name = await self.deps.alert_presenter.render_nodes(
+            self.loc, result_network_info, chart_pts, usd_per_rune)
 
-        await message.answer_photo(img_to_bio(pic, gen.proper_name()), disable_notification=True)
+        await message.answer_photo(img_to_bio(pic, pic_name), disable_notification=True)
 
     async def show_queue(self, message, period):
         await self.start_typing(message)

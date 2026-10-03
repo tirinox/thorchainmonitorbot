@@ -1205,22 +1205,37 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_PIC_NODES = 'nodes'
     TEXT_PIC_ACTIVE_NODES = 'Active nodes'
-    TEXT_PIC_STANDBY_NODES = 'Standby nodes'
-    TEXT_PIC_ALL_NODES = 'All nodes'
-    TEXT_PIC_NODE_DIVERSITY = 'Node Diversity'
-    TEXT_PIC_NODE_DIVERSITY_SUBTITLE = 'by infrastructure provider'
-    TEXT_PIC_OTHERS = 'Others'
-    TEXT_PIC_UNKNOWN = 'Unknown'
-
-    TEXT_PIC_UNKNOWN_LOCATION = 'Unknown location'
-    TEXT_PIC_CLOUD = 'Cloud'
-    TEXT_PIC_COUNTRY = 'Country'
     TEXT_PIC_ACTIVE_BOND = 'Active bond'
     TEXT_PIC_TOTAL_NODES = 'Total nodes'
     TEXT_PIC_TOTAL_BOND = 'Total bond'
-    TEXT_PIC_MIN_BOND = 'Min bond'
+    TEXT_PIC_STANDBY = 'standby'
+    TEXT_PIC_OF_SUPPLY = 'of RUNE supply'
+    TEXT_PIC_PROVIDERS = 'Providers'
+    TEXT_PIC_COUNTRIES = 'Countries'
+    TEXT_PIC_OF_ACTIVE_NODES = 'of active nodes'
+    TEXT_PIC_WORLD = 'World'
+    TEXT_PIC_EUROPE = 'Europe'
+    TEXT_PIC_LEGEND_ACTIVE = 'active nodes, color = provider'
+    TEXT_PIC_LEGEND_STANDBY = 'standby nodes'
+    TEXT_PIC_OTHERS = 'Others'
+    TEXT_PIC_UNKNOWN = 'Unknown'
+    TEXT_PIC_UNKNOWN_LOCATION = 'Unknown location'
+    TEXT_PIC_NODE_BOND = 'Node bond'
+    TEXT_PIC_MIN_BOND = 'Min'
     TEXT_PIC_MEDIAN_BOND = 'Median'
     TEXT_PIC_MAX_BOND = 'Max'
+    TEXT_PIC_NODES_NOTE = ('The location and the provider are those of the public IP address of a node. '
+                           'Often it is just a proxy server that hides the real node, '
+                           'which may run in a completely different place.')
+
+    def text_pic_last_days(self, days):
+        return f'last {days} days'
+
+    # ISO code => country name, where the English name that GeoIP gives is not what we want
+    COUNTRY_NAMES = {}
+
+    def text_country_name(self, code, name):
+        return self.COUNTRY_NAMES.get(code, name)
 
     PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION = ital('THORChain nodes')
 

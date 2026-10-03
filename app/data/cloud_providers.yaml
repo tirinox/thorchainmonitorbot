@@ -1,0 +1,465 @@
+# The owners of the IP addresses of THORNodes, as the node infographic (nodes.jinja2) names them.
+#
+# A provider is found by the number of the autonomous system (asn) first, then by a word or a phrase (match)
+# in the names GeoIP gives: the AS name, the organization and the ISP. The words are matched whole and
+# in any case, so "ovh" finds "OVH SAS" but not "Novohost". An owner that is not here gets the name of its
+# AS without "LLC", "GmbH" and the like (models/cloud_provider.py).
+#
+# To add a provider look its AS up, e.g. http://ip-api.com/json/1.2.3.4?fields=as,org,isp
+
+providers:
+  # ---------------- big clouds ----------------
+  - name: AWS
+    asn: [16509, 14618]
+    match: [amazon, aws]
+
+  - name: Google Cloud
+    asn: [396982, 15169, 19527]
+    match: [google]
+
+  - name: Microsoft Azure
+    asn: [8075]
+    match: [microsoft, azure]
+
+  - name: Oracle Cloud
+    asn: [31898]
+    match: [oracle]
+
+  - name: IBM Cloud
+    asn: [36351]
+    match: [softlayer, ibm cloud]
+
+  - name: Alibaba Cloud
+    asn: [45102, 37963]
+    match: [alibaba, aliyun]
+
+  - name: Tencent Cloud
+    asn: [132203, 45090]
+    match: [tencent]
+
+  - name: Huawei Cloud
+    asn: [136907, 55990]
+    match: [huawei]
+
+  - name: Cloudflare
+    asn: [13335]
+    match: [cloudflare]
+
+  # ---------------- cloud and dedicated server hosting ----------------
+  - name: DigitalOcean
+    asn: [14061]
+    match: [digitalocean, digital ocean]
+
+  - name: Hetzner
+    asn: [24940, 213230, 212317]
+    match: [hetzner]
+
+  - name: OVHcloud
+    asn: [16276]
+    match: [ovh, ovhcloud, kimsufi, soyoustart]
+
+  - name: Vultr
+    asn: [20473]
+    match: [vultr, choopa, the constant company]
+
+  - name: Akamai (Linode)
+    asn: [63949]
+    match: [linode, akamai connected cloud]
+
+  - name: Leaseweb
+    asn: [60781, 28753, 30633, 205544, 59253, 7203, 396362, 395954, 396190, 394380, 133752, 136988]
+    match: [leaseweb]
+
+  - name: Contabo
+    asn: [51167, 141995, 40021]
+    match: [contabo]
+
+  - name: Scaleway
+    asn: [12876]
+    match: [scaleway, online s.a.s, online sas]
+
+  - name: Equinix
+    asn: [54825]
+    match: [equinix, packet host]
+
+  - name: MEVSPACE
+    asn: [201814]
+    match: [mevspace, meverywhere]
+
+  - name: LifeinCloud
+    asn: [203919]
+    match: [lifeincloud, lumadock]
+
+  - name: FlokiNET
+    asn: [200651]
+    match: [flokinet]
+
+  - name: BuyVM
+    asn: [53667, 399629]
+    match: [frantech, buyvm, bl networks, ponynet]
+
+  - name: Hostinger
+    asn: [47583]
+    match: [hostinger]
+
+  - name: Latitude.sh
+    asn: [262287, 396356]
+    match: [latitude.sh, maxihost]
+
+  - name: Cherry Servers
+    asn: [59642]
+    match: [cherry servers, cherryservers]
+
+  - name: M247
+    asn: [9009]
+    match: [m247]
+
+  - name: DataPacket
+    asn: [60068, 212238]
+    match: [datapacket, datacamp, cdn77]
+
+  - name: Zenlayer
+    asn: [21859]
+    match: [zenlayer]
+
+  - name: netcup
+    asn: [197540]
+    match: [netcup]
+
+  - name: IONOS
+    asn: [8560]
+    match: [ionos, 1&1]
+
+  - name: Strato
+    asn: [6724]
+    match: [strato]
+
+  - name: UpCloud
+    asn: [202053]
+    match: [upcloud]
+
+  - name: Gcore
+    asn: [199524]
+    match: [gcore, g-core]
+
+  - name: Servers.com
+    asn: [7979]
+    match: [servers.com]
+
+  - name: InterServer
+    asn: [19318]
+    match: [interserver]
+
+  - name: Hivelocity
+    asn: [29802]
+    match: [hivelocity]
+
+  - name: TeraSwitch
+    asn: [20326]
+    match: [teraswitch]
+
+  - name: Psychz
+    asn: [40676]
+    match: [psychz]
+
+  - name: ColoCrossing
+    asn: [36352]
+    match: [colocrossing, racknerd]
+
+  - name: Worldstream
+    asn: [49981]
+    match: [worldstream]
+
+  - name: i3D.net
+    asn: [49544]
+    match: [i3d.net, i3d]
+
+  - name: Selectel
+    asn: [49505]
+    match: [selectel]
+
+  - name: Aruba
+    asn: [31034]
+    match: [aruba s.p.a, aruba spa, aruba cloud]
+
+  - name: Fly.io
+    asn: [40509]
+    match: [fly.io]
+
+  - name: Rackspace
+    asn: [27357, 33070, 19994]
+    match: [rackspace]
+
+  - name: Clouvider
+    asn: [62240]
+    match: [clouvider]
+
+  - name: HostHatch
+    asn: [63473]
+    match: [hosthatch]
+
+  - name: velia.net
+    asn: [29066]
+    match: [velia.net, velia]
+
+  - name: phoenixNAP
+    asn: [20454, 60558]
+    match: [phoenixnap, phoenix nap, secured servers]
+
+  - name: Kamatera
+    asn: [36007]
+    match: [kamatera]
+
+  - name: Hostwinds
+    asn: [54290]
+    match: [hostwinds]
+
+  - name: QuadraNet
+    asn: [8100]
+    match: [quadranet]
+
+  - name: Sharktech
+    asn: [46844]
+    match: [sharktech]
+
+  - name: Liquid Web
+    asn: [32244]
+    match: [liquid web, liquidweb]
+
+  - name: GoDaddy
+    asn: [26496]
+    match: [godaddy]
+
+  - name: DreamHost
+    asn: [26347]
+    match: [dreamhost]
+
+  - name: Namecheap
+    asn: [22612]
+    match: [namecheap]
+
+  - name: Limestone Networks
+    asn: [46475]
+    match: [limestone networks]
+
+  - name: ReliableSite
+    asn: [23470]
+    match: [reliablesite]
+
+  - name: NForce
+    asn: [43350]
+    match: [nforce]
+
+  - name: Serverius
+    asn: [50673]
+    match: [serverius]
+
+  - name: NovoServe
+    asn: [24875]
+    match: [novoserve]
+
+  - name: myLoc
+    asn: [24961]
+    match: [myloc]
+
+  - name: combahton
+    asn: [30823]
+    match: [combahton, aurologic]
+
+  - name: GleSYS
+    asn: [42708]
+    match: [glesys]
+
+  - name: Bahnhof
+    asn: [8473]
+    match: [bahnhof]
+
+  - name: Infomaniak
+    asn: [29222]
+    match: [infomaniak]
+
+  - name: Exoscale
+    asn: [61098]
+    match: [exoscale]
+
+  - name: Gandi
+    asn: [29169]
+    match: [gandi]
+
+  - name: HOSTKEY
+    asn: [57043]
+    match: [hostkey]
+
+  - name: Voxility
+    asn: [3223]
+    match: [voxility]
+
+  - name: UCloud
+    asn: [135377]
+    match: [ucloud]
+
+  - name: E2E Networks
+    asn: [132420]
+    match: [e2e networks]
+
+  - name: Sakura Internet
+    match: [sakura internet]
+
+  - name: xTom
+    match: [xtom]
+
+  - name: Time4VPS
+    match: [time4vps]
+
+  - name: Aeza
+    match: [aeza]
+
+  - name: Atlantic.Net
+    match: [atlantic.net]
+
+  - name: Nocix
+    match: [nocix]
+
+  - name: Melbicom
+    match: [melbicom]
+
+  - name: Datanet
+    asn: [20799]
+    match: [datanet.co.uk]
+
+  - name: IPAX
+    asn: [44133]
+    match: [ipax]
+
+  - name: Timewarp
+    asn: [207203]
+    match: [timewarp]
+
+  # ---------------- internet providers and carriers: a node at home or in a rented rack ----------------
+  - name: Cogent
+    asn: [174]
+    match: [cogent]
+
+  - name: Lumen (Level 3)
+    asn: [3356]
+    match: [level 3, lumen]
+
+  - name: Hurricane Electric
+    asn: [6939]
+    match: [hurricane electric]
+
+  - name: NTT
+    asn: [2914]
+    match: [ntt america, ntt communications]
+
+  - name: GTT
+    asn: [3257]
+    match: [gtt communications]
+
+  - name: Zayo
+    asn: [6461]
+    match: [zayo]
+
+  - name: Arelion (Telia)
+    asn: [1299, 3301]
+    match: [arelion, telia]
+
+  - name: Comcast
+    asn: [7922]
+    match: [comcast]
+
+  - name: AT&T
+    asn: [7018]
+    match: [at&t]
+
+  - name: Verizon
+    asn: [701]
+    match: [verizon]
+
+  - name: Spectrum (Charter)
+    asn: [20115]
+    match: [charter communications]
+
+  - name: Cox
+    asn: [22773]
+    match: [cox communications]
+
+  - name: T-Mobile
+    asn: [21928]
+    match: [t-mobile]
+
+  - name: Starlink
+    asn: [14593]
+    match: [starlink, spacex]
+
+  - name: Bell Canada
+    asn: [577]
+    match: [bell canada]
+
+  - name: Rogers
+    asn: [812]
+    match: [rogers communications]
+
+  - name: Telus
+    asn: [852]
+    match: [telus]
+
+  - name: Shaw
+    asn: [6327]
+    match: [shaw communications]
+
+  - name: Deutsche Telekom
+    asn: [3320]
+    match: [deutsche telekom]
+
+  - name: Vodafone
+    asn: [3209, 33915]
+    match: [vodafone]
+
+  - name: KPN
+    asn: [1136]
+    match: [kpn]
+
+  - name: Ziggo
+    asn: [9143]
+    match: [ziggo]
+
+  - name: Orange
+    asn: [3215]
+    match: [orange s.a, france telecom]
+
+  - name: Free (Iliad)
+    asn: [12322]
+    match: [free sas, proxad]
+
+  - name: BT
+    asn: [2856]
+    match: [british telecommunications]
+
+  - name: Virgin Media
+    asn: [5089]
+    match: [virgin media]
+
+  - name: Sky UK
+    asn: [5607]
+    match: [sky uk, sky broadband]
+
+  - name: Swisscom
+    asn: [3303]
+    match: [swisscom]
+
+  - name: Telefonica
+    asn: [3352]
+    match: [telefonica]
+
+  - name: Liberty Global
+    asn: [6830]
+    match: [liberty global]
+
+  - name: Telstra
+    asn: [1221]
+    match: [telstra]
+
+  - name: Aussie Broadband
+    asn: [4764]
+    match: [aussie broadband, aussie fibre, wideband]

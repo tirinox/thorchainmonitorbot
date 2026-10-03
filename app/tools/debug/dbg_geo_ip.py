@@ -1,10 +1,12 @@
 import asyncio
+import json
 import os
 import random
 
 from eth_utils.humanize import WEEK
 
-from comm.picture.nodes_pictures import NodePictureGenerator
+from comm.localization.languages import Language
+from comm.picture.nodes_card import build_nodes_card, NODES_CHART_PERIOD, NODES_TEMPLATE
 from lib.date_utils import now_ts, DAY, HOUR
 from lib.draw_utils import make_donut_chart
 from lib.geo_ip import GeoIPManager
@@ -115,31 +117,35 @@ def make_random_node_chart(days=31, reverse=True):
             bond *= random.uniform(0.8, 1.2)
 
 
-async def demo_test_new_geo_chart(app: LpAppFramework):
+SAVE_GALLERY_DEMOS = False  # writes renderer/demo/nodes.json and nodes_ru.json from the live data
+
+
+async def demo_nodes_card(app: LpAppFramework):
+    """Renders the node infographic (nodes.jinja2) from the live node set and the saved bond statistics"""
     LpAppFramework.solve_working_dir_mess()
 
-    chart_pts = await NodeChurnNotifier(app.deps).load_last_statistics(NodePictureGenerator.CHART_PERIOD)
+    chart_pts = await NodeChurnNotifier(app.deps).load_last_statistics(NODES_CHART_PERIOD)
     # chart_pts = EXAMPLE_CHAR_PTS
-    # chart_pts = EXAMPLE_CHAR_PTS[5:7]
     # chart_pts = list(make_random_node_chart())
 
-    # infos = await get_ip_infos_pickled(app, 'nodes_new_10.pickle')
     infos = await get_ip_infos_pickled(app)
-    gen = NodePictureGenerator(infos, chart_pts, app.deps.loc_man.default)
+    usd_per_rune = await app.deps.pool_cache.get_usd_per_rune()
 
-    pic = await gen.generate()
+    for lang, demo_name in ((Language.ENGLISH, 'nodes'), (Language.RUSSIAN, 'nodes_ru')):
+        loc = app.deps.loc_man.get_from_lang(lang)
 
-    save_and_show_pic(pic, name='new_node_pic.png')
+        if SAVE_GALLERY_DEMOS:
+            demo = {
+                'template_name': NODES_TEMPLATE,
+                'meta': {'title': 'Nodes: map, providers and bond'},
+                'parameters': build_nodes_card(infos, chart_pts, loc, usd_per_rune),
+            }
+            with open(f'./renderer/demo/{demo_name}.json', 'w') as f:
+                json.dump(demo, f, indent=2, ensure_ascii=False)
+                f.write('\n')
 
-    # usage
-    """
-    node_set_info: NetworkNodeIpInfo
-    churn_notifier: NodeChurnNotifier
-    loc: BaseLocalisation
-    chart_pts = await churn_notifier.load_last_statistics(NodePictureGenerator.CHART_PERIOD)
-    gen = NodePictureGenerator(node_set_info, chart_pts, loc)
-    pic = await gen.generate()
-    """
+        pic, pic_name = await app.deps.alert_presenter.render_nodes(loc, infos, chart_pts, usd_per_rune)
+        save_and_show_pic(pic, name=f'{demo_name}-{pic_name}')
 
 
 async def demo_last_block():
@@ -155,7 +161,7 @@ async def main():
     # await demo_test_parallel_fetch()
     lp_app = LpAppFramework()
     async with lp_app:
-        await demo_test_new_geo_chart(lp_app)
+        await demo_nodes_card(lp_app)
     #     # await demo_last_block()
     #     await demo_test_parallel_fetch()
 

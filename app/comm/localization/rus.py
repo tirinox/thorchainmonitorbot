@@ -948,23 +948,47 @@ class RussianLocalization(BaseLocalization):
     # ------- NETWORK NODES -------
 
     TEXT_PIC_NODES = 'ноды'
-    TEXT_PIC_ACTIVE_NODES = 'Активные'
-    TEXT_PIC_STANDBY_NODES = 'Ожидающие'
-    TEXT_PIC_ALL_NODES = 'Все ноды'
-    TEXT_PIC_NODE_DIVERSITY = 'Распределение нод'
-    TEXT_PIC_NODE_DIVERSITY_SUBTITLE = 'по провайдеру инфраструктуры'
-    TEXT_PIC_OTHERS = 'Другие'
-    TEXT_PIC_UNKNOWN = 'Не известно'
-
-    TEXT_PIC_UNKNOWN_LOCATION = 'Неизвестное положение'
-    TEXT_PIC_CLOUD = 'Облако'
-    TEXT_PIC_COUNTRY = 'Страна'
+    TEXT_PIC_ACTIVE_NODES = 'Активные ноды'
     TEXT_PIC_ACTIVE_BOND = 'Активный бонд'
     TEXT_PIC_TOTAL_NODES = 'Всего нод'
     TEXT_PIC_TOTAL_BOND = 'Общий бонд'
-    TEXT_PIC_MIN_BOND = 'Мин. бонд'
+    TEXT_PIC_STANDBY = 'в ожидании'
+    TEXT_PIC_OF_SUPPLY = 'от эмиссии RUNE'
+    TEXT_PIC_PROVIDERS = 'Провайдеры'
+    TEXT_PIC_COUNTRIES = 'Страны'
+    TEXT_PIC_OF_ACTIVE_NODES = 'активных нод'
+    TEXT_PIC_WORLD = 'Мир'
+    TEXT_PIC_EUROPE = 'Европа'
+    TEXT_PIC_LEGEND_ACTIVE = 'активные ноды, цвет — провайдер'
+    TEXT_PIC_LEGEND_STANDBY = 'ожидающие ноды'
+    TEXT_PIC_OTHERS = 'Другие'
+    TEXT_PIC_UNKNOWN = 'Неизвестно'
+    TEXT_PIC_UNKNOWN_LOCATION = 'Неизвестное положение'
+    TEXT_PIC_NODE_BOND = 'Бонд ноды'
+    TEXT_PIC_MIN_BOND = 'Мин.'
     TEXT_PIC_MEDIAN_BOND = 'Медиана'
-    TEXT_PIC_MAX_BOND = 'Макс'
+    TEXT_PIC_MAX_BOND = 'Макс.'
+    TEXT_PIC_NODES_NOTE = ('Положение и провайдер определены по публичному IP-адресу ноды. '
+                           'Часто это лишь прокси, скрывающий настоящую ноду, '
+                           'которая может быть совсем в другом месте.')
+
+    def text_pic_last_days(self, days):
+        return f'за {days} дн.'
+
+    COUNTRY_NAMES = {
+        'US': 'США', 'CA': 'Канада', 'MX': 'Мексика', 'BR': 'Бразилия', 'AR': 'Аргентина', 'CL': 'Чили',
+        'CO': 'Колумбия', 'GB': 'Великобритания', 'IE': 'Ирландия', 'DE': 'Германия', 'NL': 'Нидерланды',
+        'BE': 'Бельгия', 'LU': 'Люксембург', 'FR': 'Франция', 'ES': 'Испания', 'PT': 'Португалия', 'IT': 'Италия',
+        'CH': 'Швейцария', 'AT': 'Австрия', 'PL': 'Польша', 'CZ': 'Чехия', 'SK': 'Словакия', 'HU': 'Венгрия',
+        'RO': 'Румыния', 'BG': 'Болгария', 'GR': 'Греция', 'RS': 'Сербия', 'HR': 'Хорватия', 'SI': 'Словения',
+        'FI': 'Финляндия', 'SE': 'Швеция', 'NO': 'Норвегия', 'DK': 'Дания', 'IS': 'Исландия', 'LT': 'Литва',
+        'LV': 'Латвия', 'EE': 'Эстония', 'UA': 'Украина', 'MD': 'Молдова', 'BY': 'Беларусь', 'RU': 'Россия',
+        'TR': 'Турция', 'CY': 'Кипр', 'MT': 'Мальта', 'GE': 'Грузия', 'AM': 'Армения', 'KZ': 'Казахстан',
+        'IL': 'Израиль', 'AE': 'ОАЭ', 'SA': 'Саудовская Аравия', 'IN': 'Индия', 'SG': 'Сингапур',
+        'MY': 'Малайзия', 'ID': 'Индонезия', 'TH': 'Таиланд', 'VN': 'Вьетнам', 'PH': 'Филиппины', 'HK': 'Гонконг',
+        'TW': 'Тайвань', 'CN': 'Китай', 'JP': 'Япония', 'KR': 'Южная Корея', 'AU': 'Австралия',
+        'NZ': 'Новая Зеландия', 'ZA': 'ЮАР', 'NG': 'Нигерия', 'KE': 'Кения', 'EG': 'Египет',
+    }
 
     def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False, expand_link=False):
         if expand_link:

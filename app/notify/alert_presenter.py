@@ -7,7 +7,7 @@ from api.w3.token_record import AmountToken
 from comm.localization.manager import BaseLocalization
 from comm.picture.achievement_card import build_achievement_card, achievement_card_filename, ACHIEVEMENT_TEMPLATE
 from comm.picture.block_height_picture import block_speed_chart
-from comm.picture.nodes_pictures import NodePictureGenerator
+from comm.picture.nodes_card import build_nodes_card, nodes_card_filename, NODES_TEMPLATE
 from comm.picture.pools_picture import PoolPictureGenerator
 from comm.picture.price_picture import price_graph_from_db
 from comm.picture.queue_picture import queue_graph
@@ -19,7 +19,6 @@ from lib.constants import THOR_BLOCKS_PER_MINUTE, thor_to_float, THOR_BASIS_POIN
 from lib.date_utils import DAY
 from lib.delegates import INotified
 from lib.depcont import DepContainer
-from lib.draw_utils import img_to_bio
 from lib.html_renderer import InfographicRendererRPC
 from lib.logs import WithLogger
 from lib.texts import shorten_text, shorten_text_middle
@@ -33,7 +32,7 @@ from models.limit_swap import LimitSwapPeriodStats
 from models.memo import THORMemo
 from models.mimir import AlertMimirChange, AlertMimirVoting, MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT
 from models.net_stats import AlertNetworkStats
-from models.node_info import AlertNodeChurn
+from models.node_info import AlertNodeChurn, NetworkNodes
 from models.pool_info import PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.rapid_swap import RapidSwapPeriodStats
@@ -230,6 +229,11 @@ class AlertPresenter(INotified, WithLogger):
             _gen, event
         )
 
+    async def render_nodes(self, loc: BaseLocalization, network_info: NetworkNodes, bond_chart, usd_per_rune=0.0):
+        parameters = build_nodes_card(network_info, bond_chart, loc, usd_per_rune)
+        photo = await self.renderer.render(NODES_TEMPLATE, parameters)
+        return photo, nodes_card_filename()
+
     async def _handle_node_churn(self, event: AlertNodeChurn):
         if event.finished:
             await self.broadcaster.broadcast_to_all(
@@ -237,14 +241,12 @@ class AlertPresenter(INotified, WithLogger):
                 BaseLocalization.notification_text_node_churn_finish,
                 event.changes)
 
-            if event.with_picture:
+            if event.with_picture and self.use_renderer:
                 async def _gen(loc: BaseLocalization):
-                    gen = NodePictureGenerator(event.network_info, event.bond_chart, loc)
-                    # noinspection PyUnresolvedReferences
-                    pic = await gen.generate()
-                    bio_graph = img_to_bio(pic, gen.proper_name())
+                    photo, photo_name = await self.render_nodes(
+                        loc, event.network_info, event.bond_chart, event.usd_per_rune)
                     caption = loc.PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION
-                    return BoardMessage.make_photo(bio_graph, caption)
+                    return BoardMessage.make_photo(photo, caption, photo_name)
 
                 await self.broadcaster.broadcast_to_all(
                     "public:node_churn:finish:picture",

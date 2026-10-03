@@ -1,0 +1,788 @@
+{% set _width, _height = set_viewport_size(1600, 1350) %}
+{% extends "base.jinja2" %}
+
+{#
+  THORChain nodes: where the active nodes are (the world and Europe closer), whose servers they run on,
+  the bond of the last month and the bond of a node.
+  Parameters come localized from comm/picture/nodes_card.py: build_nodes_card.
+  The maps are drawn by the script below: the land comes as dots from static/js/world_land.js,
+  the nodes that are too close to each other on a map are merged into a cluster.
+#}
+
+{% block extra_head %}
+<script src="renderer/static/js/world_land.js?r=1"></script>
+{% endblock %}
+
+{% block content %}
+{% set providers = providers or [] %}
+{% set countries = countries or [] %}
+{% set points    = points or [] %}
+{% set chart     = chart or [] %}
+{% set bond      = bond or {} %}
+{% set palette   = ['#33FF99', '#23DCC8', '#f5c518', '#7aa2ff', '#ff7f8a', '#c58bff'] %}
+{% set others_color = '#7b96a0' %}
+{% set price     = usd_per_rune | default(0) | float %}
+{% set other_nodes = [total_nodes - active_nodes - standby_nodes, 0] | max %}
+
+{% macro color_of(ci) -%}
+  {{- palette[ci] if ci is not none and ci >= 0 and ci < (palette | length) else others_color -}}
+{%- endmacro %}
+
+{% macro pct(v) -%}
+  {{- '%.1f' | format(v | float) }}%
+{%- endmacro %}
+
+{% macro bond_sub(rune, percent) -%}
+  {%- if price -%}<b>{{ short_dollar(rune * price) }}</b> · {% endif -%}
+  <b>{{ pct(percent) }}</b> {{ t.of_supply }}
+{%- endmacro %}
+
+<style>
+  /* ── diversity pill ──────────────────────────────────── */
+  .diversity-pill {
+    position: absolute;
+    top: 34px; right: 30px;
+    display: flex; gap: 0;
+    padding: 12px 6px;
+    border-radius: 14px;
+    background: rgba(18,34,37,.85);
+    border: 1px solid rgba(55,255,173,.16);
+  }
+  .diversity-cell { padding: 0 24px; text-align: center; border-right: 1px solid rgba(255,255,255,.08); }
+  .diversity-cell:last-child { border-right: none; }
+  .diversity-num { font-size: 36px; font-weight: 800; color: #fff; line-height: 1; }
+  .diversity-label { font-size: 16px; color: #97b8b0; text-transform: uppercase; letter-spacing: .1em; margin-top: 5px; }
+
+  /* ── main layout ─────────────────────────────────────── */
+  .layout {
+    position: absolute;
+    top: 140px; left: 30px; right: 30px; bottom: 50px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  /* ── stat cards ──────────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .card {
+    padding: 18px 22px 16px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(18,29,35,.94), rgba(10,16,21,.95));
+    border: 1px solid rgba(255,255,255,.05);
+  }
+  .card-title {
+    color: #91a3a9; font-size: 19px; text-transform: uppercase;
+    letter-spacing: .14em; font-weight: 400; margin-bottom: 9px; white-space: nowrap;
+  }
+  .card-value {
+    color: #fff; font-size: 54px; font-weight: 800; line-height: 1; white-space: nowrap;
+    text-shadow: rgba(35,220,200,.14) 0 0 16px;
+  }
+  .card-value.accent { color: #33FF99; text-shadow: rgba(51,255,153,.25) 0 0 18px; }
+  .card-sub { margin-top: 9px; font-size: 21px; color: #9eb3ba; white-space: nowrap; }
+  .card-sub b { color: #dbe6ea; font-weight: 700; }
+
+  .panel {
+    border-radius: 20px; padding: 18px 22px 16px;
+    background: linear-gradient(180deg, rgba(15,24,30,.97), rgba(9,14,19,.98));
+    border: 1px solid rgba(255,255,255,.05);
+    min-height: 0; min-width: 0;
+  }
+  .panel-title {
+    color: #fff; font-size: 25px; font-weight: 800;
+    letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; white-space: nowrap;
+  }
+  .panel-title small { font-size: 17px; color: #8ea4ab; font-weight: 400; margin-left: 8px; letter-spacing: .06em; }
+
+  /* ── maps ────────────────────────────────────────────── */
+  .map-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 520px;
+    gap: 16px; height: 400px; flex-shrink: 0;
+  }
+  .map-panel {
+    position: relative; padding: 0; overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 90% at 50% 45%, rgba(0,120,160,.20), transparent 75%),
+      linear-gradient(180deg, rgba(15,24,30,.97), rgba(9,14,19,.98));
+  }
+  .map-panel canvas, .map-panel svg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+  .map-title {
+    position: absolute; top: 13px; left: 20px;
+    color: #fff; font-size: 21px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase;
+    text-shadow: 0 0 10px #0a1015, 0 0 4px #0a1015;
+  }
+  .map-legend {
+    position: absolute; left: 18px; bottom: 11px;
+    display: flex; gap: 20px; align-items: center;
+    font-size: 17px; color: #a9bcc2; text-shadow: 0 0 8px #0a1015, 0 0 3px #0a1015;
+    white-space: nowrap;
+  }
+  .map-legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend-swatches { display: inline-flex; }
+  .legend-swatches i {
+    width: 13px; height: 13px; border-radius: 50%; margin-left: -4px; border: 1.5px solid #0a1015;
+  }
+  .legend-swatches i:first-child { margin-left: 0; }
+  .legend-standby {
+    width: 8px; height: 8px; border-radius: 50%;
+    border: 1.3px solid rgba(190,210,216,.7); background: rgba(10,16,21,.6);
+  }
+  .map-unknown {
+    position: absolute; right: 16px; bottom: 10px;
+    padding: 4px 12px; border-radius: 999px;
+    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+    font-size: 17px; color: #c9d6da; white-space: nowrap;
+  }
+  .map-unknown b { color: #fff; }
+
+  .cluster { filter: drop-shadow(0 0 5px rgba(0,0,0,.7)); }
+  .cluster-count { fill: #fff; font-weight: 800; text-anchor: middle; }
+  .city-label {
+    fill: #e3ecee; font-weight: 600;
+    stroke: #0a1015; stroke-width: 4px; stroke-linejoin: round; paint-order: stroke;
+  }
+  .city-label.minor { fill: #a9bcc2; font-weight: 400; }
+  .zoom-frame { fill: rgba(255,255,255,.025); stroke: rgba(255,255,255,.28); stroke-width: 1.5; stroke-dasharray: 6 5; }
+
+  /* ── the note about proxies ──────────────────────────── */
+  .note {
+    display: flex; gap: 10px; align-items: baseline; justify-content: center;
+    font-size: 18.5px; line-height: 1.25; color: #8a9da3; font-style: italic; text-align: center;
+    margin: -4px 10px -4px;
+  }
+  .note-sign { color: #f5c518; font-style: normal; font-weight: 800; }
+
+  /* ── content row ─────────────────────────────────────── */
+  .content-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, .94fr) minmax(0, 1.1fr);
+    gap: 16px; flex: 1; min-height: 0;
+  }
+  .panel-shell { display: flex; flex-direction: column; }
+
+  /* providers: a donut and its legend */
+  .provider-body { display: flex; gap: 16px; align-items: center; flex: 1; min-height: 0; }
+  .donut { width: 150px; height: 150px; flex-shrink: 0; }
+  .donut-num { fill: #fff; font-size: 44px; font-weight: 800; text-anchor: middle; }
+
+  .rank-list { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; justify-content: center; }
+  .rank-row {
+    display: grid; align-items: center; gap: 9px;
+    grid-template-columns: 14px minmax(0, 1fr) auto 56px;
+    padding: 5px 9px 5px 9px; border-radius: 10px;
+    background: rgba(255,255,255,.03);
+    font-size: 21px; white-space: nowrap;
+  }
+  .rank-swatch { width: 14px; height: 14px; border-radius: 4px; }
+  .rank-name { color: #fff; font-weight: 700; overflow: hidden; text-overflow: ellipsis; }
+  .rank-row.other .rank-name { color: #8ea4ab; font-style: italic; font-weight: 400; }
+  .rank-count { color: #fff; font-weight: 800; text-align: right; }
+  .rank-pct { color: #8ea4ab; font-size: 18px; text-align: right; }
+
+  /* countries: flags and a bar behind each row */
+  .country-list { flex: 1; }
+  .country-row { grid-template-columns: 30px minmax(0, 1fr) auto 56px; padding-left: 10px; }
+  .country-flag { font-size: 23px; line-height: 1; text-align: center; }
+  .country-flag.none { font-size: 16px; color: #8ea4ab; font-weight: 700; }
+
+  /* ── chart ───────────────────────────────────────────── */
+  .legend-row  { display: flex; gap: 20px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 8px; color: #b4c4c9; font-size: 18px; white-space: nowrap; }
+  .legend-line { width: 22px; height: 4px; border-radius: 2px; flex-shrink: 0; }
+  .chart-wrap  { flex: 1; position: relative; min-height: 0; }
+  .empty-state {
+    color: #637870; font-size: 22px; margin: auto;
+    text-align: center; text-transform: uppercase; letter-spacing: .06em;
+  }
+
+  /* ── bond of a node ──────────────────────────────────── */
+  .bond-strip {
+    display: grid; grid-template-columns: auto minmax(0, 1fr);
+    align-items: center; gap: 30px;
+    padding: 12px 34px 12px 22px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(18,29,35,.94), rgba(10,16,21,.95));
+    border: 1px solid rgba(55,255,173,.16);
+    flex-shrink: 0;
+  }
+  .strip-badge {
+    display: flex; flex-direction: column; gap: 3px;
+    padding-right: 28px; border-right: 1px solid rgba(255,255,255,.07);
+    white-space: nowrap;
+  }
+  .strip-title { color: #33FF99; font-size: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; }
+  .strip-hint { font-size: 17px; color: #8ea4ab; }
+  .strip-hint b { color: #dbe6ea; font-weight: 700; }
+
+  .ruler { position: relative; height: 84px; }
+  .ruler.with-below { height: 110px; }  /* a line more for the median under the scale */
+  .ruler-line {
+    position: absolute; left: 0; right: 0; top: 56px; height: 4px; border-radius: 2px;
+    background: linear-gradient(90deg, rgba(35,220,200,.55), rgba(51,255,153,.55));
+  }
+  .ruler-tick {
+    position: absolute; top: 46px; width: 3px; height: 24px; margin-left: -1.5px; border-radius: 2px;
+    background: rgba(51,255,153,.42);
+  }
+  .ruler-mark { position: absolute; top: 39px; width: 4px; height: 38px; margin-left: -2px; border-radius: 2px; background: #fff; }
+  .ruler-mark.median { background: #f5c518; box-shadow: 0 0 12px rgba(245,197,24,.6); }
+  .ruler-label { position: absolute; top: 0; white-space: nowrap; line-height: 1.1; }
+  .ruler-label.median-below { top: 81px; }
+  .ruler-caption { font-size: 15px; color: #9eb3ba; text-transform: uppercase; letter-spacing: .1em; }
+  .ruler-value { font-size: 26px; font-weight: 800; color: #fff; }
+  .ruler-label.median .ruler-caption { color: #f5c518; }
+  .ruler-label.inline { display: flex; gap: 9px; align-items: baseline; }
+</style>
+
+{# ── header ───────────────────────────────────────────────── #}
+{% with title=t.title %}
+  {% include "components/header.jinja2" %}
+{% endwith %}
+
+<div class="diversity-pill shadow-box">
+  <div class="diversity-cell">
+    <div class="diversity-num">{{ country_count }}</div>
+    <div class="diversity-label">{{ t.countries }}</div>
+  </div>
+  <div class="diversity-cell">
+    <div class="diversity-num">{{ provider_count }}</div>
+    <div class="diversity-label">{{ t.providers }}</div>
+  </div>
+</div>
+
+<div class="layout">
+
+  {# ── stat cards ────────────────────────────────────────── #}
+  <div class="stats-grid">
+    <div class="card shadow-box">
+      <div class="card-title">✅ {{ t.active_nodes }}</div>
+      <div class="card-value accent">{{ active_nodes }}</div>
+      <div class="card-sub">+ <b>{{ standby_nodes }}</b> {{ t.standby }}</div>
+    </div>
+    <div class="card shadow-box">
+      <div class="card-title">🔐 {{ t.active_bond }}</div>
+      <div class="card-value">{{ short_rune(active_bond) }}</div>
+      <div class="card-sub">{{ bond_sub(active_bond, active_bond_percent) }}</div>
+    </div>
+    <div class="card shadow-box">
+      <div class="card-title">🖥 {{ t.total_nodes }}</div>
+      <div class="card-value">{{ total_nodes }}</div>
+      <div class="card-sub">✅ <b>{{ active_nodes }}</b> · ⏳ <b>{{ standby_nodes }}</b>{% if other_nodes %} · 💤 <b>{{ other_nodes }}</b>{% endif %}</div>
+    </div>
+    <div class="card shadow-box">
+      <div class="card-title">💰 {{ t.total_bond }}</div>
+      <div class="card-value">{{ short_rune(total_bond) }}</div>
+      <div class="card-sub">{{ bond_sub(total_bond, total_bond_percent) }}</div>
+    </div>
+  </div>
+
+  {# ── maps ──────────────────────────────────────────────── #}
+  <div class="map-row">
+    <div class="panel map-panel shadow-box" id="world-map">
+      <canvas></canvas>
+      <svg xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="map-title">🌍 {{ t.world }}</div>
+      <div class="map-legend">
+        <span>
+          <span class="legend-swatches">
+            {% for p in providers[:4] %}<i style="background: {{ color_of(p.ci) }}"></i>{% endfor %}
+          </span>
+          {{ t.legend_active }}
+        </span>
+        {% if points | selectattr('standby') | list %}
+          <span><i class="legend-standby"></i>{{ t.legend_standby }}</span>
+        {% endif %}
+      </div>
+      {% if unknown_location %}
+        <div class="map-unknown">❔ {{ t.unknown_location }}: <b>{{ unknown_location }}</b></div>
+      {% endif %}
+    </div>
+    <div class="panel map-panel shadow-box" id="europe-map">
+      <canvas></canvas>
+      <svg xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="map-title">🔎 {{ t.europe }}</div>
+    </div>
+  </div>
+
+  <div class="note"><span class="note-sign">ⓘ</span><span>{{ t.note }}</span></div>
+
+  {# ── providers, countries, bond chart ──────────────────── #}
+  <div class="content-row">
+
+    <div class="panel panel-shell shadow-box">
+      <div class="panel-title">☁️ {{ t.providers }} <small>{{ t.of_active_nodes }}</small></div>
+      {% if providers %}
+        <div class="provider-body">
+          <svg class="donut" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="62" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="24"/>
+            {% set acc = namespace(v=0.0) %}
+            {% for p in providers %}
+              {% set share = p.percent | float %}
+              {% set gap = 0.7 if providers | length > 1 else 0 %}
+              <circle cx="80" cy="80" r="62" fill="none" stroke="{{ color_of(p.ci) }}" stroke-width="24"
+                      pathLength="100" stroke-dasharray="{{ [share - gap, 0.2] | max }} {{ 100 - ([share - gap, 0.2] | max) }}"
+                      stroke-dashoffset="{{ -acc.v }}" transform="rotate(-90 80 80)"/>
+              {% set acc.v = acc.v + share %}
+            {% endfor %}
+            <text class="donut-num" x="80" y="95">{{ provider_count }}</text>
+          </svg>
+          <div class="rank-list">
+            {% for p in providers %}
+              <div class="rank-row {{ 'other' if p.other }}">
+                <i class="rank-swatch" style="background: {{ color_of(p.ci) }}"></i>
+                <span class="rank-name">{{ p.name }}</span>
+                <span class="rank-count">{{ p.count }}</span>
+                <span class="rank-pct">{{ pct(p.percent) }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-state">—</div>
+      {% endif %}
+    </div>
+
+    <div class="panel panel-shell shadow-box">
+      <div class="panel-title">🌐 {{ t.countries }} <small>{{ t.of_active_nodes }}</small></div>
+      {% if countries %}
+        {% set max_count = countries | rejectattr('other') | map(attribute='count') | max | default(1) %}
+        <div class="rank-list country-list">
+          {% for c in countries %}
+            {% set fill = [(c.count / max_count * 100) if max_count else 0, 100] | min %}
+            <div class="rank-row country-row {{ 'other' if c.other }}"
+                 {% if not c.other %}style="background: linear-gradient(90deg, rgba(35,220,200,.20) {{ fill }}%, rgba(255,255,255,.03) {{ fill }}%)"{% endif %}>
+              {% if c.flag %}
+                <span class="country-flag">{{ c.flag }}</span>
+              {% else %}
+                <span class="country-flag none">{{ '···' if c.other else '?' }}</span>
+              {% endif %}
+              <span class="rank-name">{{ c.name }}</span>
+              <span class="rank-count">{{ c.count }}</span>
+              <span class="rank-pct">{{ pct(c.percent) }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">—</div>
+      {% endif %}
+    </div>
+
+    <div class="panel panel-shell shadow-box">
+      <div class="panel-title">📈 {{ t.active_bond }} <small>{{ t.last_days }}</small></div>
+      {% if chart | length >= 2 %}
+        <div class="legend-row">
+          <div class="legend-item"><div class="legend-line" style="background: #33FF99"></div>{{ t.active_bond }}</div>
+          <div class="legend-item"><div class="legend-line" style="background: #00CCFF"></div>{{ t.active_nodes }}</div>
+        </div>
+        <div class="chart-wrap"><canvas id="bondChart"></canvas></div>
+      {% else %}
+        <div class="empty-state">—</div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  {# ── bond of a node: from the smallest to the biggest, a tick per active node ── #}
+  {% set bond_min = bond.min | default(0) | float %}
+  {% set bond_max = bond.max | default(0) | float %}
+  {% set span = bond_max - bond_min %}
+  {% macro pos(v) -%}
+    {{- ((v | float) - bond_min) / span * 100 if span > 0 else 50 -}}
+  {%- endmacro %}
+  {% set median_pos = pos(bond.median | default(0)) | float %}
+  {# next to an end the median goes under the line, not to run into the label of that end #}
+  {% set median_below = median_pos < 22 or median_pos > 78 %}
+  <div class="bond-strip shadow-box">
+    <div class="strip-badge">
+      <div class="strip-title">🔐 {{ t.node_bond }}</div>
+      <div class="strip-hint">{{ t.active_nodes }}: <b>{{ active_nodes }}</b></div>
+    </div>
+    <div class="ruler {{ 'with-below' if median_below and bond['values'] }}">
+      <div class="ruler-line"></div>
+      {% for b in bond['values'] or [] %}
+        <i class="ruler-tick" style="left: {{ pos(b) }}%"></i>
+      {% endfor %}
+      {% if bond['values'] %}
+        <i class="ruler-mark" style="left: 0"></i>
+        <i class="ruler-mark" style="left: 100%"></i>
+        <i class="ruler-mark median" style="left: {{ median_pos }}%"></i>
+
+        <div class="ruler-label inline" style="left: 0">
+          <span class="ruler-caption">{{ t.min_bond }}</span>
+          <span class="ruler-value">{{ short_rune(bond.min) }}</span>
+        </div>
+        <div class="ruler-label inline" style="right: 0">
+          <span class="ruler-caption">{{ t.max_bond }}</span>
+          <span class="ruler-value">{{ short_rune(bond.max) }}</span>
+        </div>
+        <div class="ruler-label inline median {{ 'median-below' if median_below }}"
+             style="left: {{ median_pos }}%; transform: translateX({{ '-12%' if median_pos < 22 else ('-88%' if median_pos > 78 else '-50%') }})">
+          <span class="ruler-caption">{{ t.median_bond }}</span>
+          <span class="ruler-value">{{ short_rune(bond.median) }}</span>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    const PALETTE = {{ palette | tojson }};
+    const OTHERS_COLOR = '{{ others_color }}';
+    const POINTS = {{ points | tojson }};
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const FONT_FAMILY = 'ThorFontLight, sans-serif';
+    const DARK = '#0a1015';
+
+    const colorOf = ci => (ci >= 0 && ci < PALETTE.length) ? PALETTE[ci] : OTHERS_COLOR;
+
+    // ── land ────────────────────────────────────────────────
+    const land = (typeof WORLD_LAND !== 'undefined') ? WORLD_LAND : {w: 1, h: 1, bits: ''};
+    const landBits = Uint8Array.from(atob(land.bits), ch => ch.charCodeAt(0));
+
+    function isLand(lon, lat) {
+      const j = Math.floor((90 - lat) / 180 * land.h);
+      if (j < 0 || j >= land.h) return false;
+      const i = ((Math.floor((lon + 180) / 360 * land.w) % land.w) + land.w) % land.w;
+      const n = j * land.w + i;
+      return (landBits[n >> 3] & (0x80 >> (n & 7))) !== 0;
+    }
+
+    // ── views: degrees to pixels of a panel ─────────────────
+    // "stretch" is how much taller a degree of latitude is than a degree of longitude: at the latitudes
+    // of Europe it undoes the flattening of the plain projection
+    const EUROPE_BOUNDS = {lon0: -12, lon1: 42, latTop: 63.6, stretch: 1 / Math.cos(50 * Math.PI / 180)};
+    const WORLD_BOUNDS = {lon0: -150, lon1: 170, latTop: 75, stretch: 1};
+
+    function makeView(panel, bounds) {
+      const w = panel.clientWidth, h = panel.clientHeight;
+      const sx = w / (bounds.lon1 - bounds.lon0), sy = sx * bounds.stretch;
+      const latBottom = bounds.latTop - h / sy;
+      return {
+        w, h, sx, sy, lon0: bounds.lon0, lon1: bounds.lon1, latTop: bounds.latTop, latBottom,
+        x: lon => (lon - bounds.lon0) * sx,
+        y: lat => (bounds.latTop - lat) * sy,
+        has: (lon, lat) => lon >= bounds.lon0 && lon <= bounds.lon1 && lat <= bounds.latTop && lat >= latBottom,
+      };
+    }
+
+    function drawLand(canvas, view, pitch) {
+      canvas.width = view.w;
+      canvas.height = view.h;
+      const c = canvas.getContext('2d');
+      c.fillStyle = 'rgba(140, 200, 214, .46)';
+      const r = pitch * 0.31;
+      for (let cy = pitch / 2; cy < view.h; cy += pitch) {
+        for (let cx = pitch / 2; cx < view.w; cx += pitch) {
+          if (isLand(view.lon0 + cx / view.sx, view.latTop - cy / view.sy)) {
+            c.beginPath();
+            c.arc(cx, cy, r, 0, Math.PI * 2);
+            c.fill();
+          }
+        }
+      }
+    }
+
+    // ── clusters ────────────────────────────────────────────
+    const CLUSTER_GAP = 3;  // px that stay between two bubbles
+    const radius = n => n <= 1 ? 6.5 : 9.5 + 3.1 * Math.sqrt(n);
+
+    // the pair of one country that overlaps most is merged, until no bubbles of a country touch;
+    // bubbles of different countries are never merged (Toronto is not the US), they are moved apart
+    function clusterize(items, byCountry) {
+      const clusters = items.map(p => ({x: p.x, y: p.y, n: p.n, cc: p.cc || '', members: [p]}));
+      for (; ;) {
+        let best = null;
+        for (let i = 0; i < clusters.length; i++) {
+          for (let j = i + 1; j < clusters.length; j++) {
+            const a = clusters[i], b = clusters[j];
+            if (a.cc !== b.cc) continue;
+            const overlap = radius(a.n) + radius(b.n) + CLUSTER_GAP - Math.hypot(a.x - b.x, a.y - b.y);
+            if (overlap > 0 && (!best || overlap > best.overlap)) best = {i, j, overlap};
+          }
+        }
+        if (!best) break;
+        const a = clusters[best.i], b = clusters[best.j], n = a.n + b.n;
+        clusters[best.i] = {
+          x: (a.x * a.n + b.x * b.n) / n, y: (a.y * a.n + b.y * b.n) / n, n, cc: a.cc,
+          members: a.members.concat(b.members),
+        };
+        clusters.splice(best.j, 1);
+      }
+
+      // neighbors of different countries: the smaller one gives way more
+      for (let pass = 0; pass < 40; pass++) {
+        let moved = false;
+        for (let i = 0; i < clusters.length; i++) {
+          for (let j = i + 1; j < clusters.length; j++) {
+            const a = clusters[i], b = clusters[j];
+            let dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+            const overlap = radius(a.n) + radius(b.n) + CLUSTER_GAP - d;
+            if (overlap <= 0.1) continue;
+            if (d < 0.01) { dx = 1; dy = 0; d = 1; }
+            const shareA = b.n / (a.n + b.n), ux = dx / d, uy = dy / d;
+            a.x -= ux * overlap * shareA; a.y -= uy * overlap * shareA;
+            b.x += ux * overlap * (1 - shareA); b.y += uy * overlap * (1 - shareA);
+            moved = true;
+          }
+        }
+        if (!moved) break;
+      }
+
+      for (const cl of clusters) {
+        cl.r = radius(cl.n);
+        const segments = new Map(), cities = new Map();
+        for (const m of cl.members) {
+          for (const [ci, count] of m.seg) segments.set(ci, (segments.get(ci) || 0) + count);
+          if (m.city) cities.set(m.city, (cities.get(m.city) || 0) + m.n);
+        }
+        // the colors of the palette in their order, "others" last
+        cl.segments = [...segments.entries()].sort((s1, s2) => (s1[0] < 0) - (s2[0] < 0) || s1[0] - s2[0]);
+        const ranked = [...cities.entries()].sort((c1, c2) => c2[1] - c1[1]);
+        // several cities: the far view names their country, the close one the main city
+        const country = cl.members[0].country;
+        cl.label = !ranked.length ? '' : ranked.length === 1 ? ranked[0][0]
+          : (byCountry && country) ? country : ranked[0][0] + ' +' + (ranked.length - 1);
+      }
+      return clusters.sort((c1, c2) => c2.n - c1.n);
+    }
+
+    // ── drawing ─────────────────────────────────────────────
+    function el(name, attrs, text) {
+      const node = document.createElementNS(SVG_NS, name);
+      for (const key in attrs) node.setAttribute(key, attrs[key]);
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    const measureCtx = document.createElement('canvas').getContext('2d');
+
+    function textWidth(text, size, weight) {
+      measureCtx.font = `${weight} ${size}px ${FONT_FAMILY}`;
+      return measureCtx.measureText(text).width;
+    }
+
+    const intersects = (a, b) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+    function drawCluster(svg, cl) {
+      const g = el('g', {class: 'cluster', transform: `translate(${cl.x.toFixed(1)} ${cl.y.toFixed(1)})`});
+      if (cl.n <= 1) {
+        g.append(el('circle', {r: cl.r, fill: colorOf(cl.segments[0][0]), stroke: DARK, 'stroke-width': 2.5}));
+      } else {
+        const ring = Math.max(5, cl.r * 0.3), ringR = cl.r - ring / 2;
+        const gap = cl.segments.length > 1 ? 1.6 : 0;
+        g.append(el('circle', {r: cl.r + 1.5, fill: DARK}));
+        g.append(el('circle', {r: cl.r - ring + 0.5, fill: '#101c23'}));
+        let acc = 0;
+        for (const [ci, count] of cl.segments) {
+          const share = count / cl.n * 100, dash = Math.max(share - gap, 0.5);
+          g.append(el('circle', {
+            r: ringR, fill: 'none', stroke: colorOf(ci), 'stroke-width': ring, pathLength: 100,
+            'stroke-dasharray': `${dash} ${100 - dash}`, 'stroke-dashoffset': -acc, transform: 'rotate(-90)',
+          }));
+          acc += share;
+        }
+        const size = Math.min(Math.max(cl.r * 0.82, 13), 26);
+        g.append(el('text', {class: 'cluster-count', y: size * 0.35, 'font-size': size}, cl.n));
+      }
+      svg.append(g);
+    }
+
+    // a place for the label around the bubble that runs into nothing; no label if there is none
+    function placeLabel(cl, text, size, weight, view, obstacles) {
+      const w = textWidth(text, size, weight), h = size * 1.15, pad = 6, d = cl.r * 0.72;
+      const candidates = [
+        {x: cl.x + cl.r + pad, y: cl.y - h / 2},          // right
+        {x: cl.x - cl.r - pad - w, y: cl.y - h / 2},      // left
+        {x: cl.x - w / 2, y: cl.y - cl.r - pad - h},      // above
+        {x: cl.x - w / 2, y: cl.y + cl.r + pad},          // below
+        {x: cl.x + d + pad, y: cl.y - d - h},             // corners
+        {x: cl.x + d + pad, y: cl.y + d},
+        {x: cl.x - d - pad - w, y: cl.y - d - h},
+        {x: cl.x - d - pad - w, y: cl.y + d},
+      ];
+      for (const c of candidates) {
+        const box = {x: c.x - 2, y: c.y - 1, w: w + 4, h: h + 2};
+        const inside = box.x >= 4 && box.y >= 4 && box.x + box.w <= view.w - 4 && box.y + box.h <= view.h - 4;
+        if (inside && !obstacles.some(o => o !== cl.box && intersects(box, o))) {
+          return {x: c.x, y: c.y + h * 0.78, box};
+        }
+      }
+      return null;
+    }
+
+    function relativeBox(node, panel) {
+      const a = node.getBoundingClientRect(), b = panel.getBoundingClientRect();
+      return {x: a.left - b.left - 6, y: a.top - b.top - 4, w: a.width + 12, h: a.height + 8};
+    }
+
+    function drawMap(panel, bounds, opts) {
+      const view = makeView(panel, bounds);
+      const svg = panel.querySelector('svg');
+      svg.setAttribute('viewBox', `0 0 ${view.w} ${view.h}`);
+      drawLand(panel.querySelector('canvas'), view, opts.pitch);
+
+      const margin = 12;
+      const project = p => ({
+        ...p,
+        x: Math.min(Math.max(view.x(p.lon), margin), view.w - margin),
+        y: Math.min(Math.max(view.y(p.lat), margin), view.h - margin),
+      });
+      // the world shows everything, a node off the map sticks to its edge; a closer view shows only its own
+      const visible = POINTS.filter(p => opts.clamp || view.has(p.lon, p.lat)).map(project);
+
+      // what the closer view shows in detail is one group here, whatever the country
+      if (opts.frame) for (const p of visible) if (opts.frame.has(p.lon, p.lat)) p.cc = '*frame';
+      const clusters = clusterize(visible.filter(p => p.n > 0), opts.byCountry);
+      for (const cl of clusters) cl.box = {x: cl.x - cl.r, y: cl.y - cl.r, w: cl.r * 2, h: cl.r * 2};
+
+      let frame = null;
+      if (opts.frame) {
+        const f = opts.frame;
+        frame = {x: view.x(f.lon0), y: view.y(f.latTop), w: view.x(f.lon1) - view.x(f.lon0), h: view.y(f.latBottom) - view.y(f.latTop)};
+        svg.append(el('rect', {class: 'zoom-frame', x: frame.x, y: frame.y, width: frame.w, height: frame.h, rx: 6}));
+      }
+
+      // standby nodes: dim dots, where no bubble covers them
+      for (const p of visible) {
+        if (p.standby > 0 && !clusters.some(cl => Math.hypot(cl.x - p.x, cl.y - p.y) < cl.r + 4)) {
+          svg.append(el('circle', {
+            cx: p.x.toFixed(1), cy: p.y.toFixed(1), r: 3,
+            fill: 'rgba(10,16,21,.6)', stroke: 'rgba(190,210,216,.55)', 'stroke-width': 1.3,
+          }));
+        }
+      }
+
+      for (const cl of clusters) drawCluster(svg, cl);
+
+      // labels: the biggest clusters choose first
+      const obstacles = clusters.map(cl => cl.box);
+      panel.querySelectorAll('.map-title, .map-legend, .map-unknown').forEach(node => obstacles.push(relativeBox(node, panel)));
+      for (const cl of clusters) {
+        if (!cl.label) continue;
+        // what is inside the frame is named on the closer view
+        if (frame && intersects(cl.box, frame)) continue;
+        const minor = cl.n <= 1;
+        const size = minor ? opts.fontSize - 1.5 : opts.fontSize, weight = minor ? 400 : 600;
+        const place = placeLabel(cl, cl.label, size, weight, view, obstacles);
+        if (place) {
+          svg.append(el('text', {
+            class: 'city-label' + (minor ? ' minor' : ''), x: place.x.toFixed(1), y: place.y.toFixed(1),
+            'font-size': size,
+          }, cl.label));
+          obstacles.push(place.box);
+        }
+      }
+      return view;
+    }
+
+    function drawMaps() {
+      const europe = drawMap(document.getElementById('europe-map'), EUROPE_BOUNDS, {pitch: 7, fontSize: 17, clamp: false});
+      drawMap(document.getElementById('world-map'), WORLD_BOUNDS, {pitch: 5, fontSize: 16.5, clamp: true, frame: europe, byCountry: true});
+    }
+
+    // the labels are measured, so the font has to be there
+    const fontsReady = document.fonts
+      ? Promise.all([document.fonts.load(`600 17px ${FONT_FAMILY}`), document.fonts.load(`400 17px ${FONT_FAMILY}`)])
+      : Promise.resolve();
+    fontsReady.then(drawMaps, drawMaps);
+  })();
+</script>
+
+{% if chart | length >= 2 %}
+<script>
+  (function () {
+    const points = {{ chart | tojson }};
+    const pad = n => String(n).padStart(2, '0');
+    const DAY = 86400000;
+    const bond = points.map(p => ({x: p.ts * 1000, y: p.bond}));
+    const nodes = points.map(p => ({x: p.ts * 1000, y: p.nodes}));
+    const xMin = bond[0].x, xMax = bond[bond.length - 1].x;
+
+    // ticks at UTC midnights, about six of them
+    const stepDays = Math.max(1, Math.round((xMax - xMin) / DAY / 6));
+    const ticks = [];
+    for (let t = Math.ceil(xMin / DAY) * DAY; t <= xMax; t += stepDays * DAY) ticks.push({value: t});
+
+    const trim = (v, digits) => v.toFixed(digits).replace(/\.0+$/, '');
+    const shortRune = v => {
+      const a = Math.abs(v);
+      if (a >= 1e9) return trim(v / 1e9, 1) + 'Bᚱ';
+      if (a >= 1e6) return trim(v / 1e6, 1) + 'Mᚱ';
+      if (a >= 1e3) return trim(v / 1e3, 0) + 'Kᚱ';
+      return v + 'ᚱ';
+    };
+
+    // an axis of round numbers with some room above and below the line
+    function niceAxis(values, steps, integer) {
+      let lo = Math.min(...values), hi = Math.max(...values);
+      if (hi <= lo) { lo *= 0.95; hi = hi * 1.05 + 1; }
+      const raw = (hi - lo) / steps, mag = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / mag;
+      let step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * mag;
+      if (integer) step = Math.max(1, Math.round(step));
+      let min = Math.floor(lo / step) * step, max = Math.ceil(hi / step) * step;
+      if (lo - min < step * 0.3) min -= step;
+      if (max - hi < step * 0.3) max += step;
+      return {min: Math.max(min, 0), max, step};
+    }
+    const bondAxis = niceAxis(bond.map(p => p.y), 3, false);
+    const nodeAxis = niceAxis(nodes.map(p => p.y), 3, true);
+
+    Chart.defaults.font.family = 'ThorFontLight, sans-serif';
+    Chart.defaults.color = '#b7c8cc';
+
+    const ctx = document.getElementById('bondChart').getContext('2d');
+    const fill = ctx.createLinearGradient(0, 0, 0, 300);
+    fill.addColorStop(0, 'rgba(51,255,153,.30)');
+    fill.addColorStop(1, 'rgba(51,255,153,.02)');
+
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [
+          {
+            data: nodes, yAxisID: 'yNodes', stepped: 'before',
+            borderColor: '#00CCFF', borderWidth: 2.5, pointRadius: 0, borderDash: [7, 5],
+          },
+          {
+            data: bond, yAxisID: 'yBond', stepped: 'before',
+            borderColor: '#33FF99', borderWidth: 3, pointRadius: 0, fill: true, backgroundColor: fill,
+          },
+        ]
+      },
+      options: {
+        maintainAspectRatio: false, responsive: true, animation: false,
+        layout: {padding: {top: 4}},
+        plugins: {legend: {display: false}, tooltip: {enabled: false}},
+        scales: {
+          x: {
+            type: 'linear', min: xMin, max: xMax,
+            grid: {display: false},
+            afterBuildTicks: axis => { axis.ticks = ticks; },
+            ticks: {
+              color: '#9db0b5', font: {size: 16}, maxRotation: 0,
+              callback: ms => { const d = new Date(ms); return pad(d.getUTCDate()) + '.' + pad(d.getUTCMonth() + 1); },
+            },
+          },
+          yBond: {
+            position: 'left', min: bondAxis.min, max: bondAxis.max,
+            grid: {color: 'rgba(255,255,255,.07)'},
+            ticks: {color: '#8fe6bc', font: {size: 17}, stepSize: bondAxis.step, callback: v => shortRune(v)},
+          },
+          yNodes: {
+            position: 'right', min: nodeAxis.min, max: nodeAxis.max,
+            grid: {drawOnChartArea: false},
+            ticks: {color: '#6fdcff', font: {size: 17}, stepSize: nodeAxis.step, precision: 0},
+          },
+        },
+      },
+    });
+  })();
+</script>
+{% endif %}
+
+{% endblock %}

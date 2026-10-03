@@ -1,0 +1,1156 @@
+{
+  "template_name": "nodes.jinja2",
+  "meta": {
+    "title": "Nodes: map, providers and bond",
+    "subtitle": "after a churn, 103 active nodes",
+    "lang": "en"
+  },
+  "parameters": {
+    "active_nodes": 103,
+    "standby_nodes": 70,
+    "total_nodes": 199,
+    "active_bond": 97751458.67989258,
+    "total_bond": 103975389.39282526,
+    "active_bond_percent": 27.636827446958605,
+    "total_bond_percent": 29.39649120520929,
+    "usd_per_rune": 0.7368,
+    "provider_count": 15,
+    "country_count": 14,
+    "providers": [
+      {
+        "name": "DigitalOcean",
+        "count": 20,
+        "percent": 19.41747572815534,
+        "ci": 0
+      },
+      {
+        "name": "MEVSPACE",
+        "count": 18,
+        "percent": 17.475728155339805,
+        "ci": 1
+      },
+      {
+        "name": "Leaseweb",
+        "count": 12,
+        "percent": 11.650485436893204,
+        "ci": 2
+      },
+      {
+        "name": "Vultr",
+        "count": 12,
+        "percent": 11.650485436893204,
+        "ci": 3
+      },
+      {
+        "name": "Hetzner",
+        "count": 9,
+        "percent": 8.737864077669903,
+        "ci": 4
+      },
+      {
+        "name": "LifeinCloud",
+        "count": 9,
+        "percent": 8.737864077669903,
+        "ci": 5
+      },
+      {
+        "name": "Others (9)",
+        "count": 23,
+        "percent": 22.330097087378643,
+        "ci": -1,
+        "flag": "",
+        "other": true
+      }
+    ],
+    "countries": [
+      {
+        "name": "Poland",
+        "code": "PL",
+        "flag": "🇵🇱",
+        "count": 20,
+        "percent": 19.41747572815534
+      },
+      {
+        "name": "United States",
+        "code": "US",
+        "flag": "🇺🇸",
+        "count": 14,
+        "percent": 13.592233009708737
+      },
+      {
+        "name": "Germany",
+        "code": "DE",
+        "flag": "🇩🇪",
+        "count": 11,
+        "percent": 10.679611650485436
+      },
+      {
+        "name": "Australia",
+        "code": "AU",
+        "flag": "🇦🇺",
+        "count": 10,
+        "percent": 9.70873786407767
+      },
+      {
+        "name": "United Kingdom",
+        "code": "GB",
+        "flag": "🇬🇧",
+        "count": 10,
+        "percent": 9.70873786407767
+      },
+      {
+        "name": "India",
+        "code": "IN",
+        "flag": "🇮🇳",
+        "count": 8,
+        "percent": 7.766990291262135
+      },
+      {
+        "name": "Others (8)",
+        "count": 30,
+        "percent": 29.126213592233007,
+        "ci": -1,
+        "flag": "",
+        "other": true
+      }
+    ],
+    "points": [
+      {
+        "lat": 52.18,
+        "lon": 21.06,
+        "city": "Warsaw",
+        "n": 10,
+        "standby": 2,
+        "seg": [
+          [
+            1,
+            10
+          ]
+        ],
+        "cc": "PL",
+        "country": "Poland"
+      },
+      {
+        "lat": 12.98,
+        "lon": 77.59,
+        "city": "Bengaluru",
+        "n": 8,
+        "standby": 4,
+        "seg": [
+          [
+            0,
+            6
+          ],
+          [
+            3,
+            2
+          ]
+        ],
+        "cc": "IN",
+        "country": "India"
+      },
+      {
+        "lat": 51.52,
+        "lon": -0.62,
+        "city": "Slough",
+        "n": 8,
+        "standby": 0,
+        "seg": [
+          [
+            0,
+            2
+          ],
+          [
+            2,
+            6
+          ]
+        ],
+        "cc": "GB",
+        "country": "United Kingdom"
+      },
+      {
+        "lat": 52.37,
+        "lon": 4.9,
+        "city": "Amsterdam",
+        "n": 6,
+        "standby": 1,
+        "seg": [
+          [
+            2,
+            1
+          ],
+          [
+            5,
+            5
+          ]
+        ],
+        "cc": "NL",
+        "country": "The Netherlands"
+      },
+      {
+        "lat": 52.2,
+        "lon": 20.99,
+        "city": "Warsaw",
+        "n": 6,
+        "standby": 0,
+        "seg": [
+          [
+            1,
+            6
+          ]
+        ],
+        "cc": "PL",
+        "country": "Poland"
+      },
+      {
+        "lat": -33.9,
+        "lon": 151.19,
+        "city": "Sydney",
+        "n": 5,
+        "standby": 0,
+        "seg": [
+          [
+            3,
+            5
+          ]
+        ],
+        "cc": "AU",
+        "country": "Australia"
+      },
+      {
+        "lat": 43.71,
+        "lon": -79.41,
+        "city": "Toronto",
+        "n": 4,
+        "standby": 2,
+        "seg": [
+          [
+            0,
+            4
+          ]
+        ],
+        "cc": "CA",
+        "country": "Canada"
+      },
+      {
+        "lat": 60.17,
+        "lon": 24.93,
+        "city": "Helsinki",
+        "n": 4,
+        "standby": 2,
+        "seg": [
+          [
+            4,
+            4
+          ]
+        ],
+        "cc": "FI",
+        "country": "Finland"
+      },
+      {
+        "lat": 52.23,
+        "lon": 21.01,
+        "city": "Warsaw",
+        "n": 4,
+        "standby": 0,
+        "seg": [
+          [
+            1,
+            2
+          ],
+          [
+            3,
+            2
+          ]
+        ],
+        "cc": "PL",
+        "country": "Poland"
+      },
+      {
+        "lat": 37.39,
+        "lon": -121.96,
+        "city": "Santa Clara",
+        "n": 3,
+        "standby": 8,
+        "seg": [
+          [
+            0,
+            3
+          ]
+        ],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": -33.85,
+        "lon": 151.19,
+        "city": "Sydney",
+        "n": 3,
+        "standby": 2,
+        "seg": [
+          [
+            -1,
+            3
+          ]
+        ],
+        "cc": "AU",
+        "country": "Australia"
+      },
+      {
+        "lat": 50.12,
+        "lon": 8.67,
+        "city": "Frankfurt am Main",
+        "n": 3,
+        "standby": 1,
+        "seg": [
+          [
+            -1,
+            3
+          ]
+        ],
+        "cc": "DE",
+        "country": "Germany"
+      },
+      {
+        "lat": 38.57,
+        "lon": -77.77,
+        "city": "Bealeton",
+        "n": 3,
+        "standby": 0,
+        "seg": [
+          [
+            2,
+            3
+          ]
+        ],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 50.48,
+        "lon": 12.36,
+        "city": "Falkenstein",
+        "n": 3,
+        "standby": 0,
+        "seg": [
+          [
+            4,
+            3
+          ]
+        ],
+        "cc": "DE",
+        "country": "Germany"
+      },
+      {
+        "lat": 50.7,
+        "lon": 3.22,
+        "city": "Wattrelos",
+        "n": 3,
+        "standby": 0,
+        "seg": [
+          [
+            -1,
+            3
+          ]
+        ],
+        "cc": "FR",
+        "country": "France"
+      },
+      {
+        "lat": 52.35,
+        "lon": 4.94,
+        "city": "Amsterdam",
+        "n": 2,
+        "standby": 7,
+        "seg": [
+          [
+            0,
+            2
+          ]
+        ],
+        "cc": "NL",
+        "country": "The Netherlands"
+      },
+      {
+        "lat": 40.84,
+        "lon": -74.14,
+        "city": "Clifton",
+        "n": 2,
+        "standby": 3,
+        "seg": [
+          [
+            0,
+            2
+          ]
+        ],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 1.32,
+        "lon": 103.69,
+        "city": "Singapore",
+        "n": 2,
+        "standby": 2,
+        "seg": [
+          [
+            0,
+            1
+          ],
+          [
+            3,
+            1
+          ]
+        ],
+        "cc": "SG",
+        "country": "Singapore"
+      },
+      {
+        "lat": -37.82,
+        "lon": 144.97,
+        "city": "Melbourne",
+        "n": 2,
+        "standby": 0,
+        "seg": [
+          [
+            3,
+            2
+          ]
+        ],
+        "cc": "AU",
+        "country": "Australia"
+      },
+      {
+        "lat": 40.42,
+        "lon": -3.69,
+        "city": "Madrid",
+        "n": 2,
+        "standby": 0,
+        "seg": [
+          [
+            5,
+            2
+          ]
+        ],
+        "cc": "ES",
+        "country": "Spain"
+      },
+      {
+        "lat": 48.79,
+        "lon": 2.2,
+        "city": "Vélizy-Villacoublay",
+        "n": 2,
+        "standby": 0,
+        "seg": [
+          [
+            5,
+            2
+          ]
+        ],
+        "cc": "FR",
+        "country": "France"
+      },
+      {
+        "lat": 49.45,
+        "lon": 11.08,
+        "city": "Nuremberg",
+        "n": 2,
+        "standby": 0,
+        "seg": [
+          [
+            4,
+            2
+          ]
+        ],
+        "cc": "DE",
+        "country": "Germany"
+      },
+      {
+        "lat": 50.11,
+        "lon": 8.68,
+        "city": "Frankfurt am Main",
+        "n": 2,
+        "standby": 0,
+        "seg": [
+          [
+            2,
+            1
+          ],
+          [
+            -1,
+            1
+          ]
+        ],
+        "cc": "DE",
+        "country": "Germany"
+      },
+      {
+        "lat": 59.33,
+        "lon": 18.07,
+        "city": "Stockholm",
+        "n": 2,
+        "standby": 0,
+        "seg": [
+          [
+            -1,
+            2
+          ]
+        ],
+        "cc": "SE",
+        "country": "Sweden"
+      },
+      {
+        "lat": 50.12,
+        "lon": 8.68,
+        "city": "Frankfurt",
+        "n": 1,
+        "standby": 4,
+        "seg": [
+          [
+            -1,
+            1
+          ]
+        ],
+        "cc": "DE",
+        "country": "Germany"
+      },
+      {
+        "lat": 51.51,
+        "lon": -0.13,
+        "city": "London",
+        "n": 1,
+        "standby": 3,
+        "seg": [
+          [
+            2,
+            1
+          ]
+        ],
+        "cc": "GB",
+        "country": "United Kingdom"
+      },
+      {
+        "lat": 41.26,
+        "lon": -95.86,
+        "city": "Council Bluffs",
+        "n": 1,
+        "standby": 2,
+        "seg": [
+          [
+            -1,
+            1
+          ]
+        ],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 33.45,
+        "lon": -112.07,
+        "city": "Phoenix",
+        "n": 1,
+        "standby": 1,
+        "seg": [
+          [
+            -1,
+            1
+          ]
+        ],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 44.43,
+        "lon": 26.1,
+        "city": "Bucharest",
+        "n": 1,
+        "standby": 1,
+        "seg": [
+          [
+            -1,
+            1
+          ]
+        ],
+        "cc": "RO",
+        "country": "Romania"
+      },
+      {
+        "lat": 50.99,
+        "lon": 2.13,
+        "city": "Gravelines",
+        "n": 1,
+        "standby": 1,
+        "seg": [
+          [
+            -1,
+            1
+          ]
+        ],
+        "cc": "FR",
+        "country": "France"
+      },
+      {
+        "lat": 32.78,
+        "lon": -96.8,
+        "city": "Dallas",
+        "n": 1,
+        "standby": 0,
+        "seg": [
+          [
+            -1,
+            1
+          ]
+        ],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 32.88,
+        "lon": -80.01,
+        "city": "North Charleston",
+        "n": 1,
+        "standby": 0,
+        "seg": [
+          [
+            -1,
+            1
+          ]
+        ],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 34.05,
+        "lon": -118.27,
+        "city": "Los Angeles",
+        "n": 1,
+        "standby": 0,
+        "seg": [
+          [
+            -1,
+            1
+          ]
+        ],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 45.53,
+        "lon": -122.99,
+        "city": "Hillsboro",
+        "n": 1,
+        "standby": 0,
+        "seg": [
+          [
+            -1,
+            1
+          ]
+        ],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 51.4,
+        "lon": -0.17,
+        "city": "Mitcham",
+        "n": 1,
+        "standby": 0,
+        "seg": [
+          [
+            -1,
+            1
+          ]
+        ],
+        "cc": "GB",
+        "country": "United Kingdom"
+      },
+      {
+        "lat": 60.17,
+        "lon": 24.94,
+        "city": "Helsinki",
+        "n": 1,
+        "standby": 0,
+        "seg": [
+          [
+            -1,
+            1
+          ]
+        ],
+        "cc": "FI",
+        "country": "Finland"
+      },
+      {
+        "lat": 25.94,
+        "lon": -80.31,
+        "city": "Hialeah",
+        "n": 0,
+        "standby": 2,
+        "seg": [],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 39.04,
+        "lon": -77.49,
+        "city": "Ashburn",
+        "n": 0,
+        "standby": 2,
+        "seg": [],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 48.2,
+        "lon": 16.37,
+        "city": "Vienna",
+        "n": 0,
+        "standby": 2,
+        "seg": [],
+        "cc": "AT",
+        "country": "Austria"
+      },
+      {
+        "lat": 48.86,
+        "lon": 2.35,
+        "city": "Paris",
+        "n": 0,
+        "standby": 2,
+        "seg": [],
+        "cc": "FR",
+        "country": "France"
+      },
+      {
+        "lat": 52.37,
+        "lon": 4.89,
+        "city": "Amsterdam",
+        "n": 0,
+        "standby": 2,
+        "seg": [],
+        "cc": "NL",
+        "country": "The Netherlands"
+      },
+      {
+        "lat": -34.94,
+        "lon": 138.67,
+        "city": "Adelaide",
+        "n": 0,
+        "standby": 1,
+        "seg": [],
+        "cc": "AU",
+        "country": "Australia"
+      },
+      {
+        "lat": 32.59,
+        "lon": -92.07,
+        "city": "Monroe",
+        "n": 0,
+        "standby": 1,
+        "seg": [],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 36.68,
+        "lon": -78.37,
+        "city": "Boydton",
+        "n": 0,
+        "standby": 1,
+        "seg": [],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 37.34,
+        "lon": -121.89,
+        "city": "San Jose",
+        "n": 0,
+        "standby": 1,
+        "seg": [],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 38.91,
+        "lon": -77.04,
+        "city": "Washington",
+        "n": 0,
+        "standby": 1,
+        "seg": [],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 39.96,
+        "lon": -83.0,
+        "city": "Columbus",
+        "n": 0,
+        "standby": 1,
+        "seg": [],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 40.11,
+        "lon": -83.11,
+        "city": "Dublin",
+        "n": 0,
+        "standby": 1,
+        "seg": [],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 40.8,
+        "lon": -74.02,
+        "city": "North Bergen",
+        "n": 0,
+        "standby": 1,
+        "seg": [],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 40.83,
+        "lon": -74.13,
+        "city": "Clifton",
+        "n": 0,
+        "standby": 1,
+        "seg": [],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 41.85,
+        "lon": -87.65,
+        "city": "Chicago",
+        "n": 0,
+        "standby": 1,
+        "seg": [],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 42.36,
+        "lon": -71.06,
+        "city": "Boston",
+        "n": 0,
+        "standby": 1,
+        "seg": [],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 45.84,
+        "lon": -119.7,
+        "city": "Boardman",
+        "n": 0,
+        "standby": 1,
+        "seg": [],
+        "cc": "US",
+        "country": "United States"
+      },
+      {
+        "lat": 51.95,
+        "lon": 4.45,
+        "city": "Rotterdam",
+        "n": 0,
+        "standby": 1,
+        "seg": [],
+        "cc": "NL",
+        "country": "The Netherlands"
+      }
+    ],
+    "unknown_location": 0,
+    "chart": [
+      {
+        "ts": 1788436800,
+        "bond": 74100000.0,
+        "nodes": 87
+      },
+      {
+        "ts": 1788523200,
+        "bond": 74100000.0,
+        "nodes": 87
+      },
+      {
+        "ts": 1788609600,
+        "bond": 74100000.0,
+        "nodes": 87
+      },
+      {
+        "ts": 1788696000,
+        "bond": 74100000.0,
+        "nodes": 87
+      },
+      {
+        "ts": 1788782400,
+        "bond": 74100000.0,
+        "nodes": 87
+      },
+      {
+        "ts": 1788868800,
+        "bond": 74100000.0,
+        "nodes": 87
+      },
+      {
+        "ts": 1788955200,
+        "bond": 74100000.0,
+        "nodes": 87
+      },
+      {
+        "ts": 1789041600,
+        "bond": 74100000.0,
+        "nodes": 87
+      },
+      {
+        "ts": 1789128000,
+        "bond": 74100000.0,
+        "nodes": 87
+      },
+      {
+        "ts": 1789214400,
+        "bond": 74100000.0,
+        "nodes": 87
+      },
+      {
+        "ts": 1789300800,
+        "bond": 78000000.0,
+        "nodes": 91
+      },
+      {
+        "ts": 1789387200,
+        "bond": 78000000.0,
+        "nodes": 91
+      },
+      {
+        "ts": 1789473600,
+        "bond": 78000000.0,
+        "nodes": 91
+      },
+      {
+        "ts": 1789560000,
+        "bond": 81200000.0,
+        "nodes": 95
+      },
+      {
+        "ts": 1789646400,
+        "bond": 81200000.0,
+        "nodes": 95
+      },
+      {
+        "ts": 1789732800,
+        "bond": 81200000.0,
+        "nodes": 95
+      },
+      {
+        "ts": 1789819200,
+        "bond": 85400000.0,
+        "nodes": 99
+      },
+      {
+        "ts": 1789905600,
+        "bond": 85400000.0,
+        "nodes": 99
+      },
+      {
+        "ts": 1789992000,
+        "bond": 85400000.0,
+        "nodes": 99
+      },
+      {
+        "ts": 1790078400,
+        "bond": 85400000.0,
+        "nodes": 99
+      },
+      {
+        "ts": 1790164800,
+        "bond": 85400000.0,
+        "nodes": 99
+      },
+      {
+        "ts": 1790251200,
+        "bond": 85400000.0,
+        "nodes": 99
+      },
+      {
+        "ts": 1790337600,
+        "bond": 85400000.0,
+        "nodes": 99
+      },
+      {
+        "ts": 1790424000,
+        "bond": 85400000.0,
+        "nodes": 99
+      },
+      {
+        "ts": 1790510400,
+        "bond": 85400000.0,
+        "nodes": 99
+      },
+      {
+        "ts": 1790596800,
+        "bond": 85400000.0,
+        "nodes": 99
+      },
+      {
+        "ts": 1790683200,
+        "bond": 85400000.0,
+        "nodes": 99
+      },
+      {
+        "ts": 1790769600,
+        "bond": 86000000.0,
+        "nodes": 99
+      },
+      {
+        "ts": 1790856000,
+        "bond": 86000000.0,
+        "nodes": 99
+      },
+      {
+        "ts": 1790942400,
+        "bond": 97750000.0,
+        "nodes": 103
+      },
+      {
+        "ts": 1791028800,
+        "bond": 97750000.0,
+        "nodes": 103
+      }
+    ],
+    "chart_days": 30,
+    "bond": {
+      "min": 360116.82561681,
+      "median": 992187.46926278,
+      "max": 1250020.82726499,
+      "values": [
+        360117,
+        399612,
+        403215,
+        548242,
+        609603,
+        634102,
+        649077,
+        695139,
+        700000,
+        706765,
+        712939,
+        724977,
+        728599,
+        734037,
+        758518,
+        758802,
+        768289,
+        768919,
+        796867,
+        799103,
+        801955,
+        804218,
+        809675,
+        812822,
+        815525,
+        821064,
+        831671,
+        854894,
+        870243,
+        882861,
+        889593,
+        900002,
+        900067,
+        919546,
+        927622,
+        929239,
+        936205,
+        940593,
+        941189,
+        948475,
+        951988,
+        953089,
+        953854,
+        953960,
+        956914,
+        962245,
+        967582,
+        974206,
+        975143,
+        982772,
+        988919,
+        992187,
+        992786,
+        998750,
+        998926,
+        999205,
+        999979,
+        1006981,
+        1007056,
+        1011553,
+        1017736,
+        1018549,
+        1018816,
+        1019523,
+        1021430,
+        1023560,
+        1024312,
+        1024512,
+        1025330,
+        1028862,
+        1030584,
+        1033714,
+        1041071,
+        1044881,
+        1046196,
+        1047331,
+        1059178,
+        1060312,
+        1073441,
+        1080951,
+        1091392,
+        1099815,
+        1108379,
+        1110526,
+        1116818,
+        1127998,
+        1132814,
+        1138467,
+        1141303,
+        1148526,
+        1149490,
+        1151634,
+        1152530,
+        1154695,
+        1163148,
+        1164791,
+        1171090,
+        1173229,
+        1178153,
+        1196021,
+        1218376,
+        1249476,
+        1250021
+      ]
+    },
+    "t": {
+      "title": "NODES",
+      "active_nodes": "Active nodes",
+      "active_bond": "Active bond",
+      "total_nodes": "Total nodes",
+      "total_bond": "Total bond",
+      "standby": "standby",
+      "of_supply": "of RUNE supply",
+      "providers": "Providers",
+      "countries": "Countries",
+      "of_active_nodes": "of active nodes",
+      "world": "World",
+      "europe": "Europe",
+      "legend_active": "active nodes, color = provider",
+      "legend_standby": "standby nodes",
+      "unknown_location": "Unknown location",
+      "last_days": "last 30 days",
+      "node_bond": "Node bond",
+      "min_bond": "Min",
+      "median_bond": "Median",
+      "max_bond": "Max",
+      "note": "The location and the provider are those of the public IP address of a node. Often it is just a proxy server that hides the real node, which may run in a completely different place."
+    }
+  }
+}

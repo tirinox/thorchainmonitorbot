@@ -152,6 +152,12 @@ class NodeInfo(BaseModelMixin):
         instance = cls(**data)
         # fix bond_providers by converting [str, float] to BondProvider
         instance.bond_providers = [BondProvider(*arr) for arr in instance.bond_providers]
+        # JSON keeps the location tuple as a plain list too
+        if instance.ip_info is not None and not isinstance(instance.ip_info, LocationInfo):
+            try:
+                instance.ip_info = LocationInfo(*instance.ip_info)
+            except TypeError:
+                instance.ip_info = None
         return instance
 
     @staticmethod
@@ -412,7 +418,7 @@ class NodeSetChanges:
 @dataclass
 class NetworkNodes:
     node_info_list: List[NodeInfo] = field(default_factory=list)
-    ip_info_dict: Dict[str, dict] = field(default_factory=dict)  # IP -> Geo Info
+    ip_info_dict: Dict[str, Optional[LocationInfo]] = field(default_factory=dict)  # IP -> Geo Info
     total_rune_supply: float = 425e6  # todo: set it correctly dynamically
 
     def __len__(self):

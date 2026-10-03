@@ -1,6 +1,6 @@
 from typing import List
 
-from comm.picture.nodes_pictures import NodePictureGenerator
+from comm.picture.nodes_card import NODES_CHART_PERIOD
 from jobs.node_churn import NodeChurnDetector
 from lib.cooldown import Cooldown
 from lib.date_utils import HOUR, now_ts
@@ -61,42 +61,50 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
 
     async def _finish_churn(self):
         self.logger.info('Finish Node Churn!')
+        # the stage is cleared first: if anything fails below, the finish is not retried on every tick
+        await self._set_churning_stage('')
         event = await self._retrieve_node_churn()
+        if not event:
+            self.logger.error('The node sets of the churn are not saved, I cannot tell how it finished')
+            return
         last_churn_ts = await self.get_last_churn_start_ts()
         if last_churn_ts:
             event.churn_duration = now_ts() - last_churn_ts
-        await self._set_churning_stage('')
         await self._notify_when_node_churn_finished(event)
 
     async def _notify_when_node_churn_started(self, changes: NodeSetChanges):
         if await self._start_cd.can_do():
             await self._start_cd.do()
-            try:
-                usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
-            except Exception as e:
-                self.logger.error(f'No RUNE price for the churn rewards: {e!r}')
-                usd_per_rune = 0.0
             await self.pass_data_to_listeners(
-                AlertNodeChurn(changes, finished=False, with_picture=False, usd_per_rune=usd_per_rune)
+                AlertNodeChurn(changes, finished=False, with_picture=False,
+                               usd_per_rune=await self._get_usd_per_rune())
             )
+
+    async def _get_usd_per_rune(self) -> float:
+        try:
+            return await self.deps.pool_cache.get_usd_per_rune()
+        except Exception as e:
+            self.logger.error(f'No RUNE price for the node churn alert: {e!r}')
+            return 0.0
 
     async def _notify_when_node_churn_finished(self, changes: NodeSetChanges):
         if await self._finish_cd.can_do():
             await self._finish_cd.do()
             with_picture = changes.count_of_changes >= self._min_changes_to_post_picture
 
+            result_network_info = None
+            chart_pts = None
             if with_picture:
-                result_network_info = await self.deps.node_cache.load_geo_info_for_nodes(changes.nodes_all)
-                chart_pts = await NodeChurnNotifier(self.deps).load_last_statistics(NodePictureGenerator.CHART_PERIOD)
+                try:
+                    result_network_info = await self.deps.node_cache.load_geo_info_for_nodes(changes.nodes_all)
+                    chart_pts = await self.load_last_statistics(NODES_CHART_PERIOD)
+                except Exception as e:
+                    # the text about the churn is worth posting without the picture
+                    self.logger.exception(f'Could not load the data of the node picture: {e!r}')
 
-                if not changes or not result_network_info:
-                    self.logger.error(f'Could not load necessary info: '
-                                      f'{bool(result_network_info) = }, {bool(chart_pts) = }')
+                if not result_network_info:
+                    self.logger.error('No node info for the node picture')
                     with_picture = False
-
-            else:
-                result_network_info = None
-                chart_pts = None
 
             await self.pass_data_to_listeners(
                 AlertNodeChurn(
@@ -105,6 +113,7 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
                     with_picture=with_picture,
                     network_info=result_network_info,
                     bond_chart=chart_pts,
+                    usd_per_rune=await self._get_usd_per_rune() if with_picture else 0.0,
                 ))
 
     # ---- Various DB interactions ----
@@ -117,7 +126,10 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
 
     async def get_last_churn_start_ts(self):
         v = await self.deps.db.redis.get(self.DB_KEY_CHURN_START_TS)
-        return float(v) or None
+        try:
+            return float(v) or None
+        except (TypeError, ValueError):
+            return None  # never saved
 
     async def _set_churning_stage(self, stage):
         await self.deps.db.redis.set(self.DB_KEY_CHURN_STAGE, stage)
