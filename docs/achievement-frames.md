@@ -147,7 +147,8 @@ The file keeps every field of every frame, and a `note` where the hole was set b
 |---|---|---|---|
 | `BG_LIQUIDITY` | `nn_wreath_liquidity.png` | Celtic knotwork ring with ivory antlers, leaves, a knot shield-heart below | teal, jade, ivory |
 | `BG_NETWORK` | `nn_wreath_network.png` | Braided wreath with feathers, a knot on top, a chevron shield and bronze rings | sage, muted teal, beige |
-| `BG_SWAPS` | `nn_wreath_swaps.png` | Stone and steel ring in a whirl of turquoise flame with silver arrow-blades | cyan, electric blue |
+| `BG_SWAPS` | `nn_wreath_swaps_2.png` | A wide forged steel ring with a knotwork band in a turquoise maelstrom, four arrow-blades | turquoise, electric blue, steel |
+| `BG_SWAP_VOLUME` | `nn_wreath_swap_volume.png` | The gold twin of the swaps frame: the maelstrom of molten gold with coins, a bronze ring with gold inlay (volumes in money) | molten gold, amber, bronze |
 | `BG_USERS` | `nn_wreath_users_day.png` | A crown of Viking helmets under the sun, some horned, a gilded helmet with big ram horns leading below | dark iron, gilding, bone, golden daylight |
 | `BG_USERS_NIGHT` | `nn_wreath_users_night.png` | The same helmets under the moon (the monthly twin of the daily one) | dark iron, silver, ivory, night blue |
 | `BG_RUNE` | `nn_wreath_rune.png` | Gunmetal and obsidian runic ring, crystal with ᚱ, lightning | turquoise, green |

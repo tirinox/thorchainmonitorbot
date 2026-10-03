@@ -20,15 +20,27 @@
     "shade_from": 58,
     "note": "inside the warm halo, clear of the chevron"
   },
-  "nn_wreath_swaps.png": {
+  "nn_wreath_swaps_2.png": {
     "tint": "#4ffffa",
-    "hole_x": 0.504,
-    "hole_y": 0.464,
-    "hole_r": 0.21,
+    "hole_x": 0.5,
+    "hole_y": 0.496,
+    "hole_r": 0.189,
     "base": "#030708",
-    "size": 860,
-    "top": 40,
-    "shade_from": 58
+    "size": 810,
+    "top": 60,
+    "shade_from": 58,
+    "note": "the spray reaches far down: smaller and lower, clear of the title"
+  },
+  "nn_wreath_swap_volume.png": {
+    "tint": "#ffd36b",
+    "hole_x": 0.5,
+    "hole_y": 0.496,
+    "hole_r": 0.189,
+    "base": "#080806",
+    "size": 810,
+    "top": 60,
+    "shade_from": 58,
+    "note": "the gold twin of the swaps frame; the spray reaches far down: smaller and lower, clear of the title"
   },
   "nn_wreath_users_day.png": {
     "tint": "#ffd98a",
