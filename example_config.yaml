@@ -535,6 +535,17 @@ upgrade_proposals:
     enabled: true
     cooldown: 30m
     minimum_progress_step_percent: 5
+  # Once this many validators or fewer are missing to the quorum, a progress update goes out at once
+  # (despite the cooldown) and lists the last 4 characters of the active nodes that have not approved yet.
+  near_quorum:
+    validators_to_quorum: 5
+  # Once per proposal, when the validators reach the quorum, with the upgrade height and ETA.
+  # Also sent when the proposal left the list after its height and the chain switched to its version.
+  approved:
+    enabled: true
+  # The upgrade height passed without the quorum.
+  expired:
+    enabled: true
 
 
 constants:

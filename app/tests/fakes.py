@@ -13,6 +13,18 @@ class FakeRedis:
         self.values = self.strings
         self.expirations = {}
         self.hll = defaultdict(set)
+        self.sets = defaultdict(set)
+
+    async def sadd(self, name, *values):
+        before = len(self.sets[name])
+        self.sets[name].update(str(v) for v in values)
+        return len(self.sets[name]) - before
+
+    async def sismember(self, name, value):
+        return int(str(value) in self.sets.get(name, set()))
+
+    async def smembers(self, name):
+        return set(self.sets.get(name, set()))
 
     async def hincrbyfloat(self, name, key, value):
         bucket = self.hashes[name]
@@ -96,6 +108,7 @@ class FakeRedis:
             self.hashes.pop(name, None)
             self.strings.pop(name, None)
             self.hll.pop(name, None)
+            self.sets.pop(name, None)
             self.expirations.pop(name, None)
         return deleted
 

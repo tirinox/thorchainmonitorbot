@@ -52,7 +52,8 @@ from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
 from models.tx import ThorAction, ThorSubTx, EventLargeTransaction
-from models.upgrade_proposal import AlertUpgradeProposalNew, AlertUpgradeProposalProgress
+from models.upgrade_proposal import AlertUpgradeProposalNew, AlertUpgradeProposalProgress, \
+    AlertUpgradeProposalApproved, AlertUpgradeProposalExpired, short_node_address
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from models.wasm import WasmPeriodStats
 from notify.channel import Messengers
@@ -1390,18 +1391,51 @@ class BaseLocalization(ABC):  # == English
     def upgrade_proposal_status_text(approved: bool):
         return 'Approved' if approved else 'Pending'
 
+    UPGRADE_LAGGARDS_LIMIT = 50
+
+    @staticmethod
+    def _upgrade_info(p):
+        # info is usually JSON with links to the binaries, which is of no interest to the reader
+        info = (p.info or '').strip()
+        return '' if not info or info.startswith('{') else info
+
+    def _upgrade_eta(self, e):
+        blocks_left = e.blocks_left
+        if blocks_left is None or blocks_left <= 0:
+            return ''
+        return f' ≈ in {self.seconds_human(e.seconds_left)}'
+
+    def _upgrade_short_addresses(self, addresses):
+        shown = addresses[:self.UPGRADE_LAGGARDS_LIMIT]
+        text = ' '.join(code(short_node_address(a)) for a in shown)
+        if len(addresses) > len(shown):
+            text += f' and {len(addresses) - len(shown)} more'
+        return text
+
+    def _upgrade_laggards_text(self, e: AlertUpgradeProposalProgress):
+        laggards = e.votes
+        if not e.near_quorum or not laggards or not (laggards.not_voted or laggards.rejecters):
+            return ''
+        msg = ''
+        if laggards.not_voted:
+            msg += f'\n⏰ {bold("Not voted yet")} ({len(laggards.not_voted)}): ' \
+                   f'{self._upgrade_short_addresses(laggards.not_voted)}\n'
+        if laggards.rejecters:
+            msg += f'👎 {bold("Rejected")} ({len(laggards.rejecters)}): ' \
+                   f'{self._upgrade_short_addresses(laggards.rejecters)}\n'
+        return msg
+
     def notification_text_upgrade_proposal_new(self, e: AlertUpgradeProposalNew):
         p = e.proposal
-        msg = bold('🆕 THORChain upgrade proposal detected') + '\n\n'
-        msg += f'Version: {pre(p.name)}\n'
+        msg = bold(f'🆕 THORChain upgrade proposal: {p.name}') + '\n\n'
         msg += f'Approval: {pre(f"{p.approved_percent:.2f}%")}\n'
         msg += f'Approvers: {pre(len(p.approvers))}\n'
         msg += f'Validators to quorum: {pre(p.validators_to_quorum)}\n'
         msg += f'Status: {pre(self.upgrade_proposal_status_text(p.approved))}\n'
-        msg += f'Height: {pre(p.height)}\n'
+        msg += f'Upgrade height: {pre(p.height)}{self._upgrade_eta(e)}\n'
 
-        if p.info:
-            msg += f'\nInfo: {pre(cut_long_text(p.info, 180))}\n'
+        if info := self._upgrade_info(p):
+            msg += f'\nInfo: {pre(cut_long_text(info, 180))}\n'
 
         return msg
 
@@ -1412,8 +1446,8 @@ class BaseLocalization(ABC):  # == English
         approver_delta = len(current.approvers) - len(previous.approvers)
         quorum_delta = current.validators_to_quorum - previous.validators_to_quorum
 
-        msg = bold('🗳️ THORChain upgrade proposal progress') + '\n\n'
-        msg += f'Version: {pre(current.name)}\n'
+        title = '🔥 THORChain upgrade is almost approved' if e.near_quorum else '🗳️ THORChain upgrade vote'
+        msg = bold(f'{title}: {current.name}') + '\n\n'
         msg += f'Approval: {pre(f"{current.approved_percent:.2f}%")} ({approval_delta:+.2f}%)\n'
         msg += f'Approvers: {pre(len(current.approvers))} ({approver_delta:+d})\n'
         msg += f'Validators to quorum: {pre(current.validators_to_quorum)} ({quorum_delta:+d})\n'
@@ -1422,11 +1456,30 @@ class BaseLocalization(ABC):  # == English
                    f'{pre(self.upgrade_proposal_status_text(current.approved))}\n'
         else:
             msg += f'Status: {pre(self.upgrade_proposal_status_text(current.approved))}\n'
-        msg += f'Height: {pre(current.height)}\n'
+        msg += f'Upgrade height: {pre(current.height)}{self._upgrade_eta(e)}\n'
+        msg += self._upgrade_laggards_text(e)
 
-        if current.info:
-            msg += f'\nInfo: {pre(cut_long_text(current.info, 180))}\n'
+        return msg
 
+    def notification_text_upgrade_proposal_approved(self, e: AlertUpgradeProposalApproved):
+        p = e.proposal
+        msg = bold(f'✅ THORChain upgrade {p.name} is APPROVED!') + '\n\n'
+        if e.is_late:
+            msg += f'The upgrade height {pre(p.height)} has been reached, ' \
+                   f'the network is switching to {pre(p.name)}.\n'
+        else:
+            msg += f'Validators reached the quorum: {pre(f"{p.approved_percent:.2f}%")} ' \
+                   f'({pre(len(p.approvers))} approvers).\n'
+            msg += f'Upgrade height: {pre(p.height)}{self._upgrade_eta(e)}\n'
+            msg += '\nNode operators, get ready to update!\n'
+        return msg
+
+    def notification_text_upgrade_proposal_expired(self, e: AlertUpgradeProposalExpired):
+        p = e.proposal
+        msg = bold(f'⌛ THORChain upgrade proposal {p.name} has expired') + '\n\n'
+        msg += f'The height {pre(p.height)} has passed without the quorum.\n'
+        msg += f'Last approval: {pre(f"{p.approved_percent:.2f}%")}, ' \
+               f'{pre(p.validators_to_quorum)} more validators were needed.\n'
         return msg
 
     # --------- CHAIN INFO SUMMARY ------------

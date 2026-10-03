@@ -1,0 +1,566 @@
+{
+ "template_name": "upgrade_proposal.jinja2",
+ "parameters": {
+  "kind": "voting",
+  "is_new": false,
+  "version": "v3.137.0",
+  "current_version": "3.136.2",
+  "approved": false,
+  "near_quorum": false,
+  "is_late": false,
+  "approved_percent": 50.0,
+  "prev_percent": 46.2,
+  "approvers": 52,
+  "rejecters": 2,
+  "not_voted": 50,
+  "active_count": 104,
+  "quorum_count": 70,
+  "validators_to_quorum": 18,
+  "height": 28121500,
+  "current_block": 28080270,
+  "blocks_left": 41230,
+  "eta_parts": [
+   [
+    2,
+    "d"
+   ],
+   [
+    20,
+    "h"
+   ],
+   [
+    43,
+    "m"
+   ]
+  ],
+  "eta_date": "06.10.2026 00:43 UTC",
+  "nodes": [
+   {
+    "short": "ewvl",
+    "vote": "approve"
+   },
+   {
+    "short": "e922",
+    "vote": "approve"
+   },
+   {
+    "short": "ydn8",
+    "vote": "approve"
+   },
+   {
+    "short": "srtv",
+    "vote": "approve"
+   },
+   {
+    "short": "m2r9",
+    "vote": "approve"
+   },
+   {
+    "short": "ezep",
+    "vote": "approve"
+   },
+   {
+    "short": "vp6c",
+    "vote": "approve"
+   },
+   {
+    "short": "pf6r",
+    "vote": "approve"
+   },
+   {
+    "short": "7vhu",
+    "vote": "approve"
+   },
+   {
+    "short": "smlg",
+    "vote": "approve"
+   },
+   {
+    "short": "6a08",
+    "vote": "approve"
+   },
+   {
+    "short": "8rvv",
+    "vote": "approve"
+   },
+   {
+    "short": "92e3",
+    "vote": "approve"
+   },
+   {
+    "short": "kj22",
+    "vote": "approve"
+   },
+   {
+    "short": "vf6v",
+    "vote": "approve"
+   },
+   {
+    "short": "25vc",
+    "vote": "approve"
+   },
+   {
+    "short": "j2mq",
+    "vote": "approve"
+   },
+   {
+    "short": "60e2",
+    "vote": "approve"
+   },
+   {
+    "short": "3cer",
+    "vote": "approve"
+   },
+   {
+    "short": "7q3k",
+    "vote": "approve"
+   },
+   {
+    "short": "vld9",
+    "vote": "approve"
+   },
+   {
+    "short": "86eu",
+    "vote": "approve"
+   },
+   {
+    "short": "7vvd",
+    "vote": "approve"
+   },
+   {
+    "short": "z4vt",
+    "vote": "approve"
+   },
+   {
+    "short": "f5qv",
+    "vote": "approve"
+   },
+   {
+    "short": "gvnv",
+    "vote": "approve"
+   },
+   {
+    "short": "pgp0",
+    "vote": "approve"
+   },
+   {
+    "short": "ae2p",
+    "vote": "approve"
+   },
+   {
+    "short": "68f2",
+    "vote": "approve"
+   },
+   {
+    "short": "z2t5",
+    "vote": "approve"
+   },
+   {
+    "short": "h0ed",
+    "vote": "approve"
+   },
+   {
+    "short": "gl70",
+    "vote": "approve"
+   },
+   {
+    "short": "9fh6",
+    "vote": "approve"
+   },
+   {
+    "short": "vupu",
+    "vote": "approve"
+   },
+   {
+    "short": "ngzd",
+    "vote": "approve"
+   },
+   {
+    "short": "aj46",
+    "vote": "approve"
+   },
+   {
+    "short": "ye35",
+    "vote": "approve"
+   },
+   {
+    "short": "93ej",
+    "vote": "approve"
+   },
+   {
+    "short": "95cs",
+    "vote": "approve"
+   },
+   {
+    "short": "vdae",
+    "vote": "approve"
+   },
+   {
+    "short": "gz2u",
+    "vote": "approve"
+   },
+   {
+    "short": "pl9v",
+    "vote": "approve"
+   },
+   {
+    "short": "eazz",
+    "vote": "approve"
+   },
+   {
+    "short": "atq5",
+    "vote": "approve"
+   },
+   {
+    "short": "ra2m",
+    "vote": "approve"
+   },
+   {
+    "short": "et30",
+    "vote": "approve"
+   },
+   {
+    "short": "she5",
+    "vote": "approve"
+   },
+   {
+    "short": "tp3m",
+    "vote": "approve"
+   },
+   {
+    "short": "jppy",
+    "vote": "approve"
+   },
+   {
+    "short": "spv3",
+    "vote": "approve"
+   },
+   {
+    "short": "xtf2",
+    "vote": "approve"
+   },
+   {
+    "short": "fl4v",
+    "vote": "approve"
+   },
+   {
+    "short": "hxyr",
+    "vote": "none"
+   },
+   {
+    "short": "37yr",
+    "vote": "none"
+   },
+   {
+    "short": "fwwq",
+    "vote": "none"
+   },
+   {
+    "short": "ydcf",
+    "vote": "none"
+   },
+   {
+    "short": "9s3z",
+    "vote": "none"
+   },
+   {
+    "short": "7sys",
+    "vote": "none"
+   },
+   {
+    "short": "7pja",
+    "vote": "none"
+   },
+   {
+    "short": "54e8",
+    "vote": "none"
+   },
+   {
+    "short": "lrg2",
+    "vote": "none"
+   },
+   {
+    "short": "fxa9",
+    "vote": "none"
+   },
+   {
+    "short": "69sw",
+    "vote": "none"
+   },
+   {
+    "short": "an6n",
+    "vote": "none"
+   },
+   {
+    "short": "py8v",
+    "vote": "none"
+   },
+   {
+    "short": "xseh",
+    "vote": "none"
+   },
+   {
+    "short": "kw6n",
+    "vote": "none"
+   },
+   {
+    "short": "x0dd",
+    "vote": "none"
+   },
+   {
+    "short": "m2cw",
+    "vote": "none"
+   },
+   {
+    "short": "cffn",
+    "vote": "none"
+   },
+   {
+    "short": "x7lf",
+    "vote": "none"
+   },
+   {
+    "short": "rzqr",
+    "vote": "none"
+   },
+   {
+    "short": "cwuj",
+    "vote": "none"
+   },
+   {
+    "short": "78hf",
+    "vote": "none"
+   },
+   {
+    "short": "ms00",
+    "vote": "none"
+   },
+   {
+    "short": "zz33",
+    "vote": "none"
+   },
+   {
+    "short": "an77",
+    "vote": "none"
+   },
+   {
+    "short": "kgv3",
+    "vote": "none"
+   },
+   {
+    "short": "cw94",
+    "vote": "none"
+   },
+   {
+    "short": "92h5",
+    "vote": "none"
+   },
+   {
+    "short": "k0cv",
+    "vote": "none"
+   },
+   {
+    "short": "phk6",
+    "vote": "none"
+   },
+   {
+    "short": "8z5d",
+    "vote": "none"
+   },
+   {
+    "short": "uahj",
+    "vote": "none"
+   },
+   {
+    "short": "ctk5",
+    "vote": "none"
+   },
+   {
+    "short": "fjyr",
+    "vote": "none"
+   },
+   {
+    "short": "hre0",
+    "vote": "none"
+   },
+   {
+    "short": "fyn4",
+    "vote": "none"
+   },
+   {
+    "short": "kakm",
+    "vote": "none"
+   },
+   {
+    "short": "55pl",
+    "vote": "none"
+   },
+   {
+    "short": "7zna",
+    "vote": "none"
+   },
+   {
+    "short": "5pxq",
+    "vote": "none"
+   },
+   {
+    "short": "025u",
+    "vote": "none"
+   },
+   {
+    "short": "mxpr",
+    "vote": "none"
+   },
+   {
+    "short": "jhzu",
+    "vote": "none"
+   },
+   {
+    "short": "lgqw",
+    "vote": "none"
+   },
+   {
+    "short": "jedg",
+    "vote": "none"
+   },
+   {
+    "short": "d9ke",
+    "vote": "none"
+   },
+   {
+    "short": "0ask",
+    "vote": "none"
+   },
+   {
+    "short": "n2t8",
+    "vote": "none"
+   },
+   {
+    "short": "c3y3",
+    "vote": "none"
+   },
+   {
+    "short": "yr72",
+    "vote": "none"
+   },
+   {
+    "short": "qftf",
+    "vote": "reject"
+   },
+   {
+    "short": "eere",
+    "vote": "reject"
+   }
+  ],
+  "history": [
+   {
+    "ts": 1790895986,
+    "pct": 0.0
+   },
+   {
+    "ts": 1790899839,
+    "pct": 6.26
+   },
+   {
+    "ts": 1790903847,
+    "pct": 11.77
+   },
+   {
+    "ts": 1790907911,
+    "pct": 16.62
+   },
+   {
+    "ts": 1790911768,
+    "pct": 20.89
+   },
+   {
+    "ts": 1790914602,
+    "pct": 24.64
+   },
+   {
+    "ts": 1790918582,
+    "pct": 27.94
+   },
+   {
+    "ts": 1790922774,
+    "pct": 30.85
+   },
+   {
+    "ts": 1790927562,
+    "pct": 33.4
+   },
+   {
+    "ts": 1790930935,
+    "pct": 35.65
+   },
+   {
+    "ts": 1790935211,
+    "pct": 37.63
+   },
+   {
+    "ts": 1790939067,
+    "pct": 39.37
+   },
+   {
+    "ts": 1790943166,
+    "pct": 40.91
+   },
+   {
+    "ts": 1790946749,
+    "pct": 42.25
+   },
+   {
+    "ts": 1790950824,
+    "pct": 43.44
+   },
+   {
+    "ts": 1790954672,
+    "pct": 44.48
+   },
+   {
+    "ts": 1790959569,
+    "pct": 45.4
+   },
+   {
+    "ts": 1790962500,
+    "pct": 46.21
+   },
+   {
+    "ts": 1790967837,
+    "pct": 46.92
+   },
+   {
+    "ts": 1790971956,
+    "pct": 47.54
+   },
+   {
+    "ts": 1790975880,
+    "pct": 48.1
+   },
+   {
+    "ts": 1790978533,
+    "pct": 48.58
+   },
+   {
+    "ts": 1790982507,
+    "pct": 49.01
+   },
+   {
+    "ts": 1790987938,
+    "pct": 49.38
+   },
+   {
+    "ts": 1790990628,
+    "pct": 49.71
+   },
+   {
+    "ts": 1790994606,
+    "pct": 50.0
+   },
+   {
+    "ts": 1791000000,
+    "pct": 50.0
+   }
+  ]
+ }
+}

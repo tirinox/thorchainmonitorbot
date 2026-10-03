@@ -1,0 +1,242 @@
+{% set _width, _height = set_viewport_size(1400, 1080) %}
+{% extends "base.jinja2" %}
+
+{#
+  THORChain upgrade proposal: the vote (kind = voting | near) and the approval (kind = approved).
+  Parameters come from models/upgrade_proposal.py: upgrade_card_params.
+#}
+
+{% block content %}
+{% set approved = kind == 'approved' %}
+{% set near_quorum = kind == 'near' %}
+{% set title = 'UPGRADE' if approved else 'UPGRADE VOTE' %}
+{% include "components/header.jinja2" %}
+
+{% set nodes = nodes or [] %}
+{% set history = history or [] %}
+{% set pct = approved_percent | float %}
+{% set accent = '#33FF99' if approved else ('#ffb547' if near_quorum else '#23DCC8') %}
+{% set yes = nodes | selectattr('vote', 'eq', 'approve') | list %}
+{% set silent = nodes | selectattr('vote', 'eq', 'none') | list %}
+{% set against = nodes | selectattr('vote', 'eq', 'reject') | list %}
+{% set units = {'d': 'days', 'h': 'hours', 'm': 'minutes'} %}
+{% set show_history = not approved and history | length >= 2 %}
+{% set show_waiting = near_quorum and (silent or against) %}
+{% set has_bottom = show_history or show_waiting %}
+
+<style>
+  {% if approved %}
+  .container.bg {
+    background:
+      radial-gradient(ellipse 70% 55% at 50% 45%, rgba(51,255,153,.22), transparent 70%),
+      #07130f;
+  }
+  {% endif %}
+  .poster {
+    position: absolute; top: 140px; left: 50px; right: 50px; bottom: 50px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    justify-content: {{ 'flex-start' if has_bottom else 'center' }};
+  }
+  .kicker {
+    font-size: 26px; letter-spacing: .3em; text-transform: uppercase; color: {{ accent }};
+    font-weight: 700;
+  }
+  .version {
+    font-size: {{ 120 if near_quorum else 150 }}px; font-weight: 900; line-height: 1; color: #fff; margin-top: 6px;
+    letter-spacing: .02em;
+    text-shadow: {{ accent }}66 0 0 50px;
+  }
+  .from { font-size: 26px; color: #8ea4ab; margin-top: 6px; letter-spacing: .06em; }
+
+  /* ── approved ───────────────────────────────────────── */
+  .stamp {
+    margin-top: 26px; display: inline-flex; align-items: center; gap: 22px;
+    padding: 16px 44px; border-radius: 999px;
+    border: 4px solid #33FF99; color: #33FF99;
+    font-size: 64px; font-weight: 900; letter-spacing: .18em;
+    background: rgba(51,255,153,.08);
+    box-shadow: 0 0 50px rgba(51,255,153,.45), inset 0 0 30px rgba(51,255,153,.15);
+    text-shadow: 0 0 26px rgba(51,255,153,.7);
+  }
+  .countdown { margin-top: 28px; display: flex; gap: 16px; justify-content: center; }
+  .cd-cell {
+    min-width: 170px; padding: 14px 20px; border-radius: 18px;
+    background: rgba(0,0,0,.35); border: 1px solid rgba(51,255,153,.35);
+  }
+  .cd-num { font-size: 72px; font-weight: 900; color: #fff; line-height: 1; }
+  .cd-unit { font-size: 20px; letter-spacing: .2em; color: #9fe8c4; text-transform: uppercase; margin-top: 6px; }
+  .cd-sub { margin-top: 16px; font-size: 26px; color: #d9ffe9; }
+  .cd-sub b { color: #fff; }
+
+  /* ── voting ─────────────────────────────────────────── */
+  .numbers { margin-top: 24px; display: flex; gap: 60px; justify-content: center; align-items: flex-end; }
+  .num-big { font-size: 84px; font-weight: 900; color: {{ accent }}; line-height: 1; text-shadow: {{ accent }}55 0 0 30px; }
+  .num { font-size: 52px; font-weight: 800; color: #fff; line-height: 1; }
+  .num-label { font-size: 19px; letter-spacing: .14em; color: #91a3a9; text-transform: uppercase; margin-top: 8px; }
+  .num-delta { font-size: 24px; font-weight: 800; color: #33FF99; margin-left: 6px; }
+  .num-delta.neg { color: #ff7f8a; }
+
+  .strip-wrap { width: 100%; margin-top: 30px; position: relative; }
+  .strip { display: flex; gap: 3px; height: 54px; }
+  .seg { flex: 1; border-radius: 4px; }
+  .seg-approve { background: {{ '#33FF99' if approved else '#23DCC8' }}; opacity: .85; }
+  .seg-none { background: {{ '#ffb547' if near_quorum else 'rgba(255,255,255,.12)' }}; }
+  .seg-reject { background: #ff5a6e; }
+  .strip-quorum { position: absolute; top: -12px; height: 78px; width: 5px; background: #fff; border-radius: 3px;
+                  box-shadow: 0 0 12px rgba(255,255,255,.6); }
+  .strip-q-label { position: absolute; top: 76px; transform: translateX(-50%); font-size: 20px;
+                   font-weight: 800; color: #fff; letter-spacing: .08em; white-space: nowrap; }
+  .strip-labels { display: flex; justify-content: space-between; margin-top: 12px; font-size: 20px; color: #9eb3ba; }
+
+  /* ── bottom row: the chart and/or the laggards, all the height that is left ── */
+  .bottom-row {
+    flex: 1 1 auto; min-height: 0; width: 100%; margin-top: 50px;
+    display: flex; gap: 40px; justify-content: center; align-items: stretch;
+  }
+  .bottom-col { flex: 0 0 50%; min-width: 0; display: flex; flex-direction: column; }
+  .bottom-row.split .bottom-col { flex: 1 1 0; }
+
+  .lag-title { font-size: 26px; font-weight: 800; color: #ffb547; letter-spacing: .08em;
+               text-transform: uppercase; text-shadow: rgba(255,181,71,.35) 0 0 18px; }
+  .chips { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; align-content: flex-start; }
+  .chip { font-family: monospace; font-size: 21px; font-weight: 700; padding: 5px 10px; border-radius: 9px;
+          background: rgba(255,181,71,.14); color: #ffcf85; border: 1px solid rgba(255,181,71,.5); }
+  .chip.no { background: rgba(255,90,110,.18); color: #ff8a98; border-color: rgba(255,90,110,.5); }
+
+  /* a quiet chart of the approval over time */
+  .history-label { font-size: 17px; letter-spacing: .14em; color: #5f747a; text-transform: uppercase; }
+  .history-canvas { flex: 1 1 auto; min-height: 0; position: relative; margin-top: 4px; }
+</style>
+
+<div class="poster">
+  <div class="kicker">
+    {% if approved %}The network said yes
+    {% elif near_quorum %}🔥 {{ validators_to_quorum }} {{ 'vote' if validators_to_quorum == 1 else 'votes' }} to the quorum
+    {% elif is_new %}New upgrade proposal
+    {% else %}Validators are voting{% endif %}
+  </div>
+  <div class="version">{{ version }}</div>
+  {% if current_version %}<div class="from">current version {{ current_version }}</div>{% endif %}
+
+  {% if approved %}
+    <div class="stamp">✓ APPROVED</div>
+    {% if is_late or not eta_parts %}
+      <div class="cd-sub" style="margin-top: 28px">the upgrade height <b>#{{ '{:,}'.format(height) }}</b> is reached</div>
+    {% else %}
+      <div class="countdown">
+        {% for value, unit in eta_parts %}
+          <div class="cd-cell">
+            <div class="cd-num">{{ value }}</div>
+            <div class="cd-unit">{{ units[unit] }}</div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="cd-sub">until the upgrade at block <b>#{{ '{:,}'.format(height) }}</b> · {{ eta_date }}</div>
+    {% endif %}
+  {% else %}
+    <div class="numbers">
+      <div>
+        <div class="num-big">{{ '%.1f' | format(pct) }}%</div>
+        <div class="num-label">approval
+          {%- if prev_percent is not none and (pct - prev_percent) | abs >= 0.05 -%}
+            <span class="num-delta {{ 'neg' if pct < prev_percent }}">{{ '%+.1f' | format(pct - prev_percent) }}%</span>
+          {%- endif -%}
+        </div>
+      </div>
+      {% if active_count %}
+        <div><div class="num">{{ approvers }}<span style="color:#6f8389">/{{ active_count }}</span></div><div class="num-label">validators</div></div>
+      {% endif %}
+      <div><div class="num">{{ validators_to_quorum }}</div><div class="num-label">to quorum</div></div>
+      {% if eta_parts %}
+        <div>
+          <div class="num">≈ {% for value, unit in eta_parts[:2] %}{{ value }}{{ unit }} {% endfor %}</div>
+          <div class="num-label">deadline</div>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% if nodes %}
+    <div class="strip-wrap">
+      <div class="strip">
+        {% for n in yes %}<div class="seg seg-approve"></div>{% endfor %}
+        {% for n in silent %}<div class="seg seg-none"></div>{% endfor %}
+        {% for n in against %}<div class="seg seg-reject"></div>{% endfor %}
+      </div>
+      {% set q_left = quorum_count / active_count * 100 %}
+      <div class="strip-quorum" style="left: calc({{ q_left }}% - 2px)"></div>
+      <div class="strip-q-label" style="left: {{ q_left }}%">quorum {{ quorum_count }}</div>
+      <div class="strip-labels">
+        <span>✓ {{ yes | length }} approved</span>
+        <span>{{ silent | length }} silent · {{ against | length }} rejected</span>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if has_bottom %}
+    <div class="bottom-row {{ 'split' if show_history and show_waiting }}">
+      {% if show_history %}
+        <div class="bottom-col">
+          <div class="history-label">approval over time</div>
+          <div class="history-canvas"><canvas id="history-chart"></canvas></div>
+        </div>
+      {% endif %}
+      {% if show_waiting %}
+        <div class="bottom-col">
+          <div class="lag-title">⏰ Still waiting for</div>
+          <div class="chips">
+            {% for n in silent %}<span class="chip">{{ n.short }}</span>{% endfor %}
+            {% for n in against %}<span class="chip no">{{ n.short }}</span>{% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+{% if show_history %}
+<script>
+  (function () {
+    const points = {{ history | tojson }}.map(p => ({x: p.ts * 1000, y: p.pct}));
+    const accent = '{{ accent }}';
+    const quorumPct = {{ (quorum_count / active_count * 100) if active_count else 66.67 }};
+    const xMin = points[0].x, xMax = points[points.length - 1].x;
+    const yMax = Math.min(100, Math.ceil((Math.max(quorumPct, ...points.map(p => p.y)) + 5) / 20) * 20);
+    const pad = (n) => String(n).padStart(2, '0');
+    // ticks at UTC midnights; for a short vote, every 6 hours
+    const DAY = 86400000, STEP_SHORT = 6 * 3600000;
+    const step = (xMax - xMin) >= 2 * DAY ? DAY : STEP_SHORT;
+    const ticks = [];
+    for (let t = Math.ceil(xMin / step) * step; t <= xMax; t += step) ticks.push({value: t});
+    const fmt = (ms) => {
+      const d = new Date(ms);
+      const date = pad(d.getUTCDate()) + '.' + pad(d.getUTCMonth() + 1);
+      return step === DAY ? date : date + ' ' + pad(d.getUTCHours()) + 'h';
+    };
+    new Chart(document.getElementById('history-chart'), {
+      type: 'line',
+      data: {
+        datasets: [
+          {data: points, stepped: true, borderColor: accent + 'aa', borderWidth: 2.5, pointRadius: 0,
+           fill: true, backgroundColor: accent + '14'},
+          {data: [{x: xMin, y: quorumPct}, {x: xMax, y: quorumPct}], borderColor: 'rgba(255,255,255,.28)',
+           borderWidth: 1.5, borderDash: [8, 7], pointRadius: 0},
+        ],
+      },
+      options: {
+        animation: false, responsive: true, maintainAspectRatio: false,
+        layout: {padding: {top: 6}},
+        plugins: {legend: {display: false}, tooltip: {enabled: false}},
+        scales: {
+          x: {type: 'linear', min: xMin, max: xMax, grid: {display: false}, border: {display: false},
+              afterBuildTicks: axis => { axis.ticks = ticks; },
+              ticks: {color: '#56696f', font: {size: 15}, maxRotation: 0, autoSkip: true, callback: fmt}},
+          y: {min: 0, max: yMax, grid: {display: false}, border: {display: false},
+              ticks: {color: '#56696f', font: {size: 15}, stepSize: 20, callback: v => v + "%"}},
+        },
+      },
+    });
+  })();
+</script>
+{% endif %}
+{% endblock %}
