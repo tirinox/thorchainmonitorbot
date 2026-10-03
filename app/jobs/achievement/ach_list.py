@@ -200,8 +200,8 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.DAILY_VOLUME, 'Daily swap volume', prefix='$', thresholds=50_000_000, background=BG_TRADE),
     ADesc(A.MONTHLY_SWAP_VOLUME, 'Monthly swap volume', prefix='$', thresholds=1_000_000_000,
           background=BG_TRADE),
-    ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond', postfix=POSTFIX_RUNE, background=BG_NETWORK),
-    ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE, background=BG_NETWORK),
+    ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond', postfix=POSTFIX_RUNE, background=BG_NODES),
+    ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE, background=BG_NODES),
     ADesc(A.NODE_COUNT, 'Total node count', more_than=False, background=BG_NETWORK, enabled=False),
     ADesc(A.ACTIVE_NODE_COUNT, 'Active node count', more_than=False, background=BG_NODES),
 
