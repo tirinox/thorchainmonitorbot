@@ -135,6 +135,17 @@
     "shade_from": 58,
     "note": "the calm water between the bows; the top ship reaches the date: smaller and lower"
   },
+  "nn_wreath_blocks_forge.png": {
+    "tint": "#ffd27a",
+    "hole_x": 0.501,
+    "hole_y": 0.42,
+    "hole_r": 0.195,
+    "base": "#060a0d",
+    "size": 830,
+    "top": 75,
+    "shade_from": 58,
+    "note": "a little above the hammer head; smaller and lower, so the ring stays clear of the date"
+  },
   "nn_wreath_btc_vault_2.png": {
     "tint": "#ffb84d",
     "hole_x": 0.499,

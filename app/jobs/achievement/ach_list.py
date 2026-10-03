@@ -150,6 +150,7 @@ BG_STABLES = 'nn_wreath_stables_chains.png'
 BG_TRADE = 'nn_wreath_trade.png'
 BG_POL = 'nn_wreath_pol_roots.png'
 BG_NODES = 'nn_wreath_nodes_fleet.png'
+BG_BLOCKS = 'nn_wreath_blocks_forge.png'
 BG_BTC = 'nn_wreath_btc_vault_2.png'
 BG_ETH = 'nn_wreath_eth_vault_2.png'
 BG_ANNIVERSARY = 'nn_wreath_ann_3.png'
@@ -213,7 +214,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
           always_fresh=True),  # fed only within ANNIVERSARY_WINDOW, a year after the previous feed
 
     ADesc(A.BLOCK_NUMBER, 'Blocks produced', milestone_scale=MILESTONES_EVERY_DIGIT,
-          thresholds=7_000_000, background=BG_NETWORK),
+          thresholds=7_000_000, background=BG_BLOCKS),
     ADesc(A.DAILY_TX_COUNT, 'Daily transactions', background=BG_SWAPS),
     ADesc(A.TOTAL_MIMIR_VOTES, 'Total Mimir votes', more_than=False, background=BG_NETWORK),
     ADesc(A.MARKET_CAP_USD, 'RUNE market cap', prefix='$', background=BG_RUNE),
