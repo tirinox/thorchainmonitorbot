@@ -62,16 +62,16 @@
     "top": 40,
     "shade_from": 58
   },
-  "nn_wreath_revenue_toast.png": {
-    "tint": "#e8c45a",
-    "hole_x": 0.499,
-    "hole_y": 0.444,
-    "hole_r": 0.196,
-    "base": "#010a0b",
-    "size": 790,
-    "top": 36,
-    "shade_from": 70,
-    "note": "the tankards reach into the opening: the hole is set by eye above them"
+  "nn_wreath_revenue_hoard.png": {
+    "tint": "#f2e6c8",
+    "hole_x": 0.497,
+    "hole_y": 0.402,
+    "hole_r": 0.178,
+    "base": "#090a0e",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58,
+    "note": "inside the silver arm ring, above the beam of the scales"
   },
   "nn_wreath_affiliate_grip.png": {
     "tint": "#f0c070",
@@ -183,6 +183,16 @@
     "hole_y": 0.496,
     "hole_r": 0.187,
     "base": "#090d16",
+    "size": 860,
+    "top": 40,
+    "shade_from": 58
+  },
+  "nn_wreath_pools.png": {
+    "tint": "#e6f2ff",
+    "hole_x": 0.502,
+    "hole_y": 0.396,
+    "hole_r": 0.151,
+    "base": "#070a0f",
     "size": 860,
     "top": 40,
     "shade_from": 58

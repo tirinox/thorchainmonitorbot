@@ -143,7 +143,7 @@ BG_SWAPS = 'nn_wreath_swaps.png'
 BG_USERS = 'nn_wreath_users_day.png'
 BG_USERS_NIGHT = 'nn_wreath_users_night.png'  # the monthly twin of the daily frame
 BG_RUNE = 'nn_wreath_rune.png'
-BG_REVENUE = 'nn_wreath_revenue_toast.png'
+BG_REVENUE = 'nn_wreath_revenue_hoard.png'
 BG_AFFILIATE = 'nn_wreath_affiliate_grip.png'
 BG_BURN = 'nn_wreath_burnt.png'  # kept for a burnt RUNE achievement, none uses it yet
 BG_VAULT = 'nn_wreath_vault.png'
@@ -152,6 +152,7 @@ BG_TRADE = 'nn_wreath_trade.png'
 BG_POL = 'nn_wreath_pol_roots.png'
 BG_NODES = 'nn_wreath_nodes_fleet.png'
 BG_BLOCKS = 'nn_wreath_blocks_forge.png'
+BG_POOLS = 'nn_wreath_pools.png'
 BG_BTC = 'nn_wreath_btc_vault_2.png'
 BG_ETH = 'nn_wreath_eth_vault_2.png'
 BG_ANNIVERSARY = 'nn_wreath_ann_3.png'
@@ -219,8 +220,8 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.DAILY_TX_COUNT, 'Daily transactions', background=BG_SWAPS),
     ADesc(A.TOTAL_MIMIR_VOTES, 'Total Mimir votes', more_than=False, background=BG_NETWORK),
     ADesc(A.MARKET_CAP_USD, 'RUNE market cap', prefix='$', background=BG_RUNE),
-    ADesc(A.TOTAL_POOLS, 'Total pools', more_than=False),
-    ADesc(A.TOTAL_ACTIVE_POOLS, 'Active pools', more_than=False),
+    ADesc(A.TOTAL_POOLS, 'Total pools', more_than=False, background=BG_POOLS),
+    ADesc(A.TOTAL_ACTIVE_POOLS, 'Active pools', more_than=False, background=BG_POOLS),
 
     ADesc(A.SWAP_VOLUME_TOTAL_USD, 'Total swap volume', prefix='$', milestone_scale=MILESTONES_EVERY_DIGIT,
           thresholds=100_000_000_000, background=BG_TRADE),
