@@ -255,7 +255,7 @@ class AlertPresenter(INotified, WithLogger):
             await self.broadcaster.broadcast_to_all(
                 "public:node_churn:start",
                 BaseLocalization.notification_churn_started,
-                event.changes
+                event
             )
 
     async def render_key_stats(self, _: BaseLocalization, event: AlertKeyStats):

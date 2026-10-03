@@ -9,7 +9,7 @@ from typing import List, Dict, NamedTuple, Optional, Tuple, Any, Iterator
 
 from semver import VersionInfo
 
-from lib.constants import thor_to_float, float_to_thor, bp_to_float
+from lib.constants import thor_to_float, float_to_thor, bp_to_float, BLOCKS_PER_YEAR, THOR_BLOCK_TIME
 from lib.date_utils import now_ts, DAY
 from lib.money import calculate_apy
 from lib.texts import find_country_emoji
@@ -196,6 +196,31 @@ class EventBondProviderInOut(NamedTuple):
 
 
 @dataclass
+class ChurnRewardStats:
+    total_rune: float = 0.0
+    n_nodes: int = 0  # the nodes that got a reward
+    total_bond: float = 0.0  # the active bond that earned it
+    period_blocks: int = 0  # since the previous churn, 0 if unknown
+
+    MIN_PERIOD_BLOCKS = 600  # an hour; over a shorter period the APR is nonsense
+
+    @property
+    def average_rune(self):
+        return self.total_rune / self.n_nodes if self.n_nodes else 0.0
+
+    @property
+    def period_sec(self):
+        return self.period_blocks * THOR_BLOCK_TIME
+
+    @property
+    def apr(self) -> Optional[float]:
+        """Bond-weighted, in percent; None if the period or the bond is unknown"""
+        if self.period_blocks < self.MIN_PERIOD_BLOCKS or self.total_bond <= 0:
+            return None
+        return self.total_rune / self.total_bond * BLOCKS_PER_YEAR / self.period_blocks * 100.0
+
+
+@dataclass
 class NodeSetChanges:
     nodes_added: List[NodeInfo] = field(default_factory=list)
     nodes_removed: List[NodeInfo] = field(default_factory=list)
@@ -341,6 +366,24 @@ class NodeSetChanges:
     @property
     def bond_churn_delta(self):
         return self.bond_churn_in - self.bond_churn_out
+
+    @property
+    def churn_rewards(self) -> ChurnRewardStats:
+        """
+        A churn pays all the active nodes, the leaving ones too, and resets their current_award,
+        so the node set before it holds what was paid.
+        Nodes become active only at a churn, so the newest active_block_height in that set is the previous churn.
+        """
+        nodes = self.previous_active_only_nodes
+        paid = [n for n in nodes if n.current_award > 0]
+        prev_churn_height = max((n.active_block_height for n in nodes), default=0)
+        period = self.block_no - prev_churn_height if 0 < prev_churn_height < self.block_no else 0
+        return ChurnRewardStats(
+            total_rune=sum(n.current_award for n in paid),
+            n_nodes=len(paid),
+            total_bond=sum(n.bond for n in nodes),
+            period_blocks=period,
+        )
 
     def __str__(self) -> str:
         return (f"NodeSetChanges("
@@ -585,3 +628,4 @@ class AlertNodeChurn(NamedTuple):
     with_picture: bool
     network_info: Optional[NetworkNodes] = None
     bond_chart: Optional[List[NodeStatsItem]] = None
+    usd_per_rune: float = 0.0

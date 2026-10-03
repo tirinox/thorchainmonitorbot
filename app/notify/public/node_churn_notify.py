@@ -71,7 +71,14 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
     async def _notify_when_node_churn_started(self, changes: NodeSetChanges):
         if await self._start_cd.can_do():
             await self._start_cd.do()
-            await self.pass_data_to_listeners(AlertNodeChurn(changes, finished=False, with_picture=False))
+            try:
+                usd_per_rune = await self.deps.pool_cache.get_usd_per_rune()
+            except Exception as e:
+                self.logger.error(f'No RUNE price for the churn rewards: {e!r}')
+                usd_per_rune = 0.0
+            await self.pass_data_to_listeners(
+                AlertNodeChurn(changes, finished=False, with_picture=False, usd_per_rune=usd_per_rune)
+            )
 
     async def _notify_when_node_churn_finished(self, changes: NodeSetChanges):
         if await self._finish_cd.can_do():

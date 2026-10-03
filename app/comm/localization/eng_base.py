@@ -39,7 +39,7 @@ from models.name import ThorName
 from models.net_stats import NetworkStats, AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash, EventProviderBondChange, \
-    EventProviderStatus, BondProvider, NetworkNodes
+    EventProviderStatus, BondProvider, NetworkNodes, AlertNodeChurn
 from models.pool_info import PoolInfo, PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge, PriceHolder
 from models.queue import QueueInfo
@@ -1289,11 +1289,38 @@ class BaseLocalization(ABC):  # == English
 
         return message.strip()
 
-    def notification_churn_started(self, changes: NodeSetChanges):
+    def _rune_and_usd(self, rune, usd_per_rune):
+        text = code(short_rune(rune))
+        if usd_per_rune:
+            text += f' ({short_dollar(rune * usd_per_rune)})'
+        return text
+
+    def notification_churn_started(self, event: AlertNodeChurn):
+        changes = event.changes
         text = f'♻️ <b>Node churn started at block #{changes.block_no}</b>'
         if changes.vaults_migrating:
             text += '\nVaults are migrating.'
-        return text
+        text += '\n\n'
+
+        if n_in := len(changes.nodes_activated):
+            text += (f'➡️ Churning in: {bold(n_in)} {plural(n_in, "node", "nodes")}, '
+                     f'bond {code(short_rune(changes.bond_churn_in, signed=True))}\n')
+        if n_out := len(changes.nodes_deactivated):
+            text += (f'⬅️ Churning out: {bold(n_out)} {plural(n_out, "node", "nodes")}, '
+                     f'bond {code(short_rune(-changes.bond_churn_out, signed=True))}\n')
+        text += self._node_bond_change_after_churn(changes) + '\n\n'
+
+        rewards = changes.churn_rewards
+        if rewards.total_rune:
+            usd_per_rune = event.usd_per_rune
+            text += (f'💰 Rewards paid: {self._rune_and_usd(rewards.total_rune, usd_per_rune)} '
+                     f'to {bold(rewards.n_nodes)} {plural(rewards.n_nodes, "node", "nodes")}\n'
+                     f'Average reward: {self._rune_and_usd(rewards.average_rune, usd_per_rune)} per node\n')
+            if (apr := rewards.apr) is not None:
+                text += (f'Average APR: {code(pretty_percent(apr, signed=False))} '
+                         f'over {self.seconds_human(rewards.period_sec)} since the previous churn\n')
+
+        return text.strip()
 
     def node_list_text(self, nodes: List[NodeInfo], status, items_per_chunk=12):
         add_status = False

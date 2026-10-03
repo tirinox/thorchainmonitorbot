@@ -31,7 +31,7 @@ from models.memo import ActionType
 from models.mimir import MimirChange, MimirHolder
 from models.net_stats import AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo, NodeEvent, EventDataSlash, \
-    NodeEventType, EventBlockHeight, EventProviderStatus, EventProviderBondChange, BondProvider
+    NodeEventType, EventBlockHeight, EventProviderStatus, EventProviderBondChange, BondProvider, AlertNodeChurn
 from models.pool_info import PoolInfo, PoolChanges, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.queue import QueueInfo
@@ -1024,11 +1024,32 @@ class RussianLocalization(BaseLocalization):
 
         return message.strip()
 
-    def notification_churn_started(self, changes: NodeSetChanges):
+    def notification_churn_started(self, event: AlertNodeChurn):
+        changes = event.changes
         text = f'♻️ <b>Процесс перемешивания нод начался на блоке #{changes.block_no}</b>'
         if changes.vaults_migrating:
             text += '\nХранилища мигрируют.'
-        return text
+        text += '\n\n'
+
+        if n_in := len(changes.nodes_activated):
+            text += (f'➡️ Входят в активный сет: {bold(n_in)}, '
+                     f'бонд {code(short_rune(changes.bond_churn_in, signed=True))}\n')
+        if n_out := len(changes.nodes_deactivated):
+            text += (f'⬅️ Выходят из активного сета: {bold(n_out)}, '
+                     f'бонд {code(short_rune(-changes.bond_churn_out, signed=True))}\n')
+        text += self._node_bond_change_after_churn(changes) + '\n\n'
+
+        rewards = changes.churn_rewards
+        if rewards.total_rune:
+            usd_per_rune = event.usd_per_rune
+            text += (f'💰 Выплачено наград: {self._rune_and_usd(rewards.total_rune, usd_per_rune)}, '
+                     f'получили нод: {bold(rewards.n_nodes)}\n'
+                     f'Средняя награда на ноду: {self._rune_and_usd(rewards.average_rune, usd_per_rune)}\n')
+            if (apr := rewards.apr) is not None:
+                text += (f'Средний APR: {code(pretty_percent(apr, signed=False))} '
+                         f'за {self.seconds_human(rewards.period_sec)} с прошлого перемешивания\n')
+
+        return text.strip()
 
     def node_list_text(self, nodes: List[NodeInfo], status, items_per_chunk=12):
         add_status = False

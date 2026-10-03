@@ -22,7 +22,7 @@ from models.last_block import EventBlockSpeed, BlockProduceState
 from models.memo import ActionType
 from models.mimir import MimirChange, MimirHolder
 from models.net_stats import AlertNetworkStats
-from models.node_info import NodeSetChanges, NodeInfo
+from models.node_info import NodeSetChanges, NodeInfo, AlertNodeChurn
 from models.pool_info import EventPools, PoolChanges, PoolInfo
 from models.price import RuneMarketInfo, AlertPrice, AlertPriceDiverge
 from models.pol_reserve import AlertPolReserveStats
@@ -471,11 +471,43 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return self.smart_split(components)
 
-    def notification_churn_started(self, changes: NodeSetChanges):
-        text = f'♻️ Node churn have started at block #{changes.block_no}'
+    @staticmethod
+    def _rune_and_usd_plain(rune, usd_per_rune):
+        text = short_rune(rune)
+        if usd_per_rune:
+            text += f' ({short_dollar(rune * usd_per_rune)})'
+        return text
+
+    def notification_churn_started(self, event: AlertNodeChurn):
+        changes = event.changes
+        text = f'♻️ Node churn has started at block #{changes.block_no}'
         if changes.vaults_migrating:
             text += '\nVaults are migrating.'
-        return text
+        components = [text + '\n\n']
+
+        nodes_text = ''
+        if n_in := len(changes.nodes_activated):
+            nodes_text += (f'➡️ In: {n_in} {plural(n_in, "node", "nodes")}, '
+                           f'bond {short_rune(changes.bond_churn_in, signed=True)}\n')
+        if n_out := len(changes.nodes_deactivated):
+            nodes_text += (f'⬅️ Out: {n_out} {plural(n_out, "node", "nodes")}, '
+                           f'bond {short_rune(-changes.bond_churn_out, signed=True)}\n')
+        nodes_text += self._node_bond_change_after_churn(changes) + '\n\n'
+        components.append(nodes_text)
+
+        rewards = changes.churn_rewards
+        if rewards.total_rune:
+            usd_per_rune = event.usd_per_rune
+            rewards_text = (
+                f'💰 Rewards paid: {self._rune_and_usd_plain(rewards.total_rune, usd_per_rune)} '
+                f'to {rewards.n_nodes} {plural(rewards.n_nodes, "node", "nodes")}\n'
+                f'Avg. reward: {self._rune_and_usd_plain(rewards.average_rune, usd_per_rune)} per node\n'
+            )
+            if (apr := rewards.apr) is not None:
+                rewards_text += f'Avg. APR: {pretty_percent(apr, signed=False)}\n'
+            components.append(rewards_text)
+
+        return self.smart_split(components)
 
     @staticmethod
     def node_version(v, data: NodeSetChanges, active=True):
