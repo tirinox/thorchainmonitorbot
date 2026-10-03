@@ -43,7 +43,8 @@ from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
 from models.tx import EventLargeTransaction
-from models.upgrade_proposal import AlertUpgradeProposalNew, AlertUpgradeProposalProgress
+from models.upgrade_proposal import AlertUpgradeProposalNew, AlertUpgradeProposalProgress, \
+    AlertUpgradeProposalApproved, AlertUpgradeProposalExpired, short_node_address
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from .achievements.ach_rus import AchievementsRussianLocalization
 from .eng_base import BaseLocalization, CREATOR_TG, URL_OUR_REF
@@ -1125,18 +1126,43 @@ class RussianLocalization(BaseLocalization):
     def upgrade_proposal_status_text(approved: bool):
         return 'Одобрено' if approved else 'В ожидании'
 
+    def _upgrade_eta(self, e):
+        blocks_left = e.blocks_left
+        if blocks_left is None or blocks_left <= 0:
+            return ''
+        return f' ≈ через {self.seconds_human(e.seconds_left)}'
+
+    def _upgrade_short_addresses(self, addresses):
+        shown = addresses[:self.UPGRADE_LAGGARDS_LIMIT]
+        text = ' '.join(code(short_node_address(a)) for a in shown)
+        if len(addresses) > len(shown):
+            text += f' и ещё {len(addresses) - len(shown)}'
+        return text
+
+    def _upgrade_laggards_text(self, e: AlertUpgradeProposalProgress):
+        laggards = e.votes
+        if not e.near_quorum or not laggards or not (laggards.not_voted or laggards.rejecters):
+            return ''
+        msg = ''
+        if laggards.not_voted:
+            msg += f'\n⏰ {bold("Ещё не проголосовали")} ({len(laggards.not_voted)}): ' \
+                   f'{self._upgrade_short_addresses(laggards.not_voted)}\n'
+        if laggards.rejecters:
+            msg += f'👎 {bold("Против")} ({len(laggards.rejecters)}): ' \
+                   f'{self._upgrade_short_addresses(laggards.rejecters)}\n'
+        return msg
+
     def notification_text_upgrade_proposal_new(self, e: AlertUpgradeProposalNew):
         p = e.proposal
-        msg = bold('🆕 Обнаружено новое предложение обновления THORChain') + '\n\n'
-        msg += f'Версия: {pre(p.name)}\n'
+        msg = bold(f'🆕 Предложено обновление THORChain: {p.name}') + '\n\n'
         msg += f'Поддержка: {pre(f"{p.approved_percent:.2f}%")}\n'
         msg += f'Подписантов: {pre(len(p.approvers))}\n'
         msg += f'Валидаторов до кворума: {pre(p.validators_to_quorum)}\n'
         msg += f'Статус: {pre(self.upgrade_proposal_status_text(p.approved))}\n'
-        msg += f'Высота: {pre(p.height)}\n'
+        msg += f'Высота обновления: {pre(p.height)}{self._upgrade_eta(e)}\n'
 
-        if p.info:
-            msg += f'\nИнфо: {pre(cut_long_text(p.info, 180))}\n'
+        if info := self._upgrade_info(p):
+            msg += f'\nИнфо: {pre(cut_long_text(info, 180))}\n'
 
         return msg
 
@@ -1147,8 +1173,8 @@ class RussianLocalization(BaseLocalization):
         approver_delta = len(current.approvers) - len(previous.approvers)
         quorum_delta = current.validators_to_quorum - previous.validators_to_quorum
 
-        msg = bold('🗳️ Прогресс предложения обновления THORChain') + '\n\n'
-        msg += f'Версия: {pre(current.name)}\n'
+        title = '🔥 Обновление THORChain почти одобрено' if e.near_quorum else '🗳️ Голосование за обновление THORChain'
+        msg = bold(f'{title}: {current.name}') + '\n\n'
         msg += f'Поддержка: {pre(f"{current.approved_percent:.2f}%")} ({approval_delta:+.2f}%)\n'
         msg += f'Подписантов: {pre(len(current.approvers))} ({approver_delta:+d})\n'
         msg += f'Валидаторов до кворума: {pre(current.validators_to_quorum)} ({quorum_delta:+d})\n'
@@ -1157,11 +1183,29 @@ class RussianLocalization(BaseLocalization):
                    f'{pre(self.upgrade_proposal_status_text(current.approved))}\n'
         else:
             msg += f'Статус: {pre(self.upgrade_proposal_status_text(current.approved))}\n'
-        msg += f'Высота: {pre(current.height)}\n'
+        msg += f'Высота обновления: {pre(current.height)}{self._upgrade_eta(e)}\n'
+        msg += self._upgrade_laggards_text(e)
 
-        if current.info:
-            msg += f'\nИнфо: {pre(cut_long_text(current.info, 180))}\n'
+        return msg
 
+    def notification_text_upgrade_proposal_approved(self, e: AlertUpgradeProposalApproved):
+        p = e.proposal
+        msg = bold(f'✅ Обновление THORChain {p.name} ОДОБРЕНО!') + '\n\n'
+        if e.is_late:
+            msg += f'Высота обновления {pre(p.height)} достигнута, сеть переходит на {pre(p.name)}.\n'
+        else:
+            msg += f'Валидаторы набрали кворум: {pre(f"{p.approved_percent:.2f}%")} ' \
+                   f'({pre(len(p.approvers))} подписантов).\n'
+            msg += f'Высота обновления: {pre(p.height)}{self._upgrade_eta(e)}\n'
+            msg += '\nОператоры нод, готовьтесь обновляться!\n'
+        return msg
+
+    def notification_text_upgrade_proposal_expired(self, e: AlertUpgradeProposalExpired):
+        p = e.proposal
+        msg = bold(f'⌛ Предложение обновления THORChain {p.name} истекло') + '\n\n'
+        msg += f'Высота {pre(p.height)} пройдена без кворума.\n'
+        msg += f'Последняя поддержка: {pre(f"{p.approved_percent:.2f}%")}, ' \
+               f'не хватило {pre(p.validators_to_quorum)} валидаторов.\n'
         return msg
 
     # --------- CHAIN INFO SUMMARY ------------

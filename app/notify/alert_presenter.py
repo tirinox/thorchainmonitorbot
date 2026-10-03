@@ -47,7 +47,8 @@ from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
 from models.tx import EventLargeTransaction
-from models.upgrade_proposal import AlertUpgradeProposalNew, AlertUpgradeProposalProgress
+from models.upgrade_proposal import AlertUpgradeProposalNew, AlertUpgradeProposalProgress, \
+    AlertUpgradeProposalApproved, AlertUpgradeProposalExpired, upgrade_card_params
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from models.wasm import WasmPeriodStats
 from notify.broadcast import Broadcaster
@@ -123,6 +124,10 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_upgrade_proposal_new(data)
         elif isinstance(data, AlertUpgradeProposalProgress):
             await self._handle_upgrade_proposal_progress(data)
+        elif isinstance(data, AlertUpgradeProposalApproved):
+            await self._handle_upgrade_proposal_approved(data)
+        elif isinstance(data, AlertUpgradeProposalExpired):
+            await self._handle_upgrade_proposal_expired(data)
         elif isinstance(data, AlertMimirVoting):
             await self._handle_mimir_voting(data)
         elif isinstance(data, AlertQueue):
@@ -617,17 +622,54 @@ class AlertPresenter(INotified, WithLogger):
             BaseLocalization.notification_text_version_changed, data
         )
 
+    async def render_upgrade_proposal(self, data):
+        if not self.use_renderer:
+            return None, None
+        try:
+            photo = await self.renderer.render('upgrade_proposal.jinja2', upgrade_card_params(data))
+            return photo, 'upgrade_proposal.png'
+        except Exception as e:
+            self.logger.exception(f'Failed to render the upgrade proposal card: {e!r}')
+            return None, None
+
+    async def _broadcast_upgrade_proposal(self, msg_type, text_f, data):
+        # the card has no localized text, so it is rendered once for all the languages
+        photo, photo_name = await self.render_upgrade_proposal(data)
+
+        async def message_gen(loc: BaseLocalization):
+            text = text_f(loc, data)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
+        await self.deps.broadcaster.broadcast_to_all(msg_type, message_gen)
+
     async def _handle_upgrade_proposal_new(self, data: AlertUpgradeProposalNew):
-        await self.deps.broadcaster.broadcast_to_all(
+        await self._broadcast_upgrade_proposal(
             "public:upgrade_proposals:new",
             BaseLocalization.notification_text_upgrade_proposal_new,
             data,
         )
 
     async def _handle_upgrade_proposal_progress(self, data: AlertUpgradeProposalProgress):
-        await self.deps.broadcaster.broadcast_to_all(
+        await self._broadcast_upgrade_proposal(
             "public:upgrade_proposals:progress",
             BaseLocalization.notification_text_upgrade_proposal_progress,
+            data,
+        )
+
+    async def _handle_upgrade_proposal_approved(self, data: AlertUpgradeProposalApproved):
+        await self._broadcast_upgrade_proposal(
+            "public:upgrade_proposals:approved",
+            BaseLocalization.notification_text_upgrade_proposal_approved,
+            data,
+        )
+
+    async def _handle_upgrade_proposal_expired(self, data: AlertUpgradeProposalExpired):
+        await self.deps.broadcaster.broadcast_to_all(
+            "public:upgrade_proposals:expired",
+            BaseLocalization.notification_text_upgrade_proposal_expired,
             data,
         )
 

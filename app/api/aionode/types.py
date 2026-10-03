@@ -350,6 +350,7 @@ class ThorUpgradeProposal(NamedTuple):
     info: str = ''
     name: str = ''
     validators_to_quorum: int = 0
+    rejecters: List[str] = None
 
     @classmethod
     def from_json(cls, j):
@@ -362,6 +363,7 @@ class ThorUpgradeProposal(NamedTuple):
             info=j.get('info', '') or '',
             name=j.get('name', '') or '',
             validators_to_quorum=int(j.get('validators_to_quorum', 0) or 0),
+            rejecters=j.get('rejecters', []) or [],
         )
 
     @classmethod

@@ -77,6 +77,11 @@ class ThorConnector:
         response = await self._request(self.env.path_upgrade_proposals, height=height)
         return ThorUpgradeProposal.from_json_array(response if isinstance(response, list) else [])
 
+    async def query_version(self) -> dict:
+        # {"current": "3.20.3", "next": "3.20.3", "next_since_height": 27937292, "querier": "3.20.3"}
+        response = await self._request(self.env.path_version)
+        return response if isinstance(response, dict) else {}
+
     async def query_chain_info(self) -> Dict[str, ThorChainInfo]:
         data = await self._request(self.env.path_inbound_addresses)
         if isinstance(data, list):
