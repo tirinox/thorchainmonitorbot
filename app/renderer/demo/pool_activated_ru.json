@@ -1,0 +1,36 @@
+{
+ "template_name": "pool_activated.jinja2",
+ "meta": {
+  "title": "Pool activated: a gas asset",
+  "subtitle": "BTC.BTC in Russian, no chain badge",
+  "lang": "ru",
+  "order": 1
+ },
+ "parameters": {
+  "pool": "BTC.BTC",
+  "ticker": "BTC",
+  "pool_label": "BTC",
+  "contract": "",
+  "asset_logo": "BTC.BTC",
+  "chain_logo": "",
+  "stats": [
+   {
+    "label": "Глубина пула",
+    "value": "$45.0M"
+   },
+   {
+    "label": "Цена",
+    "value": "$15,000"
+   },
+   {
+    "label": "Активных пулов",
+    "value": "29"
+   }
+  ],
+  "t": {
+   "title": "НОВЫЙ ПУЛ",
+   "activated": "Пул активирован",
+   "tagline": "Открыт для обменов и ликвидности"
+  }
+ }
+}

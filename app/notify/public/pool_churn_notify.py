@@ -28,7 +28,9 @@ class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
         # self._dbg_pool_changes(pool_changes) # fixme: debug (!)
 
         if pool_changes.any_changed:
-            self.logger.info(f'Pool changes detected: {pool_changes}!')
+            pool_changes = pool_changes._replace(pool_info_map=data.pool_info_map, usd_per_rune=data.usd_per_rune)
+            self.logger.info(f'Pool changes detected: added {pool_changes.pools_added}, '
+                             f'removed {pool_changes.pools_removed}, changed {pool_changes.pools_changed}!')
             if await self.spam_cd.can_do():
                 await self.pass_data_to_listeners(pool_changes)
                 await self.spam_cd.do()

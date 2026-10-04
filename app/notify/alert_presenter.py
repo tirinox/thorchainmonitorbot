@@ -8,9 +8,11 @@ from comm.localization.manager import BaseLocalization
 from comm.picture.achievement_card import build_achievement_card, achievement_card_filename, ACHIEVEMENT_TEMPLATE
 from comm.picture.block_height_picture import block_speed_chart
 from comm.picture.nodes_card import build_nodes_card, nodes_card_filename, NODES_TEMPLATE
+from comm.picture.pool_card import build_pool_activated_card, pool_activated_card_filename, POOL_ACTIVATED_TEMPLATE
 from comm.picture.pools_picture import PoolPictureGenerator
 from comm.picture.price_picture import price_graph_from_db
 from comm.picture.queue_picture import queue_graph
+from comm.picture.resources import Resources
 from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.achievement.ach_list import Achievement
 from jobs.fetch.cached.last_block import EventLastBlock
@@ -33,7 +35,7 @@ from models.memo import THORMemo
 from models.mimir import AlertMimirChange, AlertMimirVoting, MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT
 from models.net_stats import AlertNetworkStats
 from models.node_info import AlertNodeChurn, NetworkNodes
-from models.pool_info import PoolChanges, EventPools
+from models.pool_info import PoolChanges, PoolChange, EventPools
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.rapid_swap import RapidSwapPeriodStats
 from models.queue import AlertQueue
@@ -200,11 +202,40 @@ class AlertPresenter(INotified, WithLogger):
             event
         )
 
+    async def render_pool_activated(self, loc: BaseLocalization, event: PoolChanges, change: PoolChange):
+        asset = Asset.from_string(change.pool_name)
+        # a new pool may have no logo yet; the renderer reads the same folder
+        await Resources().logo_downloader.get_or_download_logo_cached(str(asset.l1_asset))
+        parameters = build_pool_activated_card(
+            change.pool_name, event.pool_info_map, event.usd_per_rune, loc, self._get_chain_logo(asset))
+        photo = await self.renderer.render(POOL_ACTIVATED_TEMPLATE, parameters)
+        return photo, pool_activated_card_filename(change.pool_name)
+
+    async def _broadcast_pool_activated(self, event: PoolChanges, change: PoolChange):
+        async def _gen(loc: BaseLocalization):
+            caption = loc.notification_text_pool_churn(event.only(change))
+            try:
+                photo, photo_name = await self.render_pool_activated(loc, event, change)
+            except Exception as e:
+                # the pool is still worth announcing without its picture
+                self.logger.exception(f'Failed to render the card of the activated pool {change.pool_name!r}: {e!r}')
+                return caption
+            return BoardMessage.make_photo(photo, caption, photo_name)
+
+        await self.broadcaster.broadcast_to_all("public:pool_churn:activated", _gen)
+
     async def _handle_pool_churn(self, event: PoolChanges):
-        await self.broadcaster.broadcast_to_all(
-            "public:pool_churn",
-            BaseLocalization.notification_text_pool_churn, event
-        )
+        # an activated pool gets a card of its own, the cards go one after another;
+        # without the renderer there are no cards and everything stays in the one text
+        activated = event.activated if self.use_renderer else []
+        for change in activated:
+            await self._broadcast_pool_activated(event, change)
+
+        if (rest := event.without(activated)).any_changed:
+            await self.broadcaster.broadcast_to_all(
+                "public:pool_churn",
+                BaseLocalization.notification_text_pool_churn, rest
+            )
 
     async def render_achievement(self, loc: BaseLocalization, event: Achievement):
         parameters = build_achievement_card(event, loc.ach)

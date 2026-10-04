@@ -587,6 +587,14 @@ class RussianLocalization(BaseLocalization):
 
         return message.rstrip()
 
+    # карточка активированного пула
+    TEXT_PIC_POOL_TITLE = 'новый пул'
+    TEXT_PIC_POOL_ACTIVATED = 'Пул активирован'
+    TEXT_PIC_POOL_TAGLINE = 'Открыт для обменов и ликвидности'
+    TEXT_PIC_POOL_DEPTH = 'Глубина пула'
+    TEXT_PIC_POOL_PRICE = 'Цена'
+    TEXT_PIC_POOL_ACTIVE_COUNT = 'Активных пулов'
+
     # -------- SETTINGS --------
 
     TEXT_SETTING_INTRO = '<b>Настройки</b>\nЧто вы хотите поменять в настройках?'

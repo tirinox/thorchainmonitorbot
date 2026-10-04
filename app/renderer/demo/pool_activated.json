@@ -1,0 +1,36 @@
+{
+ "template_name": "pool_activated.jinja2",
+ "meta": {
+  "title": "Pool activated: a token",
+  "subtitle": "BSC.USDC, with the chain badge and the contract",
+  "lang": "en",
+  "order": 0
+ },
+ "parameters": {
+  "pool": "BSC.USDC-0X8AC76A51CC950D9822D68B83FE1AD97B32CD580D",
+  "ticker": "USDC",
+  "pool_label": "BSC.USDC",
+  "contract": "0x8AC7…580D",
+  "asset_logo": "BSC.USDC-0X8AC76A51CC950D9822D68B83FE1AD97B32CD580D",
+  "chain_logo": "BSC.BNB",
+  "stats": [
+   {
+    "label": "Pool depth",
+    "value": "$5.3M"
+   },
+   {
+    "label": "Price",
+    "value": "$1.01"
+   },
+   {
+    "label": "Active pools",
+    "value": "29"
+   }
+  ],
+  "t": {
+   "title": "NEW POOL",
+   "activated": "Pool activated",
+   "tagline": "Open for swaps and liquidity"
+  }
+ }
+}

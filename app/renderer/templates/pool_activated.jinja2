@@ -1,0 +1,299 @@
+{% set _width, _height = set_viewport_size(1200, 1200) %}
+{% extends "base.jinja2" %}
+
+{#
+  A liquidity pool became active: the celebration card, one per pool.
+  Parameters come localized from comm/picture/pool_card.py: build_pool_activated_card.
+  The confetti, the fireworks and the streamers are drawn by the script below. Its random numbers are seeded by
+  the pool name, so a pool always gets the same picture and another pool gets another one.
+#}
+
+{% block content %}
+{% set title = t.title %}
+{% include "components/header.jinja2" %}
+
+{% set stats = stats or [] %}
+{% set gold = '#f5c518' %}
+## about 0.6 of the font size is the width of a capital of this font in bold; the name must fit in 1000px
+{% set ticker_size = [190, (1500 / (ticker | length)) | int] | min %}
+
+<style>
+  .container.bg {
+    background:
+      radial-gradient(ellipse 62% 44% at 50% 36%, rgba(245,197,24,.24), transparent 72%),
+      radial-gradient(ellipse 100% 55% at 50% 105%, rgba(35,220,200,.18), transparent 70%),
+      radial-gradient(ellipse 70% 50% at 50% 70%, rgba(51,255,153,.07), transparent 70%),
+      #08110f;
+  }
+
+  #party { position: absolute; left: 0; top: 0; z-index: 0; }
+
+  .poster {
+    position: absolute; top: 150px; left: 50px; right: 50px; bottom: 50px; z-index: 1; isolation: isolate;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    justify-content: {{ 'flex-start' if stats else 'center' }};  /* without the numbers it sits in the middle */
+  }
+
+  /* ── the coin: the logo of the asset in a golden ring, the sunburst behind it ── */
+  .coin-wrap { position: relative; width: 340px; height: 340px; margin-top: 8px; flex-shrink: 0; }
+  .rays {
+    position: absolute; left: 50%; top: 50%; width: 1700px; height: 1700px; transform: translate(-50%, -50%);
+    z-index: -1;
+    background: repeating-conic-gradient(from 3deg at 50% 50%, rgba(255, 214, 90, .20) 0deg 5deg, transparent 5deg 15deg);
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 8%, rgba(0,0,0,.55) 22%, transparent 48%);
+    mask-image: radial-gradient(circle at 50% 50%, #000 8%, rgba(0,0,0,.55) 22%, transparent 48%);
+  }
+  .coin {
+    position: relative; width: 100%; height: 100%; border-radius: 50%; padding: 13px;
+    background: conic-gradient(from 210deg, #fff6c2, {{ gold }}, #a87408, #ffe27a, {{ gold }}, #fff6c2);
+    box-shadow:
+      0 0 0 7px rgba(245,197,24,.18),
+      0 0 80px rgba(245,197,24,.60),
+      0 0 190px rgba(245,197,24,.28);
+  }
+  .coin-face {
+    width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+    background: radial-gradient(circle at 35% 28%, #22343c, #0a1217 72%);
+    box-shadow: inset 0 0 36px rgba(0,0,0,.7);
+  }
+  .coin-face img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .chain-badge {
+    position: absolute; right: -4px; bottom: 6px; width: 112px; height: 112px; border-radius: 50%;
+    border: 6px solid #0a1015; background: #0a1015;
+    box-shadow: 0 0 0 3px {{ gold }}, 0 6px 26px rgba(0,0,0,.7), 0 0 36px rgba(245,197,24,.45);
+  }
+
+  /* ── the name ── */
+  .ticker {
+    margin-top: 34px; font-size: {{ ticker_size }}px; font-weight: 900; line-height: 1; letter-spacing: .02em;
+    white-space: nowrap;
+    background: linear-gradient(180deg, #ffffff 12%, #fff0b3 48%, {{ gold }} 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 0 30px rgba(245,197,24,.45)) drop-shadow(0 5px 0 rgba(0,0,0,.45));
+  }
+  .pool-pill {
+    margin-top: 16px; padding: 7px 28px 8px; border-radius: 999px;
+    background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.2);
+    font-size: 30px; font-weight: 700; letter-spacing: .08em; color: #d5e2e6; white-space: nowrap;
+  }
+  .pool-pill .contract { margin-left: 12px; font-family: monospace; font-size: 25px; font-weight: 400; color: #8ea4ab; letter-spacing: .02em; }
+
+  /* ── the stamp ── */
+  .stamp-row { margin-top: 34px; display: flex; align-items: center; gap: 22px; }
+  .stamp {
+    padding: 14px 46px 16px; border-radius: 999px; border: 4px solid {{ gold }}; color: #ffe27a;
+    font-size: 58px; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; white-space: nowrap;
+    background: linear-gradient(180deg, rgba(245,197,24,.18), rgba(245,197,24,.06));
+    box-shadow: 0 0 56px rgba(245,197,24,.5), inset 0 0 30px rgba(245,197,24,.18);
+    text-shadow: 0 0 26px rgba(245,197,24,.75), 0 2px 0 rgba(0,0,0,.4);
+  }
+  .spark { width: 52px; height: 52px; flex-shrink: 0; filter: drop-shadow(0 0 12px rgba(255,226,122,.9)); }
+  .tagline { margin-top: 18px; font-size: 30px; letter-spacing: .06em; color: #cfeee3; }
+
+  /* ── numbers ── */
+  .stats {
+    margin-top: auto; width: 100%; display: grid; gap: 18px;
+    grid-template-columns: repeat({{ [stats | length, 1] | max }}, minmax(0, 1fr));
+  }
+  .stat {
+    padding: 16px 12px 18px; border-radius: 18px;
+    background: linear-gradient(180deg, rgba(20,31,37,.92), rgba(10,16,21,.94));
+    border: 1px solid rgba(245,197,24,.30);
+    box-shadow: 0 0 26px rgba(0,0,0,.5), inset 0 0 22px rgba(245,197,24,.05);
+  }
+  .stat-label { font-size: 19px; letter-spacing: .15em; text-transform: uppercase; color: #94a7ad; white-space: nowrap; }
+  .stat-value { margin-top: 8px; font-size: 56px; font-weight: 800; line-height: 1; color: #fff; white-space: nowrap;
+                text-shadow: rgba(35,220,200,.30) 0 0 20px; }
+</style>
+
+<canvas id="party" width="{{ _width }}" height="{{ _height }}"></canvas>
+
+{% macro star() -%}
+  <svg class="spark" viewBox="-50 -50 100 100"><path fill="#ffe27a"
+    d="M0-48 C4-14 14-4 48 0 C14 4 4 14 0 48 C-4 14 -14 4 -48 0 C-14-4 -4-14 0-48Z"/></svg>
+{%- endmacro %}
+
+<div class="poster">
+  <div class="coin-wrap">
+    <div class="rays"></div>
+    <div class="coin">
+      <div class="coin-face">
+        <img src="renderer/logo/{{ asset_logo }}.png" alt=""
+             onerror="console.error('{{ asset_logo }}: no logo!'); this.onerror = null; this.src = 'renderer/logo/unknown.png';">
+      </div>
+    </div>
+    {% if chain_logo %}
+      <img class="chain-badge" src="renderer/logo/{{ chain_logo }}.png" alt=""
+           onerror="this.style.display = 'none'">
+    {% endif %}
+  </div>
+
+  <div class="ticker">{{ ticker }}</div>
+  {% if contract or pool_label != ticker %}
+    <div class="pool-pill">{{ pool_label }}{% if contract %}<span class="contract">{{ contract }}</span>{% endif %}</div>
+  {% endif %}
+
+  <div class="stamp-row">
+    {{ star() }}
+    <div class="stamp">{{ t.activated }}</div>
+    {{ star() }}
+  </div>
+  <div class="tagline">{{ t.tagline }}</div>
+
+  {% if stats %}
+    <div class="stats">
+      {% for s in stats %}
+        <div class="stat">
+          <div class="stat-label">{{ s.label }}</div>
+          <div class="stat-value">{{ s.value }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+<script>
+  (function () {
+    const W = {{ _width }}, H = {{ _height }};
+    const canvas = document.getElementById('party');
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // mulberry32 seeded by the pool name
+    let seed = 2166136261;
+    for (const ch of {{ pool | tojson }}) seed = Math.imul(seed ^ ch.charCodeAt(0), 16777619);
+    const rnd = () => {
+      seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    const between = (a, b) => a + rnd() * (b - a);
+    const pick = (list) => list[Math.floor(rnd() * list.length)];
+
+    // the palette of the other cards: green, turquoise, gold, blue, pink, violet
+    const PALETTE = ['#33FF99', '#23DCC8', '#f5c518', '#ffe27a', '#7aa2ff', '#ff7f8a', '#c58bff'];
+    const FIRE = ['#f5c518', '#33FF99', '#23DCC8', '#ff7f8a', '#7aa2ff', '#c58bff'];
+    const TAU = Math.PI * 2;
+    // the header lives top left; the coin and the texts in the middle stay calm
+    const inHeader = (x, y) => x < 840 && y < 150;
+    const inText = (x, y) => x > 230 && x < 970 && y > 260 && y < 1010;
+    const inStats = (x, y) => x > 40 && x < 1160 && y > 1015;
+
+    function burst(cx, cy, R, color) {
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.35);
+      glow.addColorStop(0, color + '4d');
+      glow.addColorStop(1, color + '00');
+      ctx.fillStyle = glow;
+      ctx.beginPath(); ctx.arc(cx, cy, R * 1.35, 0, TAU); ctx.fill();
+
+      const n = 24 + Math.floor(rnd() * 12);
+      const phase = rnd() * TAU;
+      ctx.lineCap = 'round';
+      for (let i = 0; i < n; i++) {
+        const a = phase + i / n * TAU;
+        const r0 = R * 0.22, r1 = R * between(0.78, 1.12);
+        const cos = Math.cos(a), sin = Math.sin(a);
+        const line = ctx.createLinearGradient(cx + cos * r0, cy + sin * r0, cx + cos * r1, cy + sin * r1);
+        line.addColorStop(0, color + '00');
+        line.addColorStop(0.55, color + 'aa');
+        line.addColorStop(1, '#ffffff');
+        ctx.strokeStyle = line;
+        ctx.lineWidth = between(2.5, 4.5);
+        ctx.beginPath(); ctx.moveTo(cx + cos * r0, cy + sin * r0); ctx.lineTo(cx + cos * r1, cy + sin * r1); ctx.stroke();
+
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.95;
+        ctx.beginPath(); ctx.arc(cx + cos * r1, cy + sin * r1, between(3, 6), 0, TAU); ctx.fill();
+        // a spark that falls behind the tip
+        ctx.globalAlpha = 0.55;
+        const rs = r1 * between(1.04, 1.2);
+        ctx.beginPath(); ctx.arc(cx + cos * rs, cy + sin * rs + R * 0.08, between(1.5, 3), 0, TAU); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function sparkle(x, y, size, color) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.shadowColor = color; ctx.shadowBlur = size * 0.9;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(0, -size);
+      ctx.bezierCurveTo(size * 0.08, -size * 0.3, size * 0.3, -size * 0.08, size, 0);
+      ctx.bezierCurveTo(size * 0.3, size * 0.08, size * 0.08, size * 0.3, 0, size);
+      ctx.bezierCurveTo(-size * 0.08, size * 0.3, -size * 0.3, size * 0.08, -size, 0);
+      ctx.bezierCurveTo(-size * 0.3, -size * 0.08, -size * 0.08, -size * 0.3, 0, -size);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function streamer(x0, y0, x1, y1, color) {
+      ctx.strokeStyle = color; ctx.lineWidth = between(5, 8); ctx.lineCap = 'round'; ctx.globalAlpha = 0.85;
+      const dx = x1 - x0, dy = y1 - y0;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.bezierCurveTo(x0 + dx * 0.9, y0 + dy * 0.05, x0 + dx * 0.1, y0 + dy * 0.6, x1, y1);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    function piece(x, y) {
+      const color = pick(PALETTE);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rnd() * TAU);
+      ctx.globalAlpha = between(0.55, 1);
+      ctx.fillStyle = color; ctx.strokeStyle = color;
+      const kind = Math.floor(rnd() * 4);
+      if (kind === 0) {                       // paper
+        const w = between(12, 26), h = between(6, 11);
+        ctx.fillRect(-w / 2, -h / 2, w, h);
+      } else if (kind === 1) {                // dot
+        ctx.beginPath(); ctx.arc(0, 0, between(4, 8), 0, TAU); ctx.fill();
+      } else if (kind === 2) {                // triangle
+        const s = between(9, 16);
+        ctx.beginPath(); ctx.moveTo(0, -s); ctx.lineTo(s * 0.9, s * 0.7); ctx.lineTo(-s * 0.9, s * 0.7); ctx.closePath(); ctx.fill();
+      } else {                                // a curl of ribbon
+        const s = between(14, 24);
+        ctx.lineWidth = 4.5; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-s, 0); ctx.bezierCurveTo(-s / 2, -s, s / 2, s, s, 0); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // fireworks: the sky around the coin
+    // every burst has a color of its own
+    const fireColors = FIRE.slice().sort(() => rnd() - 0.5);
+    [[165, 470, 150], [1040, 430, 165], [105, 860, 118], [1105, 835, 128], [330, 235, 82], [885, 215, 90]]
+      .forEach(([x, y, r], i) => burst(x + between(-12, 12), y + between(-12, 12), r, fireColors[i]));
+
+    // streamers from the top corners
+    [[0, 210], [0, 250], [W, 40], [W, 85]].forEach(([x, y], i) => {
+      const dir = x === 0 ? 1 : -1;
+      streamer(x, y, x + dir * between(110, 190), y + between(170, 260), pick(PALETTE));
+    });
+
+    // confetti, thicker toward the edges
+    for (let i = 0, placed = 0; i < 6000 && placed < 190; i++) {
+      const x = between(0, W), y = between(0, H);
+      if (inHeader(x, y) || inStats(x, y)) continue;
+      if (inText(x, y) && rnd() < 0.9) continue;
+      piece(x, y); placed++;
+    }
+
+    // sparkles around the coin and over the fireworks
+    const coin = document.querySelector('.coin').getBoundingClientRect();
+    const coinX = coin.left + coin.width / 2, coinY = coin.top + coin.height / 2;
+    for (let i = 0; i < 16; i++) {
+      const a = rnd() * TAU, d = between(215, 470);
+      const x = coinX + Math.cos(a) * d * 1.25, y = coinY + Math.sin(a) * d * 0.95;
+      if (inHeader(x, y)) continue;
+      sparkle(x, y, between(8, 26), pick(['#ffffff', '#ffe27a', '#fff0b3']));
+    }
+  })();
+</script>
+{% endblock %}

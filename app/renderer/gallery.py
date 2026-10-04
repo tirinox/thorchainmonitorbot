@@ -26,6 +26,7 @@ TEMPLATE_GROUPS = {
     'mimir_voting.jinja2': 'Mimir voting',
     'chain_halt.jinja2': 'Chain halt',
     'nodes.jinja2': 'Nodes',
+    'pool_activated.jinja2': 'Pool activated',
 }
 DEBUG_GROUP = 'Debug'
 DEBUG_TEMPLATES = {'foo.jinja2', 'example.jinja2'}

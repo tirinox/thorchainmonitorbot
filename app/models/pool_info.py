@@ -288,10 +288,32 @@ class PoolChanges(NamedTuple):
     pools_added: List[PoolChange]
     pools_removed: List[PoolChange]
     pools_changed: List[PoolChange]
+    # the pools after the change and the RUNE price: the details for the card of an activated pool
+    pool_info_map: Optional[PoolInfoMap] = None
+    usd_per_rune: float = 0.0
 
     @property
     def any_changed(self):
         return self.pools_changed or self.pools_added or self.pools_removed
+
+    @property
+    def activated(self) -> List[PoolChange]:
+        """Pools that are open for swaps now, added in this state or switched to it ("Now Active!")"""
+        return [c for c in (*self.pools_added, *self.pools_changed) if PoolInfo.is_status_enabled(c.new_status)]
+
+    def filtered(self, keep) -> 'PoolChanges':
+        """The same event with only the changes that `keep` accepts"""
+        return self._replace(
+            pools_added=[c for c in self.pools_added if keep(c)],
+            pools_removed=[c for c in self.pools_removed if keep(c)],
+            pools_changed=[c for c in self.pools_changed if keep(c)],
+        )
+
+    def only(self, change: PoolChange) -> 'PoolChanges':
+        return self.filtered(lambda c: c is change)
+
+    def without(self, changes: List[PoolChange]) -> 'PoolChanges':
+        return self.filtered(lambda c: all(c is not x for x in changes))
 
 
 class PoolMapStruct(NamedTuple):

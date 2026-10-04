@@ -839,6 +839,14 @@ class BaseLocalization(ABC):  # == English
 
         return message.rstrip()
 
+    # the card of an activated pool
+    TEXT_PIC_POOL_TITLE = 'new pool'
+    TEXT_PIC_POOL_ACTIVATED = 'Pool activated'
+    TEXT_PIC_POOL_TAGLINE = 'Open for swaps and liquidity'
+    TEXT_PIC_POOL_DEPTH = 'Pool depth'
+    TEXT_PIC_POOL_PRICE = 'Price'
+    TEXT_PIC_POOL_ACTIVE_COUNT = 'Active pools'
+
     # -------- SETTINGS --------
 
     TEXT_SETTING_INTRO = '<b>Settings</b>\nWhat would you like to tune?'
