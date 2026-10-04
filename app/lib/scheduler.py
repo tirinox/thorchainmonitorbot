@@ -24,6 +24,7 @@ class PrivateScheduler(WithLogger, WithDelegates):
         self.catch_up_spread = max(catch_up_spread, 2 * poll_interval)
         # optional async predicate(ident) -> bool: which lost periodic events to bring back on start
         self.should_restore = None
+        self.emergency = None  # EmergencyReport, set by the wiring
 
     async def schedule(self, ident, timestamp=0.0, period=0.0):
         assert isinstance(ident, (str, int, float)) and ident, 'ident must be a string or number'
@@ -60,6 +61,10 @@ class PrivateScheduler(WithLogger, WithDelegates):
     def next_slot(ev_ts, now, period):
         # the first moment strictly after now that keeps the phase of the event, missed slots are skipped
         return ev_ts + (math.floor((now - ev_ts) / period) + 1) * period
+
+    def _report_emergency(self, message, **kwargs):
+        if self.emergency:
+            self.emergency.report(f'PrivateScheduler:{self.name}', message, **kwargs)
 
     async def _run_handler(self, ev):
         try:
@@ -103,6 +108,7 @@ class PrivateScheduler(WithLogger, WithDelegates):
 
         except Exception as e:
             self.logger.exception(f'Error in scheduler handler: {e}', stack_info=True)
+            self._report_emergency('Scheduler handler failed', event=repr(ev), error=repr(e))
 
     async def awaiting_events(self):
         return await self._r.zrange(self.key_timeline(), 0, -1, withscores=True)
@@ -186,6 +192,7 @@ class PrivateScheduler(WithLogger, WithDelegates):
                 await self._process()
             except Exception as e:
                 self.logger.exception(f'Error in scheduler: {e}', stack_info=True)
+                self._report_emergency('Scheduler loop failed', error=repr(e))
 
     def run_in_background(self):
         return asyncio.create_task(self.run())

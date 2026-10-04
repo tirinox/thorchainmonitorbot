@@ -308,6 +308,7 @@ class PublicAlertJobExecutor(WithLogger):
     async def configure_jobs(self):
         d = self.deps
         scheduler = d.public_scheduler = PublicScheduler(d.cfg, d.db, d.loop)
+        scheduler.emergency = d.emergency
         without_data = self.job_types_without_data()
         for job_name, job_func in self.AVAILABLE_TYPES.items():
             if reason := without_data.get(job_name):

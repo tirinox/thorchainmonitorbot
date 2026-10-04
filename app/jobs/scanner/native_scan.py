@@ -8,7 +8,7 @@ from jobs.fetch.base import BaseFetcher
 from jobs.scanner.block_result import BlockResult
 from jobs.scanner.scanner_state import ScannerStateDB
 from lib.constants import THOR_BLOCK_TIME
-from lib.date_utils import now_ts, format_time_ago
+from lib.date_utils import now_ts, format_time_ago, MINUTE
 from lib.depcont import DepContainer
 from lib.utils import safe_get
 
@@ -236,3 +236,29 @@ class BlockScanner(BaseFetcher):
 
         # So we match the logs with the txs
         return block_result.only_successful
+
+
+class BlockStallWatchdog(BaseFetcher):
+    """
+    Tells the admin when the scanner has not moved to a new block for a long time: the chain has halted,
+    the node is stuck, or the scanner is hung. The scanner's own loop cannot report that, it is the one that stuck.
+    """
+
+    def __init__(self, deps: DepContainer, scanner: BlockScanner, max_silence=5 * MINUTE):
+        super().__init__(deps, sleep_period=MINUTE)
+        self.scanner = scanner
+        self.max_silence = max_silence
+        self._block = None
+        self._since = now_ts()
+
+    async def fetch(self):
+        now = now_ts()
+        if self.scanner.last_block != self._block:
+            self._block = self.scanner.last_block
+            self._since = now
+        elif now - self._since > self.max_silence:
+            self._report_emergency('The block scanner is not moving',
+                                   block_no=self._block,
+                                   stalled_for=format_time_ago(now - self._since),
+                                   last_node_answer=format_time_ago(now - self.scanner.last_block_ts)
+                                   if self.scanner.last_block_ts else 'never')

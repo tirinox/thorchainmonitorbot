@@ -15,6 +15,7 @@ from lib.config import SubConfig
 from lib.constants import NetworkIdents
 from lib.delegates import INotified
 from lib.draw_utils import img_to_bio
+from lib.emergency import EmergencyReport
 from lib.texts import sep
 from lib.utils import load_json
 from main import App
@@ -33,7 +34,7 @@ class LpAppFramework(App):
 
         self.emergency = emergency
         if not emergency:
-            d.emergency = None
+            d.emergency = EmergencyReport(None, None)  # only logs
 
         if network:
             d.cfg.network_id = network

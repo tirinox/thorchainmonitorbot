@@ -16,7 +16,8 @@ SCANNER_JOBS = {Jobs.RAPID_SWAP_STATS, Jobs.RUNE_TRANSFER_STATS, Jobs.LIMIT_SWAP
 def _executor(config: dict):
     # skip __init__: it builds every fetcher
     executor = PublicAlertJobExecutor.__new__(PublicAlertJobExecutor)
-    executor.deps = SimpleNamespace(cfg=Config(data=config), db=SimpleNamespace(redis=FakePubSubRedis()), loop=None)
+    executor.deps = SimpleNamespace(cfg=Config(data=config), db=SimpleNamespace(redis=FakePubSubRedis()), loop=None,
+                                   emergency=None)
     return executor
 
 

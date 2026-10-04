@@ -161,6 +161,7 @@ class PublicScheduler(WithLogger):
 
         self.cfg = cfg
         self.db = db
+        self.emergency = None  # EmergencyReport, set by the wiring
 
         self.scheduler = AsyncIOScheduler({
             'event_loop': loop or asyncio.get_event_loop(),
@@ -421,6 +422,9 @@ class PublicScheduler(WithLogger):
                                                 job=func_name, job_id=job_id,
                                                 error=error_msg, **run_tag)
                         self.logger.error(f'{func_name}: all {retry_count} attempts failed.')
+                        if real_run and self.emergency:
+                            self.emergency.report('PublicScheduler', 'Scheduled job failed after all attempts',
+                                                  job=func_name, job_id=job_id, attempts=retry_count, error=error_msg)
                         return f'failed with error: {error_msg}'
             return 'unknown failure'
 

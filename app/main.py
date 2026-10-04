@@ -43,7 +43,7 @@ from jobs.rapid_recorder import RapidSwapRecorder
 from jobs.ref_memo_cache import RefMemoCache
 from jobs.rune_burn_recorder import RuneBurnRecorder
 from jobs.scanner.limit_detector import LimitSwapDetector
-from jobs.scanner.native_scan import BlockScanner
+from jobs.scanner.native_scan import BlockScanner, BlockStallWatchdog
 from jobs.scanner.runepool import RunePoolEventDecoder
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.scanner.swap_routes import SwapRouteRecorder
@@ -322,6 +322,7 @@ class App(WithLogger):
             max_attempts = d.cfg.as_int('native_scanner.max_attempts_per_block', 5)
             d.block_scanner = BlockScanner(d, max_attempts=max_attempts, role='main')
             tasks.append(d.block_scanner)
+            tasks.append(BlockStallWatchdog(d, d.block_scanner))
             d.ref_memo_cache = RefMemoCache(d)
             d.block_scanner.add_subscriber(d.ref_memo_cache)
             d.rapid_swap_recorder = RapidSwapRecorder(d)
@@ -625,6 +626,7 @@ class App(WithLogger):
         if scheduler_cfg.get('enabled', True):
             poll_interval = parse_timespan_to_seconds(scheduler_cfg.get_pure('poll_interval', '1m'))
             d.scheduler = PrivateScheduler(d.db.redis, 'PersonalLPReports', poll_interval)
+            d.scheduler.emergency = d.emergency
             tasks.append(d.scheduler)
 
             personal_lp_notifier = PersonalPeriodicNotificationService(d)
@@ -692,6 +694,7 @@ class App(WithLogger):
             self._ev_loaded.set()
         except Exception as e:
             self.logger.exception(f'Failed to prepare tasks: {e}')
+            await self._report_fatal('Failed to start the bot, terminating', e)
             self.logger.error(f'Terminating in {self.sleep_step} sec...')
             await asyncio.sleep(self.sleep_step)
             self.die()
@@ -709,7 +712,15 @@ class App(WithLogger):
             self.logger.info(f'Total tasks to running: {len(running_tasks)}')
         except Exception as e:
             self.logger.exception(f'{e!r}', exc_info=True)
+            await self._report_fatal('Failed to start the background jobs, terminating', e)
             self.die()
+
+    async def _report_fatal(self, message, e):
+        # the emergency worker runs among the background jobs, which are not started yet: send it here and now
+        emergency = self.deps.emergency
+        if emergency:
+            emergency.report('App', message, error=repr(e))
+            await emergency.flush()
 
     async def _debug_command(self):
         await self.deps.telegram_bot.send_message(

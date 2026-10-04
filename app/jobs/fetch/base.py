@@ -17,6 +17,7 @@ from lib.depcont import DepContainer
 from lib.logs import WithLogger
 
 UNPAUSE_AFTER = 5 * MINUTE
+ERRORS_IN_A_ROW_TO_REPORT = 5  # a fetcher failing this many ticks in a row is reported to the admin
 
 
 # UNPAUSE_AFTER = 30
@@ -30,6 +31,7 @@ class WatchedEntity:
         self.initial_sleep = 1.0
         self.last_timestamp = 0.0
         self.error_counter = 0
+        self.consecutive_errors = 0
         self.total_ticks = 0
         self.creating_date = now_ts()
 
@@ -204,6 +206,7 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
             data = await self.fetch()
             await self.pass_data_to_listeners(data)
             await self.post_action(data)
+            self.consecutive_errors = 0
         except Exception as e:
             # If the database is in a busy state, we need to pause for a while
             if isinstance(e, BusyLoadingError):
@@ -211,6 +214,10 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
 
             self.logger.exception(f"task error: {e}")
             self.error_counter += 1
+            self.consecutive_errors += 1
+            if self.consecutive_errors >= ERRORS_IN_A_ROW_TO_REPORT:
+                self._report_emergency('Fetcher keeps failing',
+                                       errors_in_a_row=self.consecutive_errors, last_error=repr(e))
             try:
                 await self.handle_error(e)
             except Exception as e:
@@ -221,8 +228,12 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
             delta = time.monotonic() - t0
             self.run_times.append(delta)
 
+    def _report_emergency(self, message, **kwargs):
+        if self.deps.emergency:
+            self.deps.emergency.report(self.name, message, **kwargs)
+
     async def _handle_db_busy_error(self, e):
-        self.deps.emergency.report(self.name, f'BusyLoadingError: {e}')
+        self._report_emergency(f'BusyLoadingError: {e}')
         self.data_controller.request_global_pause()
         # noinspection PyAsyncCall
         asyncio.create_task(self._unpause_after())
@@ -251,6 +262,8 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
             await self._run()
         except Exception as e:
             self.logger.error(f'Unexpected termination due to exception {e!r}')
+            self._report_emergency('Fetcher has stopped for good: it will not run until the bot is restarted',
+                                   error=repr(e))
         finally:
             self.logger.warning('Unexpected termination!')
 

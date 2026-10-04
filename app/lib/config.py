@@ -203,7 +203,7 @@ class Config(SubConfig):
 
     @property
     def first_admin_id(self):
-        return self.admins[0]
+        return self.admins[0] if self.admins else None
 
     def is_admin(self, user_id):
         return user_id in self.admins
