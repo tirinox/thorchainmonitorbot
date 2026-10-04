@@ -58,7 +58,7 @@ from jobs.vote_recorder import VoteRecorder
 from jobs.wasm_recorder import CosmWasmRecorder
 from lib.config import Config, SubConfig
 from lib.constants import HTTP_CLIENT_ID
-from lib.date_utils import parse_timespan_to_seconds
+from lib.date_utils import parse_timespan_to_seconds, MINUTE
 from lib.db import DB, KeyDB
 from lib.depcont import DepContainer
 from lib.emergency import EmergencyReport
@@ -226,6 +226,9 @@ class App(WithLogger):
             self.logger.info(f'Sleeping before start for {sleep_interval:.1f} sec..')
             await asyncio.sleep(sleep_interval)
 
+    PRELOAD_FAILURES_TO_REPORT = 3
+    PRELOAD_MAX_RETRY_DELAY = 10 * MINUTE
+
     async def _preloading(self):
         d = self.deps
         await self._some_sleep()
@@ -234,6 +237,7 @@ class App(WithLogger):
 
         sleep_step = self.sleep_step
         retry_after = sleep_step * 5
+        failures = 0
         while True:
             try:
                 self.logger.info('Testing DB connection...')
@@ -274,8 +278,12 @@ class App(WithLogger):
             except Exception as e:
                 if not isinstance(e, ConnectionError):
                     self.logger.exception(e)
-                retry_after = retry_after * 2
+                failures += 1
+                retry_after = min(retry_after * 2, self.PRELOAD_MAX_RETRY_DELAY)
                 self.logger.error(f'No luck. {e!r} Retrying in {retry_after} sec...')
+                if failures >= self.PRELOAD_FAILURES_TO_REPORT and self.deps.emergency:
+                    self.deps.emergency.report('App', 'The bot cannot finish loading, still retrying',
+                                               failures=failures, error=repr(e), next_retry_in_sec=retry_after)
                 await asyncio.sleep(retry_after)
 
     def _can_run(self, feature: str, needs: dict) -> bool:

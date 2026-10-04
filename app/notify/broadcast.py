@@ -53,6 +53,14 @@ class Broadcaster(WithLogger):
         self._limit_period = parse_timespan_to_seconds(_rate_limit_cfg.as_str('period', '1m'))
         self._limit_cooldown = parse_timespan_to_seconds(_rate_limit_cfg.as_str('cooldown', '5m'))
 
+    def _is_public(self, channel_info: ChannelDescriptor) -> bool:
+        return any(c.short_coded == channel_info.short_coded for c in self.channels)
+
+    def _report_emergency(self, message, **kwargs):
+        # only for the configured public channels: a private subscriber failing is routine, a public one is not
+        if self.deps.emergency:
+            self.deps.emergency.report('Broadcaster', message, **kwargs)
+
     def get_channels(self, channel_type):
         return [c for c in self.channels if c.type == channel_type]
 
@@ -208,6 +216,9 @@ class Broadcaster(WithLogger):
 
     async def _handle_bad_user(self, channel_info):
         self.logger.warning(f'{channel_info} is about to be paused!')
+        if self._is_public(channel_info):
+            self._report_emergency(f'The public channel {channel_info.short_coded} refuses messages '
+                                   f'(the bot was removed or blocked?)', channel=channel_info.short_coded)
         channel_id = channel_info.channel_id
         if not channel_id:
             return
@@ -246,8 +257,11 @@ class Broadcaster(WithLogger):
                         await self._handle_bad_user(channel_info)
                 else:
                     self.logger.error(f'{channel_info.type} bot is disabled!')
-        except Exception:
+        except Exception as e:
             self.logger.exception('We are still safe!', stack_info=True)
+            if self._is_public(channel_info):
+                self._report_emergency(f'Sending to the public channel {channel_info.short_coded} raised',
+                                       channel=channel_info.short_coded, msg_type=message.msg_type, error=repr(e))
 
         return result
 
@@ -326,6 +340,7 @@ class Broadcaster(WithLogger):
         async with self._broadcast_lock:
             count = 0
             failed = []  # channels whose message could not be built
+            first_error = None
 
             try:
                 for channel_info in channels:
@@ -336,6 +351,7 @@ class Broadcaster(WithLogger):
                         # one channel's message (a locale, a chart...) failing must not stop the others
                         self.logger.exception(f'Failed to build {msg_type} for {channel_info.short_coded}: {e}')
                         failed.append(channel_info.short_coded)
+                        first_error = first_error or repr(e)
                         continue
 
                     if b_message.is_empty:
@@ -359,6 +375,10 @@ class Broadcaster(WithLogger):
                         disable_web_page_preview=True,
                         disable_notification=False, **kwargs)
 
+                    if not send_results and self._is_public(channel_info):
+                        self._report_emergency(f'The public channel {channel_info.short_coded} did not get a message',
+                                               channel=channel_info.short_coded, msg_type=msg_type)
+
                     if send_results:
                         count += 1
                         if sent_key:
@@ -367,6 +387,11 @@ class Broadcaster(WithLogger):
                     await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)
             finally:
                 self.logger.info(f"{count} messages successful sent (of {len(channels)})")
+
+            if failed and not is_test_send:
+                self._report_emergency('Failed to build a message for some channels',
+                                       msg_type=msg_type, failed=', '.join(failed), sent=count,
+                                       first_error=first_error)
 
             if failed and not count:
                 # nothing went out at all, so a retry of the job cannot produce duplicates: let it retry

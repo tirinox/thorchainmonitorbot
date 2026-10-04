@@ -34,6 +34,14 @@ class FakeNoSubscribers:
         return []
 
 
+class RecordingEmergency:
+    def __init__(self):
+        self.calls = []
+
+    def report(self, module, message, /, **kwargs):
+        self.calls.append((module, message, kwargs))
+
+
 def make_broadcaster(test_channels=(), startup_delay='0'):
     cfg = Config(data={
         'broadcasting': {
@@ -49,7 +57,8 @@ def make_broadcaster(test_channels=(), startup_delay='0'):
     })
     db = FakeDB(FakePubSubRedis())
     deps = SimpleNamespace(cfg=cfg, db=db, flagship=Flagship(db), loc_man=FakeLocMan(),
-                           gen_alert_settings_proc=FakeNoSubscribers(), settings_manager=None)
+                           gen_alert_settings_proc=FakeNoSubscribers(), settings_manager=None,
+                           emergency=RecordingEmergency())
     broadcaster = Broadcaster(deps)
     sent = []
 
@@ -257,6 +266,27 @@ async def test_one_failing_channel_does_not_stop_the_broadcast():
 
     await broadcaster.broadcast_to_all(MSG_TYPE, text_or_boom)
     assert sent == [('telegram-@public', 'hello in eng'), ('discord-42', 'hello in eng')]
+    # the admin hears about it once, with the channel and the reason
+    [(module, message, details)] = deps.emergency.calls
+    assert module == 'Broadcaster' and details['failed'] == 'twitter-tw' and details['sent'] == 2
+    assert 'no chart for twitter' in details['first_error']
+
+
+@pytest.mark.asyncio
+async def test_failed_public_send_is_reported_but_a_private_one_is_not():
+    broadcaster, deps, _ = make_broadcaster()
+    del broadcaster._safe_send_message  # the real one, over a messenger that raises
+
+    class Boom:
+        async def send_message(self, *a, **k):
+            raise RuntimeError('telegram is down')
+
+    deps.get_messenger = lambda _type: Boom()
+    message = BoardMessage('hi', msg_type=MSG_TYPE)
+    await broadcaster._safe_send_message(ChannelDescriptor('telegram', '@public', 'eng'), message)
+    await broadcaster._safe_send_message(ChannelDescriptor('telegram', '12345', 'eng'), message)
+    [(_, text, details)] = deps.emergency.calls
+    assert '@public' in text and 'telegram is down' in details['error']
 
 
 @pytest.mark.asyncio

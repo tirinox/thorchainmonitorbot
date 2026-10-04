@@ -21,6 +21,9 @@ class InfographicRendererRPC(WithLogger):
                 return await self._render(template_name, parameters)
             except Exception as e:
                 if attempt == self._count - 1:
+                    if emergency := getattr(self.deps, 'emergency', None):
+                        emergency.report('InfographicRenderer', 'The HTML renderer fails or is unreachable',
+                                         url=self.url, template=template_name, attempts=self._count, error=repr(e))
                     raise
                 self.logger.error(f'#{attempt}: Failed to render {template_name = }. {e = }')
                 await asyncio.sleep(self._step_timeout)

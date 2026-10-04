@@ -205,3 +205,52 @@ async def test_flush_sends_without_worker():
     r.report('m', 'last words')
     await r.flush()
     assert len(bot.texts) == 1 and r._q.empty()
+
+
+@pytest.mark.asyncio
+async def test_renderer_reports_after_the_last_attempt_only():
+    from types import SimpleNamespace
+    from lib.html_renderer import InfographicRendererRPC
+
+    spy = Spy()
+    r = InfographicRendererRPC(SimpleNamespace(emergency=spy), url='http://x/render')
+    r._count, r._step_timeout = 3, 0
+
+    async def fail(*_):
+        raise ConnectionError('refused')
+
+    r._render = fail
+    with pytest.raises(ConnectionError):
+        await r.render('nodes.jinja2', {})
+    assert len(spy.calls) == 1 and spy.calls[0][2]['template'] == 'nodes.jinja2'
+
+
+@pytest.mark.asyncio
+async def test_preloading_reports_a_long_failure_and_caps_the_delay():
+    from types import SimpleNamespace
+    from main import App
+
+    spy = Spy()
+    app = App.__new__(App)
+    app.logger = SimpleNamespace(info=lambda *_: None, error=lambda *_: None, exception=lambda *_: None)
+    sleeps = []
+
+    async def no_sleep(*_):
+        pass
+
+    async def fake_sleep(t):
+        sleeps.append(t)
+        if len(sleeps) >= 8:
+            raise asyncio.CancelledError
+
+    async def broken():
+        raise ConnectionError('no db')
+
+    app.deps = SimpleNamespace(emergency=spy, db=SimpleNamespace(test_db_connection=broken))
+    app._some_sleep = no_sleep
+    app.sleep_step = 3
+    with patch('main.asyncio.sleep', new=fake_sleep), pytest.raises(asyncio.CancelledError):
+        await app._preloading()
+
+    assert len(spy.calls) == 6  # from the 3rd failure on (deduplication is the emergency's own job)
+    assert max(sleeps) == App.PRELOAD_MAX_RETRY_DELAY
