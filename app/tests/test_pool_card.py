@@ -4,11 +4,13 @@ from types import SimpleNamespace
 
 import pytest
 
+from api.aionode.types import ThorChainInfo
 from comm.localization.eng_base import EnglishLocalization
 from comm.localization.rus import RussianLocalization
 from comm.picture.pool_card import build_pool_activated_card, pool_activated_card_filename, short_contract, \
     POOL_ACTIVATED_TEMPLATE
 from lib.config import Config
+from models.chains import ChainInfoHolder
 from models.pool_info import PoolInfo, PoolChange, PoolChanges
 from notify.alert_presenter import AlertPresenter
 from notify.channel import BoardMessage
@@ -137,6 +139,32 @@ def test_card_filename():
     assert pool_activated_card_filename(BSC_USDC).endswith('.png')
 
 
+# ---------------- is the trading on ----------------
+
+@pytest.mark.parametrize('flags, paused', [
+    ({}, False),
+    ({'halted': True}, True),
+    ({'chain_trading_paused': True}, True),
+    ({'global_trading_paused': True}, True),
+    ({'chain_lp_actions_paused': True}, False),  # liquidity is paused, the swaps are not
+])
+def test_trading_paused_of_a_chain(flags, paused):
+    holder = ChainInfoHolder.from_list({'ZEC': ThorChainInfo(chain='ZEC', **flags)})
+    assert holder.trading_paused('ZEC') is paused
+    assert holder.trading_paused('XMR') is None  # the bot does not know this chain
+
+
+def test_card_tells_whether_the_trading_is_on():
+    loc = EnglishLocalization(CFG)
+    pools = make_pools(**{'ZEC.ZEC': 'available'})
+    for paused, trading in ((False, 'on'), (True, 'paused'), (None, '')):
+        card = build_pool_activated_card('ZEC.ZEC', pools, 2.0, loc, trading_paused=paused)
+        assert card['trading'] == trading
+    assert card['t']['trading_on'] == 'Trading is on' and card['t']['trading_paused'] == 'Trading is paused'
+    ru = build_pool_activated_card('ZEC.ZEC', pools, 2.0, RussianLocalization(CFG), trading_paused=True)
+    assert ru['t']['trading_paused'] == 'Торговля приостановлена'
+
+
 # ---------------- the template ----------------
 
 @pytest.fixture(scope='module')
@@ -160,6 +188,16 @@ def test_template_renders(renderer, pool, pools, usd_per_rune, loc):
     for s in params['stats']:
         assert s['label'] in html and s['value'] in html
     assert ('class="stats"' in html) == bool(params['stats'])
+
+
+@pytest.mark.parametrize('paused, shown', [(False, 'Trading is on'), (True, 'Trading is paused'), (None, None)])
+def test_template_shows_the_trading_state(renderer, paused, shown):
+    params = json.loads(json.dumps(build_pool_activated_card(
+        'ZEC.ZEC', make_pools(**{'ZEC.ZEC': 'available'}), 2.0, EnglishLocalization(CFG), trading_paused=paused)))
+    html = renderer.render_template_to_html(POOL_ACTIVATED_TEMPLATE, params).html_content
+    assert ('class="trading' in html) == (shown is not None)
+    for text in ('Trading is on', 'Trading is paused'):
+        assert (text in html) == (text == shown)
 
 
 def test_template_renders_the_demos(renderer):
@@ -260,3 +298,27 @@ async def test_a_card_that_fails_is_still_announced_as_text():
     await presenter._handle_pool_churn(churn(changed=[PoolChange('BTC.BTC', 'staged', 'available')]))
     assert len(posted) == 1
     assert isinstance(posted[0][1], str) and 'BTC' in posted[0][1] and 'Now Active' in posted[0][1]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('chain_info, trading', [
+    (ChainInfoHolder.from_list({'BTC': ThorChainInfo(chain='BTC')}), 'on'),
+    (ChainInfoHolder.from_list({'BTC': ThorChainInfo(chain='BTC', chain_trading_paused=True)}), 'paused'),
+    (ChainInfoHolder(), ''),  # the chain is not known (the fetcher is off or has not run yet)
+])
+async def test_presenter_gives_the_card_the_trading_state_of_the_chain(chain_info, trading):
+    deps = SimpleNamespace(cfg=RUNTIME_CFG, broadcaster=FakeBroadcaster(), name_service=None, chain_info=chain_info)
+    presenter = AlertPresenter(deps)
+    sent = {}
+
+    async def render(template, parameters):
+        sent.update(template=template, **parameters)
+        return b'png'
+
+    presenter.renderer = SimpleNamespace(render=render)
+    event = churn(changed=[PoolChange('BTC.BTC', 'staged', 'available')], pool_info_map=make_pools(**{'BTC.BTC': 'available'}),
+                  usd_per_rune=2.0)
+    photo, name = await presenter.render_pool_activated(EnglishLocalization(CFG), event, event.pools_changed[0])
+
+    assert photo == b'png' and name.startswith('THORChain-pool-BTC-')
+    assert sent['template'] == POOL_ACTIVATED_TEMPLATE and sent['trading'] == trading

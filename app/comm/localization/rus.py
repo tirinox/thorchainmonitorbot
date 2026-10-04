@@ -57,6 +57,8 @@ class RussianLocalization(BaseLocalization):
 
     TEXT_REF_CALL = f'Начни 👉 {link(URL_OUR_REF, "торговать сейчас")} ⚡!'
 
+    TEXT_USER_UNKNOWN = 'неизвестен'
+
     COIN_GECKO_URL = ("https://www.coingecko.com/ru/"
                       "%D0%9A%D1%80%D0%B8%D0%BF%D1%82%D0%BE%D0%B2%D0%B0%D0%BB%D1%8E%D1%82%D1%8B/thorchain")
 
@@ -590,7 +592,9 @@ class RussianLocalization(BaseLocalization):
     # карточка активированного пула
     TEXT_PIC_POOL_TITLE = 'новый пул'
     TEXT_PIC_POOL_ACTIVATED = 'Пул активирован'
-    TEXT_PIC_POOL_TAGLINE = 'Открыт для обменов и ликвидности'
+    TEXT_PIC_POOL_TAGLINE = 'Добро пожаловать в THORChain'
+    TEXT_PIC_POOL_TRADING_ON = 'Торговля включена'
+    TEXT_PIC_POOL_TRADING_PAUSED = 'Торговля приостановлена'
     TEXT_PIC_POOL_DEPTH = 'Глубина пула'
     TEXT_PIC_POOL_PRICE = 'Цена'
     TEXT_PIC_POOL_ACTIVE_COUNT = 'Активных пулов'

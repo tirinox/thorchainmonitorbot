@@ -136,7 +136,12 @@ class BaseLocalization(ABC):  # == English
         thorchain_net_link = link(thorchain_net_tx(tx_id), '🔍thorchain.net')
         return f'{ordinary_link} | {thorchain_net_link}'
 
+    # the sender of a Monero transaction, for one, is not on the chain
+    TEXT_USER_UNKNOWN = 'unknown'
+
     def link_to_address(self, addr, name_map, chain=Chains.THOR):
+        if not addr:
+            return self.TEXT_USER_UNKNOWN
         tab = ''
         url = get_explorer_url_to_address(self.cfg.network_id, chain, addr, tab)
         if name_map:
@@ -842,7 +847,9 @@ class BaseLocalization(ABC):  # == English
     # the card of an activated pool
     TEXT_PIC_POOL_TITLE = 'new pool'
     TEXT_PIC_POOL_ACTIVATED = 'Pool activated'
-    TEXT_PIC_POOL_TAGLINE = 'Open for swaps and liquidity'
+    TEXT_PIC_POOL_TAGLINE = 'Welcome to THORChain'
+    TEXT_PIC_POOL_TRADING_ON = 'Trading is on'
+    TEXT_PIC_POOL_TRADING_PAUSED = 'Trading is paused'
     TEXT_PIC_POOL_DEPTH = 'Pool depth'
     TEXT_PIC_POOL_PRICE = 'Price'
     TEXT_PIC_POOL_ACTIVE_COUNT = 'Active pools'

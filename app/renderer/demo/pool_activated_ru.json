@@ -2,7 +2,7 @@
  "template_name": "pool_activated.jinja2",
  "meta": {
   "title": "Pool activated: a gas asset",
-  "subtitle": "BTC.BTC in Russian, no chain badge",
+  "subtitle": "BTC.BTC in Russian, no chain badge, trading is paused",
   "lang": "ru",
   "order": 1
  },
@@ -27,10 +27,13 @@
     "value": "29"
    }
   ],
+  "trading": "paused",
   "t": {
    "title": "НОВЫЙ ПУЛ",
    "activated": "Пул активирован",
-   "tagline": "Открыт для обменов и ликвидности"
+   "tagline": "Добро пожаловать в THORChain",
+   "trading_on": "Торговля включена",
+   "trading_paused": "Торговля приостановлена"
   }
  }
 }

@@ -2,7 +2,7 @@
  "template_name": "pool_activated.jinja2",
  "meta": {
   "title": "Pool activated: a token",
-  "subtitle": "BSC.USDC, with the chain badge and the contract",
+  "subtitle": "BSC.USDC, with the chain badge and the contract, trading is on",
   "lang": "en",
   "order": 0
  },
@@ -27,10 +27,13 @@
     "value": "29"
    }
   ],
+  "trading": "on",
   "t": {
    "title": "NEW POOL",
    "activated": "Pool activated",
-   "tagline": "Open for swaps and liquidity"
+   "tagline": "Welcome to THORChain",
+   "trading_on": "Trading is on",
+   "trading_paused": "Trading is paused"
   }
  }
 }

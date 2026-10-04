@@ -208,7 +208,8 @@ class AlertPresenter(INotified, WithLogger):
         # a new pool may have no logos yet, its own and its chain's; the renderer reads the same folder
         await check_pool_logos(Resources().logo_downloader, [change.pool_name])
         parameters = build_pool_activated_card(
-            change.pool_name, event.pool_info_map, event.usd_per_rune, loc, self._get_chain_logo(asset))
+            change.pool_name, event.pool_info_map, event.usd_per_rune, loc, self._get_chain_logo(asset),
+            trading_paused=self.deps.chain_info.trading_paused(asset.chain))
         photo = await self.renderer.render(POOL_ACTIVATED_TEMPLATE, parameters)
         return photo, pool_activated_card_filename(change.pool_name)
 
@@ -341,13 +342,13 @@ class AlertPresenter(INotified, WithLogger):
         )
 
     @staticmethod
-    def _gen_user_address_for_renderer(name_map, address):
+    def _gen_user_address_for_renderer(name_map, address, unknown=''):
         user_name_thor = name_map.by_address.get(address) if name_map else None
         if user_name_thor:
             return add_thor_suffix(user_name_thor)
         else:
             # just address
-            return shorten_text_middle(address, 6, 4) if address else ''
+            return shorten_text_middle(address, 6, 4) if address else unknown
 
     # words that add nothing under a small arrow: the chain is already shown by the token's chain logo
     _AGGREGATOR_NOISE_WORDS = {'aggregator', 'ethereum', 'avalanche', 'binancesmartchain', 'bsc', 'base', 'arbitrum'}
@@ -386,7 +387,7 @@ class AlertPresenter(INotified, WithLogger):
         if not self.use_renderer:
             return None, None
 
-        user_name = self._gen_user_address_for_renderer(name_map, data.from_address)
+        user_name = self._gen_user_address_for_renderer(name_map, data.from_address, loc.TEXT_USER_UNKNOWN)
 
         from_asset = Asset(data.in_asset)
         to_asset = Asset(data.out_asset)
@@ -435,8 +436,8 @@ class AlertPresenter(INotified, WithLogger):
             return None, None
 
         tx = data.transaction
-        from_user_name = self._gen_user_address_for_renderer(name_map, tx.sender_address)
-        to_user_name = self._gen_user_address_for_renderer(name_map, tx.recipient_address)
+        from_user_name = self._gen_user_address_for_renderer(name_map, tx.sender_address, loc.TEXT_USER_UNKNOWN)
+        to_user_name = self._gen_user_address_for_renderer(name_map, tx.recipient_address, loc.TEXT_USER_UNKNOWN)
 
         from_subtx = tx.in_tx[0]
         to_subtx = tx.recipients_output

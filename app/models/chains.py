@@ -18,6 +18,11 @@ class ChainInfoHolder:
     def from_list(cls, chain_info_dict):
         return cls(state_dict=chain_info_dict)
 
+    def trading_paused(self, chain: str) -> Optional[bool]:
+        """Is the trading through the chain off? None when the bot does not know the chain (yet)"""
+        info = self.state_dict.get(chain)
+        return None if info is None else info.trading_paused
+
     @property
     def all_chains(self):
         return list(self.state_dict.keys())
@@ -39,7 +44,7 @@ class ChainInfoHolder:
 
     @classmethod
     def one_work_chain_state(cls, info: ThorChainInfo):
-        if info.halted or info.chain_trading_paused or info.global_trading_paused:
+        if info.trading_paused:
             return cls.HALTED
         if info.chain_lp_actions_paused:
             return cls.WARNING

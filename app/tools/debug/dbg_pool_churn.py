@@ -51,15 +51,16 @@ def save_gallery_demos(usd_per_rune=2.5):
     cfg = Config()
     demos = (
         ('pool_activated', EnglishLocalization(cfg), 'BSC.USDC-0X8AC76A51CC950D9822D68B83FE1AD97B32CD580D', 'BSC.BNB',
-         1_050_000, 2_600_000,
-         {'title': 'Pool activated: a token', 'subtitle': 'BSC.USDC, with the chain badge and the contract',
+         1_050_000, 2_600_000, False,
+         {'title': 'Pool activated: a token', 'subtitle': 'BSC.USDC, with the chain badge and the contract, trading is on',
           'lang': 'en', 'order': 0}),
-        ('pool_activated_ru', RussianLocalization(cfg), 'BTC.BTC', '', 9_000_000, 1500,
-         {'title': 'Pool activated: a gas asset', 'subtitle': 'BTC.BTC in Russian, no chain badge',
+        ('pool_activated_ru', RussianLocalization(cfg), 'BTC.BTC', '', 9_000_000, 1500, True,
+         {'title': 'Pool activated: a gas asset', 'subtitle': 'BTC.BTC in Russian, no chain badge, trading is paused',
           'lang': 'ru', 'order': 1}),
     )
-    for name, loc, pool, chain_logo, rune, asset, meta in demos:
-        parameters = build_pool_activated_card(pool, pool_map(pool, rune, asset), usd_per_rune, loc, chain_logo)
+    for name, loc, pool, chain_logo, rune, asset, trading_paused, meta in demos:
+        parameters = build_pool_activated_card(pool, pool_map(pool, rune, asset), usd_per_rune, loc, chain_logo,
+                                               trading_paused=trading_paused)
         demo = {'template_name': POOL_ACTIVATED_TEMPLATE, 'meta': meta, 'parameters': parameters}
         with open(f'renderer/demo/{name}.json', 'w', encoding='utf-8') as f:
             json.dump(demo, f, indent=1, ensure_ascii=False)

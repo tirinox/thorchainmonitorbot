@@ -394,6 +394,11 @@ class ThorChainInfo(NamedTuple):
     def is_perfect(self):
         return self.is_ok and not self.chain_lp_actions_paused and not self.chain_trading_paused and not self.halted
 
+    @property
+    def trading_paused(self):
+        """No swaps through this chain: it is halted, or its trading (or all the trading) is paused"""
+        return self.halted or self.chain_trading_paused or self.global_trading_paused
+
     @classmethod
     def from_json(cls, j):
         return cls(

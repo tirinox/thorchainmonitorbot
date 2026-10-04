@@ -23,10 +23,12 @@ def short_contract(tag: str, begin=6, end=4):
 
 
 def build_pool_activated_card(pool_name: str, pool_info_map: Optional[PoolInfoMap], usd_per_rune: float,
-                              loc: BaseLocalization, chain_logo='') -> dict:
+                              loc: BaseLocalization, chain_logo='', trading_paused: Optional[bool] = None) -> dict:
     """
     Parameters for the pool_activated.jinja2 template; all texts come localized.
     The numbers that are not known (the pool is not in the map, no RUNE price) are left out.
+    A pool opens before the trading of a new chain does, so the card tells whether the trading through the chain
+    is on (trading_paused False) or paused (True); None, when the bot does not know the chain, tells nothing.
     """
     asset = Asset.from_string(pool_name).l1_asset
     pool = (pool_info_map or {}).get(pool_name)
@@ -49,9 +51,12 @@ def build_pool_activated_card(pool_name: str, pool_info_map: Optional[PoolInfoMa
         'asset_logo': str(asset),
         'chain_logo': chain_logo,
         'stats': stats,
+        'trading': '' if trading_paused is None else ('paused' if trading_paused else 'on'),
         't': {
             'title': loc.TEXT_PIC_POOL_TITLE.upper(),
             'activated': loc.TEXT_PIC_POOL_ACTIVATED,
             'tagline': loc.TEXT_PIC_POOL_TAGLINE,
+            'trading_on': loc.TEXT_PIC_POOL_TRADING_ON,
+            'trading_paused': loc.TEXT_PIC_POOL_TRADING_PAUSED,
         },
     }

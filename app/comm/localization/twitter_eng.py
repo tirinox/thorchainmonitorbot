@@ -58,6 +58,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         return "TX: " + get_explorer_url_to_tx(self.cfg.network_id, chain, tx_id)
 
     def link_to_address(self, addr, name_map, chain=Chains.THOR):
+        if not addr:
+            return self.TEXT_USER_UNKNOWN
         # without a link, just a caption
         if name_map:
             name = name_map.by_address.get(addr)

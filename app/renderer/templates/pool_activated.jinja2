@@ -35,7 +35,7 @@
   }
 
   /* ── the coin: the logo of the asset in a golden ring, the sunburst behind it ── */
-  .coin-wrap { position: relative; width: 340px; height: 340px; margin-top: 8px; flex-shrink: 0; }
+  .coin-wrap { position: relative; width: 300px; height: 300px; margin-top: 6px; flex-shrink: 0; }
   .rays {
     position: absolute; left: 50%; top: 50%; width: 1700px; height: 1700px; transform: translate(-50%, -50%);
     z-index: -1;
@@ -58,28 +58,28 @@
   }
   .coin-face img { display: block; width: 100%; height: 100%; object-fit: contain; }
   .chain-badge {
-    position: absolute; right: -4px; bottom: 6px; width: 112px; height: 112px; border-radius: 50%;
+    position: absolute; right: -4px; bottom: 4px; width: 100px; height: 100px; border-radius: 50%;
     border: 6px solid #0a1015; background: #0a1015;
     box-shadow: 0 0 0 3px {{ gold }}, 0 6px 26px rgba(0,0,0,.7), 0 0 36px rgba(245,197,24,.45);
   }
 
   /* ── the name ── */
   .ticker {
-    margin-top: 34px; font-size: {{ ticker_size }}px; font-weight: 900; line-height: 1; letter-spacing: .02em;
+    margin-top: 24px; font-size: {{ ticker_size }}px; font-weight: 900; line-height: 1; letter-spacing: .02em;
     white-space: nowrap;
     background: linear-gradient(180deg, #ffffff 12%, #fff0b3 48%, {{ gold }} 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
     filter: drop-shadow(0 0 30px rgba(245,197,24,.45)) drop-shadow(0 5px 0 rgba(0,0,0,.45));
   }
   .pool-pill {
-    margin-top: 16px; padding: 7px 28px 8px; border-radius: 999px;
+    margin-top: 12px; padding: 7px 28px 8px; border-radius: 999px;
     background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.2);
     font-size: 30px; font-weight: 700; letter-spacing: .08em; color: #d5e2e6; white-space: nowrap;
   }
   .pool-pill .contract { margin-left: 12px; font-family: monospace; font-size: 25px; font-weight: 400; color: #8ea4ab; letter-spacing: .02em; }
 
   /* ── the stamp ── */
-  .stamp-row { margin-top: 34px; display: flex; align-items: center; gap: 22px; }
+  .stamp-row { margin-top: 26px; display: flex; align-items: center; gap: 22px; }
   .stamp {
     padding: 14px 46px 16px; border-radius: 999px; border: 4px solid {{ gold }}; color: #ffe27a;
     font-size: 58px; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; white-space: nowrap;
@@ -88,7 +88,18 @@
     text-shadow: 0 0 26px rgba(245,197,24,.75), 0 2px 0 rgba(0,0,0,.4);
   }
   .spark { width: 52px; height: 52px; flex-shrink: 0; filter: drop-shadow(0 0 12px rgba(255,226,122,.9)); }
-  .tagline { margin-top: 18px; font-size: 30px; letter-spacing: .06em; color: #cfeee3; }
+  .tagline { margin-top: 12px; font-size: 30px; letter-spacing: .06em; color: #cfeee3; }
+
+  /* is the trading through the chain on: a new chain opens its pool before its trading */
+  .trading {
+    margin-top: 12px; padding: 5px 26px 6px; border-radius: 999px; display: inline-flex; align-items: center; gap: 14px;
+    font-size: 26px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap;
+  }
+  .trading i { width: 16px; height: 16px; border-radius: 50%; background: currentColor; box-shadow: 0 0 14px currentColor; }
+  .trading.on { color: #33FF99; border: 2px solid rgba(51,255,153,.55);
+    background: linear-gradient(rgba(51,255,153,.10), rgba(51,255,153,.10)), #0a1511; }
+  .trading.paused { color: #ffb547; border: 2px solid rgba(255,181,71,.55);
+    background: linear-gradient(rgba(255,181,71,.10), rgba(255,181,71,.10)), #151208; }
 
   /* ── numbers ── */
   .stats {
@@ -139,6 +150,9 @@
     {{ star() }}
   </div>
   <div class="tagline">{{ t.tagline }}</div>
+  {% if trading %}
+    <div class="trading {{ trading }}"><i></i>{{ t.trading_on if trading == 'on' else t.trading_paused }}</div>
+  {% endif %}
 
   {% if stats %}
     <div class="stats">
