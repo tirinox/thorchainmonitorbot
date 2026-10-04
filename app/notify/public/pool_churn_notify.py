@@ -1,3 +1,7 @@
+import asyncio
+
+from comm.picture.crypto_logo import CryptoLogoDownloader, check_pool_logos
+from comm.picture.resources import Resources
 from lib.config import SubConfig
 from lib.cooldown import Cooldown
 from lib.delegates import INotified, WithDelegates
@@ -7,10 +11,14 @@ from models.pool_info import PoolInfoMap, PoolChanges, PoolChange
 from models.price import PriceHolder
 
 
+LOGO_CHECK_TIMEOUT = 60.0  # sec; the check downloads, and the alert must not wait for a hanging download for long
+
+
 class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
-    def __init__(self, deps: DepContainer):
+    def __init__(self, deps: DepContainer, logo_downloader: CryptoLogoDownloader = None):
         super().__init__()
         self.deps = deps
+        self.logo_downloader = logo_downloader or CryptoLogoDownloader(Resources.LOGO_BASE)
         self.old_pool_dict = {}
         cfg: SubConfig = deps.cfg.pool_churn
         cooldown_sec = cfg.as_interval('notification.cooldown', '1h')
@@ -28,6 +36,7 @@ class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
         # self._dbg_pool_changes(pool_changes) # fixme: debug (!)
 
         if pool_changes.any_changed:
+            await self.check_logos(pool_changes)
             pool_changes = pool_changes._replace(pool_info_map=data.pool_info_map, usd_per_rune=data.usd_per_rune)
             self.logger.info(f'Pool changes detected: added {pool_changes.pools_added}, '
                              f'removed {pool_changes.pools_removed}, changed {pool_changes.pools_changed}!')
@@ -36,6 +45,32 @@ class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
                 await self.spam_cd.do()
 
         self.old_pool_dict = data.pool_info_map
+
+    async def check_logos(self, pool_changes: PoolChanges):
+        """
+        The card of a pool and the pictures of the bot need the logo of the asset and of its chain.
+        A new or activated pool is checked as soon as it shows up, before the alert (which downloads what is missing),
+        and the admin is told about a logo that is not there and cannot be downloaded.
+        Never fails: it must not cost the alert.
+        """
+        names = list(dict.fromkeys(c.pool_name for c in (*pool_changes.pools_added, *pool_changes.activated)))
+        if not names:
+            return
+
+        try:
+            problems = await asyncio.wait_for(check_pool_logos(self.logo_downloader, names), LOGO_CHECK_TIMEOUT)
+        except Exception as e:  # asyncio.TimeoutError too
+            self.logger.exception(f'Failed to check the logos of {names}: {e!r}')
+            problems = {'check': f'failed: {e!r}'}
+
+        if problems:
+            self.logger.error(f'No logos for {names}: {problems}')
+            if emergency := getattr(self.deps, 'emergency', None):
+                emergency.report(
+                    'PoolChurnNotifier',
+                    f'A new pool has no logo, and it cannot be downloaded: {", ".join(names)}. '
+                    f'Put the picture into data/asset_logo, or the cards show a placeholder',
+                    problems=problems)
 
     @staticmethod
     def split_pools_by_status(pim: PoolInfoMap):

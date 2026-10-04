@@ -59,7 +59,11 @@ def test_deprecated_enabled_status_counts_too():
 
 @pytest.mark.asyncio
 async def test_notifier_attaches_the_pools_and_the_price():
-    notifier = PoolChurnNotifier(SimpleNamespace(cfg=RUNTIME_CFG, db=FakeDB(), flagship=None))
+    class Logos:  # the check of the logos is in test_pool_logos.py; here it must not touch the disk or the network
+        async def ensure_logo(self, logo):
+            return ''
+
+    notifier = PoolChurnNotifier(SimpleNamespace(cfg=RUNTIME_CFG, db=FakeDB(), flagship=None), logo_downloader=Logos())
     sent = []
 
     class Listener:

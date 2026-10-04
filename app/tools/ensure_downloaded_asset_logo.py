@@ -1,24 +1,22 @@
 import asyncio
 import logging
 
-import tqdm
-
-from comm.picture.crypto_logo import CryptoLogoDownloader
+from comm.picture.crypto_logo import CryptoLogoDownloader, check_pool_logos
 from comm.picture.resources import Resources
 from models.price import PriceHolder
 from tools.lib.lp_common import LpAppFramework
 
 
 async def do_download_job(app):
+    """Downloads the missing logos of all the pools, of their chains and of RUNE, and tells what cannot be got"""
     ph: PriceHolder = await app.deps.pool_cache.get()
-    pools = ph.pool_names
+    pools = sorted(ph.pool_names | {'THOR.RUNE'})
     print(pools)
 
-    pools.add('THOR.RUNE')
-
-    logo_downloader = CryptoLogoDownloader(Resources().LOGO_BASE)
-    for pool in tqdm.tqdm(pools):
-        await logo_downloader.get_or_download_logo_cached(pool)
+    problems = await check_pool_logos(CryptoLogoDownloader(Resources().LOGO_BASE), pools)
+    print(f'{len(pools)} pools checked, {len(problems)} problems')
+    for logo, problem in problems.items():
+        print(f'NO LOGO {logo}: {problem}')
 
 
 async def main():

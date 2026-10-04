@@ -7,6 +7,7 @@ from api.w3.token_record import AmountToken
 from comm.localization.manager import BaseLocalization
 from comm.picture.achievement_card import build_achievement_card, achievement_card_filename, ACHIEVEMENT_TEMPLATE
 from comm.picture.block_height_picture import block_speed_chart
+from comm.picture.crypto_logo import chain_logo_name, check_pool_logos
 from comm.picture.nodes_card import build_nodes_card, nodes_card_filename, NODES_TEMPLATE
 from comm.picture.pool_card import build_pool_activated_card, pool_activated_card_filename, POOL_ACTIVATED_TEMPLATE
 from comm.picture.pools_picture import PoolPictureGenerator
@@ -17,7 +18,7 @@ from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.achievement.ach_list import Achievement
 from jobs.fetch.cached.last_block import EventLastBlock
 from jobs.fetch.chain_id import AlertChainIdChange
-from lib.constants import THOR_BLOCKS_PER_MINUTE, thor_to_float, THOR_BASIS_POINT_MAX, Chains
+from lib.constants import THOR_BLOCKS_PER_MINUTE, thor_to_float, THOR_BASIS_POINT_MAX
 from lib.date_utils import DAY
 from lib.delegates import INotified
 from lib.depcont import DepContainer
@@ -25,7 +26,7 @@ from lib.html_renderer import InfographicRendererRPC
 from lib.logs import WithLogger
 from lib.texts import shorten_text, shorten_text_middle
 from lib.utils import namedtuple_to_dict, recursive_asdict
-from models.asset import Asset, is_ambiguous_asset
+from models.asset import Asset
 from models.cap_info import AlertLiquidityCap
 from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
@@ -204,8 +205,8 @@ class AlertPresenter(INotified, WithLogger):
 
     async def render_pool_activated(self, loc: BaseLocalization, event: PoolChanges, change: PoolChange):
         asset = Asset.from_string(change.pool_name)
-        # a new pool may have no logo yet; the renderer reads the same folder
-        await Resources().logo_downloader.get_or_download_logo_cached(str(asset.l1_asset))
+        # a new pool may have no logos yet, its own and its chain's; the renderer reads the same folder
+        await check_pool_logos(Resources().logo_downloader, [change.pool_name])
         parameters = build_pool_activated_card(
             change.pool_name, event.pool_info_map, event.usd_per_rune, loc, self._get_chain_logo(asset))
         photo = await self.renderer.render(POOL_ACTIVATED_TEMPLATE, parameters)
@@ -372,16 +373,7 @@ class AlertPresenter(INotified, WithLogger):
             "aggregator_short": cls._short_aggregator_name(name),
         }
 
-    @staticmethod
-    def _get_chain_logo(asset: Asset) -> str:
-        if is_ambiguous_asset(asset):
-            if asset.chain == Chains.BASE:
-                return 'BASE'  # Base has ETH as gas asset, but we wanna display BASE.png here
-            else:
-                # other just use chain's gas asset as logo
-                return str(Asset.gas_asset_from_chain(asset.chain))
-        else:
-            return ''  # no ambiguity
+    _get_chain_logo = staticmethod(chain_logo_name)
 
     def get_affiliates(self, memo: THORMemo):
         ns = self.deps.name_service

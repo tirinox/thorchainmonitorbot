@@ -5,7 +5,7 @@ import web3
 from PIL import Image
 
 from lib.constants import *
-from models.asset import Asset
+from models.asset import Asset, is_ambiguous_asset
 from lib.file_util import download_file
 
 logger = logging.getLogger(__name__)
@@ -25,6 +25,18 @@ def convert_eth_address_to_case_checksum(eth_address: str) -> str:
             new_address += symbol
 
     return '0x' + new_address
+
+
+def chain_logo_name(asset: Asset) -> str:
+    """The logo that tells the chain of a token pool apart (BSC.USDC is shown with BNB); '' when the asset says it itself"""
+    if is_ambiguous_asset(asset):
+        if asset.chain == Chains.BASE:
+            return 'BASE'  # Base has ETH as gas asset, but we wanna display BASE.png here
+        else:
+            # other just use chain's gas asset as logo
+            return str(Asset.gas_asset_from_chain(asset.chain))
+    else:
+        return ''  # no ambiguity
 
 
 class CryptoLogoDownloader:
@@ -112,7 +124,8 @@ class CryptoLogoDownloader:
             raise FileNotFoundError
 
         target_path = self.path_to_local_coin_image(asset)
-        await download_file(url, target_path)
+        if (status := await download_file(url, target_path)) != 200:
+            raise FileNotFoundError(f'HTTP {status} for {url}')
 
         # thumbnail
         logo = Image.open(target_path).convert("RGBA")
@@ -136,9 +149,53 @@ class CryptoLogoDownloader:
         return logo
 
 
+    async def ensure_logo(self, asset) -> str:
+        """
+        '' when the logo of the asset is in the folder (it is downloaded if it was not there),
+        otherwise what is wrong: the address cannot be made, the download fails or the file is not a picture.
+        """
+        local_path = self.path_to_local_coin_image(asset)
+        try:
+            if not os.path.exists(local_path):
+                await self._download_logo(asset)
+            with Image.open(local_path) as logo:
+                logo.verify()
+            return ''
+        except Exception as e:
+            if os.path.exists(local_path):
+                try:
+                    Image.open(local_path).verify()
+                except Exception:
+                    os.remove(local_path)  # a broken file would be taken for the logo from now on
+            return f'{e!r}'
+
     async def get_logo_for_chain(self, chain, forced=False):
         # for example: for ARB.XXX-0X123123, we need to get the logo for ARB
         virtual_asset = self.CHAIN_TO_LOGO_ASSET.get(chain)
         if not virtual_asset:
             return
         return await self.get_or_download_logo_cached(virtual_asset, forced)
+
+
+async def check_pool_logos(downloader: CryptoLogoDownloader, pool_names) -> dict:
+    """
+    Checks that every pool has the logo of its asset and of its chain badge, downloading what is missing.
+    Returns {file name of the logo: what is wrong}, empty when all is fine.
+    """
+    problems = {}
+    checked = set()
+    for pool in pool_names:
+        try:
+            asset = Asset.from_string(pool).l1_asset
+            logos = (str(asset), chain_logo_name(asset))
+        except Exception as e:
+            problems[str(pool)] = f'not an asset: {e!r}'
+            continue
+
+        for logo in logos:
+            if not logo or logo in checked:
+                continue
+            checked.add(logo)
+            if problem := await downloader.ensure_logo(logo):
+                problems[f'{logo}.png'] = problem
+    return problems
