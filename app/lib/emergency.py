@@ -1,5 +1,6 @@
 import asyncio
 import html
+import logging
 import os
 import sys
 import time
@@ -22,6 +23,7 @@ MAX_VALUE_LEN = 300  # of one detail value
 MAX_TRACEBACK_LEN = 1200
 MAX_DETAILS_LEN = 2000
 CLEAN_SEEN_ABOVE = 500
+REPORT_HELPER_PREFIX = '_report'  # a function named so that calls report() is skipped when looking for the caller
 
 
 class EmergencyLimits(NamedTuple):
@@ -35,12 +37,25 @@ class EmergencyLimits(NamedTuple):
 
     @classmethod
     def from_config(cls, cfg) -> 'EmergencyLimits':
+        # never fails: it is read before the emergency reports exist, so a crash here would not be reported.
+        # A bad value (or an empty "emergency:" section, which YAML reads as None) keeps the default, loudly.
         section = cfg.get_pure('emergency', {})
-        d = cls()
+        if not isinstance(section, dict):
+            if section is not None:
+                logging.error(f'Config "emergency" must be a mapping, got {section!r}. Using the defaults.')
+            section = {}
+
         fields = {}
-        for name, default in d._asdict().items():
-            if (value := section.get(name)) is not None:
-                fields[name] = parse_timespan_to_seconds(str(value)) if isinstance(default, float) else int(value)
+        for name, default in cls()._asdict().items():
+            if (value := section.get(name)) is None:
+                continue
+            try:
+                parsed = parse_timespan_to_seconds(str(value)) if isinstance(default, float) else int(value)
+                if parsed <= 0:
+                    raise ValueError('must be positive')
+                fields[name] = parsed
+            except (ValueError, TypeError) as e:
+                logging.error(f'Config "emergency.{name}" = {value!r} is invalid ({e}). Using {default}.')
         return cls(**fields)
 
 
@@ -139,9 +154,12 @@ class EmergencyReport(WithLogger):
 
     @staticmethod
     def _caller() -> str:
-        # frame 0 = _caller, 1 = report, 2 = who called report()
+        # frame 0 = _caller, 1 = report, 2 = who called report();
+        # helpers named _report* only pass the call on (BaseFetcher._report_emergency...): the place is above them
         with suppress(Exception):
             f = sys._getframe(2)
+            while f.f_back and f.f_code.co_name.startswith(REPORT_HELPER_PREFIX):
+                f = f.f_back
             return f'{os.path.basename(f.f_code.co_filename)}:{f.f_lineno}'
         return ''
 

@@ -269,3 +269,48 @@ def test_limits_come_from_the_config_and_keep_defaults():
     assert limits.dedup_window == 120 and limits.max_per_minute == 3
     assert limits.block_stall_after == 90 and limits.preload_failures == 7
     assert limits.fetcher_errors_in_a_row == 5  # not set: the default
+
+
+def _report_via_helper(r):
+    r.report('m', 'via helper')
+
+
+@pytest.mark.asyncio
+async def test_caller_is_above_the_report_helpers():
+    import sys
+    r = make()
+    _report_via_helper(r); line = sys._getframe().f_lineno  # noqa: E702 (the same line)
+    assert r._q.get_nowait().caller == f'test_emergency.py:{line}'
+
+
+@pytest.mark.asyncio
+async def test_fetcher_report_points_at_run_once_not_at_its_helper():
+    import linecache
+    from jobs.fetch import base
+    from jobs.fetch.base import BaseFetcher
+
+    class Failing(BaseFetcher):
+        async def fetch(self):
+            raise RuntimeError('down')
+
+    r = make()
+    f = Failing(make_deps(r), sleep_period=1)
+    for _ in range(r.limits.fetcher_errors_in_a_row):
+        await f.run_once()
+    file, line = r._q.get_nowait().caller.split(':')
+    assert file == 'base.py'
+    assert "_report_emergency('Fetcher keeps failing'" in linecache.getline(base.__file__, int(line))
+
+
+@pytest.mark.parametrize('section', [None, 'oops', []])
+def test_limits_survive_an_empty_or_wrong_section(section):
+    from lib.config import Config
+    assert em.EmergencyLimits.from_config(Config(data={'emergency': section})) == em.EmergencyLimits()
+
+
+def test_bad_limit_values_keep_the_defaults():
+    from lib.config import Config
+    limits = em.EmergencyLimits.from_config(Config(data={'emergency': {
+        'dedup_window': 'soon', 'max_per_minute': 0, 'fetcher_errors_in_a_row': 'x', 'block_stall_after': '-5m',
+        'preload_failures': 2}}))
+    assert limits == em.EmergencyLimits()._replace(preload_failures=2)
