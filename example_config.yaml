@@ -20,6 +20,16 @@ infographic_renderer:
   renderer_url: "http://renderer:8404/render"
 
 
+# Emergency messages to the first Telegram admin (lib/emergency.py): when, and how often not to bother. Optional.
+emergency:
+  dedup_window: 10m  # the same message of a module is sent once per this time, the repeats are only counted
+  max_per_minute: 10  # at most this many messages per minute at all; the rest is dropped and counted
+  fetcher_errors_in_a_row: 5  # a fetcher failing this many ticks in a row is reported
+  block_stall_after: 5m  # the block scanner standing on the same block for this long is reported
+  preload_failures: 3  # the startup is reported from this many failed attempts
+  preload_max_retry_delay: 10m  # the startup retries with a doubling delay, up to this
+
+
 sentry:
   url: ""
 

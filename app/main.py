@@ -58,10 +58,10 @@ from jobs.vote_recorder import VoteRecorder
 from jobs.wasm_recorder import CosmWasmRecorder
 from lib.config import Config, SubConfig
 from lib.constants import HTTP_CLIENT_ID
-from lib.date_utils import parse_timespan_to_seconds, MINUTE
+from lib.date_utils import parse_timespan_to_seconds
 from lib.db import DB, KeyDB
 from lib.depcont import DepContainer
-from lib.emergency import EmergencyReport
+from lib.emergency import EmergencyReport, EmergencyLimits
 from lib.flagship import Flagship
 from lib.logs import WithLogger, setup_logs_from_config
 from lib.money import DepthCurve
@@ -168,7 +168,7 @@ class App(WithLogger):
         d = self.deps
         self._admin_messages = AdminMessages(d)
         d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
-        d.emergency = EmergencyReport(d.cfg.first_admin_id, d.telegram_bot.bot)
+        d.emergency = EmergencyReport(d.cfg.first_admin_id, d.telegram_bot.bot, EmergencyLimits.from_config(d.cfg))
         d.loc_man = LocalizationManager(d.cfg)
         d.loc_man.set_mimir_rules(d.mimir_const_holder.mimir_rules)
         d.broadcaster = Broadcaster(d)
@@ -226,9 +226,6 @@ class App(WithLogger):
             self.logger.info(f'Sleeping before start for {sleep_interval:.1f} sec..')
             await asyncio.sleep(sleep_interval)
 
-    PRELOAD_FAILURES_TO_REPORT = 3
-    PRELOAD_MAX_RETRY_DELAY = 10 * MINUTE
-
     async def _preloading(self):
         d = self.deps
         await self._some_sleep()
@@ -238,6 +235,7 @@ class App(WithLogger):
         sleep_step = self.sleep_step
         retry_after = sleep_step * 5
         failures = 0
+        limits = d.emergency.limits
         while True:
             try:
                 self.logger.info('Testing DB connection...')
@@ -279,11 +277,11 @@ class App(WithLogger):
                 if not isinstance(e, ConnectionError):
                     self.logger.exception(e)
                 failures += 1
-                retry_after = min(retry_after * 2, self.PRELOAD_MAX_RETRY_DELAY)
+                retry_after = min(retry_after * 2, limits.preload_max_retry_delay)
                 self.logger.error(f'No luck. {e!r} Retrying in {retry_after} sec...')
-                if failures >= self.PRELOAD_FAILURES_TO_REPORT and self.deps.emergency:
-                    self.deps.emergency.report('App', 'The bot cannot finish loading, still retrying',
-                                               failures=failures, error=repr(e), next_retry_in_sec=retry_after)
+                if failures >= limits.preload_failures:
+                    d.emergency.report('App', 'The bot cannot finish loading, still retrying',
+                                       failures=failures, error=repr(e), next_retry_in_sec=retry_after)
                 await asyncio.sleep(retry_after)
 
     def _can_run(self, feature: str, needs: dict) -> bool:
@@ -330,7 +328,7 @@ class App(WithLogger):
             max_attempts = d.cfg.as_int('native_scanner.max_attempts_per_block', 5)
             d.block_scanner = BlockScanner(d, max_attempts=max_attempts, role='main')
             tasks.append(d.block_scanner)
-            tasks.append(BlockStallWatchdog(d, d.block_scanner))
+            tasks.append(BlockStallWatchdog(d, d.block_scanner, d.emergency.limits.block_stall_after))
             d.ref_memo_cache = RefMemoCache(d)
             d.block_scanner.add_subscriber(d.ref_memo_cache)
             d.rapid_swap_recorder = RapidSwapRecorder(d)

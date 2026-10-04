@@ -41,7 +41,7 @@ async def test_dedup_counts_repeats_and_reports_after_window():
         r.report('m', 'same', tx='a')
     assert r._q.qsize() == 1
 
-    r._seen[('m', 'same')][0] -= em.DEDUP_WINDOW + 1
+    r._seen[('m', 'same')][0] -= r.limits.dedup_window + 1
     r.report('m', 'same')
     assert r._q.qsize() == 2
     r._q.get_nowait()
@@ -51,14 +51,14 @@ async def test_dedup_counts_repeats_and_reports_after_window():
 @pytest.mark.asyncio
 async def test_rate_cap_and_throttled_note():
     r = make()
-    for i in range(em.MAX_PER_MINUTE + 5):
+    for i in range(r.limits.max_per_minute + 5):
         r.report('m', f'different {i}')
-    assert r._q.qsize() == em.MAX_PER_MINUTE
+    assert r._q.qsize() == r.limits.max_per_minute
     assert r._throttled == 5
 
     r._sent_times.clear()
     r.report('m', 'later')
-    for _ in range(em.MAX_PER_MINUTE):
+    for _ in range(r.limits.max_per_minute):
         e = r._q.get_nowait()
     assert r._q.get_nowait().throttled == 5
 
@@ -108,6 +108,8 @@ async def test_disabled_mode_only_logs():
 # ---------- who reports ----------
 
 class Spy:
+    limits = em.EmergencyLimits()
+
     def __init__(self):
         self.calls = []
 
@@ -126,7 +128,8 @@ def make_deps(spy):
 
 @pytest.mark.asyncio
 async def test_fetcher_reports_only_a_streak_of_errors_and_success_resets_it():
-    from jobs.fetch.base import BaseFetcher, ERRORS_IN_A_ROW_TO_REPORT
+    from jobs.fetch.base import BaseFetcher
+    n = em.EmergencyLimits().fetcher_errors_in_a_row
 
     class Flaky(BaseFetcher):
         fail = True
@@ -138,13 +141,13 @@ async def test_fetcher_reports_only_a_streak_of_errors_and_success_resets_it():
 
     spy = Spy()
     f = Flaky(make_deps(spy), sleep_period=1)
-    for _ in range(ERRORS_IN_A_ROW_TO_REPORT - 1):
+    for _ in range(n - 1):
         await f.run_once()
     assert spy.calls == []
 
     await f.run_once()
     assert len(spy.calls) == 1 and spy.calls[0][0].endswith('Flaky')
-    assert spy.calls[0][2]['errors_in_a_row'] == ERRORS_IN_A_ROW_TO_REPORT
+    assert spy.calls[0][2]['errors_in_a_row'] == n
 
     f.fail = False
     await f.run_once()
@@ -253,4 +256,16 @@ async def test_preloading_reports_a_long_failure_and_caps_the_delay():
         await app._preloading()
 
     assert len(spy.calls) == 6  # from the 3rd failure on (deduplication is the emergency's own job)
-    assert max(sleeps) == App.PRELOAD_MAX_RETRY_DELAY
+    assert max(sleeps) == spy.limits.preload_max_retry_delay
+
+
+def test_limits_come_from_the_config_and_keep_defaults():
+    from lib.config import Config
+
+    assert em.EmergencyLimits.from_config(Config(data={})) == em.EmergencyLimits()
+
+    limits = em.EmergencyLimits.from_config(Config(data={'emergency': {
+        'dedup_window': '2m', 'max_per_minute': 3, 'block_stall_after': 90, 'preload_failures': '7'}}))
+    assert limits.dedup_window == 120 and limits.max_per_minute == 3
+    assert limits.block_stall_after == 90 and limits.preload_failures == 7
+    assert limits.fetcher_errors_in_a_row == 5  # not set: the default

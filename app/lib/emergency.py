@@ -13,16 +13,35 @@ from aiogram import Bot
 from aiogram.types import ParseMode
 from aiogram.utils import exceptions as tg_exceptions
 
+from lib.date_utils import parse_timespan_to_seconds
 from lib.logs import WithLogger
 
 TG_MAX_LEN = 4096
-DEDUP_WINDOW = 10 * 60.0  # the same (module, message) is sent once per window, the rest is only counted
-MAX_PER_MINUTE = 10  # hard cap of messages to the admin; the excess is counted and told in the next message
 SEND_ATTEMPTS = 3
 MAX_VALUE_LEN = 300  # of one detail value
 MAX_TRACEBACK_LEN = 1200
 MAX_DETAILS_LEN = 2000
 CLEAN_SEEN_ABOVE = 500
+
+
+class EmergencyLimits(NamedTuple):
+    """When the admin is told and how often. The `emergency` section of config.yaml; missing keys keep these."""
+    dedup_window: float = 10 * 60.0  # the same (module, message) is sent once per window, the rest is only counted
+    max_per_minute: int = 10  # hard cap of messages to the admin; the excess is counted and told in the next one
+    fetcher_errors_in_a_row: int = 5  # a fetcher failing this many ticks in a row is reported
+    block_stall_after: float = 5 * 60.0  # the block scanner standing on one block for this long is reported
+    preload_failures: int = 3  # the startup is reported from this many failed attempts
+    preload_max_retry_delay: float = 10 * 60.0  # the startup retry delay doubles up to this
+
+    @classmethod
+    def from_config(cls, cfg) -> 'EmergencyLimits':
+        section = cfg.get_pure('emergency', {})
+        d = cls()
+        fields = {}
+        for name, default in d._asdict().items():
+            if (value := section.get(name)) is not None:
+                fields[name] = parse_timespan_to_seconds(str(value)) if isinstance(default, float) else int(value)
+        return cls(**fields)
 
 
 class ReportedEvent(NamedTuple):
@@ -53,12 +72,13 @@ class EmergencyReport(WithLogger):
     """
     Sends emergency messages to the admin's Telegram.
     Never raises from report(). Without admin or bot it only logs (disabled mode, for tools and tests).
-    Spam guard: a repeated (module, message) is sent once per DEDUP_WINDOW with the number of skipped repeats;
-    at most MAX_PER_MINUTE messages per minute go out at all.
+    Spam guard: a repeated (module, message) is sent once per limits.dedup_window with the number of skipped
+    repeats; at most limits.max_per_minute messages per minute go out at all.
     """
 
-    def __init__(self, admin_id, bot: Optional[Bot]):
+    def __init__(self, admin_id, bot: Optional[Bot], limits: EmergencyLimits = EmergencyLimits()):
         super().__init__()
+        self.limits = limits
         self._q = asyncio.Queue()
         self._running = False
         self._sleep_time = 1.0
@@ -134,18 +154,18 @@ class EmergencyReport(WithLogger):
         now = time.monotonic()
         key = (module, message)
         seen = self._seen.get(key)
-        if seen and now - seen[0] < DEDUP_WINDOW:
+        if seen and now - seen[0] < self.limits.dedup_window:
             seen[1] += 1
             return
 
         while self._sent_times and now - self._sent_times[0] > 60.0:
             self._sent_times.popleft()
-        if len(self._sent_times) >= MAX_PER_MINUTE:
+        if len(self._sent_times) >= self.limits.max_per_minute:
             self._throttled += 1
             return
 
         if len(self._seen) > CLEAN_SEEN_ABOVE:
-            self._seen = {k: v for k, v in self._seen.items() if now - v[0] < DEDUP_WINDOW}
+            self._seen = {k: v for k, v in self._seen.items() if now - v[0] < self.limits.dedup_window}
 
         tb = ''
         if sys.exc_info()[0] is not None:
@@ -161,7 +181,7 @@ class EmergencyReport(WithLogger):
         self._throttled = 0
 
     @staticmethod
-    def format_event(e: ReportedEvent) -> str:
+    def format_event(e: ReportedEvent, limits: EmergencyLimits = EmergencyLimits()) -> str:
         lines = [
             f"🚨 <b>{_fit(e.module, 100)}</b>",
             f"<code>{_fit(e.message, 500)}</code>",
@@ -170,10 +190,10 @@ class EmergencyReport(WithLogger):
         ]
         if e.repeats:
             lines.append(f"🔁 The same message was repeated {e.repeats} more time(s) "
-                         f"since the last report (muted for {DEDUP_WINDOW / 60:.0f} min).")
+                         f"since the last report (muted for {limits.dedup_window / 60:.0f} min).")
         if e.throttled:
             lines.append(f"⏳ {e.throttled} other message(s) were dropped by the rate limit "
-                         f"({MAX_PER_MINUTE}/min). See the logs.")
+                         f"({limits.max_per_minute}/min). See the logs.")
 
         if e.kwargs:
             args = [f'{i:2}. {key} = {_short(e.kwargs[key])}' for i, key in enumerate(sorted(e.kwargs), start=1)]
@@ -185,7 +205,7 @@ class EmergencyReport(WithLogger):
         return '\n'.join(lines)
 
     async def _process_item(self, e: ReportedEvent):
-        text = self.format_event(e)
+        text = self.format_event(e, self.limits)
         assert len(text) <= TG_MAX_LEN
 
         for attempt in range(1, SEND_ATTEMPTS + 1):

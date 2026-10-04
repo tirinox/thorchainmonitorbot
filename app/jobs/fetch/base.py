@@ -17,7 +17,6 @@ from lib.depcont import DepContainer
 from lib.logs import WithLogger
 
 UNPAUSE_AFTER = 5 * MINUTE
-ERRORS_IN_A_ROW_TO_REPORT = 5  # a fetcher failing this many ticks in a row is reported to the admin
 
 
 # UNPAUSE_AFTER = 30
@@ -215,7 +214,7 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
             self.logger.exception(f"task error: {e}")
             self.error_counter += 1
             self.consecutive_errors += 1
-            if self.consecutive_errors >= ERRORS_IN_A_ROW_TO_REPORT:
+            if self.deps.emergency and self.consecutive_errors >= self.deps.emergency.limits.fetcher_errors_in_a_row:
                 self._report_emergency('Fetcher keeps failing',
                                        errors_in_a_row=self.consecutive_errors, last_error=repr(e))
             try:

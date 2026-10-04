@@ -244,7 +244,7 @@ class BlockStallWatchdog(BaseFetcher):
     the node is stuck, or the scanner is hung. The scanner's own loop cannot report that, it is the one that stuck.
     """
 
-    def __init__(self, deps: DepContainer, scanner: BlockScanner, max_silence=5 * MINUTE):
+    def __init__(self, deps: DepContainer, scanner: BlockScanner, max_silence: float):
         super().__init__(deps, sleep_period=MINUTE)
         self.scanner = scanner
         self.max_silence = max_silence
