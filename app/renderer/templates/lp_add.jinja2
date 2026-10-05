@@ -1,0 +1,177 @@
+{% set _width, _height = set_viewport_size(1280, 720) %}
+{% extends "base.jinja2" %}
+
+{#
+  Liquidity added to a pool: RUNE on the left and the asset on the right flow by curved arrows into the pool ring.
+  A side that was not added is a pale coin with no arrow (a single-sided add).
+  An add bigger than the whole pool was (mega) turns the ring gold with rays, confetti and fireworks,
+  and the ring tells how many times the pool grew.
+  Parameters come localized from comm/picture/lp_card.py: build_lp_add_card.
+#}
+
+{% block content %}
+{% set title = t.title %}
+{% set header_badge = t.badge %}
+{% include "components/header.jinja2" %}
+
+{% set has_rune = rune_amount > 0 %}
+{% set has_asset = asset_amount > 0 %}
+{% set accent = '#f5c518' if mega else '#23DCC8' %}
+
+<style>
+  .container.bg { background:
+    radial-gradient(ellipse 45% 55% at 50% 55%, {{ 'rgba(245,197,24,.22)' if mega else 'rgba(35,220,200,.12)' }}, transparent 70%), #08110f; }
+  #party { position: absolute; inset: 0; z-index: 0; }
+  .layer { position: absolute; inset: 0; z-index: 1; }
+  .rays { position: absolute; left: 640px; top: 390px; width: 1400px; height: 1400px; transform: translate(-50%, -50%);
+    background: repeating-conic-gradient(from 0deg, rgba(255,214,90,.16) 0 5deg, transparent 5deg 15deg);
+    -webkit-mask-image: radial-gradient(circle, #000 10%, transparent 45%); mask-image: radial-gradient(circle, #000 10%, transparent 45%); }
+  .flow { position: absolute; inset: 0; }
+
+  .side { position: absolute; top: 230px; width: 300px; text-align: center; }
+  .side.l { left: 80px; } .side.r { right: 80px; }
+  .coin { width: 170px; height: 170px; border-radius: 50%; margin: 0 auto; position: relative; box-shadow: 0 0 40px rgba(255,255,255,.12); }
+  .coin img.main { width: 100%; height: 100%; border-radius: 50%; }
+  .coin img.badge { position: absolute; right: -6px; bottom: -2px; width: 62px; height: 62px; border-radius: 50%; border: 4px solid #0a1015; }
+  .ghost { opacity: .22; filter: grayscale(1); }
+  .ghost .coin { box-shadow: none; outline: 3px dashed rgba(255,255,255,.5); outline-offset: 6px; }
+  .amt { margin-top: 22px; font-size: 44px; font-weight: 800; color: #fff; white-space: nowrap; }
+  .amt small { font-size: 26px; color: #9fb4ba; font-weight: 600; margin-left: 6px; }
+  .usd { font-size: 31px; font-weight: 800; color: #6ff7e6; margin-top: 4px; white-space: nowrap;
+    text-shadow: 0 0 14px rgba(95,240,224,.45); }
+  .side.l .usd { color: #7dffc0; text-shadow: 0 0 14px rgba(94,255,180,.45); }
+
+  .ring { position: absolute; left: 640px; top: 390px; transform: translate(-50%, -50%); width: 330px; height: 330px;
+    border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    background: radial-gradient(circle at 50% 40%, #12262a, #091316 70%);
+    border: 10px solid {{ accent }}; box-shadow: 0 0 60px {{ accent }}88, inset 0 0 40px rgba(0,0,0,.7); }
+  .ring .lab { font-size: 20px; letter-spacing: .2em; color: #9fb4ba; text-transform: uppercase; }
+  .ring .big { font-size: {{ 92 if mega and multiplier else 66 }}px; font-weight: 900; color: #fff; line-height: 1.05;
+    white-space: nowrap; text-shadow: 0 0 30px {{ accent }}aa; }
+  .ring .sub { font-size: 24px; color: {{ accent }}; font-weight: 700; white-space: nowrap; }
+
+  .bottom { position: absolute; left: 240px; right: 240px; bottom: 50px; text-align: center; }
+  .bottom .t { font-size: 24px; color: #cfe3e6; white-space: nowrap; } .bottom b { color: #fff; }
+  .bar { height: 16px; border-radius: 8px; background: rgba(255,255,255,.08); overflow: hidden; margin-top: 10px; }
+  .bar i { display: block; height: 100%; width: {{ [share, 1.5] | max }}%; background: linear-gradient(90deg, #33FF99, {{ accent }}); }
+  .user { position: absolute; right: 40px; top: 100px; font-size: 22px; color: #8ea4ab; white-space: nowrap; }
+</style>
+
+{% if mega %}<canvas id="party"></canvas>{% endif %}
+
+{% macro arrow(d, x0, x1, color, id) -%}
+  ## a thick ribbon flowing from a coin into the ring; its head follows the tangent of the curve
+  <linearGradient id="g{{ id }}" gradientUnits="userSpaceOnUse" x1="{{ x0 }}" y1="0" x2="{{ x1 }}" y2="0">
+    <stop offset="0" stop-color="{{ color }}" stop-opacity=".15"/><stop offset=".55" stop-color="{{ color }}" stop-opacity=".8"/>
+    <stop offset="1" stop-color="{{ color }}"/>
+  </linearGradient>
+  <marker id="h{{ id }}" viewBox="0 0 10 10" refX="1" refY="5" markerUnits="strokeWidth" markerWidth="2.4" markerHeight="2.6" orient="auto">
+    <path d="M0 0 L10 5 L0 10 Z" fill="{{ color }}"/>
+  </marker>
+  <path d="{{ d }}" stroke="url(#g{{ id }})" stroke-width="26" fill="none" stroke-linecap="butt"
+        marker-end="url(#h{{ id }})" filter="url(#glow)"/>
+{%- endmacro %}
+
+<div class="layer">
+  {% if mega %}<div class="rays"></div>{% endif %}
+
+  {% if user_name %}<div class="user">👤 {{ user_name }}</div>{% endif %}
+
+  <div class="side l {{ '' if has_rune else 'ghost' }}">
+    <div class="coin"><img class="main" src="renderer/logo/THOR.RUNE.png" alt=""></div>
+    <div class="amt">{{ short_money(rune_amount) if has_rune else '—' }}<small>RUNE</small></div>
+    <div class="usd">{{ short_dollar(rune_usd) if has_rune else t.no_rune }}</div>
+  </div>
+  <div class="side r {{ '' if has_asset else 'ghost' }}">
+    <div class="coin">
+      <img class="main" src="renderer/logo/{{ asset_logo }}.png" alt=""
+           onerror="this.onerror = null; this.src = 'renderer/logo/unknown.png';">
+      {% if chain_logo %}<img class="badge" src="renderer/logo/{{ chain_logo }}.png" alt="" onerror="this.style.display = 'none'">{% endif %}
+    </div>
+    <div class="amt">{{ short_money(asset_amount) if has_asset else '—' }}<small>{{ ticker }}</small></div>
+    <div class="usd">{{ short_dollar(asset_usd) if has_asset else t.no_asset }}</div>
+  </div>
+
+  <div class="ring">
+    {% if mega and multiplier %}
+      <div class="lab">{{ t.pool_grew }}</div><div class="big">×{{ multiplier }}</div>
+      <div class="sub">{{ short_dollar(before_usd) }} → {{ short_dollar(depth_usd) }}</div>
+    {% elif mega %}
+      <div class="lab">{{ t.pool_filled }}</div><div class="big">{{ short_dollar(total_usd) }}</div>
+      <div class="sub">{{ t.pool }}</div>
+    {% else %}
+      <div class="lab">{{ t.added }}</div><div class="big">{{ short_dollar(total_usd) }}</div>
+      <div class="sub">{{ t.pool }}</div>
+    {% endif %}
+  </div>
+
+  <svg class="flow" viewBox="0 0 1280 720">
+    <defs>
+      <filter id="glow" filterUnits="userSpaceOnUse" x="0" y="0" width="1280" height="720">
+        <feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    {% if has_rune %}{{ arrow('M315 315 C 368 315, 342 390, 395 390', 315, 395, '#5effb4', 'l') }}{% endif %}
+    {% if has_asset %}{{ arrow('M965 315 C 912 315, 938 390, 885 390', 965, 885, '#5ff0e0', 'r') }}{% endif %}
+  </svg>
+
+  {% if depth_usd %}
+    <div class="bottom">
+      <div class="t">{% if mega %}<b>{{ short_dollar(total_usd) }}</b> {{ t.added }} · {% endif %}<b>{{ '%.2f' | format(share) }}%</b> {{ t.of_pool }} · {{ t.depth_now }} <b>{{ short_dollar(depth_usd) }}</b></div>
+      <div class="bar"><i></i></div>
+    </div>
+  {% endif %}
+</div>
+
+{% if mega %}
+<script>
+  // confetti and fireworks of a record add, seeded by the pool name: the same pool gets the same picture
+  (function () {
+    const canvas = document.getElementById('party');
+    const W = {{ _width }}, H = {{ _height }}, dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr; canvas.height = H * dpr; canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    const ctx = canvas.getContext('2d'); ctx.scale(dpr, dpr);
+    let seed = 2166136261;
+    for (const ch of {{ pool | tojson }}) seed = Math.imul(seed ^ ch.charCodeAt(0), 16777619);
+    const rnd = () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    const between = (a, b) => a + rnd() * (b - a), pick = l => l[Math.floor(rnd() * l.length)], TAU = Math.PI * 2;
+    const PALETTE = ['#33FF99', '#23DCC8', '#f5c518', '#ffe27a', '#7aa2ff', '#ff7f8a', '#c58bff'];
+    // the header, the user, the ring, the amounts and the bottom line stay calm
+    const KEEP = [[0, 0, 1280, 135], [1000, 85, 1280, 140], [250, 200, 1030, 690], [60, 210, 420, 530], [860, 210, 1220, 530]];
+    const calm = (x, y) => KEEP.some(b => x > b[0] && x < b[2] && y > b[1] && y < b[3]);
+
+    function burst(cx, cy, R, color) {
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.3);
+      g.addColorStop(0, color + '44'); g.addColorStop(1, color + '00');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R * 1.3, 0, TAU); ctx.fill();
+      const n = 22 + Math.floor(rnd() * 10), ph = rnd() * TAU; ctx.lineCap = 'round';
+      for (let i = 0; i < n; i++) {
+        const a = ph + i / n * TAU, r0 = R * .22, r1 = R * between(.8, 1.1), c = Math.cos(a), s = Math.sin(a);
+        const l = ctx.createLinearGradient(cx + c * r0, cy + s * r0, cx + c * r1, cy + s * r1);
+        l.addColorStop(0, color + '00'); l.addColorStop(.6, color + 'aa'); l.addColorStop(1, '#fff');
+        ctx.strokeStyle = l; ctx.lineWidth = between(2, 4);
+        ctx.beginPath(); ctx.moveTo(cx + c * r0, cy + s * r0); ctx.lineTo(cx + c * r1, cy + s * r1); ctx.stroke();
+        ctx.fillStyle = color; ctx.beginPath(); ctx.arc(cx + c * r1, cy + s * r1, between(2.5, 5), 0, TAU); ctx.fill();
+      }
+    }
+
+    const colors = ['#f5c518', '#33FF99', '#23DCC8', '#ff7f8a', '#c58bff'].sort(() => rnd() - .5);
+    [[1215, 225, 52], [75, 640, 60], [1205, 640, 60]].forEach(([x, y, r], i) => burst(x, y, r, colors[i]));
+
+    for (let i = 0, placed = 0; i < 5000 && placed < 140; i++) {
+      const x = between(0, W), y = between(0, H);
+      if (calm(x, y) && rnd() < .93) continue;
+      ctx.save(); ctx.translate(x, y); ctx.rotate(rnd() * TAU); ctx.globalAlpha = between(.5, 1);
+      ctx.fillStyle = ctx.strokeStyle = pick(PALETTE);
+      const k = Math.floor(rnd() * 3);
+      if (k === 0) { const w = between(10, 20), h = between(5, 9); ctx.fillRect(-w / 2, -h / 2, w, h); }
+      else if (k === 1) { ctx.beginPath(); ctx.arc(0, 0, between(3, 6), 0, TAU); ctx.fill(); }
+      else { const s = between(12, 20); ctx.lineWidth = 4; ctx.lineCap = 'round';
+             ctx.beginPath(); ctx.moveTo(-s, 0); ctx.bezierCurveTo(-s / 2, -s, s / 2, s, s, 0); ctx.stroke(); }
+      ctx.restore(); placed++;
+    }
+  })();
+</script>
+{% endif %}
+{% endblock %}

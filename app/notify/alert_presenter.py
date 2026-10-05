@@ -8,6 +8,7 @@ from comm.localization.manager import BaseLocalization
 from comm.picture.achievement_card import build_achievement_card, achievement_card_filename, ACHIEVEMENT_TEMPLATE
 from comm.picture.block_height_picture import block_speed_chart
 from comm.picture.crypto_logo import chain_logo_name, check_pool_logos
+from comm.picture.lp_card import build_lp_add_card, lp_add_card_filename, LP_ADD_TEMPLATE
 from comm.picture.nodes_card import build_nodes_card, nodes_card_filename, NODES_TEMPLATE
 from comm.picture.pool_card import build_pool_activated_card, pool_activated_card_filename, POOL_ACTIVATED_TEMPLATE
 from comm.picture.pools_picture import PoolPictureGenerator
@@ -32,7 +33,7 @@ from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
 from models.last_block import EventBlockSpeed, BlockProduceState
 from models.limit_swap import LimitSwapPeriodStats
-from models.memo import THORMemo
+from models.memo import THORMemo, ActionType
 from models.mimir import AlertMimirChange, AlertMimirVoting, MIMIR_VOTING_PRETTY_NAME_DISPLAY_LIMIT
 from models.net_stats import AlertNetworkStats
 from models.node_info import AlertNodeChurn, NetworkNodes
@@ -319,6 +320,8 @@ class AlertPresenter(INotified, WithLogger):
         if tx_event.is_swap:
             # post a new infographic
             await self._handle_swap_finished(tx_event, name_map)
+        elif self.use_renderer and tx_event.transaction.is_of_type(ActionType.ADD_LIQUIDITY):
+            await self._handle_liquidity_added(tx_event, name_map)
         else:
             # old style text notification
             await self.broadcaster.broadcast_to_all(
@@ -326,6 +329,29 @@ class AlertPresenter(INotified, WithLogger):
                 BaseLocalization.notification_text_large_single_tx,
                 tx_event, name_map
             )
+
+    async def render_lp_add(self, loc: BaseLocalization, event: EventLargeTransaction, name_map: NameMap):
+        pool = event.transaction.first_pool
+        asset = Asset.from_string(pool)
+        # a new pool may have no logos yet; the renderer reads the same folder
+        await check_pool_logos(Resources().logo_downloader, [pool])
+        user_name = self._gen_user_address_for_renderer(name_map, event.transaction.sender_address, loc.TEXT_USER_UNKNOWN)
+        parameters = build_lp_add_card(event, loc, user_name, self._get_chain_logo(asset))
+        photo = await self.renderer.render(LP_ADD_TEMPLATE, parameters)
+        return photo, lp_add_card_filename(pool)
+
+    async def _handle_liquidity_added(self, event: EventLargeTransaction, name_map: NameMap):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_large_single_tx(event, name_map)
+            try:
+                photo, photo_name = await self.render_lp_add(loc, event, name_map)
+            except Exception as e:
+                # the liquidity is still worth telling without its picture
+                self.logger.exception(f'Failed to render the liquidity card of {event.transaction.tx_hash}: {e!r}')
+                return text
+            return BoardMessage.make_photo(photo, text, photo_name)
+
+        await self.broadcaster.broadcast_to_all("public:large_tx", message_gen)
 
     async def _handle_swap_finished(self, event: EventLargeTransaction, name_map: NameMap):
         async def message_gen(loc: BaseLocalization):

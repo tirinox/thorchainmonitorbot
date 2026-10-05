@@ -850,6 +850,25 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_POOL_TAGLINE = 'Welcome to THORChain'
     TEXT_PIC_POOL_TRADING_ON = 'Trading is on'
     TEXT_PIC_POOL_TRADING_PAUSED = 'Trading is paused'
+
+    # the card of an added liquidity
+    TEXT_PIC_LP_ADD_TITLE = 'liquidity added'
+    TEXT_PIC_LP_SYMMETRIC = 'Symmetric'
+    TEXT_PIC_LP_SINGLE_SIDED = 'Single-sided'
+    TEXT_PIC_LP_POOL_WORD = 'pool'
+    TEXT_PIC_LP_ADDED = 'added'
+    TEXT_PIC_LP_POOL_GREW = 'pool grew'
+    TEXT_PIC_LP_POOL_FILLED = 'pool filled'
+    TEXT_PIC_LP_OF_POOL = 'of the pool'
+    TEXT_PIC_LP_DEPTH_NOW = 'depth now'
+
+    @staticmethod
+    def text_pic_lp_pool(ticker):
+        return f'{ticker} pool'
+
+    @staticmethod
+    def text_pic_lp_no_side(name):
+        return f'no {name} side'
     TEXT_PIC_POOL_DEPTH = 'Pool depth'
     TEXT_PIC_POOL_PRICE = 'Price'
     TEXT_PIC_POOL_ACTIVE_COUNT = 'Active pools'

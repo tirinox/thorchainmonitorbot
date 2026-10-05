@@ -1,0 +1,37 @@
+{
+ "template_name": "lp_add.jinja2",
+ "parameters": {
+  "pool": "ZEC.ZEC",
+  "ticker": "ZEC",
+  "asset_logo": "ZEC.ZEC",
+  "chain_logo": "",
+  "rune_amount": 32000.0,
+  "asset_amount": 18.0,
+  "rune_usd": 25600.0,
+  "asset_usd": 25398.0,
+  "total_usd": 50998.0,
+  "depth_usd": 52100.0,
+  "before_usd": 1102.0,
+  "share": 97.88483685220729,
+  "mega": true,
+  "multiplier": 47,
+  "user_name": "thor1qx...x9f2",
+  "t": {
+   "title": "LIQUIDITY ADDED",
+   "badge": "POOL ×47",
+   "added": "added",
+   "pool_grew": "pool grew",
+   "pool_filled": "pool filled",
+   "pool": "ZEC pool",
+   "of_pool": "of the pool",
+   "depth_now": "depth now",
+   "no_rune": "no RUNE side",
+   "no_asset": "no ZEC side"
+  }
+ },
+ "meta": {
+  "title": "Liquidity added: bigger than the whole pool was (the pool grew x43)",
+  "lang": "en",
+  "order": 2
+ }
+}

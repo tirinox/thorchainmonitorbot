@@ -27,6 +27,7 @@ TEMPLATE_GROUPS = {
     'chain_halt.jinja2': 'Chain halt',
     'nodes.jinja2': 'Nodes',
     'pool_activated.jinja2': 'Pool activated',
+    'lp_add.jinja2': 'Liquidity added',
 }
 DEBUG_GROUP = 'Debug'
 DEBUG_TEMPLATES = {'foo.jinja2', 'example.jinja2'}

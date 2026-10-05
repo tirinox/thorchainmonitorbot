@@ -1,0 +1,37 @@
+{
+ "template_name": "lp_add.jinja2",
+ "parameters": {
+  "pool": "ZEC.ZEC",
+  "ticker": "ZEC",
+  "asset_logo": "ZEC.ZEC",
+  "chain_logo": "",
+  "rune_amount": 0,
+  "asset_amount": 36.0,
+  "rune_usd": 0.0,
+  "asset_usd": 50796.00000000001,
+  "total_usd": 50796.00000000001,
+  "depth_usd": 52100.0,
+  "before_usd": 1303.9999999999927,
+  "share": 97.4971209213052,
+  "mega": true,
+  "multiplier": 40,
+  "user_name": "thor1qx...x9f2",
+  "t": {
+   "title": "ЛИКВИДНОСТЬ ДОБАВЛЕНА",
+   "badge": "ПУЛ ×40",
+   "added": "добавлено",
+   "pool_grew": "пул вырос",
+   "pool_filled": "пул наполнен",
+   "pool": "пул ZEC",
+   "of_pool": "от пула",
+   "depth_now": "глубина сейчас",
+   "no_rune": "без RUNE",
+   "no_asset": "без ZEC"
+  }
+ },
+ "meta": {
+  "title": "Liquidity added: a single-sided record, in Russian",
+  "lang": "ru",
+  "order": 3
+ }
+}

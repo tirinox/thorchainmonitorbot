@@ -1,0 +1,37 @@
+{
+ "template_name": "lp_add.jinja2",
+ "parameters": {
+  "pool": "BTC.BTC",
+  "ticker": "BTC",
+  "asset_logo": "BTC.BTC",
+  "chain_logo": "",
+  "rune_amount": 38000.0,
+  "asset_amount": 0.41000000000000003,
+  "rune_usd": 30400.0,
+  "asset_usd": 30094.0,
+  "total_usd": 60494.0,
+  "depth_usd": 45000000.0,
+  "before_usd": 44939506.0,
+  "share": 0.1344311111111111,
+  "mega": false,
+  "multiplier": 0,
+  "user_name": "thor1qx...x9f2",
+  "t": {
+   "title": "LIQUIDITY ADDED",
+   "badge": "Symmetric",
+   "added": "added",
+   "pool_grew": "pool grew",
+   "pool_filled": "pool filled",
+   "pool": "BTC pool",
+   "of_pool": "of the pool",
+   "depth_now": "depth now",
+   "no_rune": "no RUNE side",
+   "no_asset": "no BTC side"
+  }
+ },
+ "meta": {
+  "title": "Liquidity added: symmetric, a drop in a deep pool",
+  "lang": "en",
+  "order": 0
+ }
+}

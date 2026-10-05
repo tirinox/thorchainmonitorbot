@@ -595,6 +595,25 @@ class RussianLocalization(BaseLocalization):
     TEXT_PIC_POOL_TAGLINE = 'Добро пожаловать в THORChain'
     TEXT_PIC_POOL_TRADING_ON = 'Торговля включена'
     TEXT_PIC_POOL_TRADING_PAUSED = 'Торговля приостановлена'
+
+    # карточка добавленной ликвидности
+    TEXT_PIC_LP_ADD_TITLE = 'ликвидность добавлена'
+    TEXT_PIC_LP_SYMMETRIC = 'Симметрично'
+    TEXT_PIC_LP_SINGLE_SIDED = 'Односторонне'
+    TEXT_PIC_LP_POOL_WORD = 'пул'
+    TEXT_PIC_LP_ADDED = 'добавлено'
+    TEXT_PIC_LP_POOL_GREW = 'пул вырос'
+    TEXT_PIC_LP_POOL_FILLED = 'пул наполнен'
+    TEXT_PIC_LP_OF_POOL = 'от пула'
+    TEXT_PIC_LP_DEPTH_NOW = 'глубина сейчас'
+
+    @staticmethod
+    def text_pic_lp_pool(ticker):
+        return f'пул {ticker}'
+
+    @staticmethod
+    def text_pic_lp_no_side(name):
+        return f'без {name}'
     TEXT_PIC_POOL_DEPTH = 'Глубина пула'
     TEXT_PIC_POOL_PRICE = 'Цена'
     TEXT_PIC_POOL_ACTIVE_COUNT = 'Активных пулов'
