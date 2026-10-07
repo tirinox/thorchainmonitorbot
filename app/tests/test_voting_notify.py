@@ -53,3 +53,39 @@ async def test_voting_notifier_applies_global_cooldown_across_different_keys():
 
     assert [item['key'] for item in sent] == ['KEY_ONE', 'KEY_TWO', 'KEY_FOUR']
 
+
+@pytest.mark.asyncio
+async def test_voting_notifier_skips_options_below_min_votes_pct():
+    notifier = VotingNotifier.__new__(VotingNotifier)
+    notifier.progress_tolerance = 1.0
+    notifier.min_votes_pct = 10.0
+    notifier.IGNORE_IF_THERE_ARE_MORE_UPDATES_THAN = 6
+    notifier.logger = SimpleNamespace(info=lambda *_: None, warning=lambda *_: None)
+
+    # 100 nodes: KEY_LOW 9 votes (9%), KEY_EDGE 10 votes (10%), KEY_HIGH 30 votes (30%)
+    voting_list = [
+        MimirVoting(key, {1: MimirVoteOption(1, signer_count=n)}, active_nodes_count=100)
+        for key, n in (('KEY_LOW', 9), ('KEY_EDGE', 10), ('KEY_HIGH', 30))
+    ]
+    for v in voting_list:
+        v.top_options  # fills option.progress
+
+    async def prev_state():
+        return {v.key: {'1': 0.0} for v in voting_list}
+
+    async def save(_):
+        pass
+
+    fired = []
+
+    async def on_progress(key, *_):
+        fired.append(key)
+
+    notifier.read_prev_state = prev_state
+    notifier._save_prev_state = save
+    notifier._on_progress_changed = on_progress
+
+    data = SimpleNamespace(voting_manager=SimpleNamespace(all_voting_list=voting_list))
+    await notifier.on_data(None, data)
+
+    assert fired == ['KEY_EDGE', 'KEY_HIGH']

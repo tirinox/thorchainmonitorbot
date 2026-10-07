@@ -29,6 +29,8 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
 
         self.ignore_more_thant = cfg.as_int('ignore_if_more_than_event', self.IGNORE_IF_THERE_ARE_MORE_UPDATES_THAN)
         self.progress_tolerance = cfg.as_float('progress_tolerance_pct', 1.0)
+        # an option below this share of active nodes is not worth an alert; 0 = no limit
+        self.min_votes_pct = cfg.as_float('notification.min_votes_pct', 0.0)
 
     KEY_PREV_STATE = 'Mimir:Voting:PrevState'
 
@@ -90,7 +92,7 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
             for option in voting.options.values():
                 prev_progress = prev_voting.get(str(option.value))  # str(.), that's because JSON keys are strings
 
-                if prev_progress is not None:
+                if prev_progress is not None and option.progress * 100 >= self.min_votes_pct:
                     if abs(float(prev_progress) - float(option.progress)) > self.progress_tolerance * 0.01:
                         events.append((voting.key, prev_progress, voting, option))
 

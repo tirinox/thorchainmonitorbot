@@ -572,6 +572,8 @@ constants:
       cooldown: 2h
       global_cooldown: 6h
       global_hits_before_cd: 2
+      # No alert for an option with fewer votes than this % of active nodes (0 = alert always).
+      min_votes_pct: 0
 
 
 chain_halt_state:
