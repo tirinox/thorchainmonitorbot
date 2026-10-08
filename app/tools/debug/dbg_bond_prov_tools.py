@@ -64,11 +64,11 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
         NodeEvent.new(node, NodeEventType.BOND_CHANGE,
                       EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
                                               random.uniform(1.0, 1.007), on_churn=True,
-                                              duration_sec=3 * DAY)),
+                                              duration_sec=3 * DAY, churn_period_sec=3 * DAY)),
         NodeEvent.new(node, NodeEventType.BOND_CHANGE,
                       EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
                                               random.uniform(0.997, 1.0), on_churn=True,
-                                              duration_sec=5 * DAY)),
+                                              duration_sec=5 * DAY, churn_period_sec=5 * DAY)),
         NodeEvent.new(node, NodeEventType.BOND_CHANGE,
                       EventProviderBondChange(
                           bp_address, bond_provider.rune_bond,

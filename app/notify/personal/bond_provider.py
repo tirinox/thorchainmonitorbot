@@ -202,6 +202,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
         addresses = set()
 
         just_churned = data.has_churn_happened
+        churn_period_sec = data.churn_rewards.period_sec if just_churned else 0
 
         now = now_ts()
 
@@ -230,7 +231,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
                     curr_node, NodeEventType.BOND_CHANGE,
                     EventProviderBondChange(
                         provider, prev_bond, curr_bond, on_churn=just_churned,
-                        duration_sec=duration_sec,
+                        duration_sec=duration_sec, churn_period_sec=churn_period_sec,
                     )
                 ))
 

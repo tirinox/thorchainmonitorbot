@@ -17,15 +17,21 @@ PROVIDER = 'thor1provider'
 TICK = 5.0  # the node fetch period
 
 
-def _node(bond=None):
-    providers = [BondProvider(PROVIDER, bond)] if bond is not None else []
-    return NodeInfo(status=NodeInfo.ACTIVE, node_address=NODE, bond=bond or 0.0, bond_providers=providers)
+PREV_CHURN_BLOCK = 100_000
+CHURN_PERIOD_BLOCKS = 43_200  # 3 days
+
+
+def _node(bond=None, address=NODE, provider=PROVIDER):
+    providers = [BondProvider(provider, bond)] if bond is not None else []
+    return NodeInfo(status=NodeInfo.ACTIVE, node_address=address, bond=bond or 0.0, bond_providers=providers,
+                    active_block_height=PREV_CHURN_BLOCK)
 
 
 def _changes(prev_bond, curr_bond, churn=False):
     curr = _node(curr_bond)
     return NodeSetChanges(nodes_previous=[_node(prev_bond)], nodes_all=[curr],
-                          nodes_activated=[curr] if churn else [])
+                          nodes_activated=[curr] if churn else [],
+                          block_no=PREV_CHURN_BLOCK + CHURN_PERIOD_BLOCKS)
 
 
 class Clock:
@@ -62,6 +68,7 @@ async def test_time_since_last_change_spans_the_whole_churn(notifier):
     notifier.clock.t += 3 * DAY - 3 * TICK
     [ev] = await _bond_events(notifier, 100.0, 101.0, churn=True)
     assert ev.data.duration_sec == pytest.approx(3 * DAY)
+    assert ev.data.churn_period_sec == pytest.approx(3 * DAY)
     assert ev.data.apy == pytest.approx(calculate_apy(100.0, 101.0, 3 * DAY))
 
     notifier.clock.t += TICK
@@ -70,6 +77,30 @@ async def test_time_since_last_change_spans_the_whole_churn(notifier):
     notifier.clock.t += 3 * DAY - TICK
     [ev] = await _bond_events(notifier, 101.0, 102.0, churn=True)
     assert ev.data.duration_sec == pytest.approx(3 * DAY)
+
+
+@pytest.mark.asyncio
+async def test_apy_is_counted_over_the_churn_period(notifier):
+    # the same reward on two nodes; one bond also changed in the middle of the period (a slash, a small deposit)
+    other = 'thor1other'
+
+    def changes(prev, curr, churn=False):
+        nodes = [(NODE, PROVIDER), (other, 'thor1provider2')]
+        currs = [_node(curr[i], a, p) for i, (a, p) in enumerate(nodes)]
+        return NodeSetChanges(nodes_previous=[_node(prev[i], a, p) for i, (a, p) in enumerate(nodes)],
+                              nodes_all=currs, nodes_activated=currs if churn else [],
+                              block_no=PREV_CHURN_BLOCK + CHURN_PERIOD_BLOCKS)
+
+    await notifier._handle_bond_amount_events(changes((None, None), (100.0, 100.0)))
+    notifier.clock.t += 2 * DAY
+    await notifier._handle_bond_amount_events(changes((100.0, 100.0), (100.0, 99.9)))
+    notifier.clock.t += DAY
+    _, events = await notifier._handle_bond_amount_events(changes((100.0, 99.9), (101.0, 100.9), churn=True))
+    a, b = [e.data for e in events if e.type == NodeEventType.BOND_CHANGE]
+
+    assert a.duration_sec == pytest.approx(3 * DAY) and b.duration_sec == pytest.approx(DAY)
+    assert a.apy == pytest.approx(calculate_apy(100.0, 101.0, 3 * DAY))
+    assert b.apy == pytest.approx(calculate_apy(99.9, 100.9, 3 * DAY))
 
 
 @pytest.mark.asyncio
@@ -84,14 +115,15 @@ async def test_left_provider_is_forgotten(notifier):
 
 def test_apy_needs_a_real_reward_period():
     # a 5 s "period" used to raise OverflowError: 1.003 ** (365 days / 5 s)
-    assert EventProviderBondChange(PROVIDER, 100.0, 100.3, on_churn=True, duration_sec=TICK).apy is None
-    assert EventProviderBondChange(PROVIDER, 100.0, 100.3, on_churn=False, duration_sec=3 * DAY).apy is None
-    assert EventProviderBondChange(PROVIDER, 100.0, 100.3, on_churn=True, duration_sec=3 * DAY).apy > 0
+    assert EventProviderBondChange(PROVIDER, 100.0, 100.3, on_churn=True, churn_period_sec=TICK).apy is None
+    assert EventProviderBondChange(PROVIDER, 100.0, 100.3, on_churn=False, churn_period_sec=3 * DAY).apy is None
+    assert EventProviderBondChange(PROVIDER, 100.0, 100.3, on_churn=True, churn_period_sec=0).apy is None  # unknown
+    assert EventProviderBondChange(PROVIDER, 100.0, 100.3, on_churn=True, churn_period_sec=3 * DAY).apy > 0
 
 
 def test_apy_overflow_is_infinite():
     assert calculate_apy(1.0, 1e6, DAY) == math.inf
-    assert EventProviderBondChange(PROVIDER, 1.0, 1e6, on_churn=True, duration_sec=DAY).apy is None
+    assert EventProviderBondChange(PROVIDER, 1.0, 1e6, on_churn=True, churn_period_sec=DAY).apy is None
 
 
 class FakeWatcher:

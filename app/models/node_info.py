@@ -530,14 +530,15 @@ class EventProviderBondChange(NamedTuple):
     curr_bond: float
     on_churn: bool
 
-    duration_sec: float = 0
+    duration_sec: float = 0  # since the last change of this bond
+    churn_period_sec: float = 0  # since the previous churn: the reward is earned over it, whatever changed between
 
     MIN_APY_PERIOD = DAY  # a churn comes every few days; a shorter period extrapolates to a meaningless APY
 
     @property
     def apy(self):
-        if self.prev_bond and self.on_churn and self.duration_sec >= self.MIN_APY_PERIOD:
-            apy = calculate_apy(self.prev_bond, self.curr_bond, self.duration_sec)
+        if self.prev_bond and self.on_churn and self.churn_period_sec >= self.MIN_APY_PERIOD:
+            apy = calculate_apy(self.prev_bond, self.curr_bond, self.churn_period_sec)
             if apy < 10_000:
                 return apy
 
