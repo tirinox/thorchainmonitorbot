@@ -163,6 +163,15 @@ def plural(n: int, one_thing, many_things):
     return one_thing if n == 1 else many_things
 
 
+def plural_ru(n: int, one, few, many):
+    # 1 голос, 2 голоса, 5 голосов; 11-14 are always "many"
+    n = abs(n) % 100
+    if 11 <= n <= 14:
+        return many
+    n %= 10
+    return one if n == 1 else few if 2 <= n <= 4 else many
+
+
 def join_as_numbered_list(items, sep='\n', start=1):
     en_items = (f'{i}. {text!s}' for i, text in enumerate(items, start=start))
     return sep.join(en_items)

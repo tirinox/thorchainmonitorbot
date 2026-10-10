@@ -126,3 +126,41 @@ def test_alert_mimir_voting_to_dict_keeps_short_pretty_name():
     assert data['pretty_name'] == holder.pretty_name_value
 
 
+
+
+def _voting_alert(votes, active=100, first_seen_ts=0.0):
+    from models.mimir import MimirVoteOption
+    holder = _DummyHolder()
+    holder.last_thor_block = 0
+    holder.pretty_name_value = 'Max Synth'
+    options = {value: MimirVoteOption(value, signer_count=n) for value, n in votes.items()}
+    voting = MimirVoting('MAXSYNTH', options, active, first_seen_ts=first_seen_ts)
+    return AlertMimirVoting(holder=cast(MimirHolder, cast(object, holder)), voting=voting)
+
+
+def test_mimir_voting_progress_text_tells_the_leader_and_votes_to_pass():
+    from comm.localization.rus import RussianLocalization
+    from lib.date_utils import now_ts, DAY
+    loc = make_loc()
+    loc.mimir_rules = _DummyMimirRules()
+    rus = RussianLocalization(Config(name='./tests/test_config.yaml'))
+    rus.mimir_rules = _DummyMimirRules()
+
+    alert = _voting_alert({1500: 54, 1000: 20}, first_seen_ts=now_ts() - 2 * DAY)
+    text = loc.notification_text_mimir_voting_progress(alert)
+    assert 'leads with 54 of 100 votes' in text
+    assert 'needs 13 more votes to pass' in text  # 67 of 100 is the supermajority
+    assert 'going on for 2 day' in text
+    text = rus.notification_text_mimir_voting_progress(alert)
+    assert 'с 54 голосами из 100' in text and 'не хватает 13 голосов' in text
+
+    text = rus.notification_text_mimir_voting_progress(_voting_alert({1500: 66}))
+    assert 'не хватает 1 голоса' in text and 'идёт' not in text  # no first_seen_ts, no duration
+
+    text = loc.notification_text_mimir_voting_progress(_voting_alert({1500: 70}))
+    assert 'enough to pass' in text
+
+    text = loc.notification_text_mimir_voting_progress(_voting_alert({1500: 30, 1000: 30}))
+    assert 'no leader, 2 options are tied at 30 votes' in text
+    text = rus.notification_text_mimir_voting_progress(_voting_alert({1500: 30, 1000: 30}))
+    assert 'лидера нет, 2 варианта' in text

@@ -1797,17 +1797,38 @@ class BaseLocalization(ABC):  # == English
     TEXT_MIMIR_VOTING_PROGRESS_TITLE = '🏛 <b>Node-Mimir voting update</b>\n\n'
     TEXT_MIMIR_VOTING_TO_SET_IT = 'to set it'
 
-    def notification_text_mimir_voting_progress(self, e: AlertMimirVoting):
-        message = f"{self.TEXT_MIMIR_VOTING_PROGRESS_TITLE}{e.pretty_name}"
+    def _mimir_voting_summary(self, e: AlertMimirVoting):
+        """(leader option or None, how many options share the top, its pretty value, its percent, duration or '')"""
+        voting = e.voting
+        options = voting.top_options
+        leader, tied, value, percent = None, 0, '', ''
+        if options:
+            leader = options[0]
+            tied = sum(1 for o in options if o.number_votes == leader.number_votes)
+            value = self.format_mimir_value(voting.key, str(leader.value), thor_block=e.holder.last_thor_block)
+            if self.TEXT_DECORATION_ENABLED:
+                value = code(value)
+            percent = format_percent(leader.number_votes, voting.active_nodes_count)
+        duration = self.seconds_human(now_ts() - voting.first_seen_ts) if voting.first_seen_ts else ''
+        return leader, tied, value, percent, duration
 
-        # note! we don't need this text anymore, it is going to be displayed as a pic
-        # # get up to 3 top options, if there are more options in the voting, add "there are N more..."
-        # n_options = min(3, len(e.voting.options))
-        # message += self._text_mimir_voting_options(
-        #     e.holder, e.voting, e.voting.top_options[:n_options],
-        #     e.triggered_option.value if e.triggered_option else None,
-        #     e.current_value
-        # )
+    def notification_text_mimir_voting_progress(self, e: AlertMimirVoting):
+        # the options are displayed as a picture; the text tells only about the leader
+        message = f"{self.TEXT_MIMIR_VOTING_PROGRESS_TITLE}{e.pretty_name}"
+        leader, tied, value, percent, duration = self._mimir_voting_summary(e)
+        voting = e.voting
+        if tied > 1:
+            message += f': no leader, {tied} options are tied at {leader.number_votes} votes.'
+        elif leader:
+            message += (f': ➔ {value} leads with {leader.number_votes} of {voting.active_nodes_count} votes'
+                        f' ({percent}).')
+            if voting.passed:
+                message += ' That is enough to pass.'
+            else:
+                need = leader.need_votes_to_pass
+                message += f' It needs {need} more {plural(need, "vote", "votes")} to pass.'
+        if duration:
+            message += f' The voting has been going on for {duration}.'
         return message
 
     @staticmethod

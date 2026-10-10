@@ -16,7 +16,7 @@ from lib.money import pretty_dollar, pretty_money, short_address, short_money, s
     RAIDO_GLYPH, short_rune, pretty_percent, \
     chart_emoji, pretty_rune
 from lib.texts import bold, link, code, ital, pre, progressbar, bracketify, \
-    up_down_arrow, plural, shorten_text, cut_long_text
+    up_down_arrow, plural, plural_ru, shorten_text, cut_long_text
 from lib.utils import grouper, translate, hit_every
 from models.asset import Asset
 from models.wasm import WasmPeriodStats
@@ -28,7 +28,7 @@ from models.key_stats_model import AlertKeyStats
 from models.last_block import BlockProduceState, EventBlockSpeed
 from models.lp_info import LiquidityPoolReport
 from models.memo import ActionType
-from models.mimir import MimirChange, MimirHolder
+from models.mimir import MimirChange, MimirHolder, AlertMimirVoting
 from models.net_stats import AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight, EventProviderStatus, EventProviderBondChange, BondProvider, AlertNodeChurn
@@ -1344,6 +1344,26 @@ class RussianLocalization(BaseLocalization):
 
     TEXT_MIMIR_VOTING_PROGRESS_TITLE = '🏛 <b>Прогресс голосования нод за Мимир</b>\n\n'
     TEXT_MIMIR_VOTING_TO_SET_IT = 'чтобы стало'
+
+    def notification_text_mimir_voting_progress(self, e: AlertMimirVoting):
+        message = f"{self.TEXT_MIMIR_VOTING_PROGRESS_TITLE}{e.pretty_name}"
+        leader, tied, value, percent, duration = self._mimir_voting_summary(e)
+        voting = e.voting
+        if tied > 1:
+            options = plural_ru(tied, 'вариант', 'варианта', 'вариантов')
+            message += f': лидера нет, {tied} {options} с равным числом голосов ({leader.number_votes}).'
+        elif leader:
+            votes = plural_ru(leader.number_votes, 'голосом', 'голосами', 'голосами')
+            message += (f': лидирует ➔ {value} с {leader.number_votes} {votes} из {voting.active_nodes_count}'
+                        f' ({percent}).')
+            if voting.passed:
+                message += ' Этого достаточно для принятия.'
+            else:
+                need = leader.need_votes_to_pass
+                message += f' До принятия не хватает {need} {plural_ru(need, "голоса", "голосов", "голосов")}.'
+        if duration:
+            message += f' Голосование идёт уже {duration}.'
+        return message
 
     # --------- TRADING HALTED -----------
 
