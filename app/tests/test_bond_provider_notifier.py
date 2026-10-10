@@ -96,7 +96,8 @@ async def test_apy_is_counted_over_the_churn_period(notifier):
     await notifier._handle_bond_amount_events(changes((100.0, 100.0), (100.0, 99.9)))
     notifier.clock.t += DAY
     _, events = await notifier._handle_bond_amount_events(changes((100.0, 99.9), (101.0, 100.9), churn=True))
-    a, b = [e.data for e in events if e.type == NodeEventType.BOND_CHANGE]
+    by_node = {e.address: e.data for e in events if e.type == NodeEventType.BOND_CHANGE}
+    a, b = by_node[NODE], by_node[other]
 
     assert a.duration_sec == pytest.approx(3 * DAY) and b.duration_sec == pytest.approx(DAY)
     assert a.apy == pytest.approx(calculate_apy(100.0, 101.0, 3 * DAY))
