@@ -45,12 +45,9 @@ translate:
   HALTDOGETRADING: Halt DOGE Trading
   HALTETHCHAIN: Halt ETH Chain
   HALTETHTRADING: Halt ETH Trading
-  HALTGAIACHAIN: Halt Atom Chain
-  HALTGAIATRADING: Halt Atom Trading
   HALTHAVENCHAIN: Halt Haven Chain
   HALTLTCCHAIN: Halt LTC Chain
   HALTLTCTRADING: Halt LTC Trading
-  HALTSIGNINGGAIA: Halt Signing Atom
   HALTTERRACHAIN: Halt Terra Chain
   HALTTERRATRADING: Halt Terra Trading
   HALTTRADING: Halt All Trading
@@ -70,9 +67,6 @@ translate:
   PAUSELPETH: Pause LP ETH
   PAUSELPLTC: Pause LP LTC
   PAUSELPTERRA: Pause LP Terra
-  POL-BNB-BNB: POL BNB-BNB
-  POL-BTC-BTC: POL BTC.BTC
-  POL-ETH-ETH: POL ETH.ETH
   POLBUFFER: POL Buffer
   POLMAXNETWORKDEPOSIT: POL Max Network Deposit
   POLMAXPOOLMOVEMENT: POL Max Pool Movement
@@ -87,7 +81,6 @@ translate:
   SOLVENCYHALTBTCCHAIN: Solvency Halt BTC Chain
   SOLVENCYHALTDOGECHAIN: Solvency Halt DOGE Chain
   SOLVENCYHALTETHCHAIN: Solvency Halt ETH Chain
-  SOLVENCYHALTGAIACHAIN: Solvency Halt Atom Chain
   SOLVENCYHALTLTCCHAIN: Solvency Halt LTC Chain
   SOLVENCYHALTTERRACHAIN: Solvency Halt Terra Chain
   STOPFUNDYGGDRASIL: Stop Fund Yggdrasil
@@ -297,6 +290,7 @@ word_transform:
   FOR: for
   FROM: from
   FUZN: FUZN
+  GAIA: GAIA
   GAIA-ATOM: ATOM
   ID: ID
   ILP: ILP
