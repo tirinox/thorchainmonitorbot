@@ -2,6 +2,7 @@
 {% extends "base.jinja2" %}
 
 {% block content %}
+    {% from "components/bolt.jinja2" import bolt %}
 
     {% set is_rapid_swap = rapid_swap_stats and rapid_swap_stats.blocks_saved > 0 %}
     {% set rapid_saved_seconds = (rapid_swap_stats.saved_time | round | int) if is_rapid_swap else 0 %}
@@ -42,20 +43,6 @@
 
             font-size: 30px;
             font-style: italic;
-        }
-
-        .arrow-refund {
-            width: 200px;
-            filter: brightness(100%) hue-rotate(220deg) saturate(200%) drop-shadow(3px 3px 4px rgba(255, 0, 0, 0.51)) drop-shadow(-3px -3px 4px rgba(255, 76, 76, 0.51));
-            margin: 5px;
-            padding: 0;
-            transform: scale(-1, 1);
-        }
-
-        .arrow-lr-squished {
-            margin: 5px;
-            padding: 0;
-            transform: scale(1, 1);
         }
 
         .arrow-vert-stack {
@@ -167,16 +154,11 @@
                 {% if refund %}
 
                     {% with f=70 * (refund_rate / 100) %}
-                        <img src="renderer/static/img/arrow2.png" alt="Arrow refund" class="arrow-refund shadow"
-                             style="height: {{ f }}px"
-                        >
-                        <img src="renderer/static/img/arrow2.png" alt="Arrow right"
-                             class="arrow-lr arrow-lr-squished shadow"
-                             style="height: {{ 70 - f }}px"
-                        >
+                        {{ bolt(236, f, dir='left', kind='refund', seed=tx_hash_in, css='margin: 5px -18px') }}
+                        {{ bolt(236, 70 - f, seed=tx_hash_in, css='margin: 5px -18px') }}
                     {% endwith %}
                 {% else %}
-                    <img src="renderer/static/img/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
+                    {{ bolt(236, 64, seed=tx_hash_in, css='margin: 0 -18px') }}
                 {% endif %}
             </div>
             <div class="above-arrow tx-id-block">
@@ -195,8 +177,8 @@
             </div>
 
             <div class="arrow-down-holder">
-                <img src="renderer/static/img/arrow2-down.png" alt="Arrow down"
-                     class="shadow arrow-down {{ "arrow-aff" if affiliate_names else "arrow-no-aff" }}">
+                {{ bolt(36, 94, dir='down', kind='main' if affiliate_names else 'pending',
+                        seed=tx_hash_in, css='margin: 0 auto 18px') }}
 
                 {% include "components/aff-logo-fan.jinja2" %}
             </div>
@@ -204,7 +186,7 @@
         </div>
 
         <div class="line-box">
-            <img src="renderer/static/img/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
+            {{ bolt(236, 64, seed=tx_hash_out or tx_hash_in, css='margin: 0 -18px') }}
             {% if (streaming_count and streaming_count > 1) or is_rapid_swap %}
                 <div class="above-arrow streaming-count midgard-turqoise {{ "rapid-swap-meta" if is_rapid_swap else "" }}">
                     {% if is_rapid_swap %}
@@ -263,6 +245,8 @@
         </div>
 
     </div>
+
+    <script src="renderer/static/js/bolts.js?r=2"></script>
 
     <script>
         const waitTimeSec = {{ total_time_sec }};

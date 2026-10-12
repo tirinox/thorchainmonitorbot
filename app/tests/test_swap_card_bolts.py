@@ -1,0 +1,32 @@
+import os
+import re
+
+import pytest
+
+from renderer.demo import available_demo_templates, load_demo
+
+SWAP_DEMOS = sorted(n for n in available_demo_templates() if n.startswith('swap_'))
+
+
+@pytest.fixture(scope='module')
+def renderer():
+    pytest.importorskip('playwright')
+    from renderer.engine import RendererEngine
+    return RendererEngine(templates_dir=os.path.join(os.path.dirname(__file__), '..', 'renderer', 'templates'))
+
+
+@pytest.mark.parametrize('name', SWAP_DEMOS)
+def test_swap_cards_draw_bolts_in_place_of_arrows(renderer, name):
+    demo = load_demo(name)
+    p = demo['parameters']
+    html = renderer.render_template_to_html(demo['template_name'], p).html_content
+    kinds = re.findall(r'<svg class="bolt".*?data-kind="(\w+)"', html, re.S)
+
+    if demo['template_name'] == 'swap_start.jinja2':
+        # nothing has reached the affiliates and the destination yet
+        assert kinds == ['main', 'pending', 'pending']
+    else:
+        to_affiliates = 'main' if p['affiliate_names'] else 'pending'
+        source = ['refund', 'main'] if p.get('refund') else ['main']
+        assert kinds == source + [to_affiliates, 'main']
+    assert 'static/js/bolts.js' in html

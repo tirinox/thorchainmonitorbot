@@ -146,12 +146,6 @@ footer {
     padding: 13px;
 }
 
-.arrow-lr {
-    width: 200px;
-    filter: brightness(190%) hue-rotate(30deg) saturate(200%) drop-shadow(3px 3px 4px rgba(0, 213, 213, 0.51)) drop-shadow(-3px -3px 4px rgba(3, 243, 150, 0.51));
-    padding: 0;
-}
-
 .logo-part {
     display: flex;
     justify-content: center;
@@ -172,21 +166,6 @@ footer {
     width: 43%;
 
     text-align: center;
-}
-
-.arrow-down {
-    width: 30px;
-    margin-bottom: 18px;
-}
-
-.arrow-aff {
-    filter: brightness(200%);
-    opacity: 90%;
-}
-
-.arrow-no-aff {
-    filter: brightness(500%) saturate(0%);
-    opacity: 0.4;
 }
 
 .above-arrow {

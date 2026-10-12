@@ -1,0 +1,7 @@
+{#- A lightning bolt in place of a route arrow, drawn by static/js/bolts.js (the card includes the script once, after
+    its bolts): dir is right, left or down, kind is main, refund or pending, the seed keeps the bolts of a swap the same -#}
+{% macro bolt(w, h, dir='right', kind='main', seed='', css='') -%}
+    <svg class="bolt" width="{{ w }}" height="{{ h }}" viewBox="0 0 {{ w }} {{ h }}"
+         style="overflow: visible; display: block; {{ css }}"
+         data-dir="{{ dir }}" data-kind="{{ kind }}" data-seed="{{ seed }}"></svg>
+{%- endmacro %}

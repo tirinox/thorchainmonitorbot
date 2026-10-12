@@ -2,6 +2,7 @@
 {% extends "base.jinja2" %}
 
 {% block content %}
+    {% from "components/bolt.jinja2" import bolt %}
 
     {% with title="STREAMING SWAP STARTED" %}
         {% include "components/header.jinja2" %}
@@ -70,13 +71,6 @@
             color: #FF7A45;
         }
 
-        .arrow-pending {
-            width: 200px;
-            padding: 0;
-            filter: brightness(80%) hue-rotate(30deg) saturate(0%);
-            opacity: 0.9;
-        }
-
     </style>
 
     <div class="route-box">
@@ -121,7 +115,7 @@
         </div>
 
         <div class="line-box">
-            <img src="renderer/static/img/arrow2.png" alt="Arrow right" class="arrow-lr shadow">
+            {{ bolt(236, 64, seed=tx_hash, css='margin: 0 -18px') }}
             <div class="above-arrow tx-id-block">
                 {{ shorten_text_middle(tx_hash, 4, 4) }}
             </div>
@@ -138,8 +132,7 @@
 
 
             <div class="arrow-down-holder">
-                <img src="renderer/static/img/arrow2-down.png" alt="Arrow down"
-                     class="shadow arrow-down arrow-no-aff">
+                {{ bolt(36, 94, dir='down', kind='pending', seed=tx_hash, css='margin: 0 auto 18px') }}
 
                 {% include "components/aff-logo-fan.jinja2" %}
 
@@ -148,7 +141,7 @@
         </div>
 
         <div class="line-box">
-            <img src="renderer/static/img/arrow2.png" alt="Arrow right" class="arrow-pending shadow">
+            {{ bolt(236, 64, kind='pending', seed=tx_hash, css='margin: 0 -18px') }}
             {% if int(swap_quantity) > 0 %}
                 <div class="above-arrow">
                     <div class="time-block-interval">
@@ -191,6 +184,8 @@
         </div>
 
     </div>
+
+    <script src="renderer/static/js/bolts.js?r=2"></script>
 
     <script>
         const waitTimeSec = {{ total_estimated_time_sec }};
