@@ -1,8 +1,8 @@
 {#
     A hint that a DEX aggregator was used outside THORChain, on the outer side of an asset logo.
     Context: leg = {aggregator, aggregator_short}, side = "in" | "out"
-    "in":  an arrow fading in from the left edge towards the source logo
-    "out": an arrow fading out from the destination logo towards the right edge
+    "in":  a lightning bolt fading in from the left edge towards the source logo
+    "out": a lightning bolt fading out from the destination logo towards the right edge
     Tokens and amounts are deliberately not shown here: the full route is in the message text.
     The hint lives in the page margin and is absolutely positioned, so the main route does not move.
 #}
@@ -27,8 +27,11 @@
         left: calc(100% + 14px);
     }
 
+    /* the padding keeps the glow of the bolt inside the fading mask */
     .dex-hint-arrow-fade {
         display: flex;
+        padding: 16px;
+        margin: -16px;
     }
 
     .dex-hint-in .dex-hint-arrow-fade {
@@ -39,12 +42,6 @@
     .dex-hint-out .dex-hint-arrow-fade {
         -webkit-mask-image: linear-gradient(to right, black 15%, transparent 100%);
         mask-image: linear-gradient(to right, black 15%, transparent 100%);
-    }
-
-    .dex-hint-arrow {
-        width: 112px;
-        padding: 0;
-        filter: brightness(190%) hue-rotate(30deg) saturate(200%);
     }
 
     .dex-hint-label {
@@ -77,13 +74,14 @@
     }
 </style>
 
+{% from "components/bolt.jinja2" import bolt %}
 {% if leg %}
     <div class="dex-hint dex-hint-{{ side }}">
         <div class="dex-hint-label" title="{{ leg.aggregator }}">
             {{ leg.aggregator_short or leg.aggregator or "aggregator" }}
         </div>
         <div class="dex-hint-arrow-fade">
-            <img src="renderer/static/img/arrow2.png" alt="DEX aggregator" class="dex-hint-arrow">
+            {{ bolt(112, 36, seed=(leg.aggregator or '') ~ side) }}
         </div>
         <div class="dex-hint-caption">DEX</div>
     </div>

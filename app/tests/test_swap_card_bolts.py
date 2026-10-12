@@ -28,5 +28,7 @@ def test_swap_cards_draw_bolts_in_place_of_arrows(renderer, name):
     else:
         to_affiliates = 'main' if p['affiliate_names'] else 'pending'
         source = ['refund', 'main'] if p.get('refund') else ['main']
-        assert kinds == source + [to_affiliates, 'main']
+        # a DEX aggregator before or after THORChain is a small bolt on the outer side of its logo
+        dex_in, dex_out = (['main'] if p.get(leg) else [] for leg in ('dex_in', 'dex_out'))
+        assert kinds == dex_in + source + [to_affiliates, 'main'] + dex_out
     assert 'static/js/bolts.js' in html
