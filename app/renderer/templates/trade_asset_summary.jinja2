@@ -344,7 +344,7 @@
                 <div class="asset-name">{{ a.name }}</div>
                 <div class="asset-sub">
                   <b>{{ short_money(a.amount) }}</b> {{ ticker(a.name) }} ·
-                  <b>{{ short_money(a.holders, integer=True) }}</b> holders
+                  <b>{{ short_money(a.holders, integer=True) }}</b> holder{{ '' if a.holders == 1 else 's' }}
                   {{ int_delta(a.holders, a.prev_holders, 'asset-delta') }}
                 </div>
               </div>
@@ -367,7 +367,7 @@
               <div class="others-badge">+{{ rest | length }}</div>
               <div>
                 <div class="asset-name">{{ rest | length }} others</div>
-                <div class="asset-sub"><b>{{ short_money(other.holders, integer=True) }}</b> holders</div>
+                <div class="asset-sub"><b>{{ short_money(other.holders, integer=True) }}</b> holder{{ '' if other.holders == 1 else 's' }}</div>
               </div>
               <div class="asset-right">
                 <div class="asset-value">{{ short_dollar(other.value) }}</div>
