@@ -40,14 +40,15 @@
         return jag(rnd, a, m, disp / 2, depth - 1).concat(jag(rnd, m, b, disp / 2, depth - 1).slice(1));
     }
 
-    // a sharp zigzag from a to b: the kinks go to alternate sides, smaller near the ends, and every stroke is a bit jagged
-    function zigzag(rnd, a, b, amp, kinks) {
+    // a sharp zigzag from a to b: the kinks go to alternate sides, as wide as env(k) allows (by default smaller
+    // near the ends), and every stroke is a bit jagged
+    function zigzag(rnd, a, b, amp, kinks, env = (k) => Math.sqrt(Math.sin(Math.PI * k))) {
         const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
         const pts = [a];
         let side = rnd() < 0.5 ? -1 : 1;
         for (let i = 1; i <= kinks; i++) {
             const k = (i + (rnd() - 0.5) * 0.7) / (kinks + 1);
-            const off = side * amp * (0.55 + rnd() * 0.45) * Math.sqrt(Math.sin(Math.PI * k));
+            const off = side * amp * (0.55 + rnd() * 0.45) * env(k);
             pts.push([a[0] + dx * k - dy / len * off, a[1] + dy * k + dx / len * off]);
             side = -side;
         }
@@ -72,6 +73,28 @@
         el(c.svg, 'path', {...ROUND, d, stroke: c.pal.core, 'stroke-width': width * 0.55});
     }
 
+    // the outline of a line that changes its width from w0 to w1 along its way
+    function ribbon(c, pts, w0, w1) {
+        const t0 = pts[0][0], span = (pts[pts.length - 1][0] - t0) || 1;
+        const left = [], right = [];
+        pts.forEach((q, i) => {
+            const a = pts[Math.max(i - 1, 0)], b = pts[Math.min(i + 1, pts.length - 1)];
+            const dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy) || 1;
+            const hw = (w0 + (w1 - w0) * Math.min(Math.max((q[0] - t0) / span, 0), 1)) / 2;
+            left.push([q[0] - dy / len * hw, q[1] + dx / len * hw]);
+            right.push([q[0] + dy / len * hw, q[1] - dx / len * hw]);
+        });
+        return polyline(c, left.concat(right.reverse())) + 'Z';
+    }
+
+    // a neon line that thins out from w0 to w1
+    function taper(c, pts, w0, w1) {
+        el(c.svg, 'path', {d: ribbon(c, pts, w0 * 4, w1 * 4), fill: c.grad, opacity: 0.75, filter: `url(#${c.id}l)`});
+        el(c.svg, 'path', {d: ribbon(c, pts, w0 * 2, w1 * 2), fill: c.grad, filter: `url(#${c.id}s)`});
+        el(c.svg, 'path', {d: ribbon(c, pts, w0 * 1.2, w1 * 1.2), fill: c.grad});
+        el(c.svg, 'path', {d: ribbon(c, pts, w0 * 0.55, w1 * 0.55), fill: c.pal.core});
+    }
+
     function sparkle(c, t, u, r, opacity) {
         const [x, y] = c.p(t, u), w = r * 0.18;
         const d = `M${x} ${y - r}L${x + w} ${y - w}L${x + r} ${y}L${x + w} ${y + w}L${x} ${y + r}L${x - w} ${y + w}L${x - r} ${y}L${x - w} ${y - w}Z`;
@@ -82,6 +105,18 @@
     function orb(c, t, u, r, opacity = 1) {
         const [cx, cy] = c.p(t, u);
         el(c.svg, 'circle', {cx, cy, r, fill: `url(#${c.id}r)`, opacity});
+    }
+
+    // the head of the arrow: short strikes back from the tip, gathered near 45 degrees above and below the axis
+    // as the barbs; each thins out to nothing and goes no further across than the bolt is wide
+    function head(c, rnd, tip, count, L, T, width) {
+        for (let i = 0; i < count; i++) {
+            const a = Math.PI + (rnd() < 0.5 ? -1 : 1) * (45 + (rnd() - 0.5) * 16) * Math.PI / 180;
+            const l = Math.min(L * (0.12 + rnd() * 0.14), T * 0.95 / Math.abs(Math.sin(a)));
+            const e = [tip + Math.cos(a) * l, Math.sin(a) * l];
+            // the kinks grow away from the tip, so a strike keeps its first direction
+            taper(c, zigzag(rnd, [tip, 0], e, l * 0.2, 2, (k) => k), width, width * 0.15);
+        }
     }
 
     function drawBolt(svg, index) {
@@ -111,29 +146,24 @@
 
         const c = {svg, p, pal, id, grad: `url(#${id}g)`};
         const rnd = rng(`${seed}|${dir}|${kind}|${index}`);
-        const kinks = Math.max(2, Math.round(L / 40));
+        const kinks = Math.max(2, Math.round(L / 40)), small = L < 150;
+        // the end of a route bolt goes under the logo it points to
+        const tip = L - (dir === 'right' && !small ? 8 : 0);
         // sparks fly around a full bolt, not around the thin halves of a refund or the one down to the affiliates
-        if (L >= 150 && T >= 60) {
+        if (!small && T >= 60) {
             for (let i = 0; i < 7; i++) sparkle(c, L * rnd(), (rnd() - 0.5) * T * 1.5, 3 + rnd() * 4, 0.5 + rnd() * 0.5);
         }
-        // a wide bolt is a bundle: two side strikes swing wider than the main one and meet it at the ends
+        // a wide bolt is a bundle: two side strikes with fewer and wider kinks swing around the main one
         if (T >= 40) {
-            // with fewer and wider kinks, so the three do not weave into a net
             for (const [color, amp] of [[pal.from, 0.6], [pal.to, 0.5]]) {
-                neon(c, polyline(c, zigzag(rnd, [0, 0], [L, 0], T * amp, kinks - 2 + Math.floor(rnd() * 2))), 2.2, color);
+                neon(c, polyline(c, zigzag(rnd, [0, 0], [tip, 0], T * amp, kinks - 2 + Math.floor(rnd() * 2))), 2.2, color);
             }
         }
-        const main = zigzag(rnd, [0, 0], [L, 0], T * 0.36, kinks);
-        const branches = (T >= 40 ? 3 : 2) + Math.floor(rnd() * 2);
-        for (let i = 0; i < branches; i++) {
-            const s = main[Math.floor((0.12 + rnd() * 0.55) * main.length)];
-            const angle = (rnd() < 0.5 ? -1 : 1) * (0.35 + rnd() * 0.45), len = L * (0.14 + rnd() * 0.18);
-            const e = [s[0] + Math.cos(angle) * len, s[1] + Math.sin(angle) * len * 0.8];
-            neon(c, polyline(c, zigzag(rnd, s, e, len * 0.2, 2)), T > 40 ? 2.2 : 1.1);
-        }
-        neon(c, polyline(c, main), T > 40 ? 5 : 2.4);
+        neon(c, polyline(c, zigzag(rnd, [0, 0], [tip, 0], T * 0.36, kinks)), T > 40 ? 5 : 2.4);
+        // the head goes over the bolt
+        head(c, rnd, tip, small ? 8 : 15, L, T, small ? 1.6 : 2.8);
         orb(c, 0, 0, T * 0.4, 0.8);
-        orb(c, L, 0, T * 0.6);
+        orb(c, tip, 0, T * 0.35);
     }
 
     document.querySelectorAll('svg.bolt').forEach(drawBolt);
