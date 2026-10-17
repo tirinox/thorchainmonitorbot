@@ -5,7 +5,7 @@ from typing import NamedTuple, List, Optional
 from jobs.scanner.block_result import ThorEvent
 from models.asset import is_rune, is_trade_asset, Asset
 from models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
-    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit, EventFee
+    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit, EventFee, EventAffiliateFee
 from models.memo import ActionType
 from models.memo import THORMemo
 from models.s_swap import StreamingSwap, RapidSwapStats
@@ -277,6 +277,19 @@ class SwapProps(NamedTuple):
     def is_output_trade(self):
         return is_trade_asset(self.attrs.get('out_asset', ''))
 
+    def _is_affiliate_conversion(self, swap: EventSwap) -> bool:
+        """A swap event of the affiliate's fee conversion to RUNE, not of the user's swap (which is not to RUNE)"""
+        out_asset = self.attrs.get('out_asset', '')
+        if not out_asset or is_rune(out_asset):
+            return False  # a swap to RUNE pays the affiliate by a plain transfer, there is nothing to convert
+        memo = THORMemo.parse_memo(swap.memo, no_raise=True)
+        return bool(memo and memo.action == ActionType.SWAP and memo.asset and is_rune(memo.asset))
+
+    @property
+    def affiliate_fee_coins(self) -> List[ThorCoin]:
+        """The affiliate fees skimmed from the outputs, in the output asset (affiliate_fee events)"""
+        return [ThorCoin(ev.fee_amount, ev.asset) for ev in self.find_events(EventAffiliateFee) if ev.fee_amount]
+
     @property
     def is_output_l1_asset(self):
         asset = Asset.from_string(self.attrs.get('out_asset', ''))
@@ -289,16 +302,24 @@ class SwapProps(NamedTuple):
         height = int(attrs.get('block_height', 0))  # when it was observed for the first time
         tx_id = attrs.get('id')
 
+        # the affiliate's fee is skimmed from the output and converted to RUNE by a swap of its own, with the same
+        # tx id and a "=:THOR.RUNE:<affiliate>" memo. Midgard (and so every explorer) counts its liquidity fee
+        # into the action's, and liquidity_fee follows that; the share of the conversion is kept apart, so a
+        # personal summary can show what the user alone paid. Its slip is noise and is left out.
         swaps: List[EventSwap] = list(self.find_events(EventSwap))
         pools = []
         liquidity_fee = 0
+        affiliate_conversion_fee = 0
         slip = 0
         for swap in swaps:
             if swap.pool not in pools:
                 pools.append(swap.pool)
 
             liquidity_fee += swap.liquidity_fee_in_rune
-            slip = max(slip, swap.swap_slip)
+            if self._is_affiliate_conversion(swap):
+                affiliate_conversion_fee += swap.liquidity_fee_in_rune
+            else:
+                slip = max(slip, swap.swap_slip)
 
         in_tx = [
             ThorSubTx(
@@ -365,6 +386,8 @@ class SwapProps(NamedTuple):
             meta_swap=ThorMetaSwap(
                 liquidity_fee=liquidity_fee,
                 network_fees=network_fees,
+                affiliate_fees=self.affiliate_fee_coins,
+                affiliate_conversion_liquidity_fee=affiliate_conversion_fee,
                 trade_slip=slip,
                 trade_target=trade_target,
                 memo=memo_str,

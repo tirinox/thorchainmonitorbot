@@ -77,6 +77,10 @@ class ThorMetaSwap:
     memo: str = ''
     affiliate_address: str = ''  # highly likely to be a THORName
     streaming: Optional[StreamingSwap] = None
+    # the affiliate fees skimmed from the outputs, in the output asset (affiliate_fee events); None for Midgard swaps
+    affiliate_fees: Optional[List[ThorCoin]] = None
+    # the part of liquidity_fee paid by the affiliate's fee conversion to RUNE (Midgard counts it in), 1e8 RUNE
+    affiliate_conversion_liquidity_fee: int = 0
 
     tx_type: str = ''  # swap/loan/...
     is_streaming_swap: bool = False
