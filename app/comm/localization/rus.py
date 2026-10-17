@@ -39,7 +39,7 @@ from models.pol_reserve import AlertPolReserveStats
 from models.runepool import AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
 from models.secured import AlertSecuredAssetSummary
-from models.swap_track import SwapTrack, SwapStage, StageInfo, Diagnosis
+from models.swap_track import SwapTrack, SwapStage, StageInfo, Diagnosis, SwapSummary
 from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
@@ -622,8 +622,18 @@ class RussianLocalization(BaseLocalization):
                 f'{self._swap_track_route(track)}\n'
                 f'Транзакция: {self._swap_track_links(track)}')
 
+    SWAP_TRACK_FEE_LABELS = {
+        'rate': 'Курс',
+        'network': 'Комиссия сети',
+        'liquidity': 'Комиссия ликвидности',
+        'affiliate': 'Партнёрская комиссия',
+        'total': 'Всего комиссий',
+        'of_value': 'от суммы обмена',
+    }
+
     def notification_text_swap_track_finished(self, track: SwapTrack, info: StageInfo, action, reason: str,
-                                              usd_per_rune: float, name_map: NameMap, user):
+                                              usd_per_rune: float, name_map: NameMap, user,
+                                              summary: SwapSummary = None):
         duration = f' за {self.seconds_human(now_ts() - track.started_ts)}' if track.known_start else ''
         outs = self._swap_track_outs(info, track.dest_address)
         sent = [o for o in outs if not o[0]]
@@ -632,15 +642,10 @@ class RussianLocalization(BaseLocalization):
         lines = []
         if info.stage == SwapStage.DONE:
             lines.append(f'✅ <b>Обмен завершён</b>{duration}')
-            if action:
+            if summary and summary.out_amount:
+                lines += self._swap_track_summary_lines(summary)
+            elif action:
                 lines.append(self.format_swap_route(action, usd_per_rune))
-                fees = []
-                if action.full_volume_in_rune:
-                    fees.append(f'ликвидность {format_percent(action.liquidity_fee_percent)}')
-                if action.meta_swap and action.meta_swap.affiliate_fee > 0:
-                    fees.append(f'партнёрская {format_percent(action.meta_swap.affiliate_fee, 1)}')
-                if fees:
-                    lines.append('Комиссии: ' + ' · '.join(fees))
             elif sent:
                 _, amount, asset, *_ = sent[0]
                 lines.append(f'{self.format_op_amount(track.in_amount_float)} {Asset(track.in_asset).pretty_str} '

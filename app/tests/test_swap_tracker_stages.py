@@ -6,7 +6,7 @@ import pytest
 from api.aionode.types import ThorConstants, ThorMimir, ThorTxStatus
 from models.mimir import MimirHolder, MimirTuple
 from models.s_swap import StreamingSwap
-from models.swap_track import derive_stage, SwapStage, diagnose, DiagCtx, SwapTrack
+from models.swap_track import derive_stage, SwapStage, diagnose, DiagCtx, SwapTrack, StageInfo
 
 TX = '27208951434B8D7ACB416C6B0B5DAE6449A3A3D2C4484F0B36803A180F24B1E3'
 ZERO_ID = '0' * 64
@@ -180,6 +180,53 @@ def test_stalled_thorchain_beats_everything_and_terminal_has_no_diagnosis():
     c.thor_block_age_sec = 120
     assert diagnose(derive_stage(SIGNING), c, 1, 600).code == 'thor_stalled'
     assert diagnose(derive_stage(ThorTxStatus.from_json(DONE_NATIVE)), c, 1, 600) is None
+
+
+def test_fee_event_and_the_summary_of_a_completed_swap():
+    from jobs.scanner.tx import ThorEvent
+    from models.events import EventFee, parse_swap_and_out_event
+    from models.swap_track import swap_summary
+    from models.tx import ThorAction, ThorSubTx, ThorCoin, ThorMetaSwap, SUCCESS
+    from models.memo import ActionType
+
+    fee = parse_swap_and_out_event(ThorEvent({'type': 'fee', 'tx_id': TX, 'coins': '315000000000 DOGE.DOGE, 2000000 THOR.RUNE',
+                                              'pool_deduct': '1000', '_height': 5}))
+    assert isinstance(fee, EventFee) and fee.coin_list == [(315000000000, 'DOGE.DOGE'), (2000000, 'THOR.RUNE')]
+
+    track = SwapTrack(tx_id=TX, users={'1': SwapTrack.ROLE_SENDER}, from_address='bc1qsender', dest_address='DOGEDEST',
+                      in_asset='BTC.BTC', in_amount=50_000_000, out_asset='DOGE.DOGE', volume_usd=0, memo_str='',
+                      start_height=1, started_ts=1.0)
+    action = ThorAction(
+        date_timestamp=1, height=1, status=SUCCESS, type=ActionType.SWAP.value, pools=['BTC.BTC', 'DOGE.DOGE'],
+        in_tx=[ThorSubTx('bc1qsender', [ThorCoin(50_000_000, 'BTC.BTC')], TX)],
+        out_tx=[ThorSubTx('thor1aff', [ThorCoin(11_970_000, 'THOR.RUNE')], ZERO_ID, is_affiliate=True),
+                ThorSubTx('DOGEDEST', [ThorCoin(300_000_000_000_000, 'DOGE.DOGE')], 'CD' * 32)],
+        meta_swap=ThorMetaSwap(liquidity_fee=3_430_000, network_fees=[ThorCoin(315_000_000, 'DOGE.DOGE')],
+                               trade_slip=0, trade_target=0, memo='', affiliate_fee=0.001, affiliate_address='aff'),
+    )
+
+    class Prices:  # BTC $100k, DOGE $0.08, RUNE $0.7
+        @staticmethod
+        def convert_to_usd(amount, asset):
+            return amount * {'BTC.BTC': 100_000.0, 'DOGE.DOGE': 0.08, 'THOR.RUNE': 0.7}[asset]
+
+    s = swap_summary(track, StageInfo(SwapStage.DONE), action, Prices())
+    assert (s.in_amount, s.out_amount, s.out_asset) == (0.5, 3_000_000.0, 'DOGE.DOGE')
+    assert s.rate == 6_000_000.0  # DOGE per BTC
+    assert s.network_fees == [(3.15, 'DOGE.DOGE', pytest.approx(0.252))]
+    assert (s.liquidity_fee_rune, s.affiliate_fee_rune) == pytest.approx((0.0343, 0.1197))
+    assert s.total_fees_usd == pytest.approx(0.252 + 0.0343 * 0.7 + 0.1197 * 0.7)
+    assert s.fees_percent == pytest.approx(100 * s.total_fees_usd / 50_000)
+
+    # without the scanner's action the output comes from the status, to the destination, not the affiliate
+    done = status({**SWAPPED, 'outbound_signed': {'completed': True}}, out_txs=[
+        {'id': ZERO_ID, 'chain': 'THOR', 'to_address': 'thor1aff', 'memo': f'OUT:{TX}',
+         'coins': [{'asset': 'THOR.RUNE', 'amount': '11970000'}]},
+        {'id': 'CD' * 32, 'chain': 'DOGE', 'to_address': 'dogedest', 'memo': f'OUT:{TX}',
+         'coins': [{'asset': 'DOGE.DOGE', 'amount': '300000000000000'}]},
+    ])
+    s2 = swap_summary(track, derive_stage(done), None, Prices())
+    assert (s2.out_amount, s2.out_asset, s2.has_fees) == (3_000_000.0, 'DOGE.DOGE', False)
 
 
 def test_swap_track_round_trips_through_json():

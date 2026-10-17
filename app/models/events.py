@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional, Tuple, Union
+from typing import NamedTuple, Optional, Tuple, Union, List
 
 from jobs.scanner.tx import ThorEvent
 from lib.constants import POOL_MODULE, NATIVE_RUNE_SYMBOL, thor_to_float, bp_to_float
@@ -119,6 +119,36 @@ class EventStreamingSwap(NamedTuple):
 
         amount, asset = s.split(' ')
         return int(amount), asset.strip()
+
+
+class EventFee(NamedTuple):
+    """The network (outbound) fee withheld from an output of the tx; one event per output"""
+    tx_id: str = ''  # the inbound tx
+    coins: str = ''  # "123 ETH.ETH, 456 THOR.RUNE"
+    pool_deduct: int = 0
+    original: Optional[ThorEvent] = None
+    height: int = 0
+
+    @classmethod
+    def from_event(cls, event: ThorEvent):
+        attrs = event.attrs
+        return cls(
+            tx_id=attrs.get('tx_id', ''),
+            coins=expect_string(attrs.get('coins', '')),
+            pool_deduct=_safe_int(attrs.get('pool_deduct', 0)),
+            original=event,
+            height=event.height,
+        )
+
+    @property
+    def coin_list(self) -> List[Tuple[int, str]]:
+        """[(amount 1e8, asset)]"""
+        results = []
+        for part in self.coins.split(','):
+            amount, _, asset = part.strip().partition(' ')
+            if asset:
+                results.append((_safe_int(amount), asset.strip()))
+        return results
 
 
 class EventOutbound(NamedTuple):
@@ -356,6 +386,8 @@ def parse_swap_and_out_event(e: ThorEvent):
         return EventOutbound.from_event(e)
     elif e.type == 'scheduled_outbound':
         return EventScheduledOutbound.from_event(e)
+    elif e.type == 'fee':
+        return EventFee.from_event(e)
     elif e.type == 'loan_open':
         return EventLoanOpen.from_event(e)
     elif e.type == 'loan_repayment':
@@ -366,12 +398,13 @@ def parse_swap_and_out_event(e: ThorEvent):
         return EventTradeAccountWithdraw.from_event(e)
 
 
-TypeEventSwapAndOut = Union[EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound]
+TypeEventSwapAndOut = Union[EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, EventFee]
 TypeEvents = Union[
     EventSwap,
     EventStreamingSwap,
     EventOutbound,
     EventScheduledOutbound,
+    EventFee,
     EventLoanOpen,
     EventLoanRepayment,
     EventTradeAccountDeposit,

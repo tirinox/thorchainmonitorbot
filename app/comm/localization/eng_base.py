@@ -48,7 +48,7 @@ from models.pol_reserve import AlertPolReserveStats
 from models.runepool import AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
 from models.secured import AlertSecuredAssetSummary
-from models.swap_track import SwapTrack, SwapStage, StageInfo, Diagnosis
+from models.swap_track import SwapTrack, SwapStage, StageInfo, Diagnosis, SwapSummary
 from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
@@ -906,8 +906,46 @@ class BaseLocalization(ABC):  # == English
                 f'{self._swap_track_route(track)}\n'
                 f'Transaction: {self._swap_track_links(track)}')
 
+    SWAP_TRACK_FEE_LABELS = {
+        'rate': 'Rate',
+        'network': 'Network fee',
+        'liquidity': 'Liquidity fee',
+        'affiliate': 'Affiliate fee',
+        'total': 'Total fees',
+        'of_value': 'of swap value',
+    }
+
+    def _swap_track_summary_lines(self, s: SwapSummary):
+        """The route with the real output, the effective rate and the fees of a completed swap"""
+        labels = self.SWAP_TRACK_FEE_LABELS
+        in_asset, out_asset = Asset(s.in_asset).pretty_str, Asset(s.out_asset).pretty_str
+        value = f' ({short_dollar(s.swap_value_usd)})' if s.swap_value_usd else ''
+        lines = [f'{self.format_op_amount(s.in_amount)} {in_asset} → ⚡ → {self.format_op_amount(s.out_amount)} '
+                 f'{out_asset}{value}']
+
+        if rate := s.rate:
+            # the rate in whichever direction gives a number one can read
+            rate_str = f'1 {in_asset} = {short_money(rate)} {out_asset}' if rate >= 0.01 else \
+                f'1 {out_asset} = {short_money(1 / rate)} {in_asset}'
+            lines.append(f'{labels["rate"]}: {rate_str}')
+
+        def usd(x):
+            return f' ({short_dollar(x)})' if x else ''
+
+        for amount, asset, fee_usd in s.network_fees:
+            lines.append(f'{labels["network"]}: {short_money(amount)} {Asset(asset).pretty_str}{usd(fee_usd)}')
+        if s.liquidity_fee_rune:
+            lines.append(f'{labels["liquidity"]}: {short_money(s.liquidity_fee_rune)} {self.R}{usd(s.liquidity_fee_usd)}')
+        if s.affiliate_fee_rune:
+            lines.append(f'{labels["affiliate"]}: {short_money(s.affiliate_fee_rune)} {self.R}{usd(s.affiliate_fee_usd)}')
+        if s.has_fees and s.total_fees_usd:
+            percent = f' ({s.fees_percent:.2f}% {labels["of_value"]})' if s.swap_value_usd else ''
+            lines.append(f'{labels["total"]}: {bold(short_dollar(s.total_fees_usd))}{percent}')
+        return lines
+
     def notification_text_swap_track_finished(self, track: SwapTrack, info: StageInfo, action: Optional[ThorAction],
-                                              reason: str, usd_per_rune: float, name_map: NameMap, user):
+                                              reason: str, usd_per_rune: float, name_map: NameMap, user,
+                                              summary: Optional[SwapSummary] = None):
         duration = f' in {self.seconds_human(now_ts() - track.started_ts)}' if track.known_start else ''
         outs = self._swap_track_outs(info, track.dest_address)
         sent = [o for o in outs if not o[0]]
@@ -916,15 +954,10 @@ class BaseLocalization(ABC):  # == English
         lines = []
         if info.stage == SwapStage.DONE:
             lines.append(f'✅ <b>Swap completed</b>{duration}')
-            if action:
+            if summary and summary.out_amount:
+                lines += self._swap_track_summary_lines(summary)
+            elif action:
                 lines.append(self.format_swap_route(action, usd_per_rune))
-                fees = []
-                if action.full_volume_in_rune:
-                    fees.append(f'liquidity {format_percent(action.liquidity_fee_percent)}')
-                if action.meta_swap and action.meta_swap.affiliate_fee > 0:
-                    fees.append(f'affiliate {format_percent(action.meta_swap.affiliate_fee, 1)}')
-                if fees:
-                    lines.append('Fees: ' + ' · '.join(fees))
             elif sent:
                 _, amount, asset, *_ = sent[0]
                 lines.append(f'{self.format_op_amount(track.in_amount_float)} {Asset(track.in_asset).pretty_str} '
