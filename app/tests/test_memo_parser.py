@@ -53,6 +53,21 @@ def test_memo2():
     print(m)
 
 
+def test_tcy_memos():
+    # a real mainnet one: a BTC inbound claiming the TCY of a THORFi deposit (thornode memo_tcy_claim.go)
+    m = THORMemo.parse_memo('tcy:thor1ux9jyq22k56qmpm0azpc7nsjhvr6c4tdsde95f')
+    assert m.action == ActionType.TCY_CLAIM
+    assert m.dest_address == 'thor1ux9jyq22k56qmpm0azpc7nsjhvr6c4tdsde95f'
+    assert m.build() == 'TCY:thor1ux9jyq22k56qmpm0azpc7nsjhvr6c4tdsde95f'
+
+    m = THORMemo.parse_memo('TCY+')
+    assert m.action == ActionType.TCY_STAKE and m.build() == 'TCY+'
+
+    m = THORMemo.parse_memo('tcy-:2500')
+    assert m.action == ActionType.TCY_UNSTAKE and m.withdraw_portion_bp == 2500 and m.build() == 'TCY-:2500'
+    assert THORMemo.parse_memo('tcy-').withdraw_portion_bp == 10000  # the whole stake when the share is left out
+
+
 @pytest.mark.parametrize('memo, action, dest, payload, built', [
     (
         'SECURE+:thor1x2whgc2nt665y0kc44uywhynazvp0l8tp0vtu6',

@@ -88,6 +88,11 @@ class ActionType(Enum):
     SECURED_ASSET_ADD = 'secure+'
     SECURED_ASSET_WITHDRAW = 'secure-'
 
+    # TCY: claim the tokens of a THORFi deposit to an address, stake them, unstake a share in basis points
+    TCY_CLAIM = 'tcy'
+    TCY_STAKE = 'tcy+'
+    TCY_UNSTAKE = 'tcy-'
+
     WASM_EXECUTE = 'x'
 
     SWITCH = 'switch'
@@ -129,6 +134,9 @@ MEMO_ACTION_TABLE = {
     "trade-": ActionType.TRADE_ACC_WITHDRAW,
     "secure+": ActionType.SECURED_ASSET_ADD,
     "secure-": ActionType.SECURED_ASSET_WITHDRAW,
+    "tcy": ActionType.TCY_CLAIM,
+    "tcy+": ActionType.TCY_STAKE,
+    "tcy-": ActionType.TCY_UNSTAKE,
     "x": ActionType.WASM_EXECUTE,
     "exec": ActionType.WASM_EXECUTE,
     "pool+": ActionType.RUNEPOOL_ADD,
@@ -416,6 +424,18 @@ class THORMemo:
                 affiliates=cls._parse_affiliates(affiliate, affiliate_fee_bp)
             )
 
+        elif tx_type == ActionType.TCY_CLAIM:
+            # TCY:THOR_ADDRESS
+            return cls(ActionType.TCY_CLAIM, dest_address=ith(components, 1, ''))
+
+        elif tx_type == ActionType.TCY_STAKE:
+            return cls(ActionType.TCY_STAKE)
+
+        elif tx_type == ActionType.TCY_UNSTAKE:
+            # TCY-:BASIS_POINTS
+            return cls(ActionType.TCY_UNSTAKE,
+                       withdraw_portion_bp=ith(components, 1, THOR_BASIS_POINT_MAX, is_number=True))
+
         elif tx_type == ActionType.SWITCH:
             destination_address = ith(components, 1, '')
             return cls.switch(
@@ -541,6 +561,15 @@ class THORMemo:
 
         elif self.action == ActionType.RUNEPOOL_WITHDRAW:
             memo = f'POOL-:{self.withdraw_portion_bp}:{self._affiliate_part}'
+
+        elif self.action == ActionType.TCY_CLAIM:
+            memo = f'TCY:{self.dest_address}'
+
+        elif self.action == ActionType.TCY_STAKE:
+            memo = 'TCY+'
+
+        elif self.action == ActionType.TCY_UNSTAKE:
+            memo = f'TCY-:{self.withdraw_portion_bp}'
 
         elif self.action == ActionType.SWITCH:
             return f'SWITCH:{self.dest_address}'
