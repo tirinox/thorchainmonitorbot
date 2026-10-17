@@ -56,6 +56,7 @@ class Props:
     PROP_CHAIN = 'chain'
     PROP_MIN_LIMIT = 'min'
     PROP_TRACK_BOND = 'bond_prov'
+    PROP_TRACK_SWAPS = 'track_swaps'
 
 
 class BaseChangeTracker(WithLogger):

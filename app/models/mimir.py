@@ -263,6 +263,18 @@ class MimirHolder(INotified, WithLogger, WithDelegates):
             return default
         return const_type(entry.real_value) if const_type else entry.real_value
 
+    def is_halt_active(self, name: str, thor_height: int) -> bool:
+        """
+        A halt mimir holds a THORChain height: the halt is on from that height (1 = right now, 0 = off).
+        NodePauseChainGlobal is the other way round: paused while the value is ahead of the height.
+        """
+        value = self.get_constant(name, 0)
+        if value <= 0:
+            return False
+        if name.upper() == MIMIR_PAUSE_GLOBAL:
+            return value >= thor_height
+        return value <= thor_height
+
     def get_hardcoded_const(self, name: str, default=None):
         entry = self.get_entry(name)
         return entry.hard_coded_value if entry else default

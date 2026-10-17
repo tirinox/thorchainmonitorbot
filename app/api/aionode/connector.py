@@ -172,6 +172,14 @@ class ThorConnector:
         data = await self._request(url, treat_empty_as_ok=False)
         return data
 
+    async def query_streaming_swap(self, tx_hash: str):
+        """A streaming swap while it is still in the queue; None once it has left it (or it is not streaming)"""
+        from models.s_swap import StreamingSwap  # the model imports this package's types
+        url = self.env.path_streaming_swap.format(txid=tx_hash)
+        data = await self._request(url)
+        if data and 'tx_id' in data:
+            return StreamingSwap.model_validate(data)
+
     async def query_tx_simple(self, tx_hash: str):
         url = self.env.path_tx_simple.format(txid=tx_hash)
         data = await self._request(url)

@@ -190,6 +190,21 @@ class MainMenuDialog(BaseDialog):
     async def cmd_limit_swap_stats(self, message: Message):
         await self.build_metrics_dialog().show_limit_swap_stats(message)
 
+    @message_handler(commands='track', state='*')
+    async def cmd_track(self, message: Message):
+        # /track <txid>: follow a swap to its outbound or refund, whether or not a wallet of the user is in it
+        tracker = self.deps.swap_tracker
+        tx_id = tracker.normalize_tx_id(message.get_args()) if tracker else ''
+        if not tracker:
+            text = self.loc.TEXT_TRACK_UNAVAILABLE
+        elif not tx_id:
+            text = self.loc.TEXT_TRACK_USAGE
+        else:
+            await self.start_typing(message)
+            result = await tracker.track_by_hash(tx_id, self.user_id(message))
+            text = self.loc.text_track_result(result, tx_id)
+        await message.answer(text, disable_web_page_preview=True, disable_notification=True)
+
     @message_handler(filters.RegexpCommandsFilter(regexp_commands=[r'^/unsub_.*']), state='*')
     async def on_unsubscribe_command(self, message: Message):
         # Commands like /unsub_sMth1 (in groups: /unsub_sMth1@bot_name)
