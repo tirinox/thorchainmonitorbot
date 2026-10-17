@@ -817,24 +817,67 @@ class BaseLocalization(ABC):  # == English
         chain = chain or Chains.THOR
         return link(get_explorer_url_to_tx(self.cfg.network_id, chain, out_tx_id), f'🔍{chain}')
 
-    def notification_text_swap_track_started(self, track: SwapTrack, info: StageInfo, name_map: NameMap, user):
+    SWAP_TRACK_PROGRESS_LABELS = {
+        'inbound': 'inbound',
+        'swap': 'swap',
+        'outbound': 'outbound',
+        'done': 'done',
+        'progress': 'Progress',
+        'eta': 'Time left',
+    }
+
+    def _swap_track_progress_lines(self, track: SwapTrack, info: StageInfo):
+        """Where the swap is among its stages and how long to the end: ✅ passed, 🔄 now, ⏳ to come"""
+        labels = self.SWAP_TRACK_PROGRESS_LABELS
+        steps = ['inbound', 'swap'] + (['outbound'] if track.has_outbound_stage else []) + ['done']
+        current = {
+            SwapStage.OBSERVED: 'inbound',
+            SwapStage.SWAPPING: 'swap',
+            SwapStage.OUTBOUND_DELAY: 'outbound',
+            SwapStage.OUTBOUND_SIGNING: 'outbound',
+        }.get(info.stage, 'done')
+        idx = steps.index(current)
+
+        parts = []
+        for i, step in enumerate(steps):
+            mark = '✅' if i < idx or info.is_terminal else ('🔄' if i == idx else '⏳')
+            detail = ''
+            if i == idx and not info.is_terminal:
+                if step == 'inbound' and info.confirmation_sec > 0:
+                    detail = f' ~{self.seconds_human(info.confirmation_sec)}'
+                elif step == 'swap':
+                    ss = info.streaming
+                    count, quantity = (ss.count, ss.quantity) if ss else (info.streaming_count, info.streaming_quantity)
+                    if quantity > 1:
+                        detail = f' {count}/{quantity}'
+                elif step == 'outbound' and info.stage == SwapStage.OUTBOUND_DELAY and info.expected_sec > 0:
+                    detail = f' ~{self.seconds_human(info.expected_sec)}'
+            parts.append(f'{mark} {labels[step]}{detail}')
+        lines = [f'{labels["progress"]}: ' + ' → '.join(parts)]
+
+        if (eta := track.eta_sec(info, now_ts())) > 30:
+            lines.append(f'{labels["eta"]}: ~{self.seconds_human(eta)}')
+        return lines
+
+    def notification_text_swap_track_started(self, track: SwapTrack, info: StageInfo, name_map: NameMap, user,
+                                             manual=False):
         incoming = track.users.get(str(user)) == SwapTrack.ROLE_RECIPIENT
-        heading = '📥 <b>Incoming swap</b>' if incoming else '🔁 <b>Swap detected</b>'
+        if manual:
+            heading = '👀 <b>Following the swap</b>'
+        else:
+            heading = '📥 <b>Incoming swap</b>' if incoming else '🔁 <b>Swap detected</b>'
         from_s = self._swap_track_party(track, track.from_address, track.src_chain, name_map, user)
         to_s = self._swap_track_party(track, track.dest_address, track.dst_chain, name_map, user)
         lines = [heading, self._swap_track_route(track), f'From: {from_s} → To: {to_s}']
 
         if track.expected_out:
-            eta = f' · est. time ~{self.seconds_human(track.expected_sec)}' if track.expected_sec > 60 else ''
-            lines.append(f'Expected: ~{bold(short_money(track.expected_out_float))} '
-                         f'{Asset(track.out_asset).pretty_str}{eta}')
+            lines.append(f'Expected: ~{bold(short_money(track.expected_out_float))} {Asset(track.out_asset).pretty_str}')
         if track.is_streaming:
             if track.quantity > 1:
                 lines.append(f'Streaming: {track.quantity} swaps, {track.interval or 1} block(s) apart')
             else:
                 lines.append('Streaming swap')
-        if info.confirmation_sec > 0:
-            lines.append(f'⏳ Waiting for {track.src_chain} confirmations (~{self.seconds_human(info.confirmation_sec)})')
+        lines += self._swap_track_progress_lines(track, info)
         lines.append(f'Transaction: {self._swap_track_links(track)}')
         return '\n'.join(lines)
 
@@ -858,6 +901,7 @@ class BaseLocalization(ABC):  # == English
             if info.expected_sec > 0:
                 lines.append(f'Outbound delay ~{bold(self.seconds_human(info.expected_sec))} '
                              f'({info.outbound_delay_blocks} blocks) — the network throttles outbounds by value')
+        lines += self._swap_track_progress_lines(track, info)
         lines.append(f'Transaction: {self._swap_track_links(track)}')
         return '\n'.join(lines)
 

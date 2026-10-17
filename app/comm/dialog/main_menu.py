@@ -201,8 +201,8 @@ class MainMenuDialog(BaseDialog):
             text = self.loc.TEXT_TRACK_USAGE
         else:
             await self.start_typing(message)
-            result = await tracker.track_by_hash(tx_id, self.user_id(message))
-            text = self.loc.text_track_result(result, tx_id)
+            result, text = await tracker.track_by_hash(tx_id, self.user_id(message), self.loc)
+            text = text or self.loc.text_track_result(result, tx_id)
         await message.answer(text, disable_web_page_preview=True, disable_notification=True)
 
     @message_handler(filters.RegexpCommandsFilter(regexp_commands=[r'^/unsub_.*']), state='*')

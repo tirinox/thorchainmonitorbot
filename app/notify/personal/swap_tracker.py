@@ -149,11 +149,15 @@ class PersonalSwapTracker(BaseFetcher, INotified):
         s = (s or '').strip().removeprefix('0x').removeprefix('0X').upper()
         return s if re.fullmatch(r'[0-9A-F]{64}', s) else ''
 
-    async def track_by_hash(self, tx_id: str, user_id) -> str:
-        """The /track command: follow a swap for this user whether or not a wallet of theirs is in it"""
+    async def track_by_hash(self, tx_id: str, user_id, loc=None):
+        """
+        The /track command: follow a swap for this user whether or not a wallet of theirs is in it.
+        Returns (result, text): with a loc, the text of the reply for a started track (the message of the start,
+        with the progress), None otherwise.
+        """
         status = await self.deps.thor_connector.query_tx_status(tx_id)
         if not status or not status.tx:
-            return self.RESULT_NOT_FOUND
+            return self.RESULT_NOT_FOUND, None
 
         # /tx/status gives the inbound as a common.Tx: the shape the block detector reads a swap start from
         detector = SwapStartDetectorFromBlock(self.deps, dedup_component='swap_tracker_manual')
@@ -162,12 +166,14 @@ class PersonalSwapTracker(BaseFetcher, INotified):
         swap = await detector.make_swap_start_event(status.tx, tx_id, height,
                                                     is_deposit=status.tx.get('chain') == 'THOR')
         if not swap or swap.is_limit:
-            return self.RESULT_NOT_SWAP
+            return self.RESULT_NOT_SWAP, None
 
-        return await self._start_tracking(swap, users={str(user_id): SwapTrack.ROLE_WATCHER}, status=status)
+        return await self._start_tracking(swap, users={str(user_id): SwapTrack.ROLE_WATCHER}, status=status,
+                                          reply_loc=loc)
 
     async def _start_tracking(self, swap: AlertSwapStart, users: Dict[str, str] = None,
-                              status: ThorTxStatus = None) -> str:
+                              status: ThorTxStatus = None, reply_loc=None):
+        """Returns (result, text): the text is the message of the start when reply_loc asks for it instead of a send"""
         manual = users is not None  # asked by /track, not found by the scanner
         r = await self.deps.db.get_redis()
         exists = await r.exists(self.key(swap.tx_id))
@@ -176,7 +182,7 @@ class PersonalSwapTracker(BaseFetcher, INotified):
             # found by the block scanner: the swap of a watched wallet
             users = await self._users_of_swap(swap)
             if not users or exists:
-                return self.RESULT_ALREADY
+                return self.RESULT_ALREADY, None
 
             # an address of a bot swaps all day long: cap the swaps followed for one user
             active = await self.load_active()
@@ -185,13 +191,13 @@ class PersonalSwapTracker(BaseFetcher, INotified):
                     self.logger.warning(f'User {user} has too many tracked swaps, skipping {swap.tx_id}')
                     users.pop(user)
             if not users:
-                return self.RESULT_ALREADY
+                return self.RESULT_ALREADY, None
         elif exists and await r.sismember(self.KEY_ACTIVE, swap.tx_id):
             # asked by /track while the swap is already followed: just add the user to it
             track = SwapTrack.from_json(await r.get(self.key(swap.tx_id)))
             track.users.update(users)
             await self._save(track)
-            return self.RESULT_ALREADY
+            return self.RESULT_ALREADY, None
 
         now = now_ts()
         dest_address = await self._resolve_thorname(swap.memo.dest_address, Asset(swap.out_asset).chain) \
@@ -237,13 +243,20 @@ class PersonalSwapTracker(BaseFetcher, INotified):
             # when the scanner has not stored the outbound yet, the summary follows on the next poll
             track.known_start = not manual  # /track of an old swap: no idea when it started
             finished = await self._finish(track, info)
-            return self.RESULT_FINISHED if finished else self.RESULT_STARTED
+            return (self.RESULT_FINISHED if finished else self.RESULT_STARTED), None
 
-        await self._send_all(track, lambda loc, nm, user: loc.notification_text_swap_track_started(
-            track, info, nm, user))
+        text = None
+        if reply_loc is not None:
+            # /track: the start goes as the reply to the command, not as a separate message
+            user = next(iter(users))
+            name_map = await self._name_map_for(track, user)
+            text = reply_loc.notification_text_swap_track_started(track, info, name_map, user, manual=True)
+        else:
+            await self._send_all(track, lambda loc, nm, user: loc.notification_text_swap_track_started(
+                track, info, nm, user))
         track.next_poll_ts = now + self.sleep_period
         await self._save(track)
-        return self.RESULT_STARTED
+        return self.RESULT_STARTED, text
 
     async def _load_quote(self, track: SwapTrack, swap: AlertSwapStart):
         try:
@@ -445,6 +458,14 @@ class PersonalSwapTracker(BaseFetcher, INotified):
 
     # ------------------------------------ delivery ------------------------------------
 
+    async def _name_map_for(self, track: SwapTrack, user, name_map=None):
+        """THORNames of the swap's addresses joined with the user's own wallet names"""
+        if name_map is None:
+            name_map = await self.deps.name_service.safely_load_thornames_from_address_set(
+                [a for a in (track.from_address, track.dest_address) if a])
+        local_names = await self.deps.name_service.get_local_service(user).get_name_map()
+        return name_map.joined_with(local_names) if local_names else name_map
+
     async def _send_all(self, track: SwapTrack, build: MessageBuilder):
         settings_dic = await self.deps.settings_manager.get_settings_multi(list(track.users.keys()))
         name_map = await self.deps.name_service.safely_load_thornames_from_address_set(
@@ -456,8 +477,7 @@ class PersonalSwapTracker(BaseFetcher, INotified):
                 continue
             try:
                 loc = await self.deps.loc_man.get_from_db(user, self.deps.db)
-                local_names = await self.deps.name_service.get_local_service(user).get_name_map()
-                user_name_map = name_map.joined_with(local_names) if local_names else name_map
+                user_name_map = await self._name_map_for(track, user, name_map)
 
                 message = build(loc, user_name_map, user)
                 if inspect.isawaitable(message):

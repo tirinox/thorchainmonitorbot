@@ -534,24 +534,34 @@ class RussianLocalization(BaseLocalization):
         SwapStage.OUTBOUND_SIGNING: 'отправка',
     }
 
-    def notification_text_swap_track_started(self, track: SwapTrack, info: StageInfo, name_map: NameMap, user):
+    SWAP_TRACK_PROGRESS_LABELS = {
+        'inbound': 'вход',
+        'swap': 'обмен',
+        'outbound': 'отправка',
+        'done': 'готово',
+        'progress': 'Этапы',
+        'eta': 'Осталось',
+    }
+
+    def notification_text_swap_track_started(self, track: SwapTrack, info: StageInfo, name_map: NameMap, user,
+                                             manual=False):
         incoming = track.users.get(str(user)) == SwapTrack.ROLE_RECIPIENT
-        heading = '📥 <b>Входящий обмен</b>' if incoming else '🔁 <b>Обнаружен обмен</b>'
+        if manual:
+            heading = '👀 <b>Слежу за обменом</b>'
+        else:
+            heading = '📥 <b>Входящий обмен</b>' if incoming else '🔁 <b>Обнаружен обмен</b>'
         from_s = self._swap_track_party(track, track.from_address, track.src_chain, name_map, user)
         to_s = self._swap_track_party(track, track.dest_address, track.dst_chain, name_map, user)
         lines = [heading, self._swap_track_route(track), f'От: {from_s} → Кому: {to_s}']
 
         if track.expected_out:
-            eta = f' · ожидание ~{self.seconds_human(track.expected_sec)}' if track.expected_sec > 60 else ''
-            lines.append(f'Ожидается: ~{bold(short_money(track.expected_out_float))} '
-                         f'{Asset(track.out_asset).pretty_str}{eta}')
+            lines.append(f'Ожидается: ~{bold(short_money(track.expected_out_float))} {Asset(track.out_asset).pretty_str}')
         if track.is_streaming:
             if track.quantity > 1:
                 lines.append(f'Потоковый: {track.quantity} частей с шагом {track.interval or 1} бл.')
             else:
                 lines.append('Потоковый обмен')
-        if info.confirmation_sec > 0:
-            lines.append(f'⏳ Ждём подтверждений в сети {track.src_chain} (~{self.seconds_human(info.confirmation_sec)})')
+        lines += self._swap_track_progress_lines(track, info)
         lines.append(f'Транзакция: {self._swap_track_links(track)}')
         return '\n'.join(lines)
 
@@ -575,6 +585,7 @@ class RussianLocalization(BaseLocalization):
             if info.expected_sec > 0:
                 lines.append(f'Задержка отправки ~{bold(self.seconds_human(info.expected_sec))} '
                              f'({info.outbound_delay_blocks} бл.) — сеть притормаживает крупные выплаты')
+        lines += self._swap_track_progress_lines(track, info)
         lines.append(f'Транзакция: {self._swap_track_links(track)}')
         return '\n'.join(lines)
 

@@ -65,6 +65,18 @@ class SwapTrack:
     def dst_chain(self) -> str:
         return Asset(self.out_asset).chain
 
+    @property
+    def has_outbound_stage(self) -> bool:
+        """An L1 output waits for an outbound; RUNE, trade, synth and secured outputs are paid out at once"""
+        a = Asset(self.out_asset)
+        return not (a.is_trade or a.is_synth or a.is_secured or a.chain == 'THOR')
+
+    def eta_sec(self, info: StageInfo, now: float) -> float:
+        """Seconds to the end of the swap: the quote's total from the start, or what the stage itself says"""
+        if info.is_terminal:
+            return 0.0
+        return max(info.expected_sec, self.expected_sec - (now - self.started_ts), 0.0)
+
     def my_address(self, user_id) -> str:
         """The address this user watches: the sender's or the recipient's; '' for a watcher"""
         role = self.users.get(str(user_id))
