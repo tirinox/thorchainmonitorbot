@@ -349,7 +349,7 @@ class App(WithLogger):
 
             # Personal swap tracker: follows the swaps of the watched wallets to the outbound or the refund
             if d.cfg.get('personal.swap_tracker.enabled', True):
-                swap_tracker = PersonalSwapTracker(d)
+                swap_tracker = d.swap_tracker = PersonalSwapTracker(d)  # the /track command needs it too
                 tracker_start_detector = SwapStartDetectorFromBlock(d, dedup_component='swap_tracker_start')
                 d.block_scanner.add_subscriber(tracker_start_detector)
                 tracker_start_detector.add_subscriber(swap_tracker)

@@ -174,6 +174,7 @@ class BaseLocalization(ABC):  # == English
             f"/mimir – Mimir constants\n"
             f"/weekly – THORChain weekly stats\n"
             f"/rapid – rapid swap infographic\n"
+            f"/track &lt;txid&gt; – follow a swap until it is paid out or refunded\n"
             f"<b>⚠️ All notifications are forwarded to {self.alert_channel_name} channel!</b>\n"
             f"🤗 Support and feedback: {CREATOR_TG}."
         )
@@ -943,6 +944,20 @@ class BaseLocalization(ABC):  # == English
         out_links = ' '.join(filter(None, (self._swap_track_out_link(o[4], o[5]) for o in outs)))
         lines.append(f'Transaction: {self._swap_track_links(track)}' + (f' {out_links}' if out_links else ''))
         return '\n'.join(lines)
+
+    TEXT_TRACK_USAGE = ('Send me the hash of a swap: <code>/track &lt;txid&gt;</code>\n'
+                        'I will follow it until the money is paid out or refunded.')
+    TEXT_TRACK_UNAVAILABLE = '😔 Swap tracking is off on this bot.'
+
+    def text_track_result(self, result: str, tx_id: str):
+        tx = self.link_to_tx(tx_id)
+        return {
+            'started': f'👀 Following the swap {tx}. I will tell you as it moves on.',
+            'finished': f'✅ This swap is over already; the summary is above. {tx}',
+            'already': f'👀 I am following this swap already, and you are on its list. {tx}',
+            'not_found': f'🤷 THORChain does not know this transaction (yet). Check the hash or try again in a minute.',
+            'not_swap': f'🙄 This transaction is not a swap I can follow (a limit order, a deposit or something else).',
+        }.get(result, '😔 Something went wrong, try again later.')
 
     def notification_text_swap_track_give_up(self, track: SwapTrack, info: StageInfo, name_map: NameMap, user):
         stage = self.SWAP_TRACK_STAGE_NAMES.get(info.stage, info.stage)

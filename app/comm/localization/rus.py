@@ -113,6 +113,7 @@ class RussianLocalization(BaseLocalization):
             f"/stats – THORChain статистика сети\n"
             f"/chains – Подключенные блокчейны\n"
             f"/pool – лучшие пулы\n"
+            f"/track &lt;txid&gt; – следить за обменом до выплаты или возврата\n"
             f"/mimir – список констант Мимир\n"
             f"/weekly – недельная статистика THORChain\n"
             f"/rapid – инфографика по rapid swaps\n"
@@ -664,6 +665,20 @@ class RussianLocalization(BaseLocalization):
         out_links = ' '.join(filter(None, (self._swap_track_out_link(o[4], o[5]) for o in outs)))
         lines.append(f'Транзакция: {self._swap_track_links(track)}' + (f' {out_links}' if out_links else ''))
         return '\n'.join(lines)
+
+    TEXT_TRACK_USAGE = ('Пришлите хеш обмена: <code>/track &lt;txid&gt;</code>\n'
+                        'Я буду следить за ним, пока деньги не выплатят или не вернут.')
+    TEXT_TRACK_UNAVAILABLE = '😔 Слежение за обменами в этом боте выключено.'
+
+    def text_track_result(self, result: str, tx_id: str):
+        tx = self.link_to_tx(tx_id)
+        return {
+            'started': f'👀 Слежу за обменом {tx}. Буду сообщать, как он продвигается.',
+            'finished': f'✅ Этот обмен уже завершён; итог выше. {tx}',
+            'already': f'👀 Я уже слежу за этим обменом, вы добавлены в список. {tx}',
+            'not_found': f'🤷 THORChain (пока) не знает такой транзакции. Проверьте хеш или попробуйте через минуту.',
+            'not_swap': f'🙄 Это не обмен, за которым я могу следить (лимитный ордер, депозит или что-то ещё).',
+        }.get(result, '😔 Что-то пошло не так, попробуйте позже.')
 
     def notification_text_swap_track_give_up(self, track: SwapTrack, info: StageInfo, name_map: NameMap, user):
         stage = self.SWAP_TRACK_STAGE_NAMES.get(info.stage, info.stage)

@@ -44,6 +44,7 @@ class SwapTrack:
 
     ROLE_SENDER = 'sender'
     ROLE_RECIPIENT = 'recipient'
+    ROLE_WATCHER = 'watcher'  # asked by /track: no address of the swap is known to be theirs
 
     @property
     def in_amount_float(self) -> float:
@@ -62,8 +63,11 @@ class SwapTrack:
         return Asset(self.out_asset).chain
 
     def my_address(self, user_id) -> str:
-        """The address this user watches: the sender's or the recipient's"""
-        return self.dest_address if self.users.get(str(user_id)) == self.ROLE_RECIPIENT else self.from_address
+        """The address this user watches: the sender's or the recipient's; '' for a watcher"""
+        role = self.users.get(str(user_id))
+        if role == self.ROLE_RECIPIENT:
+            return self.dest_address
+        return self.from_address if role == self.ROLE_SENDER else ''
 
     def to_json(self) -> str:
         return json.dumps(asdict(self))

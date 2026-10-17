@@ -8,12 +8,14 @@ changes, when a streaming swap has run for a while, or when a delay has a (new) 
 The final picture comes from the events the block scanner stores for the swap (EventDatabase).
 """
 import inspect
+import re
 from contextlib import suppress
 from typing import Optional, Dict, List, Callable, Union
 
 from api.aionode.types import ThorTxStatus
 from jobs.fetch.base import BaseFetcher
 from jobs.scanner.event_db import EventDatabase
+from jobs.scanner.swap_start_detector import SwapStartDetectorFromBlock
 from lib.date_utils import now_ts, MINUTE, HOUR, DAY
 from lib.db import DB
 from lib.delegates import INotified
@@ -111,23 +113,60 @@ class PersonalSwapTracker(BaseFetcher, INotified):
                 users[str(user)] = SwapTrack.ROLE_SENDER
         return users
 
-    async def _start_tracking(self, swap: AlertSwapStart):
-        users = await self._users_of_swap(swap)
-        if not users:
-            return
+    RESULT_STARTED = 'started'
+    RESULT_FINISHED = 'finished'  # the swap was over already: the summary went out at once
+    RESULT_ALREADY = 'already'
+    RESULT_NOT_FOUND = 'not_found'
+    RESULT_NOT_SWAP = 'not_swap'
 
+    @staticmethod
+    def normalize_tx_id(s: str) -> str:
+        """A THORChain tx id out of what the user typed: '' when it is not one"""
+        s = (s or '').strip().removeprefix('0x').removeprefix('0X').upper()
+        return s if re.fullmatch(r'[0-9A-F]{64}', s) else ''
+
+    async def track_by_hash(self, tx_id: str, user_id) -> str:
+        """The /track command: follow a swap for this user whether or not a wallet of theirs is in it"""
+        status = await self.deps.thor_connector.query_tx_status(tx_id)
+        if not status or not status.tx:
+            return self.RESULT_NOT_FOUND
+
+        # /tx/status gives the inbound as a common.Tx: the shape the block detector reads a swap start from
+        detector = SwapStartDetectorFromBlock(self.deps, dedup_component='swap_tracker_manual')
+        detector.ph = await self.deps.pool_cache.get()
+        height = await self.deps.last_block_cache.get_thor_block()
+        swap = await detector.make_swap_start_event(status.tx, tx_id, height,
+                                                    is_deposit=status.tx.get('chain') == 'THOR')
+        if not swap or swap.is_limit:
+            return self.RESULT_NOT_SWAP
+
+        return await self._start_tracking(swap, users={str(user_id): SwapTrack.ROLE_WATCHER}, status=status)
+
+    async def _start_tracking(self, swap: AlertSwapStart, users: Dict[str, str] = None,
+                              status: ThorTxStatus = None) -> str:
         r = await self.deps.db.get_redis()
-        if await r.exists(self.key(swap.tx_id)):
-            return
+        exists = await r.exists(self.key(swap.tx_id))
 
-        # an address of a bot swaps all day long: cap the swaps followed for one user
-        active = await self.load_active()
-        for user in list(users):
-            if sum(user in t.users for t in active) >= self.max_active_per_user:
-                self.logger.warning(f'User {user} has too many tracked swaps, skipping {swap.tx_id}')
-                users.pop(user)
-        if not users:
-            return
+        if users is None:
+            # found by the block scanner: the swap of a watched wallet
+            users = await self._users_of_swap(swap)
+            if not users or exists:
+                return self.RESULT_ALREADY
+
+            # an address of a bot swaps all day long: cap the swaps followed for one user
+            active = await self.load_active()
+            for user in list(users):
+                if sum(user in t.users for t in active) >= self.max_active_per_user:
+                    self.logger.warning(f'User {user} has too many tracked swaps, skipping {swap.tx_id}')
+                    users.pop(user)
+            if not users:
+                return self.RESULT_ALREADY
+        elif exists and await r.sismember(self.KEY_ACTIVE, swap.tx_id):
+            # asked by /track while the swap is already followed: just add the user to it
+            track = SwapTrack.from_json(await r.get(self.key(swap.tx_id)))
+            track.users.update(users)
+            await self._save(track)
+            return self.RESULT_ALREADY
 
         now = now_ts()
         track = SwapTrack(
@@ -152,21 +191,24 @@ class PersonalSwapTracker(BaseFetcher, INotified):
 
         info = StageInfo(SwapStage.OBSERVED)
         with suppress(Exception):
-            status = await self.deps.thor_connector.query_tx_status(track.tx_id)
+            status = status or await self.deps.thor_connector.query_tx_status(track.tx_id)
             if status:
                 info = derive_stage(status)
         track.stage = info.stage
 
         self.logger.info(f'Tracking swap {track.tx_id} for {len(users)} users, stage {info.stage}')
         await self._save(track, activate=True)
-        await self._send_all(track, lambda loc, nm, user: loc.notification_text_swap_track_started(
-            track, info, nm, user))
 
         if info.is_terminal:
+            # over already (a native swap is done within a block): the summary alone, no "detected"
             await self._finish(track, info)
-        else:
-            track.next_poll_ts = now + self.sleep_period
-            await self._save(track)
+            return self.RESULT_FINISHED
+
+        await self._send_all(track, lambda loc, nm, user: loc.notification_text_swap_track_started(
+            track, info, nm, user))
+        track.next_poll_ts = now + self.sleep_period
+        await self._save(track)
+        return self.RESULT_STARTED
 
     async def _load_quote(self, track: SwapTrack, swap: AlertSwapStart):
         try:

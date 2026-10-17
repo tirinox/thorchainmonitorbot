@@ -222,4 +222,8 @@ Check: 👁️‍🗨️Track | 🔍runescan. If it does not resolve, ask in THO
 4. Картинка `swap_finished` на финал — в MVP, при `use_html_renderer`.
 5. RU-локализация — сразу вместе с EN.
 
-Отложено: `/track <txid>` (напомнить), лимит-ордера, `failed_outbound_recovery`, редактирование сообщений.
+`/track <txid>` сделан следом: команда в `MainMenuDialog`, `PersonalSwapTracker.track_by_hash` читает inbound из `/tx/status`
+через `make_swap_start_event` детектора и заводит трек с ролью `watcher` (ни один адрес не помечен «(вы)»); уже завершённый
+свап получает сразу итог. Это же закрывает случай «кошелёк добавили после начала свапа».
+
+Отложено: лимит-ордера, `failed_outbound_recovery`, редактирование сообщений.
