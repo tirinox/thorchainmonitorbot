@@ -48,6 +48,8 @@ block_scanner ─► SwapStartDetectorFromBlock ─► PersonalSwapTracker.on_da
   `diagnose(stage_info, ctx, waited, warn_after) -> Diagnosis | None`.
   Чистые функции без I/O → один тест `tests/test_swap_tracker_stages.py` на фикстурах `/tx/status`.
 - `api/aionode/connector.py` — `query_streaming_swap(tx_id) -> StreamingSwap` (перенос raw-вызова из `stream_watchlist.py`).
+- `tools/debug/dbg_swap_track.py` — прогон на реальных хешах без Telegram: `/track` для тестового пользователя, затем опрос как в боте;
+  все сообщения печатаются. Нужны Redis/KeyDB из `.env` (локально можно поднять `redis-server --port 6382/6383 --requirepass …`).
 - `models/mimir.py` — `MimirHolder.is_halt_active(key, thor_height)`: `0 < value <= height` (у `NodePauseChainGlobal` наоборот `value >= height`).
   Сейчас единственный читатель халтов (`chain_notify.py:132`) делает просто `bool(...)`, что неточно: в халт-мимирах лежит высота.
 - `comm/dialog/my_wallets_menu.py` — кнопка «🔁 Track swaps ON/OFF» в настройках кошелька, `Props.PROP_TRACK_SWAPS`, включение при добавлении адреса, выключение при удалении. В отличие от баланса — для адресов **любой** цепи.
@@ -91,6 +93,7 @@ block_scanner ─► SwapStartDetectorFromBlock ─► PersonalSwapTracker.on_da
 | `OUTBOUND_DELAY` | `swap_finalised.completed`, `outbound_delay` есть и не completed | `remaining_delay_blocks/seconds` |
 | `OUTBOUND_SIGNING` | `outbound_delay.completed`, `outbound_signed` не completed | `blocks_since_scheduled`; тут работает диагностика халтов |
 | `DONE` | `outbound_signed.completed`; для RUNE/нативного выхода стадий outbound нет → `swap_finalised.completed` и `out_txs` непусто | итог из `ThorAction` |
+| `FAILED` | свап финализирован, `planned_out_txs` и `out_txs` пусты дольше 2 мин (`FAILED_AFTER_SEC`) — сети нечего выплачивать: refund «пыли» не покрывает комиссию (реальный случай: `A7F3D1AC…`, trade-ассет на $12) | причина из Midgard + «возврат не запланирован» |
 | `REFUNDED` / `PARTIAL_REFUND` | `planned_out_txs[].refund` / `out_txs` с memo `REFUND:`; partial — если есть и OUT, и REFUND (стриминг) | причина — из Midgard (`/v2/actions?txid=`, `meta_refund.reason`), один запрос на финал; `refund`-события сканер не хранит |
 
 Сообщение шлём только при **смене** стадии. Быстрый свап (RUNE→ETH за 12 с) даст два сообщения: «detected» и «completed»;

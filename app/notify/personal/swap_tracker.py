@@ -16,6 +16,7 @@ from api.aionode.types import ThorTxStatus
 from jobs.fetch.base import BaseFetcher
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.swap_start_detector import SwapStartDetectorFromBlock
+from lib.config import SubConfig
 from lib.date_utils import now_ts, MINUTE, HOUR, DAY
 from lib.db import DB
 from lib.delegates import INotified
@@ -44,9 +45,10 @@ class PersonalSwapTracker(BaseFetcher, INotified):
 
     PROGRESS_EVERY_SEC = 10 * MINUTE  # a long streaming swap reports its progress this often
     DIAG_REPEAT_SEC = HOUR  # the same explanation of a delay is not repeated more often
+    FAILED_AFTER_SEC = 2 * MINUTE  # a finalised swap with nothing planned to pay out this long has failed
 
     def __init__(self, deps: DepContainer):
-        cfg = deps.cfg.get('personal.swap_tracker')
+        cfg = deps.cfg.get('personal.swap_tracker', SubConfig({}))  # a config without the section gets the defaults
         super().__init__(deps, cfg.as_interval('poll_period', '20s'))
         self.watchlist = SwapWatchlist(deps.db)
         self._ev_db = EventDatabase(deps.db)
@@ -144,10 +146,11 @@ class PersonalSwapTracker(BaseFetcher, INotified):
 
     async def _start_tracking(self, swap: AlertSwapStart, users: Dict[str, str] = None,
                               status: ThorTxStatus = None) -> str:
+        manual = users is not None  # asked by /track, not found by the scanner
         r = await self.deps.db.get_redis()
         exists = await r.exists(self.key(swap.tx_id))
 
-        if users is None:
+        if not manual:
             # found by the block scanner: the swap of a watched wallet
             users = await self._users_of_swap(swap)
             if not users or exists:
@@ -193,16 +196,24 @@ class PersonalSwapTracker(BaseFetcher, INotified):
         with suppress(Exception):
             status = status or await self.deps.thor_connector.query_tx_status(track.tx_id)
             if status:
-                info = derive_stage(status)
+                streaming = None
+                if track.is_streaming and status.get_stage('swap_status').get('pending'):
+                    # the memo may leave the quantity to the network: the queue knows the real one
+                    streaming = await self.deps.thor_connector.query_streaming_swap(track.tx_id)
+                    if streaming and streaming.quantity:
+                        track.quantity, track.interval = streaming.quantity, streaming.interval
+                info = derive_stage(status, streaming)
         track.stage = info.stage
 
         self.logger.info(f'Tracking swap {track.tx_id} for {len(users)} users, stage {info.stage}')
         await self._save(track, activate=True)
 
         if info.is_terminal:
-            # over already (a native swap is done within a block): the summary alone, no "detected"
-            await self._finish(track, info)
-            return self.RESULT_FINISHED
+            # over already (a native swap is done within a block): the summary alone, no "detected";
+            # when the scanner has not stored the outbound yet, the summary follows on the next poll
+            track.known_start = not manual  # /track of an old swap: no idea when it started
+            finished = await self._finish(track, info)
+            return self.RESULT_FINISHED if finished else self.RESULT_STARTED
 
         await self._send_all(track, lambda loc, nm, user: loc.notification_text_swap_track_started(
             track, info, nm, user))
@@ -289,14 +300,23 @@ class PersonalSwapTracker(BaseFetcher, INotified):
             with suppress(Exception):
                 streaming = await self.deps.thor_connector.query_streaming_swap(track.tx_id)
         info = derive_stage(status, streaming)
+        if info.nothing_planned and track.stage == SwapStage.SWAPPING and now - track.stage_since_ts > self.FAILED_AFTER_SEC:
+            info.stage = SwapStage.FAILED
+        if not info.is_terminal and track.expected_sec:
+            # the quote's total time covers all the stages; a rapid streaming swap (interval 0) has no other estimate
+            info.expected_sec = max(info.expected_sec, track.expected_sec - (now - track.started_ts))
 
-        if info.stage != track.stage:
+        if info.is_terminal:
+            # over: the summary goes out now, or on a later poll when the scanner has not stored the outbound yet
+            if info.stage != track.stage:
+                self.logger.info(f'Swap {track.tx_id}: {track.stage} -> {info.stage}')
+                track.stage, track.stage_since_ts = info.stage, now
+            await self._finish(track, info)
+            return
+        elif info.stage != track.stage:
             self.logger.info(f'Swap {track.tx_id}: {track.stage} -> {info.stage}')
             track.stage, track.stage_since_ts, track.last_diag = info.stage, now, ''
-            if info.is_terminal:
-                if await self._finish(track, info):
-                    return
-            elif info.stage == SwapStage.OUTBOUND_DELAY or (info.stage == SwapStage.SWAPPING and track.is_streaming):
+            if info.stage == SwapStage.OUTBOUND_DELAY or (info.stage == SwapStage.SWAPPING and track.is_streaming):
                 # signing takes seconds and a plain swap is one block: those two stages are not announced
                 await self._send_all(track, lambda loc, nm, user: loc.notification_text_swap_track_stage(
                     track, info, nm, user))

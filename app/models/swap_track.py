@@ -41,6 +41,7 @@ class SwapTrack:
     next_poll_ts: float = 0.0
     polls: int = 0
     finish_attempts: int = 0  # waits for the block scanner to store the outbound before the final message
+    known_start: bool = True  # False when /track met the swap already over: its duration is unknown
 
     ROLE_SENDER = 'sender'
     ROLE_RECIPIENT = 'recipient'
@@ -85,8 +86,11 @@ class SwapStage:
     DONE = 'done'
     REFUNDED = 'refunded'
     PARTIAL_REFUND = 'partial_refund'  # streaming: part was swapped and sent, the rest returned
+    # the swap is over and the network has nothing to pay out: it failed and the refund could not be made
+    # (seen with dust: the refund does not cover the outbound fee). Set by the tracker after a grace period.
+    FAILED = 'failed'
 
-    TERMINAL = (DONE, REFUNDED, PARTIAL_REFUND)
+    TERMINAL = (DONE, REFUNDED, PARTIAL_REFUND, FAILED)
     # how long a stage normally lasts on top of what the status says; signing usually takes seconds
     ORDER = (OBSERVED, SWAPPING, OUTBOUND_DELAY, OUTBOUND_SIGNING)
 
@@ -103,6 +107,8 @@ class StageInfo:
     # of the legacy queue: count/quantity from swap_status.streaming when there is no StreamingSwap
     streaming_count: int = 0
     streaming_quantity: int = 0
+    # the swap is finalised, yet the network plans no outbound at all (see SwapStage.FAILED)
+    nothing_planned: bool = False
     out_txs: list = field(default_factory=list)
     planned_out_txs: list = field(default_factory=list)
 
@@ -195,8 +201,9 @@ def _derive_stage(status: ThorTxStatus, streaming: Optional[StreamingSwap]) -> S
         return terminal()
     if swap_finalised is not None and not swap_finalised.get('completed'):
         return StageInfo(SwapStage.SWAPPING)
-    # swap finalised, but no out txs yet: give it a block or two
-    return StageInfo(SwapStage.SWAPPING, expected_sec=2 * THOR_BLOCK_TIME)
+    # swap finalised, but no out txs yet: give it a block or two.
+    # With nothing planned either, the network will pay nothing: the tracker turns this into FAILED after a while
+    return StageInfo(SwapStage.SWAPPING, expected_sec=2 * THOR_BLOCK_TIME, nothing_planned=not planned)
 
 
 # ------------------------------------ delay diagnosis ------------------------------------

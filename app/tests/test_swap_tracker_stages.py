@@ -93,6 +93,16 @@ def test_outbound_delay_then_signing_then_done():
     assert derive_stage(done).stage == SwapStage.DONE
 
 
+def test_finalised_swap_with_nothing_to_pay_is_flagged():
+    # a real dust swap of a trade asset: the swap failed and the refund did not cover the fee, so nothing is planned
+    info = derive_stage(status(SWAPPED))
+    assert info.stage == SwapStage.SWAPPING and info.nothing_planned and not info.is_terminal
+    # a native outbound just not out yet is not that
+    planned = [{'chain': 'THOR', 'to_address': 'thor1', 'coin': {'asset': 'SOL~SOL', 'amount': '1'}, 'refund': False}]
+    assert not derive_stage(status(SWAPPED, planned=planned)).nothing_planned
+    assert SwapStage.FAILED in SwapStage.TERMINAL
+
+
 def test_refund_and_partial_refund():
     signed = {**SWAPPED, 'outbound_delay': {'completed': True}, 'outbound_signed': {'completed': True}}
     assert derive_stage(status(signed, out_txs=[BTC_REFUND])).stage == SwapStage.REFUNDED

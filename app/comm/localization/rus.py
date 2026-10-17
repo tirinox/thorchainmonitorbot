@@ -567,7 +567,7 @@ class RussianLocalization(BaseLocalization):
                              f'{short_money(thor_to_float(ss.out_amt))} {Asset(track.out_asset).pretty_str}{left}')
         elif info.stage == SwapStage.OUTBOUND_DELAY:
             lines.append('📤 <b>Обменяно, отправляем</b>')
-            outs = [o for o in self._swap_track_outs(info) if not o[0]]
+            outs = [o for o in self._swap_track_outs(info, track.dest_address) if not o[0]]
             if outs:
                 _, amount, asset, to_address, _, chain = outs[0]
                 to_s = self._swap_track_party(track, to_address, chain, name_map, user)
@@ -624,14 +624,14 @@ class RussianLocalization(BaseLocalization):
 
     def notification_text_swap_track_finished(self, track: SwapTrack, info: StageInfo, action, reason: str,
                                               usd_per_rune: float, name_map: NameMap, user):
-        duration = self.seconds_human(now_ts() - track.started_ts)
-        outs = self._swap_track_outs(info)
+        duration = f' за {self.seconds_human(now_ts() - track.started_ts)}' if track.known_start else ''
+        outs = self._swap_track_outs(info, track.dest_address)
         sent = [o for o in outs if not o[0]]
         refunded = [o for o in outs if o[0]]
 
         lines = []
         if info.stage == SwapStage.DONE:
-            lines.append(f'✅ <b>Обмен завершён</b> за {duration}')
+            lines.append(f'✅ <b>Обмен завершён</b>{duration}')
             if action:
                 lines.append(self.format_swap_route(action, usd_per_rune))
                 fees = []
@@ -648,6 +648,12 @@ class RussianLocalization(BaseLocalization):
             if sent:
                 _, _, _, to_address, _, chain = sent[0]
                 lines.append(f'Получено на {self._swap_track_party(track, to_address, chain, name_map, user)}')
+        elif info.stage == SwapStage.FAILED:
+            lines.append('❌ <b>Обмен не удался, выплат не будет</b>')
+            lines.append(self._swap_track_route(track))
+            if reason:
+                lines.append(f'Причина: {pre(html.escape(reason[:180]))}')
+            lines.append('Сеть не запланировала возврат: скорее всего, сумма не покрывает комиссию за отправку.')
         else:
             partial = info.stage == SwapStage.PARTIAL_REFUND
             lines.append('↩️ <b>Обмен частично возвращён</b>' if partial else '↩️ <b>Обмен возвращён</b>')

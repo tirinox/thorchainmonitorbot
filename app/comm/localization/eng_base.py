@@ -784,7 +784,7 @@ class BaseLocalization(ABC):  # == English
 
     def _swap_track_party(self, track: SwapTrack, address, chain, name_map, user):
         s = self.link_to_address(address, name_map, chain)
-        if address and address == track.my_address(user):
+        if address and address.lower() == track.my_address(user).lower():
             s += f' {self.SWAP_TRACK_YOU}'
         return s
 
@@ -792,8 +792,11 @@ class BaseLocalization(ABC):  # == English
         return f'{link(self.url_for_tx_tracker(track.tx_id), self.SWAP_TRACK_LABEL_TRACK)} | {self.link_to_tx(track.tx_id)}'
 
     @staticmethod
-    def _swap_track_outs(info: StageInfo):
-        """(is_refund, amount, asset, to_address, out_tx_id, chain) of the out txs the status has, planned ones last"""
+    def _swap_track_outs(info: StageInfo, dest_address=''):
+        """
+        (is_refund, amount, asset, to_address, out_tx_id, chain) of the out txs the status has, or of the planned ones
+        when none is out yet. The one to the destination goes first: an affiliate's RUNE payout is listed too.
+        """
         outs = []
         for t in info.out_txs:
             coin = (t.get('coins') or [{}])[0]
@@ -804,6 +807,8 @@ class BaseLocalization(ABC):  # == English
                 coin = p.get('coin') or {}
                 outs.append((bool(p.get('refund')), thor_to_float(coin.get('amount', 0)),
                              coin.get('asset', ''), p.get('to_address', ''), '', p.get('chain', '')))
+        # the memo has the address as the user typed it, the out tx as the chain writes it (EVM checksum case)
+        outs.sort(key=lambda o: o[3].lower() != (dest_address or '').lower())
         return outs
 
     def _swap_track_out_link(self, out_tx_id, chain):
@@ -845,7 +850,7 @@ class BaseLocalization(ABC):  # == English
                              f'{short_money(thor_to_float(ss.out_amt))} {Asset(track.out_asset).pretty_str} so far{left}')
         elif info.stage == SwapStage.OUTBOUND_DELAY:
             lines.append('📤 <b>Swapped, sending</b>')
-            outs = [o for o in self._swap_track_outs(info) if not o[0]]
+            outs = [o for o in self._swap_track_outs(info, track.dest_address) if not o[0]]
             if outs:
                 _, amount, asset, to_address, _, chain = outs[0]
                 to_s = self._swap_track_party(track, to_address, chain, name_map, user)
@@ -903,14 +908,14 @@ class BaseLocalization(ABC):  # == English
 
     def notification_text_swap_track_finished(self, track: SwapTrack, info: StageInfo, action: Optional[ThorAction],
                                               reason: str, usd_per_rune: float, name_map: NameMap, user):
-        duration = self.seconds_human(now_ts() - track.started_ts)
-        outs = self._swap_track_outs(info)
+        duration = f' in {self.seconds_human(now_ts() - track.started_ts)}' if track.known_start else ''
+        outs = self._swap_track_outs(info, track.dest_address)
         sent = [o for o in outs if not o[0]]
         refunded = [o for o in outs if o[0]]
 
         lines = []
         if info.stage == SwapStage.DONE:
-            lines.append(f'✅ <b>Swap completed</b> in {duration}')
+            lines.append(f'✅ <b>Swap completed</b>{duration}')
             if action:
                 lines.append(self.format_swap_route(action, usd_per_rune))
                 fees = []
@@ -927,6 +932,12 @@ class BaseLocalization(ABC):  # == English
             if sent:
                 _, _, _, to_address, _, chain = sent[0]
                 lines.append(f'Received at {self._swap_track_party(track, to_address, chain, name_map, user)}')
+        elif info.stage == SwapStage.FAILED:
+            lines.append('❌ <b>Swap failed, nothing was paid out</b>')
+            lines.append(self._swap_track_route(track))
+            if reason:
+                lines.append(f'Reason: {pre(html.escape(shorten_text(reason, 180)))}')
+            lines.append('The network planned no refund: most likely the amount does not cover the outbound fee.')
         else:
             partial = info.stage == SwapStage.PARTIAL_REFUND
             lines.append('↩️ <b>Swap partially refunded</b>' if partial else '↩️ <b>Swap refunded</b>')
