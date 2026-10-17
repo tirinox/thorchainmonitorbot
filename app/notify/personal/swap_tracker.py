@@ -102,9 +102,30 @@ class PersonalSwapTracker(BaseFetcher, INotified):
         except Exception as e:
             self.logger.exception(f'Failed to start tracking {swap.tx_id}: {e!r}')
 
+    THORNAME_RE = re.compile(r'[a-z0-9\-_+]{1,30}')  # what an address never looks like
+
+    async def _resolve_thorname(self, address: str, chain: str) -> str:
+        """
+        The memo may name the destination by a THORName; the chain resolves it to the alias of the output's chain
+        (the outbound goes there), so the tracker must too, or the recipient is never matched
+        """
+        if not address or not self.THORNAME_RE.fullmatch(address):
+            return address
+        try:
+            thor_name = await self.deps.name_service.lookup_thorname_by_name(address, forced=True)
+            if thor_name:
+                alias = next((a.address for a in thor_name.aliases if a.chain == chain), '')
+                return alias or address
+        except Exception as e:
+            self.logger.warning(f'THORName {address!r} lookup failed: {e!r}')
+        return address
+
     async def _users_of_swap(self, swap: AlertSwapStart) -> Dict[str, str]:
         memo = swap.memo
-        from_addr, dest, refund = swap.from_address, memo.dest_address, memo.refund_address
+        out_chain = Asset(swap.out_asset).chain
+        from_addr = swap.from_address
+        dest = await self._resolve_thorname(memo.dest_address, out_chain)
+        refund = await self._resolve_thorname(memo.refund_address, Asset(swap.in_asset).chain)
         addresses = [a for a in (from_addr, dest, refund) if a]
         addr_to_users = await self.watchlist.all_users_for_many_nodes(addresses)
 
@@ -173,11 +194,13 @@ class PersonalSwapTracker(BaseFetcher, INotified):
             return self.RESULT_ALREADY
 
         now = now_ts()
+        dest_address = await self._resolve_thorname(swap.memo.dest_address, Asset(swap.out_asset).chain) \
+            or swap.destination_address
         track = SwapTrack(
             tx_id=swap.tx_id,
             users=users,
             from_address=swap.from_address,
-            dest_address=swap.memo.dest_address or swap.destination_address,
+            dest_address=dest_address,
             in_asset=swap.in_asset,
             in_amount=swap.in_amount,
             out_asset=swap.out_asset,

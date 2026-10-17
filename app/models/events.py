@@ -151,6 +151,36 @@ class EventFee(NamedTuple):
         return results
 
 
+class EventAffiliateFee(NamedTuple):
+    """The affiliate fee skimmed from an output of the swap, in the output asset; one event per affiliate"""
+    tx_id: str = ''  # the inbound tx
+    memo: str = ''
+    thorname: str = ''
+    rune_address: str = ''
+    asset: str = ''
+    gross_amount: int = 0
+    fee_bps: int = 0
+    fee_amount: int = 0
+    original: Optional[ThorEvent] = None
+    height: int = 0
+
+    @classmethod
+    def from_event(cls, event: ThorEvent):
+        attrs = event.attrs
+        return cls(
+            tx_id=attrs.get('tx_id', ''),
+            memo=attrs.get('memo', ''),
+            thorname=attrs.get('thorname', ''),
+            rune_address=attrs.get('rune_address', ''),
+            asset=attrs.get('asset', ''),
+            gross_amount=_safe_int(attrs.get('gross_amount', 0)),
+            fee_bps=_safe_int(attrs.get('fee_bps', 0)),
+            fee_amount=_safe_int(attrs.get('fee_amount', 0)),
+            original=event,
+            height=event.height,
+        )
+
+
 class EventOutbound(NamedTuple):
     tx_id: str = ''  # in_tx_id
     out_id: str = ''
@@ -388,6 +418,8 @@ def parse_swap_and_out_event(e: ThorEvent):
         return EventScheduledOutbound.from_event(e)
     elif e.type == 'fee':
         return EventFee.from_event(e)
+    elif e.type == 'affiliate_fee':
+        return EventAffiliateFee.from_event(e)
     elif e.type == 'loan_open':
         return EventLoanOpen.from_event(e)
     elif e.type == 'loan_repayment':
@@ -398,13 +430,15 @@ def parse_swap_and_out_event(e: ThorEvent):
         return EventTradeAccountWithdraw.from_event(e)
 
 
-TypeEventSwapAndOut = Union[EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, EventFee]
+TypeEventSwapAndOut = Union[EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, EventFee,
+                            EventAffiliateFee]
 TypeEvents = Union[
     EventSwap,
     EventStreamingSwap,
     EventOutbound,
     EventScheduledOutbound,
     EventFee,
+    EventAffiliateFee,
     EventLoanOpen,
     EventLoanRepayment,
     EventTradeAccountDeposit,

@@ -91,12 +91,16 @@ class SwapSummary:
     network_fees: List[Tuple[float, str, float]] = field(default_factory=list)  # (amount, asset, usd)
     liquidity_fee_rune: float = 0.0
     liquidity_fee_usd: float = 0.0
-    affiliate_fee_rune: float = 0.0
-    affiliate_fee_usd: float = 0.0
+    # in the output asset by the affiliate_fee events; in RUNE when guessed from the affiliate's payout (old records)
+    affiliate_fees: List[Tuple[float, str, float]] = field(default_factory=list)
 
     @property
     def network_fee_usd(self) -> float:
         return sum(usd for _, _, usd in self.network_fees)
+
+    @property
+    def affiliate_fee_usd(self) -> float:
+        return sum(usd for _, _, usd in self.affiliate_fees)
 
     @property
     def total_fees_usd(self) -> float:
@@ -108,7 +112,7 @@ class SwapSummary:
 
     @property
     def has_fees(self) -> bool:
-        return bool(self.network_fees) or self.liquidity_fee_rune > 0 or self.affiliate_fee_rune > 0
+        return bool(self.network_fees) or self.liquidity_fee_rune > 0 or bool(self.affiliate_fees)
 
     @property
     def rate(self) -> float:
@@ -145,9 +149,18 @@ def swap_summary(track: SwapTrack, info: StageInfo, action, ph) -> SwapSummary:
             s.out_amount, s.out_asset = out.coins[0].amount_float, out.first_asset
         meta = action.meta_swap
         if meta:
-            s.liquidity_fee_rune = thor_to_float(meta.liquidity_fee)
+            # what the user paid: without the fee of the affiliate's conversion swap that Midgard counts in
+            s.liquidity_fee_rune = thor_to_float(meta.liquidity_fee - (meta.affiliate_conversion_liquidity_fee or 0))
             s.network_fees = [(c.amount_float, c.asset, usd(c.amount_float, c.asset)) for c in meta.network_fees]
-        s.affiliate_fee_rune = sum(c.amount_float for o in action.out_tx if o.is_affiliate for c in o.coins)
+            if meta.affiliate_fees:
+                s.affiliate_fees = [(c.amount_float, c.asset, usd(c.amount_float, c.asset))
+                                    for c in meta.affiliate_fees]
+        if not s.affiliate_fees:
+            # a record from before the affiliate_fee events were kept: what the affiliate was paid in RUNE
+            # (a swap to RUNE pays the affiliate by a plain transfer, so nothing is found for it here)
+            paid = sum(c.amount_float for o in action.out_tx if o.is_affiliate for c in o.coins)
+            if paid:
+                s.affiliate_fees = [(paid, 'THOR.RUNE', usd(paid, 'THOR.RUNE'))]
     else:
         out = _first_out_to(info.out_txs, track.dest_address, refund=False)
         coin = (out.get('coins') or [{}])[0] if out else {}
@@ -156,7 +169,6 @@ def swap_summary(track: SwapTrack, info: StageInfo, action, ph) -> SwapSummary:
 
     s.swap_value_usd = usd(s.in_amount, s.in_asset) or track.volume_usd
     s.liquidity_fee_usd = usd(s.liquidity_fee_rune, 'THOR.RUNE')
-    s.affiliate_fee_usd = usd(s.affiliate_fee_rune, 'THOR.RUNE')
     return s
 
 

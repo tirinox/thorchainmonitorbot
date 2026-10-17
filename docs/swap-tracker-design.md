@@ -204,9 +204,18 @@ Total fees: <b>$4.00</b> (0.32% of swap value)
 Received at 👤0x12…9a8c (you)
 Transaction: 👁️‍🗨️Track | 🔍runescan | 🔍thorchain.net 🔍ETH
 ```
-Комиссии и курс — `SwapSummary` (`models/swap_track.py: swap_summary`): network fee из `fee`-событий, которые сканер теперь
-хранит в `tx:tracker` (`EventFee`, `build_action` кладёт их в `meta_swap.network_fees`), liquidity — из `swap`-событий,
-affiliate — RUNE-outbound'ы с `is_affiliate`; USD по текущим ценам пулов. Без данных сканера — только маршрут и курс.
+Комиссии и курс — `SwapSummary` (`models/swap_track.py: swap_summary`): network fee из `fee`-событий, affiliate — из
+`affiliate_fee`-событий (в активе выхода; при RUNE-выходе аффилиату платят простым переводом без outbound, так что
+только событие и знает эту комиссию); оба сканер хранит в `tx:tracker` (`EventFee`, `EventAffiliateFee` →
+`meta_swap.network_fees` / `affiliate_fees`). Liquidity — из `swap`-событий: конверсия комиссии аффилиата в RUNE идёт
+отдельным свапом с тем же tx id и memo `=:THOR.RUNE:<aff>`; Midgard считает её в `liquidityFee` действия, поэтому
+`meta_swap.liquidity_fee` остаётся как у Midgard (регрессионный корпус закреплён на нём), а доля конверсии лежит в
+`affiliate_conversion_liquidity_fee` и вычитается только в персональной сводке. USD по текущим ценам пулов. Без данных
+сканера — только маршрут и курс. Старые записи без `affiliate_fee`: подставляется RUNE-выплата аффилиату.
+
+THORName как адрес назначения: memo хранит имя, а outbound'ы идут на алиас цепи выхода, поэтому трекер при старте
+резолвит имя через `name_service` (`_resolve_thorname`) — иначе получатель не сопоставляется с кошельком, а
+первым outbound'ом в `out_txs` оказывается нативная RUNE-выплата аффилиату.
 
 **6. Refunded:**
 ```

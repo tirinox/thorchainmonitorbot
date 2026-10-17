@@ -214,9 +214,16 @@ def test_fee_event_and_the_summary_of_a_completed_swap():
     assert (s.in_amount, s.out_amount, s.out_asset) == (0.5, 3_000_000.0, 'DOGE.DOGE')
     assert s.rate == 6_000_000.0  # DOGE per BTC
     assert s.network_fees == [(3.15, 'DOGE.DOGE', pytest.approx(0.252))]
-    assert (s.liquidity_fee_rune, s.affiliate_fee_rune) == pytest.approx((0.0343, 0.1197))
+    assert s.liquidity_fee_rune == pytest.approx(0.0343)
+    # an old record without affiliate_fee events: the affiliate's RUNE payout stands in for the fee
+    assert s.affiliate_fees == [(pytest.approx(0.1197), 'THOR.RUNE', pytest.approx(0.1197 * 0.7))]
     assert s.total_fees_usd == pytest.approx(0.252 + 0.0343 * 0.7 + 0.1197 * 0.7)
     assert s.fees_percent == pytest.approx(100 * s.total_fees_usd / 50_000)
+
+    # with the event the fee is exact and in the output asset
+    action.meta_swap.affiliate_fees = [ThorCoin(300_000_000_000, 'DOGE.DOGE')]
+    s = swap_summary(track, StageInfo(SwapStage.DONE), action, Prices())
+    assert s.affiliate_fees == [(3000.0, 'DOGE.DOGE', pytest.approx(240.0))]
 
     # without the scanner's action the output comes from the status, to the destination, not the affiliate
     done = status({**SWAPPED, 'outbound_signed': {'completed': True}}, out_txs=[
@@ -227,6 +234,58 @@ def test_fee_event_and_the_summary_of_a_completed_swap():
     ])
     s2 = swap_summary(track, derive_stage(done), None, Prices())
     assert (s2.out_amount, s2.out_asset, s2.has_fees) == (3_000_000.0, 'DOGE.DOGE', False)
+
+
+def test_affiliate_conversion_swap_is_not_the_users_fee():
+    """
+    The affiliate's fee is converted to RUNE by a swap with the same tx id and a "=:THOR.RUNE:<aff>" memo
+    (thornode helpers_affiliates.go): its liquidity fee and slip are not the user's. The fee itself comes
+    from the affiliate_fee event, in the output asset.
+    """
+    from jobs.scanner.swap_props import SwapProps
+    from models.events import EventSwap, EventAffiliateFee
+    from models.memo import THORMemo
+
+    user_memo = '=:ETH.ETH:0xdead:0/1/1:aff:50'
+    attrs = {'id': TX, 'memo': user_memo, 'from_address': 'bc1qsender', 'in_amount': 50_000_000, 'in_asset': 'BTC.BTC',
+             'out_asset': 'ETH.ETH', 'block_height': 10}
+    events = [
+        EventSwap(pool='BTC.BTC', liquidity_fee_in_rune=100, swap_slip=5, tx_id=TX, memo=user_memo, height=11),
+        EventSwap(pool='ETH.ETH', liquidity_fee_in_rune=200, swap_slip=7, tx_id=TX, memo=user_memo, height=11),
+        # the affiliate's conversion: big slip, a fee of its own
+        EventSwap(pool='ETH.ETH', liquidity_fee_in_rune=1000, swap_slip=90, tx_id=TX, memo='=:THOR.RUNE:thor1aff',
+                  height=12),
+        EventAffiliateFee(tx_id=TX, thorname='aff', asset='ETH.ETH', gross_amount=1_837_000_000, fee_bps=50,
+                          fee_amount=9_185_000, height=11),
+    ]
+    props = SwapProps(attrs, events, THORMemo.parse_memo(user_memo))
+    action = props.build_action(ts=1)
+    # liquidity_fee follows Midgard (the conversion counted in), the conversion's share is kept apart
+    assert action.meta_swap.liquidity_fee == 1300 and action.meta_swap.affiliate_conversion_liquidity_fee == 1000
+    assert action.meta_swap.trade_slip == 7  # the conversion's slip is not the user's
+    assert action.pools == ['BTC.BTC', 'ETH.ETH']
+    assert [(c.amount, c.asset) for c in action.meta_swap.affiliate_fees] == [(9_185_000, 'ETH.ETH')]
+
+    from models.swap_track import swap_summary
+
+    class Prices:
+        @staticmethod
+        def convert_to_usd(amount, asset):
+            return amount * {'BTC.BTC': 100_000.0, 'ETH.ETH': 2_800.0, 'THOR.RUNE': 0.7}[asset]
+
+    track = SwapTrack(tx_id=TX, users={}, from_address='bc1qsender', dest_address='0xdead', in_asset='BTC.BTC',
+                      in_amount=50_000_000, out_asset='ETH.ETH', volume_usd=0, memo_str=user_memo, start_height=1,
+                      started_ts=1.0)
+    s = swap_summary(track, StageInfo(SwapStage.DONE), action, Prices())
+    assert s.liquidity_fee_rune == pytest.approx(300e-8)  # the user's legs only
+    assert s.affiliate_fees == [(pytest.approx(0.09185), 'ETH.ETH', pytest.approx(0.09185 * 2800))]
+
+    # a swap to RUNE has no conversion: a "=:THOR.RUNE" memo there is the user's own swap
+    rune_attrs = {**attrs, 'out_asset': 'THOR.RUNE', 'memo': '=:THOR.RUNE:thor1user'}
+    rune_props = SwapProps(rune_attrs, [EventSwap(pool='BTC.BTC', liquidity_fee_in_rune=100, tx_id=TX,
+                                                  memo='=:THOR.RUNE:thor1user', height=11)],
+                           THORMemo.parse_memo(rune_attrs['memo']))
+    assert rune_props.build_action(ts=1).meta_swap.liquidity_fee == 100
 
 
 def test_swap_track_round_trips_through_json():

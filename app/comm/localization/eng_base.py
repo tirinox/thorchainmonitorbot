@@ -936,8 +936,8 @@ class BaseLocalization(ABC):  # == English
             lines.append(f'{labels["network"]}: {short_money(amount)} {Asset(asset).pretty_str}{usd(fee_usd)}')
         if s.liquidity_fee_rune:
             lines.append(f'{labels["liquidity"]}: {short_money(s.liquidity_fee_rune)} {self.R}{usd(s.liquidity_fee_usd)}')
-        if s.affiliate_fee_rune:
-            lines.append(f'{labels["affiliate"]}: {short_money(s.affiliate_fee_rune)} {self.R}{usd(s.affiliate_fee_usd)}')
+        for amount, asset, fee_usd in s.affiliate_fees:
+            lines.append(f'{labels["affiliate"]}: {short_money(amount)} {Asset(asset).pretty_str}{usd(fee_usd)}')
         if s.has_fees and s.total_fees_usd:
             percent = f' ({s.fees_percent:.2f}% {labels["of_value"]})' if s.swap_value_usd else ''
             lines.append(f'{labels["total"]}: {bold(short_dollar(s.total_fees_usd))}{percent}')
