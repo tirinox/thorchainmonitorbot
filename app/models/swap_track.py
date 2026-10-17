@@ -2,9 +2,11 @@
 A tracked swap of a user: the record the tracker keeps in Redis, the stage derived from /thorchain/tx/status
 and the diagnosis of a delay by the network state. Pure functions, no I/O: tests/test_swap_tracker_stages.py.
 """
+from __future__ import annotations
+
 import json
 from dataclasses import dataclass, field, asdict
-from typing import Optional, Dict
+from typing import Optional, Dict, List, Tuple
 
 from api.aionode.types import ThorTxStatus, ThorLastBlock
 from lib.constants import THOR_BLOCK_TIME, thor_to_float
@@ -76,6 +78,86 @@ class SwapTrack:
     @classmethod
     def from_json(cls, s: str) -> 'SwapTrack':
         return cls(**json.loads(s))
+
+
+@dataclass
+class SwapSummary:
+    """What the user got for what, and what it cost; for the final message"""
+    in_amount: float = 0.0
+    in_asset: str = ''
+    out_amount: float = 0.0
+    out_asset: str = ''
+    swap_value_usd: float = 0.0
+    network_fees: List[Tuple[float, str, float]] = field(default_factory=list)  # (amount, asset, usd)
+    liquidity_fee_rune: float = 0.0
+    liquidity_fee_usd: float = 0.0
+    affiliate_fee_rune: float = 0.0
+    affiliate_fee_usd: float = 0.0
+
+    @property
+    def network_fee_usd(self) -> float:
+        return sum(usd for _, _, usd in self.network_fees)
+
+    @property
+    def total_fees_usd(self) -> float:
+        return self.network_fee_usd + self.liquidity_fee_usd + self.affiliate_fee_usd
+
+    @property
+    def fees_percent(self) -> float:
+        return 100.0 * self.total_fees_usd / self.swap_value_usd if self.swap_value_usd > 0 else 0.0
+
+    @property
+    def has_fees(self) -> bool:
+        return bool(self.network_fees) or self.liquidity_fee_rune > 0 or self.affiliate_fee_rune > 0
+
+    @property
+    def rate(self) -> float:
+        """Units of the output asset per one unit of the input asset"""
+        return self.out_amount / self.in_amount if self.in_amount > 0 and self.out_amount > 0 else 0.0
+
+
+def _first_out_to(outs: list, dest_address: str, refund: bool):
+    """The out tx to the destination (case-insensitive: the memo has it as typed) or the first one of the kind"""
+    outs = [o for o in outs if str(o.get('memo', '')).upper().startswith('REFUND') == refund]
+    outs.sort(key=lambda o: str(o.get('to_address', '')).lower() != (dest_address or '').lower())
+    return outs[0] if outs else None
+
+
+def swap_summary(track: SwapTrack, info: StageInfo, action, ph) -> SwapSummary:
+    """
+    action: the ThorAction the block scanner built, with the fees; None when the scanner has not seen the swap.
+    ph: the PriceHolder for the USD values (its convert_to_usd); the swap value is the input at today's price.
+    """
+    s = SwapSummary(in_amount=track.in_amount_float, in_asset=track.in_asset, out_asset=track.out_asset)
+
+    def usd(amount, asset):
+        try:
+            return float(ph.convert_to_usd(amount, asset) or 0.0) if ph else 0.0
+        except Exception:
+            return 0.0
+
+    if action is not None:
+        in_tx = action.in_tx[0] if action.in_tx else None
+        if in_tx and in_tx.coins:
+            s.in_amount, s.in_asset = in_tx.coins[0].amount_float, in_tx.first_asset
+        out = action.recipients_output
+        if out and out.coins:
+            s.out_amount, s.out_asset = out.coins[0].amount_float, out.first_asset
+        meta = action.meta_swap
+        if meta:
+            s.liquidity_fee_rune = thor_to_float(meta.liquidity_fee)
+            s.network_fees = [(c.amount_float, c.asset, usd(c.amount_float, c.asset)) for c in meta.network_fees]
+        s.affiliate_fee_rune = sum(c.amount_float for o in action.out_tx if o.is_affiliate for c in o.coins)
+    else:
+        out = _first_out_to(info.out_txs, track.dest_address, refund=False)
+        coin = (out.get('coins') or [{}])[0] if out else {}
+        if coin:
+            s.out_amount, s.out_asset = thor_to_float(coin.get('amount', 0)), coin.get('asset', s.out_asset)
+
+    s.swap_value_usd = usd(s.in_amount, s.in_asset) or track.volume_usd
+    s.liquidity_fee_usd = usd(s.liquidity_fee_rune, 'THOR.RUNE')
+    s.affiliate_fee_usd = usd(s.affiliate_fee_rune, 'THOR.RUNE')
+    return s
 
 
 class SwapStage:

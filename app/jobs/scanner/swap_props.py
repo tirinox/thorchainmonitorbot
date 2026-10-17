@@ -5,7 +5,7 @@ from typing import NamedTuple, List, Optional
 from jobs.scanner.block_result import ThorEvent
 from models.asset import is_rune, is_trade_asset, Asset
 from models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
-    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit
+    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit, EventFee
 from models.memo import ActionType
 from models.memo import THORMemo
 from models.s_swap import StreamingSwap, RapidSwapStats
@@ -348,7 +348,12 @@ class SwapProps(NamedTuple):
                 failed_swap_reasons=[]
             )
 
-        network_fees = []  # ignore so far, not really used
+        # the outbound fees withheld from the outputs, one fee event per output (affiliate and refund ones included)
+        network_fees = [
+            ThorCoin(amount, asset)
+            for fee_ev in self.find_events(EventFee)
+            for amount, asset in fee_ev.coin_list
+        ]
 
         tx = ThorAction(
             date_timestamp=int(ts),

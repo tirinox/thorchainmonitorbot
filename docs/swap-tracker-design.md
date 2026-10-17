@@ -195,11 +195,18 @@ Transaction: 👁️‍🗨️Track | 🔍runescan
 **5. Completed** (+ карточка `swap_finished` при включённом рендерере):
 ```
 ✅ <b>Swap completed</b> in 27 min
-<b>0.5 BTC</b> ($52,400) → ⚡ → <b>18.37 ETH</b> ($52,110)
-Fees: liquidity 0.21% · affiliate 0.1% (ll) · outbound 0.0012 ETH
+<b>0.5</b> BTC → ⚡ → <b>18.37</b> ETH ($52.4K)
+Rate: 1 BTC = 36.74 ETH
+Network fee: 0.0012 ETH ($3.9)
+Liquidity fee: 0.0343 Rune ($0.02)
+Affiliate fee: 0.12 Rune ($0.08)
+Total fees: <b>$4.00</b> (0.32% of swap value)
 Received at 👤0x12…9a8c (you)
-Transactions: in 🔍runescan · out 🔍etherscan
+Transaction: 👁️‍🗨️Track | 🔍runescan | 🔍thorchain.net 🔍ETH
 ```
+Комиссии и курс — `SwapSummary` (`models/swap_track.py: swap_summary`): network fee из `fee`-событий, которые сканер теперь
+хранит в `tx:tracker` (`EventFee`, `build_action` кладёт их в `meta_swap.network_fees`), liquidity — из `swap`-событий,
+affiliate — RUNE-outbound'ы с `is_affiliate`; USD по текущим ценам пулов. Без данных сканера — только маршрут и курс.
 
 **6. Refunded:**
 ```

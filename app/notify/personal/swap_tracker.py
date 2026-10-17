@@ -26,7 +26,8 @@ from models.asset import Asset
 from models.mimir import adv_swap_queue_enabled
 from models.node_watchers import UserWatchlist
 from models.s_swap import AlertSwapStart
-from models.swap_track import SwapTrack, SwapStage, StageInfo, derive_stage, diagnose, DiagCtx, Diagnosis
+from models.swap_track import SwapTrack, SwapStage, StageInfo, derive_stage, diagnose, DiagCtx, Diagnosis, \
+    swap_summary
 from models.tx import ThorAction, EventLargeTransaction
 from notify.channel import ChannelDescriptor, BoardMessage
 
@@ -366,9 +367,11 @@ class PersonalSwapTracker(BaseFetcher, INotified):
         if action and ph:
             with suppress(Exception):
                 action.calc_full_rune_amount(ph)  # the liquidity fee % is counted against this volume
+        summary = swap_summary(track, info, action, ph) if info.stage == SwapStage.DONE else None
 
         async def build(loc, name_map, user):
-            text = loc.notification_text_swap_track_finished(track, info, action, reason, usd_per_rune, name_map, user)
+            text = loc.notification_text_swap_track_finished(track, info, action, reason, usd_per_rune, name_map, user,
+                                                             summary)
             photo = await self._render_card(loc, action, ph, name_map) if info.stage == SwapStage.DONE else None
             if photo is not None:
                 return BoardMessage.make_photo(photo, text, 'swap_finished.png', msg_type=self.MSG_TYPE)
