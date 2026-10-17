@@ -49,10 +49,7 @@ class StreamingSwapWatchListFetcher(BaseFetcher):
         return await self.deps.thor_connector.query_raw('/thorchain/swaps/streaming')
 
     async def load_streaming_swap_details(self, tx_id: str) -> Optional[StreamingSwap]:
-        raw_data = await self.deps.thor_connector.query_raw(f'/thorchain/swap/streaming/{tx_id}')
-        if not raw_data:
-            return None
-        return StreamingSwap.model_validate(raw_data)
+        return await self.deps.thor_connector.query_streaming_swap(tx_id)
 
     async def load_list_from_db(self):
         r = await self.deps.db.get_redis()

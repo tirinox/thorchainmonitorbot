@@ -52,6 +52,7 @@ class ThorEnvironment:
     path_tx_stages = '/thorchain/tx/stages/{txid}'
     path_tx_status = '/thorchain/tx/status/{txid}'
     path_tx_simple = '/thorchain/tx/{txid}'
+    path_streaming_swap = '/thorchain/swap/streaming/{txid}'
     path_memo_reference = '/thorchain/memo/{registration_hash}'
     path_memo_check = '/thorchain/memo/check/{asset}/{amount}'
 

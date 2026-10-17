@@ -29,6 +29,7 @@ from notify.personal.balance import WalletWatchlist
 from notify.personal.bond_provider import BondWatchlist
 from notify.personal.helpers import GeneralSettings, Props
 from notify.personal.scheduled import PersonalPeriodicNotificationService, PersonalIdTriplet
+from notify.personal.swap_tracker import SwapWatchlist
 from .base import message_handler, query_handler, DialogWithSettings
 from .message_cat_db import MessageCategoryDB
 
@@ -59,6 +60,7 @@ class MyWalletsMenu(DialogWithSettings):
     QUERY_7D = '7d'
     QUERY_30D = '30d'
     QUERY_BOND_PROVIDER = 'bond-provider'
+    QUERY_SWAP_TRACKER = 'swap-tracker'
     QUERY_WALLET_SETTINGS = 'wallet-settings'
     QUERY_BACK = 'back'
     QUERY_SET_NAME = 'name'
@@ -390,6 +392,7 @@ class MyWalletsMenu(DialogWithSettings):
         address_obj = self._get_address_object(address)
         track_balance = address_obj.get(Props.PROP_TRACK_BALANCE, False)
         track_bond = address_obj.get(Props.PROP_TRACK_BOND, True)
+        track_swaps = address_obj.get(Props.PROP_TRACK_SWAPS, True)
         view_value = self.data.get(self.KEY_CAN_VIEW_VALUE, True)
         chain = Chains.detect_chain(address)
         min_limit = float(address_obj.get(Props.PROP_MIN_LIMIT, 0))
@@ -429,6 +432,12 @@ class MyWalletsMenu(DialogWithSettings):
             text = self.text_new_feature(text, Features.F_BOND_PROVIDER)
             row3.append(InlineKeyboardButton(text, callback_data=self.QUERY_BOND_PROVIDER))
 
+        if not external:
+            # swaps are followed for an address of any chain
+            text = self.loc.BUTTON_TRACK_SWAPS_ON if track_swaps else self.loc.BUTTON_TRACK_SWAPS_OFF
+            text = self.text_new_feature(text, Features.F_SWAP_TRACKER)
+            row3.append(InlineKeyboardButton(text, callback_data=self.QUERY_SWAP_TRACKER))
+
         set_name_text = self.text_new_feature(self.loc.BUTTON_WALLET_NAME, Features.F_WALLET_SETTINGS)
         row3.append(InlineKeyboardButton(set_name_text, callback_data=self.QUERY_SET_NAME))
         button_matrix.append(row3)
@@ -465,6 +474,11 @@ class MyWalletsMenu(DialogWithSettings):
             address = self.current_address
             is_on = self._toggle_address_property(address, Props.PROP_TRACK_BOND, default=True)
             await self._process_wallet_track_bond_flag(address, is_on)
+            await self._present_wallet_settings(query.message)
+        elif query.data == self.QUERY_SWAP_TRACKER:
+            address = self.current_address
+            is_on = self._toggle_address_property(address, Props.PROP_TRACK_SWAPS, default=True)
+            await self._process_wallet_track_swaps_flag(address, is_on)
             await self._present_wallet_settings(query.message)
         elif query.data == self.QUERY_SET_RUNE_LIMIT:
             await self._enter_set_limit(query)
@@ -663,8 +677,9 @@ class MyWalletsMenu(DialogWithSettings):
         # As the dict is ordered, we add new obj at the beginning in a fishy way
         self.global_data[Props.KEY_ADDRESSES] = paste_at_beginning_of_dict(address_dict, new_addr, new_addr_obj)
 
-        # Bond tracker is on by default
+        # Bond and swap trackers are on by default
         await self._process_wallet_track_bond_flag(new_addr, is_on=True)
+        await self._process_wallet_track_swaps_flag(new_addr, is_on=True)
 
     async def _remove_address(self, index):
         try:
@@ -673,6 +688,7 @@ class MyWalletsMenu(DialogWithSettings):
             self.my_addresses.pop(address)
             await self._process_wallet_balance_flag(address, is_on=False)
             await self._process_wallet_track_bond_flag(address, is_on=False)
+            await self._process_wallet_track_swaps_flag(address, is_on=False)
         except IndexError:
             logging.error(f'Cannot delete address at {index = },')
 
@@ -729,10 +745,15 @@ class MyWalletsMenu(DialogWithSettings):
         user_id = str(self.data.fsm_context.user)
         await self._bond_provider_watch.set_user_to_node(user_id, address, is_on)
 
+    async def _process_wallet_track_swaps_flag(self, address: str, is_on: bool):
+        user_id = str(self.data.fsm_context.user)
+        await self._swap_watch.set_user_to_node(user_id, address, is_on)
+
     def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
         super().__init__(loc, data, d, message)
         self._wallet_watch = WalletWatchlist(d.db)
         self._bond_provider_watch = BondWatchlist(d.db)
+        self._swap_watch = SwapWatchlist(d.db)
         self._subscribers = PersonalPeriodicNotificationService(d)
 
         prohibited_addresses = self.deps.cfg.get_pure('native_scanner.prohibited_addresses')

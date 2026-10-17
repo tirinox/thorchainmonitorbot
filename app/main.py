@@ -80,6 +80,7 @@ from notify.personal.bond_provider import PersonalBondProviderNotifier
 from notify.personal.personal_main import NodeChangePersonalNotifier
 from notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from notify.personal.scheduled import PersonalPeriodicNotificationService
+from notify.personal.swap_tracker import PersonalSwapTracker
 from notify.pub_configure import PublicAlertJobExecutor
 from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.chain_id_notify import ChainIdNotifier
@@ -345,6 +346,14 @@ class App(WithLogger):
             d.block_scanner.add_subscriber(transfer_decoder)
             balance_notifier = PersonalBalanceNotifier(d)
             transfer_decoder.add_subscriber(balance_notifier)
+
+            # Personal swap tracker: follows the swaps of the watched wallets to the outbound or the refund
+            if d.cfg.get('personal.swap_tracker.enabled', True):
+                swap_tracker = PersonalSwapTracker(d)
+                tracker_start_detector = SwapStartDetectorFromBlock(d, dedup_component='swap_tracker_start')
+                d.block_scanner.add_subscriber(tracker_start_detector)
+                tracker_start_detector.add_subscriber(swap_tracker)
+                tasks.append(swap_tracker)
 
             # Count unique users
             d.user_counter = UserCounterMiddleware(d)

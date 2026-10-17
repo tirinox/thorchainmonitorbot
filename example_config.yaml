@@ -99,6 +99,13 @@ personal:
     poll_interval: 10s
     max_report_fails: 3  # unsubscribe from a scheduled LP report after this many failures in a row
 
+  swap_tracker:  # (!) new: follows the swaps of the watched wallets from the inbound to the outbound or the refund
+    enabled: true
+    poll_period: 20s  # how often the in-flight swaps are polled through /thorchain/tx/status
+    delay_warn_after: 10m  # a stage overdue by this much gets a "delayed" message with the reason
+    give_up_after: 24h  # a swap still pending after this is left alone
+    max_active_per_user: 20  # an arbitrage bot's address must not flood its owner
+
 
 telegram:
   bot:

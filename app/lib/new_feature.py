@@ -10,6 +10,7 @@ class Features:
     F_PERSONAL_TRACK_BALANCE_LIMIT = 'MyWallets.SetLimit'
 
     F_BOND_PROVIDER = 'MyWallets.BondProvider'
+    F_SWAP_TRACKER = 'MyWallets.SwapTracker'
 
     F_TEST_EXPIRED = 'Test.Expired'
     F_TEST_NOT_EXPIRED = 'Test.NotExpired'
@@ -22,6 +23,7 @@ class Features:
 
         F_BOND_PROVIDER: datetime(2024, 2, 1),
         F_WALLET_SETTINGS: datetime(2024, 4, 1),
+        F_SWAP_TRACKER: datetime(2027, 1, 15),
 
         F_TEST_EXPIRED: datetime(2022, 2, 24),
         F_TEST_NOT_EXPIRED: datetime(2042, 2, 24),

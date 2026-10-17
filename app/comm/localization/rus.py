@@ -39,6 +39,7 @@ from models.pol_reserve import AlertPolReserveStats
 from models.runepool import AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
 from models.secured import AlertSecuredAssetSummary
+from models.swap_track import SwapTrack, SwapStage, StageInfo, Diagnosis
 from models.tcy import TcyFullInfo
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import NativeTokenTransfer, AlertRuneTransferStats
@@ -159,6 +160,9 @@ class RussianLocalization(BaseLocalization):
 
     BUTTON_TRACK_BOND_ON = 'Следить за бондом: ДА'
     BUTTON_TRACK_BOND_OFF = 'Следить за бондом: НЕТ'
+
+    BUTTON_TRACK_SWAPS_ON = 'Следить за обменами: ДА'
+    BUTTON_TRACK_SWAPS_OFF = 'Следить за обменами: НЕТ'
 
     BUTTON_SET_RUNE_ALERT_LIMIT = 'Уст. мин. лимит R'
 
@@ -515,6 +519,160 @@ class RussianLocalization(BaseLocalization):
             f'Пользователь: {user_link}\n'
             f'Транзакция: {track_link} | {self.link_to_tx(e.tx_id)}\n'
             f'{self._conditional_announcement()}'
+        )
+
+    # ------- PERSONAL SWAP TRACKER -------
+
+    SWAP_TRACK_YOU = '(вы)'
+    SWAP_TRACK_LABEL_TRACK = '👁️‍🗨️Отследить'
+
+    SWAP_TRACK_STAGE_NAMES = {
+        SwapStage.OBSERVED: 'входящая транзакция',
+        SwapStage.SWAPPING: 'обмен',
+        SwapStage.OUTBOUND_DELAY: 'отправка',
+        SwapStage.OUTBOUND_SIGNING: 'отправка',
+    }
+
+    def notification_text_swap_track_started(self, track: SwapTrack, info: StageInfo, name_map: NameMap, user):
+        incoming = track.users.get(str(user)) == SwapTrack.ROLE_RECIPIENT
+        heading = '📥 <b>Входящий обмен</b>' if incoming else '🔁 <b>Обнаружен обмен</b>'
+        from_s = self._swap_track_party(track, track.from_address, track.src_chain, name_map, user)
+        to_s = self._swap_track_party(track, track.dest_address, track.dst_chain, name_map, user)
+        lines = [heading, self._swap_track_route(track), f'От: {from_s} → Кому: {to_s}']
+
+        if track.expected_out:
+            eta = f' · ожидание ~{self.seconds_human(track.expected_sec)}' if track.expected_sec > 60 else ''
+            lines.append(f'Ожидается: ~{bold(short_money(track.expected_out_float))} '
+                         f'{Asset(track.out_asset).pretty_str}{eta}')
+        if track.is_streaming:
+            if track.quantity > 1:
+                lines.append(f'Потоковый: {track.quantity} частей с шагом {track.interval or 1} бл.')
+            else:
+                lines.append('Потоковый обмен')
+        if info.confirmation_sec > 0:
+            lines.append(f'⏳ Ждём подтверждений в сети {track.src_chain} (~{self.seconds_human(info.confirmation_sec)})')
+        lines.append(f'Транзакция: {self._swap_track_links(track)}')
+        return '\n'.join(lines)
+
+    def notification_text_swap_track_stage(self, track: SwapTrack, info: StageInfo, name_map: NameMap, user):
+        lines = []
+        if info.stage == SwapStage.SWAPPING:
+            ss = info.streaming
+            count, quantity = (ss.count, ss.quantity) if ss else (info.streaming_count, info.streaming_quantity)
+            lines.append(f'🌊 <b>Идёт обмен</b> · {count} из {quantity} частей' if quantity else '🌊 <b>Идёт обмен</b>')
+            if ss and ss.in_amt and ss.out_amt:
+                left = f' · ещё ~{self.seconds_human(ss.second_to_wait)}' if ss.second_to_wait > 0 else ''
+                lines.append(f'Пока что {short_money(thor_to_float(ss.in_amt))} {Asset(track.in_asset).pretty_str} → '
+                             f'{short_money(thor_to_float(ss.out_amt))} {Asset(track.out_asset).pretty_str}{left}')
+        elif info.stage == SwapStage.OUTBOUND_DELAY:
+            lines.append('📤 <b>Обменяно, отправляем</b>')
+            outs = [o for o in self._swap_track_outs(info) if not o[0]]
+            if outs:
+                _, amount, asset, to_address, _, chain = outs[0]
+                to_s = self._swap_track_party(track, to_address, chain, name_map, user)
+                lines.append(f'Вы получите ~{bold(short_money(amount))} {Asset(asset).pretty_str} на {to_s}')
+            if info.expected_sec > 0:
+                lines.append(f'Задержка отправки ~{bold(self.seconds_human(info.expected_sec))} '
+                             f'({info.outbound_delay_blocks} бл.) — сеть притормаживает крупные выплаты')
+        lines.append(f'Транзакция: {self._swap_track_links(track)}')
+        return '\n'.join(lines)
+
+    def swap_track_reason(self, d: Diagnosis):
+        key = f' ({d.mimir_key})' if d.mimir_key and d.mimir_key != 'inbound_addresses' else ''
+        return {
+            'thor_stalled': f'🛑 THORChain не производит блоки уже {self.seconds_human(d.value)}.',
+            'src_chain_halted': f'🛑 Сеть {d.chain} остановлена{key}; входящие транзакции не наблюдаются, '
+                                f'пока её не включат.',
+            'src_trading_halted': f'🛑 Торговля в {d.chain} остановлена{key}; обмен вернут после финализации '
+                                  f'входящей транзакции.',
+            'streaming_paused': f'⏸ Потоковые обмены приостановлены во всей сети{key}; ваш продолжится, '
+                                f'когда их включат.',
+            'trading_halted': f'🛑 Торговля в {d.chain} остановлена{key}; обмен ждёт в очереди, пока её не включат.',
+            'dst_signing_halted': f'🛑 Подписание исходящих в {d.chain} остановлено операторами нод{key}; '
+                                  f'ваша выплата в очереди и уйдёт, когда подписи возобновят.',
+            'dst_chain_halted': f'🛑 Сеть {d.chain} остановлена{key}; выплаты ждут её возобновления.',
+            'outbound_queue_busy': f'🐢 Очередь исходящих загружена: {int(d.value)} транзакций ждут подписи.',
+            'rescheduled': f'🔁 Сеть переназначила вашу выплату ({int(d.value)} бл. с назначенного срока); '
+                           f'возможно, хранилищу не хватает средств или газа. Повтор каждые ~30 мин.',
+        }.get(d.code, '❔ Причина неизвестна. Сеть повторяет попытки сама; обычно это проходит.')
+
+    def notification_text_swap_track_delayed(self, track: SwapTrack, info: StageInfo, d: Diagnosis,
+                                             waited_sec: float, name_map: NameMap, user):
+        stage = self.SWAP_TRACK_STAGE_NAMES.get(info.stage, info.stage)
+        return (
+            f'⚠️ <b>Ваш обмен задерживается</b> · {stage} уже {self.seconds_human(waited_sec)}\n'
+            f'{self._swap_track_route(track)}\n'
+            f'Причина: {self.swap_track_reason(d)}\n'
+            f'От вас ничего не требуется.\n'
+            f'Транзакция: {self._swap_track_links(track)}'
+        )
+
+    def notification_text_swap_track_resumed(self, track: SwapTrack, d: Diagnosis):
+        what = {
+            'thor_stalled': 'Производство блоков THORChain',
+            'src_chain_halted': f'Сеть {d.chain}',
+            'dst_chain_halted': f'Сеть {d.chain}',
+            'src_trading_halted': f'Торговля в {d.chain}',
+            'trading_halted': f'Торговля в {d.chain}',
+            'streaming_paused': 'Потоковые обмены',
+            'dst_signing_halted': f'Подписание в {d.chain}',
+        }.get(d.code, 'Сеть')
+        return (f'✅ {what} снова работает — ваш обмен скоро продолжится.\n'
+                f'{self._swap_track_route(track)}\n'
+                f'Транзакция: {self._swap_track_links(track)}')
+
+    def notification_text_swap_track_finished(self, track: SwapTrack, info: StageInfo, action, reason: str,
+                                              usd_per_rune: float, name_map: NameMap, user):
+        duration = self.seconds_human(now_ts() - track.started_ts)
+        outs = self._swap_track_outs(info)
+        sent = [o for o in outs if not o[0]]
+        refunded = [o for o in outs if o[0]]
+
+        lines = []
+        if info.stage == SwapStage.DONE:
+            lines.append(f'✅ <b>Обмен завершён</b> за {duration}')
+            if action:
+                lines.append(self.format_swap_route(action, usd_per_rune))
+                fees = []
+                if action.full_volume_in_rune:
+                    fees.append(f'ликвидность {format_percent(action.liquidity_fee_percent)}')
+                if action.meta_swap and action.meta_swap.affiliate_fee > 0:
+                    fees.append(f'партнёрская {format_percent(action.meta_swap.affiliate_fee, 1)}')
+                if fees:
+                    lines.append('Комиссии: ' + ' · '.join(fees))
+            elif sent:
+                _, amount, asset, *_ = sent[0]
+                lines.append(f'{self.format_op_amount(track.in_amount_float)} {Asset(track.in_asset).pretty_str} '
+                             f'→ ⚡ → {bold(short_money(amount))} {Asset(asset).pretty_str}')
+            if sent:
+                _, _, _, to_address, _, chain = sent[0]
+                lines.append(f'Получено на {self._swap_track_party(track, to_address, chain, name_map, user)}')
+        else:
+            partial = info.stage == SwapStage.PARTIAL_REFUND
+            lines.append('↩️ <b>Обмен частично возвращён</b>' if partial else '↩️ <b>Обмен возвращён</b>')
+            lines.append(self._swap_track_route(track))
+            if partial and sent:
+                _, amount, asset, *_ = sent[0]
+                lines.append(f'Обменяно и отправлено: {bold(short_money(amount))} {Asset(asset).pretty_str}')
+            for _, amount, asset, to_address, _, chain in refunded:
+                to_s = self._swap_track_party(track, to_address, chain, name_map, user)
+                lines.append(f'Возвращено: {bold(short_money(amount))} {Asset(asset).pretty_str} на {to_s} '
+                             f'(за вычетом комиссии за отправку)')
+            if reason:
+                lines.append(f'Причина: {pre(html.escape(reason[:180]))}')
+
+        out_links = ' '.join(filter(None, (self._swap_track_out_link(o[4], o[5]) for o in outs)))
+        lines.append(f'Транзакция: {self._swap_track_links(track)}' + (f' {out_links}' if out_links else ''))
+        return '\n'.join(lines)
+
+    def notification_text_swap_track_give_up(self, track: SwapTrack, info: StageInfo, name_map: NameMap, user):
+        stage = self.SWAP_TRACK_STAGE_NAMES.get(info.stage, info.stage)
+        return (
+            f'🕰 <b>Всё ещё не завершён спустя {self.seconds_human(now_ts() - track.started_ts)}</b> — '
+            f'я перестаю следить за ним.\n'
+            f'{self._swap_track_route(track)}\n'
+            f'Последнее состояние: {stage}.\n'
+            f'Проверьте: {self._swap_track_links(track)}. Если не разрешится — спросите в Discord THORChain, #support.'
         )
 
     # ------- QUEUE -------
