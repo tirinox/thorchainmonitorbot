@@ -95,6 +95,15 @@ class TwitterEnglishLocalization(BaseLocalization):
         )
         return message
 
+    def can_add_more_lp_text(self, cap: ThorCapInfo):
+        if cap.can_add_liquidity:
+            return (
+                f'🤲🏻 You can add {short_rune(cap.how_much_rune_you_can_lp)} {self.R} '
+                f'or {short_dollar(cap.how_much_usd_you_can_lp)} more liquidity.'
+            )
+        else:
+            return f"🚫 You can't add more liquidity. The cap is reached."
+
     def notification_text_cap_full(self, cap: ThorCapInfo):
         return (
             '🙆‍♀️ Liquidity has reached the capacity limit!\n'

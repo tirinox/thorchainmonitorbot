@@ -689,7 +689,8 @@ class AlertPresenter(INotified, WithLogger):
         photo, photo_name = await self.render_upgrade_proposal(data)
 
         async def message_gen(loc: BaseLocalization):
-            text = text_f(loc, data)
+            # by name, so the Twitter and Russian overrides are used, not the base HTML text
+            text = getattr(loc, text_f.__name__)(data)
             if photo is not None:
                 return BoardMessage.make_photo(photo, text, photo_name)
             else:
