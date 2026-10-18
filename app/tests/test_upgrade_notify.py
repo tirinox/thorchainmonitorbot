@@ -354,6 +354,7 @@ def test_card_params():
 @pytest.mark.asyncio
 async def test_presenter_sends_the_card_with_the_text_as_caption():
     from comm.localization.eng_base import BaseLocalization
+    from comm.localization.twitter_eng import TwitterEnglishLocalization
     from lib.config import Config
     from models.upgrade_proposal import UpgradeProposalVotes
     from notify.alert_presenter import AlertPresenter
@@ -373,6 +374,7 @@ async def test_presenter_sends_the_card_with_the_text_as_caption():
 
         async def broadcast_to_all(self, msg_type, message_gen, *args, **kwargs):
             self.messages.append((msg_type, await message_gen(BaseLocalization(Config(data={})))))
+            self.twitter_message = await message_gen(TwitterEnglishLocalization(Config(data={})))
 
     broadcaster = FakeBroadcaster()
     presenter = cast(AlertPresenter, object.__new__(AlertPresenter))
@@ -391,3 +393,6 @@ async def test_presenter_sends_the_card_with_the_text_as_caption():
     assert msg_type == 'public:upgrade_proposals:approved'
     assert message.message_type == MessageType.PHOTO
     assert 'APPROVED' in message.text
+    # each localization gets its own text: no HTML on Twitter
+    assert 'APPROVED' in broadcaster.twitter_message.text
+    assert '<' not in broadcaster.twitter_message.text
