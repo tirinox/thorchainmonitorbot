@@ -1468,7 +1468,6 @@ class RussianLocalization(BaseLocalization):
             msg += f'Валидаторы набрали кворум: {pre(f"{p.approved_percent:.2f}%")} ' \
                    f'({pre(len(p.approvers))} подписантов).\n'
             msg += f'Высота обновления: {pre(p.height)}{self._upgrade_eta(e)}\n'
-            msg += '\nОператоры нод, готовьтесь обновляться!\n'
         return msg
 
     def notification_text_upgrade_proposal_expired(self, e: AlertUpgradeProposalExpired):

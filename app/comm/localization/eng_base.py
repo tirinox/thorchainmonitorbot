@@ -1843,7 +1843,6 @@ class BaseLocalization(ABC):  # == English
             msg += f'Validators reached the quorum: {pre(f"{p.approved_percent:.2f}%")} ' \
                    f'({pre(len(p.approvers))} approvers).\n'
             msg += f'Upgrade height: {pre(p.height)}{self._upgrade_eta(e)}\n'
-            msg += '\nNode operators, get ready to update!\n'
         return msg
 
     def notification_text_upgrade_proposal_expired(self, e: AlertUpgradeProposalExpired):
