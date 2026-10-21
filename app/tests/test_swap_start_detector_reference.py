@@ -118,3 +118,15 @@ async def test_detect_swaps_skips_observed_tx_when_reference_memo_cannot_be_reso
 
     assert swaps == []
     assert cache.calls == [11791]
+
+
+@pytest.mark.asyncio
+async def test_detect_swaps_destination_is_memo_recipient_not_vault():
+    # the quote is asked with this destination: the vault failed it for a cross-chain swap
+    detector, _ = make_detector()
+    block = make_block(make_observed_quorum_native_tx('obs-dest', '=:ETH.ETH:0xabc:1000', 123456789))
+
+    swaps = await detector.detect_swaps(block, make_price_holder())
+
+    assert len(swaps) == 1
+    assert swaps[0].destination_address == '0xabc'
