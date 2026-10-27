@@ -1,842 +1,355 @@
 {% set _width, _height = set_viewport_size(1920, 1080) %}
 {% extends "base.jinja2" %}
 
+{# The progress of a Mimir vote: the question as a headline, one wide split bar of all the votes with the 2/3 mark, a big card per option, the dates and a small chart in a strip at the bottom #}
 {% block content %}
     <style>
-        .voting-wrapper {
+        .wrap {
             position: absolute;
-            top: 140px;
-            left: 3%;
-            right: 3%;
-            bottom: 5%;
+            top: 135px;
+            left: 56px;
+            right: 56px;
+            bottom: 50px;
             display: flex;
             flex-direction: column;
             gap: 22px;
-            align-items: stretch;
         }
 
-        .top-row,
-        .content-row {
-            flex: 1;
-            display: flex;
-            flex-direction: row;
-            gap: 22px;
-            min-height: 0;
-            align-items: stretch;
-        }
-
-        .top-row {
-            flex: 0 0 auto;
-            min-height: 180px;
-        }
-
-        .top-row .key-box,
-        .top-row .side-meta-box {
-            height: 100%;
-        }
-
-        .top-row .key-box {
-            flex: 1 1 auto;
-        }
-
-        .top-row .side-meta-box {
-            flex: 1 1 auto;
-        }
-
-        /* ── Left panel: chart ─────────────────── */
-        .chart-panel,
-        .votes-panel {
-            display: flex;
-            flex-direction: column;
+        .panel {
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(18, 29, 35, .94), rgba(10, 16, 21, .95));
+            border: 1px solid rgba(255, 255, 255, .05);
+            padding: 22px 30px;
             min-width: 0;
             min-height: 0;
-            align-self: stretch;
-            overflow: hidden;
         }
 
-        .chart-panel {
-            flex: 3 3 0;
-        }
-
-        .votes-panel {
-            flex: 2 2 0;
-        }
-
-        .chart-box {
-            flex: 1 1 0;
-            height: 100%;
-            position: relative;
-            padding: 22px 22px 14px 22px;
-            border-radius: 20px;
-            background: linear-gradient(180deg, rgba(15,24,30,.97), rgba(9,14,19,.98));
-            border: 1px solid rgba(255,255,255,.05);
-            overflow: hidden;
-        }
-
-        #votingChart {
-            width: 100% !important;
-        }
-
-        /* ── Right panel: current state + stats ── */
-        .meta-panel {
-            flex: 1 1 0;
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            min-height: 0;
-        }
-
-        .key-box {
-            padding: 18px 24px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            border-radius: 20px;
-            background: linear-gradient(180deg, rgba(18,29,35,.94), rgba(10,16,21,.95));
-            border: 1px solid rgba(255,255,255,.05);
-        }
-
-        .top-key-box {
-            flex: 0 0 auto;
-        }
-
-        .key-hero {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            justify-content: center;
-            min-width: 0;
-        }
-
-        .meta-column {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .key-label {
-            font-size: 24px;
+        .label {
+            font-size: 20px;
             text-transform: uppercase;
             letter-spacing: 0.18em;
             color: #91a3a9;
             font-weight: 300;
         }
 
-        .key-name {
-            font-size: 42px;
-            font-weight: bold;
-            color: #fff;
-            letter-spacing: 0.05em;
-            line-height: 1.1;
-            word-break: break-word;
-            text-shadow: rgba(35,220,200,.12) 0 0 16px;
+        /* headline */
+        .head {
+            display: flex;
+            align-items: center;
+            gap: 30px;
         }
 
-        .key-pretty {
-            font-size: 46px;
-            color: #e4eef1;
-            letter-spacing: 0.03em;
-            margin-top: 1px;
-            line-height: 1.15;
-            font-weight: 300;
-        }
-
-        .key-current-value {
-            display: none;
-            margin-top: 12px;
-            padding: 14px 18px;
-            border-radius: 16px;
-            background: rgba(255,255,255,.035);
-            border: 1px solid rgba(255,255,255,.06);
-            max-width: 100%;
-        }
-
-        .key-current-value .current-value-box {
-            align-items: flex-start;
-        }
-
-        .key-current-value .current-value-display {
-            text-align: left;
-            margin-left: 0;
-        }
-
-        .side-meta-box {
-            flex: 0 0 auto;
-            padding: 16px 18px;
-            border-radius: 20px;
-            background: linear-gradient(180deg, rgba(18,29,35,.94), rgba(10,16,21,.95));
-            border: 1px solid rgba(255,255,255,.05);
-        }
-
-        .key-meta-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            grid-template-rows: repeat(2, auto);
-            gap: 12px;
-            margin-top: 0;
-            align-items: stretch;
-        }
-
-        .meta-card {
-            flex: 0 0 auto;
+        .head-q {
+            flex: 1;
             min-width: 0;
-            padding: 14px 18px;
-            border-radius: 16px;
-            background: rgba(255,255,255,.035);
-            border: 1px solid rgba(255,255,255,.06);
+        }
+
+        .q-name {
+            font-size: 60px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.05;
+            text-shadow: rgba(35, 220, 200, .15) 0 0 18px;
+        }
+
+        .q-key {
+            margin-top: 6px;
+            font-size: 24px;
+            color: #7f949b;
+            letter-spacing: 0.06em;
+        }
+
+        .q-key b {
+            color: #c8d6da;
+            font-weight: 600;
+        }
+
+        .pill {
+            flex: none;
+            padding: 18px 30px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 220, 90, .4);
+            background: rgba(255, 220, 90, .08);
+            color: #FFDC5A;
+            font-size: 30px;
+            font-weight: 800;
+            letter-spacing: .06em;
+            text-align: center;
+        }
+
+        .pill small {
+            display: block;
+            font-size: 19px;
+            font-weight: 400;
+            color: #d9c98a;
+            letter-spacing: .02em;
+            margin-top: 2px;
+        }
+
+        .pill.reached {
+            border-color: rgba(51, 255, 153, .5);
+            background: rgba(51, 255, 153, .1);
+            color: #33FF99;
+        }
+
+        .pill.reached small {
+            color: #9fe9c4;
+        }
+
+        /* split bar */
+        .split {
+            padding-top: 48px;
+        }
+
+        .split-track {
+            position: relative;
+            height: 64px;
+            border-radius: 14px;
+            overflow: visible;
+            background: rgba(255, 255, 255, .06);
+            display: flex;
+        }
+
+        .seg {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: 800;
+            color: #061913;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .seg:first-child {
+            border-radius: 14px 0 0 14px;
+        }
+
+        .seg.none {
+            background: repeating-linear-gradient(135deg, #3a444b 0 10px, #2e373d 10px 20px);
+            color: #aab;
+            border-radius: 0 14px 14px 0;
+            margin-left: auto;
+        }
+
+        .split-mark {
+            position: absolute;
+            top: -12px;
+            bottom: -12px;
+            width: 4px;
+            margin-left: -2px;
+            background: #FFDC5A;
+            box-shadow: 0 0 14px rgba(255, 220, 90, .7);
+            border-radius: 2px;
+        }
+
+        .split-mark-label {
+            position: absolute;
+            top: -44px;
+            transform: translateX(-50%);
+            font-size: 20px;
+            letter-spacing: .1em;
+            color: #FFDC5A;
+            white-space: nowrap;
+        }
+
+        /* cards */
+        .cards {
+            flex: 1;
+            display: flex;
+            gap: 22px;
+            min-height: 0;
+        }
+
+        .card {
+            flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            gap: 10px;
+            border-top: 8px solid;
+            min-width: 0;
         }
 
-        .meta-card-head {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 16px;
+        .card.lead {
+            background: linear-gradient(180deg, rgba(35, 220, 200, .10), rgba(10, 16, 21, .95));
         }
 
-        .meta-card-title {
-            font-size: 26px;
-            color: #9eb3ba;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            line-height: 1.15;
-            margin-bottom: 0;
-            flex: 0 1 auto;
+        .card.none {
+            flex: .6;
+            opacity: .55;
         }
 
-        /* large prominent number used for Active Nodes */
-        .meta-node-count {
-            font-size: 40px;
+        .card-name {
+            font-size: 38px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-pct {
+            font-size: 96px;
             font-weight: 800;
-            color: #23DCC8;
-            letter-spacing: 0.02em;
             line-height: 1;
-            text-shadow: rgba(35,220,200,.25) 0 0 20px;
-            text-align: right;
-            white-space: nowrap;
+            letter-spacing: -.02em;
         }
 
-        .meta-node-label {
-            margin-top: 4px;
-            font-size: 15px;
-            font-weight: 400;
-            color: #8ed5cd;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            text-align: right;
+        .card.none .card-pct {
+            font-size: 64px;
+            color: #aab;
         }
 
-        .meta-card-value {
-            font-size: 22px;
-            color: #eef6f8;
-            line-height: 1.2;
-            letter-spacing: 0.02em;
-            font-weight: 700;
-            overflow-wrap: anywhere;
-            text-align: right;
-            margin-left: auto;
-        }
-
-        .meta-date {
-            font-size: 31px;
-            font-weight: 700;
-            color: #eef6f8;
-            letter-spacing: 0.04em;
-            line-height: 1.15;
-            display: block;
-        }
-
-        .meta-ago {
-            margin-top: 6px;
-            font-size: 20px;
-            font-weight: 300;
-            color: #23DCC8;
-            letter-spacing: 0.06em;
-            opacity: 0.85;
-        }
-
-        .meta-participation-summary {
-            font-size: 22px;
-            font-weight: 700;
-            line-height: 1.1;
-            color: #eef6f8;
-            white-space: nowrap;
-            text-align: right;
-        }
-
-        .meta-participation-summary .secondary {
-            color: #8a989d;
-            font-weight: 500;
-        }
-
-        /* voted / not-voted participation bar */
-        .voted-bar-wrap {
-            margin-top: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .voted-bar-track {
-            position: relative;
-            width: 100%;
-            height: 16px;
-            background: rgba(255,255,255,.08);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .voted-bar-fill {
-            height: 100%;
-            border-radius: 8px;
-            background: linear-gradient(90deg, #23DCC8, #00CCFF);
-            transition: width 0.4s ease;
-        }
-
-        .voted-bar-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 17px;
+        .card-count {
+            font-size: 26px;
             color: #9fb1b7;
-            letter-spacing: 0.03em;
         }
 
-        .voted-label strong {
-            color: #fff;
-            font-weight: 700;
-        }
-
-        .voted-label-no strong {
-            color: #888;
-        }
-
-        .meta-card-accent {
-            background: linear-gradient(180deg, rgba(35,220,200,.10), rgba(35,220,200,.04));
-            border-color: rgba(35,220,200,.14);
-        }
-
-        .meta-card-accent .meta-card-title {
-            color: #8ed5cd;
-        }
-
-        .meta-card-accent .meta-card-value {
-            color: #23DCC8;
-            text-shadow: rgba(35,220,200,.15) 0 0 12px;
-        }
-
-        .current-value-box {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 18px;
-        }
-
-        .current-value-label {
-            font-size: 26px;
-            color: #9eb3ba;
-            letter-spacing: 0.08em;
+        .card-tag {
+            align-self: flex-start;
+            font-size: 16px;
+            letter-spacing: .14em;
             text-transform: uppercase;
-            line-height: 1.15;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, .18);
+            color: #aab;
         }
 
-        .current-value-display {
-            font-size: 28px;
-            line-height: 1.2;
-            font-weight: 800;
-            color: #eef6f8;
-            text-align: right;
-            overflow-wrap: anywhere;
-            margin-left: auto;
+        /* bottom strip */
+        .strip {
+            flex: none;
+            height: 230px;
+            display: flex;
+            gap: 22px;
         }
 
-        /* current votes breakdown */
-        .votes-box {
-            padding: 22px 24px 20px;
+        .meta {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 0;
-            overflow: hidden;
-            border-radius: 20px;
-            background: linear-gradient(180deg, rgba(15,24,30,.97), rgba(9,14,19,.98));
-            border: 1px solid rgba(255,255,255,.05);
+            justify-content: center;
+            gap: 6px;
         }
 
-        .votes-title {
-            font-size: 26px;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: #fff;
-            font-weight: 800;
-            margin-bottom: 16px;
+        .meta-val {
+            font-size: 34px;
+            font-weight: 700;
+            color: #eef6f8;
             line-height: 1.1;
         }
 
-        .vote-row {
+        .meta-sub {
+            font-size: 20px;
+            color: #23DCC8;
+            opacity: .85;
+        }
+
+        .chart {
+            flex: 2;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            margin-bottom: 18px;
         }
 
-        .vote-row-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            gap: 16px;
-        }
-
-        .vote-value-label {
-            font-size: 28px;
-            font-weight: bold;
-            color: #fff;
-            line-height: 1.15;
-        }
-
-        .vote-count-label {
-            font-size: 22px;
-            color: #b9c6ca;
-            white-space: nowrap;
-        }
-
-        .vote-bar-bg {
+        .chart-area {
+            flex: 1;
             position: relative;
-            width: 100%;
-            height: 14px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 7px;
-            overflow: hidden;
+            min-height: 0;
         }
-
-        .vote-bar-consensus {
-            position: absolute;
-            top: -3px;
-            bottom: -3px;
-            width: 2px;
-            margin-left: -1px;
-            background: rgba(255, 220, 90, 0.95);
-            box-shadow: 0 0 10px rgba(255, 220, 90, 0.45);
-            border-radius: 2px;
-            pointer-events: none;
-            z-index: 2;
-        }
-
-        .vote-bar-fill {
-            position: relative;
-            z-index: 1;
-            height: 100%;
-            border-radius: 7px;
-            transition: width 0.4s ease;
-        }
-
-        /* consensus threshold line */
-        .threshold-note {
-            margin-top: auto;
-            font-size: 21px;
-            color: #6f8389;
-            text-align: center;
-            letter-spacing: 0.05em;
-            line-height: 1.35;
-            padding-top: 14px;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
     </style>
 
     {% with title="MIMIR VOTE" %}
         {% include "components/header.jinja2" %}
     {% endwith %}
 
-    <div class="voting-wrapper">
-
-        <div class="top-row">
-            <div class="key-box top-key-box shadow-box">
-                <div class="key-hero">
-                    <div class="key-label">Mimir Key</div>
-                    <div class="key-name">{{ key_display or key }}</div>
-                    {% if pretty_name and pretty_name != key %}
-                        <div class="key-pretty">{{ pretty_name }}</div>
-                    {% endif %}
-                    <div class="key-current-value" id="current-value-card">
-                        <div class="current-value-box">
-                            <div class="current-value-label">Current Value</div>
-                            <div class="current-value-display" id="current-value-val">—</div>
-                        </div>
-                    </div>
-                </div>
+    <div class="wrap">
+        <div class="panel head shadow-box">
+            <div class="head-q">
+                <div class="q-name">{{ pretty_name or key_display or key }}</div>
+                <div class="q-key">Mimir key <b>{{ key_display or key }}</b><span id="current-val"></span></div>
             </div>
-
-            <div class="side-meta-box shadow-box meta-panel">
-                <div class="meta-column">
-                    <div class="key-meta-grid">
-                        <!-- row 1: left = active nodes, right = first vote -->
-                        <div class="meta-card meta-card-accent">
-                            <div class="meta-card-head">
-                                <div class="meta-card-title">Active Nodes</div>
-                                <div class="meta-node-count">{{ active_nodes }}</div>
-                            </div>
-                            <div class="meta-node-label">nodes online</div>
-                        </div>
-                        <div class="meta-card">
-                            <div class="meta-card-head">
-                                <div class="meta-card-title">Earliest vote</div>
-                                <div class="meta-card-value" id="first-seen-val">—</div>
-                            </div>
-                        </div>
-                        <!-- row 2: left = participation bar, right = latest vote -->
-                        <div class="meta-card">
-                            <div class="meta-card-head">
-                                <div class="meta-card-title">Participation</div>
-                                <div class="meta-participation-summary">
-                                    <strong id="voted-pct-val">—</strong>
-                                    <span class="secondary"> / </span>
-                                    <span class="secondary" id="not-voted-pct-val">—</span>
-                                </div>
-                            </div>
-                            <div class="voted-bar-wrap">
-                                <div class="voted-bar-track">
-                                    <div class="voted-bar-fill" id="voted-bar-fill" style="width:0%"></div>
-                                </div>
-                                <div class="voted-bar-labels">
-                                    <span class="voted-label voted-label-yes">Voted</span>
-                                    <span class="voted-label voted-label-no">Not yet voted</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="meta-card">
-                            <div class="meta-card-head">
-                                <div class="meta-card-title">Latest vote</div>
-                                <div class="meta-card-value" id="last-seen-val">—</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div class="pill" id="pill"><span id="status-title"></span><small id="status-detail"></small></div>
         </div>
 
-        <div class="content-row">
-            <!-- LEFT: stacked area chart -->
-            <div class="chart-panel">
-                <div class="chart-box shadow-box">
-                    <canvas id="votingChart"></canvas>
-                </div>
-            </div>
+        <div class="panel split shadow-box">
+            <div class="split-track" id="split"></div>
+        </div>
 
-            <!-- RIGHT: current breakdown -->
-            <div class="votes-box shadow-box votes-panel" id="votes-breakdown">
-                <div class="votes-title">Current vote snapshot</div>
-                <!-- populated by JS -->
-                <div class="threshold-note" id="threshold-note"></div>
+        <div class="cards" id="cards"></div>
+
+        <div class="strip">
+            <div class="panel meta shadow-box">
+                <div class="label">Voting started</div>
+                <div class="meta-val" id="first-seen"></div>
+                <div class="meta-sub" id="first-ago"></div>
+            </div>
+            <div class="panel meta shadow-box">
+                <div class="label">Last vote</div>
+                <div class="meta-val" id="last-seen"></div>
+                <div class="meta-sub" id="last-ago"></div>
+            </div>
+            <div class="panel meta shadow-box">
+                <div class="label">Participation</div>
+                <div class="meta-val" id="voted-line"></div>
+                <div class="meta-sub" id="voted-sub"></div>
+            </div>
+            <div class="panel chart shadow-box">
+                <div class="label">History</div>
+                <div class="chart-area"><canvas id="historyChart"></canvas></div>
             </div>
         </div>
     </div>
 
+    {% include "components/vote_data.jinja2" %}
     <script>
-        // ── data from Jinja ─────────────────────────────────────────────────────
-        const historyRaw = {{ history | tojson }};
-        const activeNodes = {{ active_nodes }};
-        const abstainedNodes = {{ abstained_nodes | default(0) }};
-        const decodedValues = {{ (decoded_values or {}) | tojson }};
-        const currentValue = {{ current_value | default(none) | tojson }};
-        const firstSeenTs = {{ first_seen_ts | default(0) }};
-        const lastSeenTs  = {{ last_seen_ts  | default(0) }};
-        const CONSENSUS = 0.667; // 2/3 threshold
-        const MAX_VISIBLE_OPTIONS = 5;
-        const OTHERS_KEY = '__others__';
+        if (currentValueText) setHtml('current-val', ` &nbsp;·&nbsp; now <b>${currentValueText}</b>`);
+        if (reached) document.getElementById('pill').classList.add('reached');
+        setHtml('status-title', (reached ? '✓ ' : '') + consensusStatus.title);
+        setHtml('status-detail', consensusStatus.detail);
+        setHtml('first-seen', fmtTs(firstSeenTs));
+        setHtml('first-ago', fmtAgo(firstSeenTs));
+        setHtml('last-seen', fmtTs(lastSeenTs));
+        setHtml('last-ago', fmtAgo(lastSeenTs));
+        setHtml('voted-line', `${votedCount} of ${activeNodes}`);
+        setHtml('voted-sub', `${fmtPct(votedCount)} of nodes voted`);
 
-        // ── format a unix timestamp to "DD.MM.YYYY" ─────────────────────────────
-        function fmtTs(ts) {
-            if (!ts) return '—';
-            const d = new Date(ts * 1000);
-            const pad = n => String(n).padStart(2, '0');
-            return `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}.${d.getUTCFullYear()}`;
+        const split = document.getElementById('split');
+        const consensusPct = CONSENSUS * 100;
+        options.forEach(o => {
+            const seg = document.createElement('div');
+            seg.className = 'seg';
+            seg.style.width = `${pctOf(o.count)}%`;
+            seg.style.background = o.color;
+            seg.textContent = pctOf(o.count) >= 7 ? fmtPct(o.count) : '';
+            split.appendChild(seg);
+        });
+        if (abstainedNodes > 0) {
+            const seg = document.createElement('div');
+            seg.className = 'seg none';
+            seg.style.width = `${pctOf(abstainedNodes)}%`;
+            seg.textContent = pctOf(abstainedNodes) >= 7 ? fmtPct(abstainedNodes) : '';
+            split.appendChild(seg);
         }
+        split.insertAdjacentHTML('beforeend',
+            `<div class="split-mark" style="left:${consensusPct}%"></div>
+             <div class="split-mark-label" style="left:${consensusPct}%">2/3 consensus · ${consensusCount} nodes</div>`);
 
-        function fmtAgo(ts) {
-            if (!ts) return '';
-            const diffSec = Math.max(0, Math.floor(Date.now() / 1000 - ts));
-            const units = [
-                ['y', 365 * 24 * 3600],
-                ['mo', 30 * 24 * 3600],
-                ['d', 24 * 3600],
-                ['h', 3600],
-                ['m', 60],
-            ];
-            for (const [suffix, size] of units) {
-                if (diffSec >= size) {
-                    return `${Math.floor(diffSec / size)}${suffix} ago`;
-                }
-            }
-            return `${diffSec}s ago`;
-        }
-
-        function fmtTsHtml(ts) {
-            const date = fmtTs(ts);
-            const ago  = fmtAgo(ts);
-            if (!ts) return `<span class="meta-date">—</span>`;
-            return `<span class="meta-date">${date}</span>`
-                 + (ago ? `<div class="meta-ago">${ago}</div>` : '');
-        }
-
-        document.getElementById('first-seen-val').innerHTML = fmtTsHtml(firstSeenTs);
-        document.getElementById('last-seen-val').innerHTML  = fmtTsHtml(lastSeenTs);
-        const votedPct = activeNodes > 0 ? ((Math.max(0, activeNodes - abstainedNodes) / activeNodes) * 100) : 0;
-        const notVotedPct = activeNodes > 0 ? ((Math.max(0, abstainedNodes) / activeNodes) * 100) : 0;
-        document.getElementById('voted-pct-val').textContent = `${votedPct.toFixed(1)}%`;
-        document.getElementById('not-voted-pct-val').textContent = `${notVotedPct.toFixed(1)}%`;
-        document.getElementById('voted-bar-fill').style.width = `${votedPct.toFixed(1)}%`;
-
-        const hasCurrentValue = currentValue !== null && currentValue !== undefined && currentValue !== '';
-        if (hasCurrentValue) {
-            const currentValueCard = document.getElementById('current-value-card');
-            const currentValueKey = String(currentValue);
-            const currentValueText = decodedValues[currentValueKey] || `Value ${currentValue}`;
-            currentValueCard.style.display = 'block';
-            document.getElementById('current-value-val').textContent = currentValueText;
-        }
-
-        // helper: return human-readable label for a raw option key
-        const label = k => k === OTHERS_KEY ? 'Others' : (decodedValues[k] || `Value ${k}`);
-
-        // ── colour palette (vibrant, dark-background friendly) ──────────────────
-        const PALETTE = [
-            '#23DCC8', // teal
-            '#00CCFF', // cyan
-            '#33FF99', // green
-            '#FF9933', // orange
-            '#FF6699', // pink
-            '#AA88FF', // purple
-            '#FFDD44', // yellow
-            '#FF4444', // red
-            '#44AAFF', // blue
-            '#88FF44', // lime
-        ];
-
-        // ── collect all unique option keys, sorted by latest vote count desc ────
-        const latestSnapshot = historyRaw[historyRaw.length - 1];
-        const latestOptions = latestSnapshot ? latestSnapshot.options : {};
-        const rawAllKeys = Object.keys(latestOptions)
-            .sort((a, b) => (latestOptions[b] || 0) - (latestOptions[a] || 0));
-
-        // also make sure any key that appeared earlier is included
-        historyRaw.forEach(snap => {
-            Object.keys(snap.options).forEach(k => {
-                if (!rawAllKeys.includes(k)) rawAllKeys.push(k);
-            });
+        const cards = document.getElementById('cards');
+        [...options, ...(abstainedNodes > 0 ? [notVoted] : [])].forEach((o, i) => {
+            const card = document.createElement('div');
+            card.className = 'panel card shadow-box' + (i === 0 && reached ? ' lead' : '') + (o === notVoted ? ' none' : '');
+            card.style.borderTopColor = o.color;
+            card.innerHTML = `
+                <div class="card-name">${i === 0 && reached ? '✓ ' : ''}${o.name}</div>
+                <div class="card-pct" style="color:${o.color}">${fmtPct(o.count)}</div>
+                <div class="card-count">${o.count} of ${activeNodes} nodes</div>
+                ${o.isCurrent ? '<span class="card-tag">current value</span>' : ''}`;
+            cards.appendChild(card);
         });
 
-        const hiddenKeys = rawAllKeys.length > MAX_VISIBLE_OPTIONS
-            ? rawAllKeys.slice(MAX_VISIBLE_OPTIONS)
-            : [];
-        const allKeys = hiddenKeys.length > 0
-            ? [...rawAllKeys.slice(0, MAX_VISIBLE_OPTIONS), OTHERS_KEY]
-            : rawAllKeys;
-
-        function valueForKeyAtSnapshot(snap, optKey) {
-            if (optKey === OTHERS_KEY) {
-                return hiddenKeys.reduce((sum, key) => sum + Number(snap.options[key] || 0), 0);
-            }
-            return Number(snap.options[optKey] || 0);
-        }
-
-        function latestValueForKey(optKey) {
-            if (optKey === OTHERS_KEY) {
-                return hiddenKeys.reduce((sum, key) => sum + Number(latestOptions[key] || 0), 0);
-            }
-            return Number(latestOptions[optKey] || 0);
-        }
-
-        const colorMap = {};
-        allKeys.forEach((k, i) => {
-            colorMap[k] = k === OTHERS_KEY ? '#8B97A3' : PALETTE[i % PALETTE.length];
-        });
-
-        // ── build chart datasets (one per option key) ────────────────────────────
-        const labels = historyRaw.map(snap => {
-            const d = new Date(snap.ts * 1000);
-            const pad = n => String(n).padStart(2, '0');
-            return `${pad(d.getUTCDate())}.${pad(d.getUTCMonth() + 1)}`;
-        });
-
-        const datasets = allKeys.map(optKey => {
-            const col = colorMap[optKey];
-            return {
-                label: label(optKey),
-                data: historyRaw.map(snap => valueForKeyAtSnapshot(snap, optKey)),
-                backgroundColor: col + '55',  // semi-transparent fill
-                borderColor: col,
-                borderWidth: 2,
-                pointRadius: 0,
-                pointHoverRadius: 4,
-                fill: true,
-                tension: 0.35,
-            };
-        });
-
-        // ── "Not Voted" dataset — nodes that cast no vote at each snapshot ───
-        datasets.push({
-            label: 'Not Voted',
-            data: historyRaw.map(snap => {
-                const voted = Object.values(snap.options).reduce((s, v) => s + Number(v), 0);
-                return Math.max(0, activeNodes - voted);
-            }),
-            backgroundColor: 'rgba(80,80,80,0.15)',
-            borderColor: 'rgba(120,120,120,0.5)',
-            borderWidth: 1.5,
-            borderDash: [5, 4],
-            pointRadius: 0,
-            pointHoverRadius: 4,
-            fill: true,
-            tension: 0.35,
-            hidden: false,
-        });
-
-        // ── render chart ─────────────────────────────────────────────────────────
-        Chart.defaults.font.family = 'ThorFontLight, sans-serif';
-        Chart.defaults.color = 'rgb(180,180,180)';
-
-        const ctx = document.getElementById('votingChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {labels, datasets},
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                interaction: {mode: 'index', intersect: false},
-                stacked: false,
-                scales: {
-                    x: {
-                        ticks: {
-                            maxTicksLimit: 10,
-                            maxRotation: 30,
-                            font: {size: 22},
-                            color: '#888',
-                            autoSkip: true,
-                        },
-                        grid: {color: 'rgba(255,255,255,0.04)'},
-                    },
-                    y: {
-                        beginAtZero: true,
-                        min: 0,
-                        max: activeNodes,
-                        ticks: {
-                            font: {size: 20},
-                            color: '#666',
-                            stepSize: Math.max(1, Math.ceil(activeNodes / 5)),
-                        },
-                        grid: {color: 'rgba(255,255,255,0.06)'},
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top',
-                        labels: {
-                            boxWidth: 18,
-                            boxHeight: 10,
-                            borderRadius: 5,
-                            useBorderRadius: true,
-                            font: {size: 28},
-                            color: '#bbb',
-                            padding: 20,
-                        }
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(10,16,21,0.92)',
-                        borderColor: 'rgba(255,255,255,0.12)',
-                        borderWidth: 1,
-                        titleColor: '#eee',
-                        bodyColor: '#bbb',
-                        callbacks: {
-                            label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} nodes (${(ctx.parsed.y / activeNodes * 100).toFixed(1)}%)`,
-                        }
-                    },
-                    // consensus threshold annotation (drawn manually via afterDraw)
-                    afterDraw: null,
-                },
-                // draw consensus line via plugin
-            },
-            plugins: [{
-                id: 'consensusLine',
-                afterDraw(chart) {
-                    const {ctx, scales: {y}} = chart;
-                    const yVal = Math.round(activeNodes * CONSENSUS);
-                    const yPx = y.getPixelForValue(yVal);
-                    ctx.save();
-                    ctx.setLineDash([6, 4]);
-                    ctx.strokeStyle = 'rgba(255, 200, 50, 0.5)';
-                    ctx.lineWidth = 1.5;
-                    ctx.beginPath();
-                    ctx.moveTo(chart.chartArea.left, yPx);
-                    ctx.lineTo(chart.chartArea.right, yPx);
-                    ctx.stroke();
-                    // label
-                    ctx.setLineDash([]);
-                    ctx.font = '24px ThorFontLight, sans-serif';
-                    ctx.fillStyle = 'rgba(255,200,50,0.7)';
-                    ctx.fillText(`Consensus (${yVal})`, chart.chartArea.left + 6, yPx - 12);
-                    ctx.restore();
-                }
-            }]
-        });
-
-        // ── populate right-panel vote breakdown ───────────────────────────────────
-        const breakdownEl = document.getElementById('votes-breakdown');
-        const thresholdEl = document.getElementById('threshold-note');
-        const consensusCount = Math.ceil(activeNodes * CONSENSUS);
-
-        allKeys.forEach(optKey => {
-            const count = latestValueForKey(optKey);
-            const pct = activeNodes > 0 ? (count / activeNodes * 100) : 0;
-            const consensusPct = CONSENSUS * 100;
-            const col = colorMap[optKey];
-            const isWinning = count >= consensusCount;
-
-            const row = document.createElement('div');
-            row.className = 'vote-row';
-            row.innerHTML = `
-            <div class="vote-row-header">
-                <span class="vote-value-label" style="color:${col}">${isWinning ? '✓ ' : ''}${label(optKey)}</span>
-                <span class="vote-count-label">${count} / ${activeNodes} &nbsp; <strong>${pct.toFixed(1)}%</strong></span>
-            </div>
-            <div class="vote-bar-bg">
-                <div class="vote-bar-consensus" style="left:${consensusPct}%;"></div>
-                <div class="vote-bar-fill" style="width:${pct}%; background:${col};"></div>
-            </div>
-        `;
-            breakdownEl.insertBefore(row, thresholdEl);
-        });
-
-        // ── "Not Voted" row ───────────────────────────────────────────────────────
-        const abstained = Math.max(0, Number(abstainedNodes) || 0);
-        if (abstained > 0) {
-            const abstPct = activeNodes > 0 ? (abstained / activeNodes * 100) : 0;
-            const consensusPct = CONSENSUS * 100;
-            const row = document.createElement('div');
-            row.className = 'vote-row';
-            row.style.opacity = '0.55';
-            row.innerHTML = `
-            <div class="vote-row-header">
-                <span class="vote-value-label" style="color:#777">Not Voted</span>
-                <span class="vote-count-label">${abstained} / ${activeNodes} &nbsp; <strong>${abstPct.toFixed(1)}%</strong></span>
-            </div>
-            <div class="vote-bar-bg">
-                <div class="vote-bar-consensus" style="left:${consensusPct}%;"></div>
-                <div class="vote-bar-fill" style="width:${abstPct}%; background:#555; border: 1px dashed #888;"></div>
-            </div>
-        `;
-            breakdownEl.insertBefore(row, thresholdEl);
-        }
-
-        const leadCount = latestOptions[allKeys[0]] || 0;
-        const leadPct = activeNodes > 0 ? (leadCount / activeNodes * 100).toFixed(1) : 0;
-        const reached = leadCount >= consensusCount;
-        thresholdEl.textContent = reached
-            ? `✅ Consensus reached! (≥ ${(CONSENSUS * 100).toFixed(0)}%)`
-            : `Consensus threshold: ${consensusCount} nodes (${(CONSENSUS * 100).toFixed(0)}%) — leader at ${leadPct}%`;
-        thresholdEl.style.color = reached ? '#33FF99' : '#666';
+        drawHistoryChart('historyChart', {fontSize: 17});
     </script>
-
 {% endblock %}

@@ -1,0 +1,169 @@
+{#
+  The data of a Mimir vote, prepared for the scripts of the vote cards:
+  the options sorted by their votes (the top ones, the rest folded into "Others"), their colours,
+  the consensus, the leader and a compact history chart. Include it after the markup.
+#}
+<script>
+    const historyRaw = {{ history | tojson }};
+    const activeNodes = Number({{ active_nodes }}) || 0;
+    const abstainedNodes = Math.max(0, Number({{ abstained_nodes | default(0) }}) || 0);
+    const decodedValues = {{ (decoded_values or {}) | tojson }};
+    const currentValue = {{ current_value | default(none) | tojson }};
+    const firstSeenTs = {{ first_seen_ts | default(0) }};
+    const lastSeenTs = {{ last_seen_ts | default(0) }};
+    const CONSENSUS = 0.667; // 2/3 of the active nodes
+    const MAX_VISIBLE_OPTIONS = 5;
+    const OTHERS_KEY = '__others__';
+    const NOT_VOTED_COLOR = '#55616a';
+    const CONSENSUS_COLOR = '#FFDC5A';
+
+    const PALETTE = ['#23DCC8', '#00CCFF', '#33FF99', '#FF9933', '#FF6699', '#AA88FF', '#FFDD44', '#FF4444', '#44AAFF', '#88FF44'];
+
+    const pad2 = n => String(n).padStart(2, '0');
+
+    function fmtTs(ts) {
+        if (!ts) return '—';
+        const d = new Date(ts * 1000);
+        return `${pad2(d.getUTCDate())}.${pad2(d.getUTCMonth() + 1)}.${d.getUTCFullYear()}`;
+    }
+
+    function fmtAgo(ts) {
+        if (!ts) return '';
+        const diffSec = Math.max(0, Math.floor(Date.now() / 1000 - ts));
+        const units = [['y', 365 * 86400], ['mo', 30 * 86400], ['d', 86400], ['h', 3600], ['m', 60]];
+        for (const [suffix, size] of units) {
+            if (diffSec >= size) return `${Math.floor(diffSec / size)}${suffix} ago`;
+        }
+        return `${diffSec}s ago`;
+    }
+
+    const latestSnapshot = historyRaw[historyRaw.length - 1];
+    const latestOptions = latestSnapshot ? latestSnapshot.options : {};
+    const rawAllKeys = Object.keys(latestOptions).sort((a, b) => (latestOptions[b] || 0) - (latestOptions[a] || 0));
+    historyRaw.forEach(snap => Object.keys(snap.options).forEach(k => {
+        if (!rawAllKeys.includes(k)) rawAllKeys.push(k);
+    }));
+    const hiddenKeys = rawAllKeys.length > MAX_VISIBLE_OPTIONS ? rawAllKeys.slice(MAX_VISIBLE_OPTIONS) : [];
+    const allKeys = hiddenKeys.length > 0 ? [...rawAllKeys.slice(0, MAX_VISIBLE_OPTIONS), OTHERS_KEY] : rawAllKeys;
+
+    const label = k => k === OTHERS_KEY ? 'Others' : (decodedValues[k] || `Value ${k}`);
+
+    function valueForKeyAtSnapshot(snap, optKey) {
+        if (optKey === OTHERS_KEY) return hiddenKeys.reduce((sum, key) => sum + Number(snap.options[key] || 0), 0);
+        return Number(snap.options[optKey] || 0);
+    }
+
+    const colorMap = {};
+    allKeys.forEach((k, i) => colorMap[k] = k === OTHERS_KEY ? '#8B97A3' : PALETTE[i % PALETTE.length]);
+
+    const consensusCount = Math.ceil(activeNodes * CONSENSUS);
+    const pctOf = n => activeNodes > 0 ? n / activeNodes * 100 : 0;
+    const fmtPct = n => `${pctOf(n).toFixed(pctOf(n) >= 10 ? 0 : 1)}%`;
+
+    const hasCurrentValue = currentValue !== null && currentValue !== undefined && currentValue !== '';
+    const currentValueText = hasCurrentValue ? (decodedValues[String(currentValue)] || `Value ${currentValue}`) : null;
+
+    // the options of the vote, the most voted first
+    const options = allKeys.map(k => ({
+        key: k,
+        name: label(k),
+        count: valueForKeyAtSnapshot(latestSnapshot || {options: {}}, k),
+        color: colorMap[k],
+        isCurrent: hasCurrentValue && String(currentValue) === k,
+    }));
+    const notVoted = {key: '__none__', name: 'Not voted', count: abstainedNodes, color: NOT_VOTED_COLOR, isCurrent: false};
+    const votedCount = Math.max(0, activeNodes - abstainedNodes);
+    const leader = options[0] || null;
+    const reached = !!leader && leader.count >= consensusCount;
+    const votesMissing = leader ? Math.max(0, consensusCount - leader.count) : consensusCount;
+
+    // {title, detail} of the consensus
+    const consensusStatus = reached
+        ? {title: 'Consensus reached', detail: `${leader.name} has ${leader.count} of ${consensusCount} votes needed`}
+        : {
+            title: 'No consensus yet',
+            detail: leader
+                ? `${leader.name} needs ${votesMissing} more ${votesMissing === 1 ? 'vote' : 'votes'} to reach ${consensusCount} (2/3 of ${activeNodes})`
+                : `${consensusCount} votes needed (2/3 of ${activeNodes})`,
+        };
+
+    function setHtml(id, html) {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
+    }
+
+    // a small history chart: the votes of each option over time, the consensus as a dashed line, no legend
+    function drawHistoryChart(canvasId, {fontSize = 18, yTicks = true} = {}) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas || historyRaw.length === 0) return;
+        Chart.defaults.font.family = 'ThorFontLight, sans-serif';
+        Chart.defaults.color = 'rgb(160,160,160)';
+        const labels = historyRaw.map(snap => {
+            const d = new Date(snap.ts * 1000);
+            return `${pad2(d.getUTCDate())}.${pad2(d.getUTCMonth() + 1)}`;
+        });
+        const datasets = allKeys.map(k => ({
+            label: label(k),
+            data: historyRaw.map(snap => valueForKeyAtSnapshot(snap, k)),
+            backgroundColor: colorMap[k] + '33',
+            borderColor: colorMap[k],
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: true,
+            tension: 0.35,
+        }));
+        datasets.push({
+            label: 'Not voted',
+            data: historyRaw.map(snap => Math.max(0, activeNodes - Object.values(snap.options).reduce((s, v) => s + Number(v), 0))),
+            borderColor: 'rgba(120,120,120,0.5)',
+            borderWidth: 1.5,
+            borderDash: [5, 4],
+            pointRadius: 0,
+            fill: false,
+            tension: 0.35,
+        });
+        new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: {labels, datasets},
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    x: {
+                        ticks: {maxTicksLimit: 6, maxRotation: 0, font: {size: fontSize}, color: '#777', autoSkip: true},
+                        grid: {display: false},
+                    },
+                    y: {
+                        min: 0,
+                        max: activeNodes,
+                        display: yTicks,
+                        ticks: {font: {size: fontSize}, color: '#666', stepSize: Math.max(1, Math.ceil(activeNodes / 2))},
+                        grid: {color: 'rgba(255,255,255,0.06)'},
+                    }
+                },
+                plugins: {legend: {display: false}, tooltip: {enabled: false}},
+            },
+            plugins: [{
+                id: 'consensusLine',
+                afterDraw(chart) {
+                    const {ctx, scales: {y}} = chart;
+                    const yPx = y.getPixelForValue(consensusCount);
+                    ctx.save();
+                    ctx.setLineDash([6, 4]);
+                    ctx.strokeStyle = 'rgba(255, 220, 90, 0.6)';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(chart.chartArea.left, yPx);
+                    ctx.lineTo(chart.chartArea.right, yPx);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.font = `${fontSize}px ThorFontLight, sans-serif`;
+                    ctx.fillStyle = 'rgba(255,220,90,0.8)';
+                    ctx.fillText(`2/3 · ${consensusCount}`, chart.chartArea.left + 6, yPx - 6);
+                    ctx.restore();
+                }
+            }]
+        });
+    }
+</script>
