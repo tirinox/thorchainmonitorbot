@@ -29,7 +29,7 @@ from notify.personal.balance import WalletWatchlist
 from notify.personal.bond_provider import BondWatchlist
 from notify.personal.helpers import GeneralSettings, Props
 from notify.personal.scheduled import PersonalPeriodicNotificationService, PersonalIdTriplet
-from notify.personal.swap_tracker import SwapWatchlist
+from notify.personal.swap_tracker import SwapWatchlist, PersonalSwapTracker
 from .base import message_handler, query_handler, DialogWithSettings
 from .message_cat_db import MessageCategoryDB
 
@@ -202,6 +202,19 @@ class MyWalletsMenu(DialogWithSettings):
         self.data[self.KEY_ACTIVE_ADDRESS_INDEX] = index
 
         await self.show_wallet_menu_for_address(message, address, edit=edit)
+
+    # registered before the handlers of the menu states, which take any query in their state
+    @query_handler(lambda q: (q.data or '').startswith(f'{PersonalSwapTracker.QUERY_MUTE}:'), state='*')
+    async def on_mute_swap_tracking(self, query: CallbackQuery):
+        """The button under a message of the swap tracker: stop following the swaps of that wallet"""
+        prefix = query.data.split(':', 1)[1]  # a long address is cut to fit the callback data
+        address = next((a for a in self.my_addresses if a.startswith(prefix)), None) if prefix else None
+        if address:
+            self._set_address_property(address, Props.PROP_TRACK_SWAPS, False)
+            await self.deps.swap_tracker.mute_address(self.user_id(query.message), address)
+        with suppress(Exception):
+            await query.message.edit_reply_markup(reply_markup=None)
+        await query.answer(self.loc.text_swap_track_muted(address or prefix), show_alert=True)
 
     @query_handler(state=LPMenuStates.MAIN_MENU)
     async def on_tap_address(self, query: CallbackQuery):
