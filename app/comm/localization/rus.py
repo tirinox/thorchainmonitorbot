@@ -164,6 +164,7 @@ class RussianLocalization(BaseLocalization):
 
     BUTTON_TRACK_SWAPS_ON = 'Следить за обменами: ДА'
     BUTTON_TRACK_SWAPS_OFF = 'Следить за обменами: НЕТ'
+    BUTTON_SWAP_TRACK_MUTE = '🔕 Не следить за обменами этого кошелька'
 
     BUTTON_SET_RUNE_ALERT_LIMIT = 'Уст. мин. лимит R'
 
@@ -542,6 +543,11 @@ class RussianLocalization(BaseLocalization):
         'progress': 'Этапы',
         'eta': 'Осталось',
     }
+
+    @staticmethod
+    def text_swap_track_muted(address):
+        return (f'🔕 Больше не слежу за обменами {short_address(address)}. '
+                f'Включить снова: Мои кошельки → кошелёк → Настройки.')
 
     def notification_text_swap_track_started(self, track: SwapTrack, info: StageInfo, name_map: NameMap, user,
                                              manual=False):

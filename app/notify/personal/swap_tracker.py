@@ -12,6 +12,8 @@ import re
 from contextlib import suppress
 from typing import Optional, Dict, List, Callable, Union
 
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 from api.aionode.types import ThorTxStatus
 from jobs.fetch.base import BaseFetcher
 from jobs.scanner.event_db import EventDatabase
@@ -29,7 +31,7 @@ from models.s_swap import AlertSwapStart
 from models.swap_track import SwapTrack, SwapStage, StageInfo, derive_stage, diagnose, DiagCtx, Diagnosis, \
     swap_summary
 from models.tx import ThorAction, EventLargeTransaction
-from notify.channel import ChannelDescriptor, BoardMessage
+from notify.channel import ChannelDescriptor, BoardMessage, Messengers
 
 
 class SwapWatchlist(UserWatchlist):
@@ -47,6 +49,9 @@ class PersonalSwapTracker(BaseFetcher, INotified):
     PROGRESS_EVERY_SEC = 10 * MINUTE  # a long streaming swap reports its progress this often
     DIAG_REPEAT_SEC = HOUR  # the same explanation of a delay is not repeated more often
     FAILED_AFTER_SEC = 2 * MINUTE  # a finalised swap with nothing planned to pay out this long has failed
+
+    QUERY_MUTE = 'swtrk-mute'  # the button "stop following the swaps of this wallet": the query is QUERY_MUTE:<address>
+    MAX_QUERY_LEN = 64  # Telegram's limit of the callback data; a longer address is cut, MyWalletsMenu matches the prefix
 
     def __init__(self, deps: DepContainer):
         cfg = deps.cfg.get('personal.swap_tracker', SubConfig({}))  # a config without the section gets the defaults
@@ -253,7 +258,7 @@ class PersonalSwapTracker(BaseFetcher, INotified):
             text = reply_loc.notification_text_swap_track_started(track, info, name_map, user, manual=True)
         else:
             await self._send_all(track, lambda loc, nm, user: loc.notification_text_swap_track_started(
-                track, info, nm, user))
+                track, info, nm, user), mute_button=True)
         track.next_poll_ts = now + self.sleep_period
         await self._save(track)
         return self.RESULT_STARTED, text
@@ -413,7 +418,7 @@ class PersonalSwapTracker(BaseFetcher, INotified):
                 return BoardMessage.make_photo(photo, text, 'swap_finished.png', msg_type=self.MSG_TYPE)
             return text
 
-        await self._send_all(track, build)
+        await self._send_all(track, build, mute_button=True)
         await self._drop(track)
         self.logger.info(f'Swap {track.tx_id} finished: {info.stage}')
         return True
@@ -466,7 +471,34 @@ class PersonalSwapTracker(BaseFetcher, INotified):
         local_names = await self.deps.name_service.get_local_service(user).get_name_map()
         return name_map.joined_with(local_names) if local_names else name_map
 
-    async def _send_all(self, track: SwapTrack, build: MessageBuilder):
+    @classmethod
+    def mute_query(cls, address: str) -> str:
+        return f'{cls.QUERY_MUTE}:{address}'[:cls.MAX_QUERY_LEN]
+
+    async def _mute_keyboard(self, loc, track: SwapTrack, user) -> Optional[InlineKeyboardMarkup]:
+        """A button to stop following the swaps of the user's wallet in this swap; none for a /track watcher"""
+        mine = await self.watchlist.all_nodes_for_user(user)
+        address = next((a for a in (track.from_address, track.dest_address) if a and a in mine), None)
+        if not address:
+            return None
+        return InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(loc.BUTTON_SWAP_TRACK_MUTE, callback_data=self.mute_query(address))
+        ]])
+
+    async def mute_address(self, user, address: str):
+        """The user stops following the swaps of this wallet: the swaps of it being followed now go quiet too"""
+        user = str(user)
+        await self.watchlist.set_user_to_node(user, address, False)
+        for track in await self.load_active():
+            if track.users.get(user) not in (None, SwapTrack.ROLE_WATCHER) and \
+                    address in (track.from_address, track.dest_address):
+                track.users.pop(user)
+                if track.users:
+                    await self._save(track)
+                else:
+                    await self._drop(track)
+
+    async def _send_all(self, track: SwapTrack, build: MessageBuilder, mute_button=False):
         settings_dic = await self.deps.settings_manager.get_settings_multi(list(track.users.keys()))
         name_map = await self.deps.name_service.safely_load_thornames_from_address_set(
             [a for a in (track.from_address, track.dest_address) if a])
@@ -488,8 +520,11 @@ class PersonalSwapTracker(BaseFetcher, INotified):
                     continue
 
                 platform = SettingsManager.get_platform(settings)
+                extra = {}
+                if mute_button and platform == Messengers.TELEGRAM:
+                    extra['reply_markup'] = await self._mute_keyboard(loc, track, user)
                 await self.deps.broadcaster.safe_send_message_rate(
-                    ChannelDescriptor(platform, user), message, disable_web_page_preview=True)
+                    ChannelDescriptor(platform, user), message, disable_web_page_preview=True, **extra)
             except Exception as e:
                 self.logger.exception(f'Failed to notify user {user} about swap {track.tx_id}: {e!r}')
 

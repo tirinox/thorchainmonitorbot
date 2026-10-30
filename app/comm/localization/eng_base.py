@@ -222,6 +222,7 @@ class BaseLocalization(ABC):  # == English
 
     BUTTON_TRACK_SWAPS_ON = 'Track swaps: ON'
     BUTTON_TRACK_SWAPS_OFF = 'Track swaps: OFF'
+    BUTTON_SWAP_TRACK_MUTE = '🔕 Stop tracking swaps of this wallet'
 
     BUTTON_SET_RUNE_ALERT_LIMIT = 'Set min limit'
 
@@ -858,6 +859,11 @@ class BaseLocalization(ABC):  # == English
         if (eta := track.eta_sec(info, now_ts())) > 30:
             lines.append(f'{labels["eta"]}: ~{self.seconds_human(eta)}')
         return lines
+
+    @staticmethod
+    def text_swap_track_muted(address):
+        return (f'🔕 Swaps of {short_address(address)} are no longer tracked. '
+                f'To turn it back on: My wallets → the wallet → Settings.')
 
     def notification_text_swap_track_started(self, track: SwapTrack, info: StageInfo, name_map: NameMap, user,
                                              manual=False):
