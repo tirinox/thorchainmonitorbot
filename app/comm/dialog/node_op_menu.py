@@ -9,6 +9,7 @@ from aiogram.utils.helper import HelperMode
 from comm.localization.manager import BaseLocalization
 from lib.date_utils import parse_timespan_to_seconds, HOUR
 from lib.depcont import DepContainer
+from lib.money import RAIDO_GLYPH
 from lib.settings_manager import SettingsContext
 from lib.texts import join_as_numbered_list, fuzzy_search
 from lib.utils import parse_list_from_string, grouper
@@ -16,7 +17,7 @@ from models.node_db import NodeStateDatabase
 from models.node_info import NodeInfo
 from models.node_watchers import NodeWatcherStorage
 from notify.channel import Messengers
-from notify.personal.helpers import NodeOpSetting, STANDARD_INTERVALS
+from notify.personal.helpers import NodeOpSetting, STANDARD_INTERVALS, DEFAULT_BOND_THRESHOLD_RUNE
 from .base import message_handler, query_handler, DialogWithSettings
 from comm.telegram.inline_list import TelegramInlineList
 
@@ -32,6 +33,7 @@ class NodeOpStates(StatesGroup):
     SETT_SLASH_PERIOD = State()
     SETT_SLASH_THRESHOLD = State()
     SETT_BOND_ENABLED = State()
+    SETT_BOND_THRESHOLD = State()
     SETT_NEW_VERSION_ENABLED = State()
     SETT_UPDATE_VERSION_ENABLED = State()
     SETT_CHURNING_ENABLED = State()
@@ -475,8 +477,44 @@ class NodeOpDialog(DialogWithSettings):
     async def bond_enabled_query_handle(self, query: CallbackQuery):
         await self.handle_query_for_something_on(query,
                                                  NodeOpSetting.BOND_ON,
-                                                 self.on_settings_menu,
+                                                 self.ask_bond_threshold,
                                                  self.on_settings_menu)
+
+    async def ask_bond_threshold(self, query: CallbackQuery):
+        await NodeOpStates.SETT_BOND_THRESHOLD.set()
+        value = self.settings.get(NodeOpSetting.BOND_THRESHOLD, DEFAULT_BOND_THRESHOLD_RUNE)
+        await query.message.edit_text(self.loc.text_nop_bond_threshold(value), reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(f'1 {RAIDO_GLYPH}', callback_data='1'),
+                    InlineKeyboardButton(f'10 {RAIDO_GLYPH}', callback_data='10'),
+                    InlineKeyboardButton(f'50 {RAIDO_GLYPH}', callback_data='50'),
+                ],
+                [
+                    InlineKeyboardButton(f'100 {RAIDO_GLYPH}', callback_data='100'),
+                    InlineKeyboardButton(f'500 {RAIDO_GLYPH}', callback_data='500'),
+                    InlineKeyboardButton(f'1K {RAIDO_GLYPH}', callback_data='1000'),
+                ],
+                [
+                    InlineKeyboardButton(f'5K {RAIDO_GLYPH}', callback_data='5000'),
+                    InlineKeyboardButton(f'10K {RAIDO_GLYPH}', callback_data='10000'),
+                    InlineKeyboardButton(f'50K {RAIDO_GLYPH}', callback_data='50000'),
+                ],
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='back')
+                ]
+            ]
+        ))
+
+    @query_handler(state=NodeOpStates.SETT_BOND_THRESHOLD)
+    async def bond_threshold_answer_query(self, query: CallbackQuery):
+        if query.data == 'back':
+            await self.on_settings_menu(query)
+            await query.answer()
+        else:
+            self.settings[NodeOpSetting.BOND_THRESHOLD] = int(query.data)
+            await self.on_settings_menu(query)
+            await query.answer(self.loc.SUCCESS)
 
     # -------- SETTINGS : OFFLINE ---------
 

@@ -2396,6 +2396,10 @@ class BaseLocalization(ABC):  # == English
         en_text = self.text_enabled_disabled(is_on)
         return f'Bond change notifications are {bold(en_text)}.'
 
+    def text_nop_bond_threshold(self, current):
+        return f'Please select the minimum bond change to notify about ' \
+               f'(now {bold(pretty_rune(current))}). Smaller changes will be ignored:'
+
     def text_nop_new_version_enabled(self, is_on):
         en_text = self.text_enabled_disabled(is_on)
         return f'New version notifications are {bold(en_text)}.\n\n' \
@@ -2490,9 +2494,11 @@ class BaseLocalization(ABC):  # == English
             message = f'🆕 New version detected! {bold(c.data)}! Consider upgrading!'
         elif c.type == NodeEventType.BOND:
             old, new = c.data
+            delta_str = up_down_arrow(old, new, money_delta=True, postfix=RAIDO_GLYPH)
+            usd_str = f' | {short_dollar(abs(new - old) * c.usd_per_rune)}' if c.usd_per_rune else ''
             message = f'⚖️ Node {short_addr}: bond changed ' \
                       f'from {pretty_rune(old)} ' \
-                      f'to {bold(pretty_rune(new))}!'
+                      f'to {bold(pretty_rune(new))} ({ital(delta_str)}{usd_str})!'
         elif c.type == NodeEventType.IP_ADDRESS_CHANGED:
             old, new = c.data
             message = f'🏤 Node {short_addr} changed its IP address from {ital(old)} to {bold(new)}!'
