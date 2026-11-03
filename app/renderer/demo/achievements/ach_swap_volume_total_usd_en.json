@@ -4,7 +4,7 @@
     "title": "Total swap volume",
     "subtitle": "$100B",
     "lang": "en",
-    "order": 11
+    "order": 12
   },
   "parameters": {
     "key": "swap_volume_total_usd",
@@ -29,7 +29,7 @@
       {
         "label": "Previous",
         "value": "$90B",
-        "sub": "1 month ago"
+        "sub": "1 month, 13 days ago"
       },
       {
         "label": "Now",

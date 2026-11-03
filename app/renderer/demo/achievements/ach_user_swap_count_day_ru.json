@@ -1,0 +1,46 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "Пользовательских свопов за день",
+    "subtitle": "200K",
+    "lang": "ru",
+    "order": 10
+  },
+  "parameters": {
+    "key": "user_swap_count_day",
+    "background": "nn_wreath_user_swaps.png",
+    "tint": "#c9a8ff",
+    "hole_x": 0.5,
+    "hole_y": 0.495,
+    "hole_r": 0.185,
+    "base_color": "#020607",
+    "frame_size": 810,
+    "frame_top": 60,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Более чем",
+    "number_text": "200K",
+    "glyphs": [],
+    "title": "Пользовательских свопов за день",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "1 октября 2026",
+    "stats": [
+      {
+        "label": "Было",
+        "value": "100K",
+        "sub": "17 дн назад"
+      },
+      {
+        "label": "Сейчас",
+        "value": "213,400",
+        "sub": ""
+      },
+      {
+        "label": "Следующая цель",
+        "value": "500K",
+        "sub": ""
+      }
+    ]
+  }
+}

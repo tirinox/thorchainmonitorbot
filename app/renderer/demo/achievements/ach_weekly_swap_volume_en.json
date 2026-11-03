@@ -4,7 +4,7 @@
     "title": "Weekly swap volume",
     "subtitle": "$2B",
     "lang": "en",
-    "order": 32
+    "order": 33
   },
   "parameters": {
     "key": "weekly_swap_volume",
@@ -29,7 +29,7 @@
       {
         "label": "Previous",
         "value": "$1B",
-        "sub": "2 months, 3 days ago"
+        "sub": "2 months, 16 days ago"
       },
       {
         "label": "Now",

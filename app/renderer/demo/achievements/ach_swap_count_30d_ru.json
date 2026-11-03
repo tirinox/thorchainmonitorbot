@@ -4,7 +4,7 @@
     "title": "Количество свопов за 30 дней",
     "subtitle": "1M",
     "lang": "ru",
-    "order": 10
+    "order": 11
   },
   "parameters": {
     "key": "swap_count_30d",
@@ -29,7 +29,7 @@
       {
         "label": "Было",
         "value": "500K",
-        "sub": "17 дн назад"
+        "sub": "1 мес назад"
       },
       {
         "label": "Сейчас",

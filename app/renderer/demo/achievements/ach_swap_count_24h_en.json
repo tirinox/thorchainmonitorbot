@@ -1,7 +1,7 @@
 {
   "template_name": "achievement.jinja2",
   "meta": {
-    "title": "Swaps in 24h",
+    "title": "Sub-swaps in 24h",
     "subtitle": "50K",
     "lang": "en",
     "order": 9
@@ -21,7 +21,7 @@
     "number_label": "Over",
     "number_text": "50K",
     "glyphs": [],
-    "title": "Swaps in 24h",
+    "title": "Sub-swaps in 24h",
     "subtitle": "",
     "asset_logo": "",
     "date": "October 1, 2026",

@@ -4,7 +4,7 @@
     "title": "Всего в бондах нод",
     "subtitle": "50M ᚱ",
     "lang": "ru",
-    "order": 17
+    "order": 18
   },
   "parameters": {
     "key": "total_bond",
@@ -29,7 +29,7 @@
       {
         "label": "Было",
         "value": "20M ᚱ",
-        "sub": "3 мес 18 дн назад"
+        "sub": "4 мес 1 дн назад"
       },
       {
         "label": "Сейчас",

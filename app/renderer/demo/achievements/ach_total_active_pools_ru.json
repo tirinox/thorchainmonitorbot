@@ -4,7 +4,7 @@
     "title": "Активных пулов",
     "subtitle": "20",
     "lang": "ru",
-    "order": 21
+    "order": 22
   },
   "parameters": {
     "key": "total_active_pools",
@@ -29,7 +29,7 @@
       {
         "label": "Было",
         "value": "10",
-        "sub": "1 мес 10 дн назад"
+        "sub": "1 мес 23 дн назад"
       },
       {
         "label": "Сейчас",

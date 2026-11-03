@@ -80,6 +80,7 @@ class AchievementsExtractor(WithLogger):
             Achievement(A.MAU, data.users_monthly),
             Achievement(A.SWAP_COUNT_TOTAL, data.swaps_total),
             Achievement(A.SWAP_COUNT_24H, data.swaps_24h),
+            Achievement(A.USER_SWAP_COUNT_DAY, data.user_swaps_day),
             Achievement(A.SWAP_COUNT_30D, data.swaps_30d),
             Achievement(A.ADD_LIQUIDITY_COUNT_TOTAL, data.add_count),
             Achievement(A.ADD_LIQUIDITY_VOLUME_TOTAL, int(data.added_rune)),

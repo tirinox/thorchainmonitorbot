@@ -4,7 +4,7 @@
     "title": "Bitcoin в хранилище",
     "subtitle": "2K",
     "lang": "ru",
-    "order": 26
+    "order": 27
   },
   "parameters": {
     "key": "btc_in_vault",
@@ -29,7 +29,7 @@
       {
         "label": "Было",
         "value": "1K",
-        "sub": "3 мес 15 дн назад"
+        "sub": "3 мес 28 дн назад"
       },
       {
         "label": "Сейчас",

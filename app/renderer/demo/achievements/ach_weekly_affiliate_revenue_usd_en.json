@@ -4,7 +4,7 @@
     "title": "Weekly affiliate revenue",
     "subtitle": "$200K",
     "lang": "en",
-    "order": 31
+    "order": 32
   },
   "parameters": {
     "key": "weekly_affiliate_revenue_usd",
@@ -29,7 +29,7 @@
       {
         "label": "Previous",
         "value": "$100K",
-        "sub": "1 month, 20 days ago"
+        "sub": "2 months, 3 days ago"
       },
       {
         "label": "Now",

@@ -4,7 +4,7 @@
     "title": "Liquidity additions",
     "subtitle": "1M",
     "lang": "en",
-    "order": 12
+    "order": 13
   },
   "parameters": {
     "key": "add_liquidity_count_total",
@@ -29,7 +29,7 @@
       {
         "label": "Previous",
         "value": "500K",
-        "sub": "1 month, 13 days ago"
+        "sub": "1 month, 26 days ago"
       },
       {
         "label": "Now",

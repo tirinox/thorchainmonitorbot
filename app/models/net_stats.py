@@ -20,7 +20,8 @@ class NetworkStats(BaseModelMixin):
 
     swap_volume_rune: float = 0.0  # stats
     swaps_total: int = 0  # stats
-    swaps_24h: int = 0  # stats
+    swaps_24h: int = 0  # stats: Midgard's swap events (sub-swaps), not the swaps of users
+    user_swaps_day: int = 0  # TxCountRecorder: swaps of users today (or yesterday, if more)
     swaps_30d: int = 0  # stats
     unique_swapper_count: int = 0  # stats
 

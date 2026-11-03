@@ -4,7 +4,7 @@
     "title": "Largest single swap",
     "subtitle": "$20M",
     "lang": "en",
-    "order": 23
+    "order": 24
   },
   "parameters": {
     "key": "max_swap_amount_usd",
@@ -29,7 +29,7 @@
       {
         "label": "Previous",
         "value": "$10M",
-        "sub": "2 months, 6 days ago"
+        "sub": "2 months, 19 days ago"
       },
       {
         "label": "Now",
