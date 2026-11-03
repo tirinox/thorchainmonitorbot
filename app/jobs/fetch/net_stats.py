@@ -7,6 +7,7 @@ from lib.constants import THOR_BLOCK_TIME, thor_to_float
 from lib.date_utils import parse_timespan_to_seconds, now_ts
 from lib.depcont import DepContainer
 from models.net_stats import NetworkStats
+from models.vol_n import TxMetricType
 
 
 class NetworkStatisticsFetcher(BaseFetcher):
@@ -134,6 +135,11 @@ class NetworkStatisticsFetcher(BaseFetcher):
         stats = await counter.get_main_stats()
         ns.users_daily = stats.dau_yesterday
         ns.users_monthly = stats.mau
+
+        if self.deps.tx_count_recorder:
+            # a swap of a user counts once: streaming sub-swaps and the two legs of a double swap do not add up
+            today, yesterday = await self.deps.tx_count_recorder.get_one_metric(TxMetricType.SWAP, period_days=1)
+            ns.user_swaps_day = max(today, yesterday)
 
     async def _get_rune_pool_stats(self, ns: NetworkStats):
         runepool = await self.deps.thor_connector.query_runepool()

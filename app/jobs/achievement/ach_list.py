@@ -28,7 +28,8 @@ class AchievementName:
     ANNIVERSARY = 'anniversary'
 
     SWAP_COUNT_TOTAL = 'swap_count_total'
-    SWAP_COUNT_24H = 'swap_count_24h'
+    SWAP_COUNT_24H = 'swap_count_24h'  # Midgard's swap events: every streaming sub-swap, a double swap is two
+    USER_SWAP_COUNT_DAY = 'user_swap_count_day'  # swaps by users (one per inbound tx), from the block scanner
     SWAP_COUNT_30D = 'swap_count_30d'
 
     SWAP_VOLUME_TOTAL_USD = 'swap_volume_total_usd'
@@ -141,6 +142,7 @@ BG_LIQUIDITY = 'nn_wreath_liquidity.png'
 BG_NETWORK = 'nn_wreath_network.png'
 BG_SWAPS = 'nn_wreath_swaps_2.png'
 BG_SWAP_VOLUME = 'nn_wreath_swap_volume.png'  # the gold twin of the swaps frame: volumes in money
+BG_USER_SWAPS = 'nn_wreath_user_swaps.png'  # the aurora twin of the swaps frame: swaps of users, not sub-swaps
 BG_USERS = 'nn_wreath_users_day.png'
 BG_USERS_NIGHT = 'nn_wreath_users_night.png'  # the monthly twin of the daily frame
 BG_RUNE = 'nn_wreath_rune.png'
@@ -195,7 +197,9 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.WALLET_COUNT, 'Wallets', milestone_scale=MILESTONES_EVERY_DIGIT,
           thresholds=61000, background=BG_USERS),
     ADesc(A.SWAP_COUNT_TOTAL, 'Total swaps', background=BG_SWAPS),
-    ADesc(A.SWAP_COUNT_24H, 'Swaps in 24h', background=BG_SWAPS),
+    ADesc(A.SWAP_COUNT_24H, 'Sub-swaps in 24h', background=BG_SWAPS),
+    # 100K was reached on 2026-10-30 (Midgard counted 1M sub-swaps that day): no news below it
+    ADesc(A.USER_SWAP_COUNT_DAY, 'User swaps per day', thresholds=100_000, background=BG_USER_SWAPS),
     ADesc(A.SWAP_COUNT_30D, 'Monthly swaps', background=BG_SWAPS),
 
     ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Liquidity additions'),

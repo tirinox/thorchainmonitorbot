@@ -4,7 +4,7 @@
     "title": "Общий объем свопов",
     "subtitle": "$100B",
     "lang": "ru",
-    "order": 11
+    "order": 12
   },
   "parameters": {
     "key": "swap_volume_total_usd",
@@ -29,7 +29,7 @@
       {
         "label": "Было",
         "value": "$90B",
-        "sub": "1 мес назад"
+        "sub": "1 мес 13 дн назад"
       },
       {
         "label": "Сейчас",

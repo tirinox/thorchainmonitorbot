@@ -4,7 +4,7 @@
     "title": "Всего голосов за Mimir",
     "subtitle": "2K",
     "lang": "ru",
-    "order": 18
+    "order": 19
   },
   "parameters": {
     "key": "total_mimir_votes",
@@ -29,7 +29,7 @@
       {
         "label": "Было",
         "value": "1K",
-        "sub": "4 мес 1 дн назад"
+        "sub": "14 дн назад"
       },
       {
         "label": "Сейчас",

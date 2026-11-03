@@ -1780,6 +1780,10 @@ class RussianLocalization(BaseLocalization):
         en_text = self.text_enabled_disabled(is_on)
         return f'Уведомления об изменении бонда {bold(en_text)}.'
 
+    def text_nop_bond_threshold(self, current):
+        return f'Выберите минимальное изменение бонда для уведомления ' \
+               f'(сейчас {bold(pretty_rune(current))}). О меньших изменениях бот не сообщит:'
+
     def text_nop_new_version_enabled(self, is_on):
         en_text = self.text_enabled_disabled(is_on)
         return f'Уведомления о появлении новой версии {bold(en_text)}.\n\n' \
@@ -1882,9 +1886,11 @@ class RussianLocalization(BaseLocalization):
             message = f'🆕 Новая версия ПО ноды обнаружена! {bold(c.data)}! Рассмотрите возможность обновиться!'
         elif c.type == NodeEventType.BOND:
             old, new = c.data
+            delta_str = up_down_arrow(old, new, money_delta=True, postfix=RAIDO_GLYPH)
+            usd_str = f' | {short_dollar(abs(new - old) * c.usd_per_rune)}' if c.usd_per_rune else ''
             message = f'⚖️ Нода {short_addr}: изменение бонда с ' \
                       f'{pretty_rune(old)} ' \
-                      f'до {bold(pretty_rune(new))}!'
+                      f'до {bold(pretty_rune(new))} ({ital(delta_str)}{usd_str})!'
         elif c.type == NodeEventType.IP_ADDRESS_CHANGED:
             old, new = c.data
             message = f'🏤 Нода {short_addr} сменила свой IP адрес с {ital(old)} на {bold(new)}!'

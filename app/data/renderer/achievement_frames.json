@@ -208,5 +208,16 @@
     "size": 860,
     "top": 40,
     "shade_from": 58
+  },
+  "nn_wreath_user_swaps.png": {
+    "tint": "#c9a8ff",
+    "hole_x": 0.5,
+    "hole_y": 0.495,
+    "hole_r": 0.185,
+    "base": "#020607",
+    "size": 810,
+    "top": 60,
+    "shade_from": 58,
+    "note": "the twin of the swaps frame for the swaps of users: an aurora around it; the spray reaches far down: smaller and lower, clear of the title"
   }
 }

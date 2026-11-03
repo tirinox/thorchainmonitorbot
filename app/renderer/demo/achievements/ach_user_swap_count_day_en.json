@@ -1,0 +1,46 @@
+{
+  "template_name": "achievement.jinja2",
+  "meta": {
+    "title": "User swaps per day",
+    "subtitle": "200K",
+    "lang": "en",
+    "order": 10
+  },
+  "parameters": {
+    "key": "user_swap_count_day",
+    "background": "nn_wreath_user_swaps.png",
+    "tint": "#c9a8ff",
+    "hole_x": 0.5,
+    "hole_y": 0.495,
+    "hole_r": 0.185,
+    "base_color": "#020607",
+    "frame_size": 810,
+    "frame_top": 60,
+    "shade_from": 58,
+    "number_font": "runic",
+    "number_label": "Over",
+    "number_text": "200K",
+    "glyphs": [],
+    "title": "User swaps per day",
+    "subtitle": "",
+    "asset_logo": "",
+    "date": "October 1, 2026",
+    "stats": [
+      {
+        "label": "Previous",
+        "value": "100K",
+        "sub": "17 days ago"
+      },
+      {
+        "label": "Now",
+        "value": "213,400",
+        "sub": ""
+      },
+      {
+        "label": "Next milestone",
+        "value": "500K",
+        "sub": ""
+      }
+    ]
+  }
+}

@@ -19,11 +19,15 @@ STANDARD_INTERVALS = [
 ]
 
 
+DEFAULT_BOND_THRESHOLD_RUNE = 10
+
+
 class NodeOpSetting:
     IP_ADDRESS_ON = 'nop:ip:on'
     VERSION_ON = 'nop:version:on'
     NEW_VERSION_ON = 'nop:new_v:on'
     BOND_ON = 'nop:bond:on'
+    BOND_THRESHOLD = 'nop:bond:threshold'  # min change in Rune
     OFFLINE_ON = 'nop:offline:on'
     OFFLINE_INTERVAL = 'nop:offline:interval'
     CHAIN_HEIGHT_ON = 'nop:height:on'

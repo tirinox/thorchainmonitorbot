@@ -4,7 +4,7 @@
     "title": "Total Mimir votes",
     "subtitle": "2K",
     "lang": "en",
-    "order": 18
+    "order": 19
   },
   "parameters": {
     "key": "total_mimir_votes",
@@ -29,7 +29,7 @@
       {
         "label": "Previous",
         "value": "1K",
-        "sub": "4 months, 1 day ago"
+        "sub": "14 days ago"
       },
       {
         "label": "Now",
