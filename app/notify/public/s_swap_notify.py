@@ -8,6 +8,7 @@ from lib.logs import WithLogger
 from lib.money import pretty_dollar
 from models.asset import Asset
 from models.s_swap import AlertSwapStart
+from notify.public.swap_dyn_threshold import DirectionalThreshold, swap_direction
 
 DB_KEY_ANNOUNCED_SS_START = 'streaming_swap_start_announced'
 
@@ -27,6 +28,7 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         self.logger.info(f'min_streaming_swap_usd = {pretty_dollar(self.min_streaming_swap_usd)}')
         self.hide_arb_bots = self.deps.cfg.as_bool('tx.swap.hide_arbitrage_bots', True)
         self.arb_detector = ArbBotDetector(deps)
+        self.dyn_threshold = DirectionalThreshold.from_config(deps.db, deps.cfg)  # None if turned off
 
         self.deduplicator = EventDbTxDeduplicator(deps.db, self.DEDUP_COMPONENT)
 
@@ -42,6 +44,12 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
                 return
         else:
             await self.deduplicator.mark_as_seen(event.tx_id)
+
+        # the check above only reads the bar; here it is checked again and raised in one step,
+        # so a series of swaps of one direction in the same moment is seen one by one
+        if self.dyn_threshold and not await self.dyn_threshold.check_and_record(
+                swap_direction(event.in_asset, event.out_asset), event.volume_usd, event.tx_id):
+            return
 
         await self.load_extra_tx_information(event)
         await self.pass_data_to_listeners(event)  # alert!
@@ -76,6 +84,11 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         if e.volume_usd < self.min_streaming_swap_usd:
             log_f(
                 f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: {e.volume_usd = } < {self.min_streaming_swap_usd}')
+            return False
+
+        if self.dyn_threshold and not await self.dyn_threshold.passes(
+                swap_direction(e.in_asset, e.out_asset), e.volume_usd):
+            log_f(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: {e.volume_usd = } is below the dynamic bar')
             return False
 
         self.logger.info(f'Swap start {e.tx_id}: {e.in_asset} -> {e.out_asset}: eligible')

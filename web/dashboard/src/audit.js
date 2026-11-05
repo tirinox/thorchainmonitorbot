@@ -14,6 +14,7 @@ const ACTIONS = {
     'flag.delete': {label: 'Deleted flag', icon: 'pi pi-trash', severity: 'danger'},
     'achievement.stale': {label: 'Marked achievement stale', icon: 'pi pi-bell-slash', severity: 'warn'},
     'achievement.fresh': {label: 'Cleared stale achievement', icon: 'pi pi-bell', severity: 'success'},
+    'threshold.reset': {label: 'Reset swap threshold', icon: 'pi pi-refresh', severity: 'warn'},
 }
 
 export function actionInfo(action) {

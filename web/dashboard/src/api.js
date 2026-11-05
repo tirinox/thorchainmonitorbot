@@ -95,6 +95,10 @@ export const api = {
     setAchievementStale: (key, specialization, stale) =>
         request('POST', '/achievements/stale', {body: {key, specialization, stale}}),
 
+    thresholds: () => request('GET', '/thresholds'),
+    // direction: 'BTC.BTC>ETH.ETH'; null drops the bars of all directions
+    resetThresholds: (direction) => request('POST', '/thresholds/reset', {body: {direction: direction || null}}),
+
     logs: (filters) => request('GET', '/logs', {query: filters}),
 
     summary: () => request('GET', '/summary'),
