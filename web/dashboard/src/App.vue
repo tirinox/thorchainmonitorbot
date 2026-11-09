@@ -16,6 +16,7 @@ const nav = [
   {to: '/', label: 'Status', icon: 'pi pi-home'},
   {to: '/overview', label: 'Overview', icon: 'pi pi-chart-bar'},
   {to: '/jobs', label: 'Jobs', icon: 'pi pi-list-check'},
+  {to: '/thresholds', label: 'Thresholds', icon: 'pi pi-gauge'},
   {to: '/calendar', label: 'Calendar', icon: 'pi pi-calendar'},
   {to: '/achievements', label: 'Achievements', icon: 'pi pi-trophy'},
   {to: '/logs', label: 'Logs', icon: 'pi pi-history'},

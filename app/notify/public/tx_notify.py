@@ -15,6 +15,7 @@ from models.price import PriceHolder
 from models.tx import ThorAction, EventLargeTransaction
 from notify.dup_stop import TxDeduplicatorSenderCooldown
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
+from notify.public.swap_dyn_threshold import DirectionalThreshold, swap_direction
 
 
 class GenericTxNotifier(INotified, WithDelegates, WithLogger):
@@ -201,6 +202,7 @@ class SwapTxNotifier(GenericTxNotifier):
         self.swap_start_deduplicator = EventDbTxDeduplicator(deps.db, StreamingSwapStartTxNotifier.DEDUP_COMPONENT)
         self.dbg_ignore_traders = False
         self.arb_detector = ArbBotDetector(deps)
+        self.dyn_threshold = DirectionalThreshold.from_config(deps.db, deps.cfg)  # None if turned off
 
     async def _check_if_they_announced_as_started(self, txs: List[ThorAction]):
         if not txs:
@@ -280,6 +282,34 @@ class SwapTxNotifier(GenericTxNotifier):
         return event
 
     async def is_tx_suitable(self, tx: ThorAction, min_rune_volume, ph: PriceHolder, curve_mult=None):
+        if not await self._is_tx_suitable_statically(tx, min_rune_volume, ph, curve_mult):
+            return False
+
+        # The start was announced, and the bar went up then: the swap is finished regardless of its volume.
+        if tx.tx_hash in self._ss_txs_started:
+            return True
+
+        return await self._clears_dynamic_threshold(tx, ph)
+
+    async def _clears_dynamic_threshold(self, tx: ThorAction, ph: PriceHolder) -> bool:
+        """A swap the static rules let through must also clear the bar of its direction, which it then raises."""
+        if not self.dyn_threshold:
+            return True
+        try:
+            direction = swap_direction(tx.first_input_tx.first_asset, tx.recipients_output.first_asset)
+        except Exception as e:
+            self.logger.warning(f'Can not tell the direction of {tx.tx_hash}, dynamic threshold skipped: {e!r}')
+            return True
+
+        volume_usd = tx.full_volume_in_rune * ph.usd_per_rune
+        if await self.dyn_threshold.check_and_record(direction, volume_usd, tx.tx_hash):
+            return True
+
+        # do not let it in later, when the bar has cooled down
+        await self.deduplicator.mark_as_seen(tx.tx_hash)
+        return False
+
+    async def _is_tx_suitable_statically(self, tx: ThorAction, min_rune_volume, ph: PriceHolder, curve_mult=None):
         # 0) debug mode
         if self.dbg_ignore_traders and tx.is_trade_asset_involved:
             self.logger.warning(f'dbg_ignore_traders = True, thus ignoring trader Tx: {tx.tx_hash}')

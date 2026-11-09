@@ -24,6 +24,7 @@ class AuditAction:
     FLAG_DELETE = 'flag.delete'
     ACHIEVEMENT_STALE = 'achievement.stale'
     ACHIEVEMENT_FRESH = 'achievement.fresh'
+    THRESHOLD_RESET = 'threshold.reset'
 
     DESTRUCTIVE = {JOB_DELETE, FLAG_DELETE}
     # what counts as "changed" for the "last changed by" hints (runs are not changes)

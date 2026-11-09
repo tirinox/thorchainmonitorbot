@@ -324,6 +324,17 @@ tx:
 
     hide_arbitrage_bots: true
 
+    # A bar per swap direction (BTC.BTC>ETH.ETH) on top of the thresholds below, against spam of similar swaps.
+    # Every announced swap (start, or finish if there was no start) raises the bar of its direction to
+    # volume x (1 + growth): a series of equal swaps gives one message, only bigger ones pass.
+    # The bar then falls back: it halves every half_life (once it is below the static threshold, it does nothing).
+    # A finish of a swap whose start was announced is never held back. See the "Swap thresholds" page of the dashboard.
+    dynamic_threshold:
+      enabled: true
+      growth: 0.4
+      half_life: 30m
+      max_bar_usd: 50M
+
     also_trigger_when:
       dex_aggregator_used:
         min_usd_total: 1000  # also: swaps this big get the DEX swap-out decoded on-chain (actual amount, recipient)
