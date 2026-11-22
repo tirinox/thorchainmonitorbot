@@ -148,11 +148,20 @@ class PersonalSwapTracker(BaseFetcher, INotified):
     RESULT_NOT_FOUND = 'not_found'
     RESULT_NOT_SWAP = 'not_swap'
 
-    @staticmethod
-    def normalize_tx_id(s: str) -> str:
+    # a tx hash anywhere in a text, with or without 0x; a longer hex run is not one
+    TX_HASH_RE = re.compile(r'(?<![0-9a-fA-F])(?:0x|0X)?([0-9a-fA-F]{64})(?![0-9a-fA-F])')
+
+    @classmethod
+    def normalize_tx_id(cls, s: str) -> str:
         """A THORChain tx id out of what the user typed: '' when it is not one"""
         s = (s or '').strip().removeprefix('0x').removeprefix('0X').upper()
         return s if re.fullmatch(r'[0-9A-F]{64}', s) else ''
+
+    @classmethod
+    def find_tx_id(cls, text: str) -> str:
+        """The first tx hash in a message, upper case; '' when there is none"""
+        m = cls.TX_HASH_RE.search(text or '')
+        return m.group(1).upper() if m else ''
 
     async def track_by_hash(self, tx_id: str, user_id, loc=None):
         """

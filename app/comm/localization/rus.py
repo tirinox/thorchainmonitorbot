@@ -694,7 +694,7 @@ class RussianLocalization(BaseLocalization):
         lines.append(f'Транзакция: {self._swap_track_links(track)}' + (f' {out_links}' if out_links else ''))
         return '\n'.join(lines)
 
-    TEXT_TRACK_USAGE = ('Пришлите хеш обмена: <code>/track &lt;txid&gt;</code>\n'
+    TEXT_TRACK_USAGE = ('Пришлите хеш обмена: <code>/track &lt;txid&gt;</code> или просто вставьте хеш.\n'
                         'Я буду следить за ним, пока деньги не выплатят или не вернут.')
     TEXT_TRACK_UNAVAILABLE = '😔 Слежение за обменами в этом боте выключено.'
 

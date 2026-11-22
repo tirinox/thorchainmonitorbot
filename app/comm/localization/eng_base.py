@@ -1039,7 +1039,7 @@ class BaseLocalization(ABC):  # == English
         lines.append(f'Transaction: {self._swap_track_links(track)}' + (f' {out_links}' if out_links else ''))
         return '\n'.join(lines)
 
-    TEXT_TRACK_USAGE = ('Send me the hash of a swap: <code>/track &lt;txid&gt;</code>\n'
+    TEXT_TRACK_USAGE = ('Send me the hash of a swap: <code>/track &lt;txid&gt;</code>, or just paste the hash.\n'
                         'I will follow it until the money is paid out or refunded.')
     TEXT_TRACK_UNAVAILABLE = '😔 Swap tracking is off on this bot.'
 

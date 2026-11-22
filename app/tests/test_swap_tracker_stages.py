@@ -288,6 +288,19 @@ def test_affiliate_conversion_swap_is_not_the_users_fee():
     assert rune_props.build_action(ts=1).meta_swap.liquidity_fee == 100
 
 
+def test_tx_hash_in_a_message():
+    from notify.personal.swap_tracker import PersonalSwapTracker as T
+    tx = 'ab' * 32
+    assert T.find_tx_id(f'what about this one? 0x{tx} thanks') == tx.upper()
+    assert T.find_tx_id(f'https://runescan.io/tx/{tx.upper()}') == tx.upper()
+    assert T.find_tx_id(tx) == tx.upper()
+    assert T.find_tx_id(tx + 'f') == ''  # 65 hex chars is not a hash
+    assert T.find_tx_id(tx[:-1]) == ''  # neither are 63
+    assert T.find_tx_id('bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh') == ''
+    assert T.find_tx_id('') == T.find_tx_id(None) == ''
+    assert T.normalize_tx_id(' 0x' + tx + ' ') == tx.upper() and T.normalize_tx_id('xyz') == ''
+
+
 def test_swap_track_round_trips_through_json():
     track = SwapTrack(tx_id=TX, users={'123': SwapTrack.ROLE_SENDER, '-45': SwapTrack.ROLE_RECIPIENT},
                       from_address='bc1qsender', dest_address='0xdead', in_asset='BTC.BTC', in_amount=50_000_000,

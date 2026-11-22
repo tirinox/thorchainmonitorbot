@@ -12,6 +12,7 @@ from lib.depcont import DepContainer
 from lib.new_feature import Features
 from lib.texts import kbd
 from notify.personal.scheduled import PersonalPeriodicNotificationService
+from notify.personal.swap_tracker import PersonalSwapTracker
 from notify.public.cap_notify import LiquidityCapNotifier
 from notify.user_registry import UserRegistry
 from .admin_menu import AdminDialog
@@ -193,8 +194,18 @@ class MainMenuDialog(BaseDialog):
     @message_handler(commands='track', state='*')
     async def cmd_track(self, message: Message):
         # /track <txid>: follow a swap to its outbound or refund, whether or not a wallet of the user is in it
+        await self._track(message, message.get_args())
+
+    @message_handler(filters.ChatTypeFilter(chat_type=[ChatType.PRIVATE]), regexp=PersonalSwapTracker.TX_HASH_RE.pattern,
+                     state='*')
+    async def on_tx_hash_message(self, message: Message):
+        # a tx hash pasted in a private chat, with no command, is a /track; in a group the command is needed,
+        # as the hashes of a discussion are not requests
+        await self._track(message, PersonalSwapTracker.find_tx_id(message.text))
+
+    async def _track(self, message: Message, raw_tx_id: str):
         tracker = self.deps.swap_tracker
-        tx_id = tracker.normalize_tx_id(message.get_args()) if tracker else ''
+        tx_id = tracker.normalize_tx_id(raw_tx_id) if tracker else ''
         if not tracker:
             text = self.loc.TEXT_TRACK_UNAVAILABLE
         elif not tx_id:
@@ -202,6 +213,8 @@ class MainMenuDialog(BaseDialog):
         else:
             await self.start_typing(message)
             result, text = await tracker.track_by_hash(tx_id, self.user_id(message), self.loc)
+            if result == tracker.RESULT_FINISHED:
+                return  # over already: the summary alone has gone out
             text = text or self.loc.text_track_result(result, tx_id)
         await message.answer(text, disable_web_page_preview=True, disable_notification=True)
 
