@@ -211,6 +211,15 @@ class MainMenuDialog(BaseDialog):
         elif not tx_id:
             text = self.loc.TEXT_TRACK_USAGE
         else:
+            used = await tracker.accept_request(tx_id, self.user_id(message))
+            if used is None:
+                return  # a repeat of a swap followed already: ignored
+            if used >= tracker.max_active_per_user:
+                text = self.loc.text_swap_track_limit(tracker.max_active_per_user, manual=True)
+                await message.answer(text, disable_web_page_preview=True, disable_notification=True)
+                return
+            await message.answer(self.loc.text_track_taken(tx_id, used + 1, tracker.max_active_per_user),
+                                 disable_web_page_preview=True, disable_notification=True)
             await self.start_typing(message)
             result, text = await tracker.track_by_hash(tx_id, self.user_id(message), self.loc)
             if result == tracker.RESULT_FINISHED:

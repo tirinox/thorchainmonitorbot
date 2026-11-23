@@ -164,6 +164,22 @@ class PersonalSwapTracker(BaseFetcher, INotified):
         m = cls.TX_HASH_RE.search(text or '')
         return m.group(1).upper() if m else ''
 
+    REQUEST_LOCK_SEC = 60  # a hash sent again while the first request is still being looked up is a repeat
+
+    async def accept_request(self, tx_id: str, user_id):
+        """
+        Before the slow lookup of /track: None when it is a repeat (the user follows this swap already, or asked
+        for it a moment ago), else the number of swaps the user follows now, for the instant "taken" reply.
+        """
+        user = str(user_id)
+        active = await self.load_active()
+        if any(t.tx_id == tx_id and user in t.users for t in active):
+            return None
+        r = await self.deps.db.get_redis()
+        if not await r.set(f'SwapTrack:Asked:{user}:{tx_id}', '1', ex=self.REQUEST_LOCK_SEC, nx=True):
+            return None
+        return sum(user in t.users for t in active)
+
     async def track_by_hash(self, tx_id: str, user_id, loc=None):
         """
         The /track command: follow a swap for this user whether or not a wallet of theirs is in it.

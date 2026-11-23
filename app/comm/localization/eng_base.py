@@ -1050,6 +1050,9 @@ class BaseLocalization(ABC):  # == English
                 f"New swaps won't be tracked until one of them completes.\n"
                 f'If a wallet swaps all day long, turn off "Track swaps" for it in "My wallets".')
 
+    def text_track_taken(self, tx_id: str, used: int, limit: int):
+        return f'🔎 Got it, looking up the swap {self.link_to_tx(tx_id)}… Swaps tracked: {used} of {limit}.'
+
     def text_track_result(self, result: str, tx_id: str):
         tx = self.link_to_tx(tx_id)
         return {

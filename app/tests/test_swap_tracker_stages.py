@@ -351,5 +351,26 @@ async def test_limit_of_tracked_swaps_per_user():
     assert result == tracker.RESULT_LIMIT and 'Try again' in text and len(sent) == 1
 
 
+@pytest.mark.asyncio
+async def test_accept_request_counts_and_ignores_repeats():
+    from lib.config import SubConfig
+    from lib.depcont import DepContainer
+    from notify.personal.swap_tracker import PersonalSwapTracker
+    from tests.fakes import FakeDB
+
+    deps = DepContainer()
+    deps.cfg = SubConfig({})
+    deps.db = FakeDB()
+    tracker = PersonalSwapTracker(deps)
+    await tracker._save(SwapTrack(tx_id='T0', users={'u1': SwapTrack.ROLE_WATCHER}, from_address='a',
+                                  dest_address='b', in_asset='BTC.BTC', in_amount=1, out_asset='ETH.ETH',
+                                  volume_usd=1.0, memo_str='=:e', start_height=1, started_ts=1.0), activate=True)
+
+    assert await tracker.accept_request('T0', 'u1') is None  # followed already
+    assert await tracker.accept_request('T0', 'u2') == 0  # someone else's track: u2 joins it
+    assert await tracker.accept_request('N1', 'u1') == 1  # new: u1 follows one swap now
+    assert await tracker.accept_request('N1', 'u1') is None  # sent again while it is looked up
+
+
 async def _async(value):
     return value

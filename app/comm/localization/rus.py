@@ -706,6 +706,9 @@ class RussianLocalization(BaseLocalization):
                 f'За новыми обменами не слежу, пока какой-нибудь из них не завершится.\n'
                 f'Если кошелёк меняет весь день, выключите для него «Следить за обменами» в «Моих кошельках».')
 
+    def text_track_taken(self, tx_id: str, used: int, limit: int):
+        return f'🔎 Принял, ищу обмен {self.link_to_tx(tx_id)}… Отслеживается обменов: {used} из {limit}.'
+
     def text_track_result(self, result: str, tx_id: str):
         tx = self.link_to_tx(tx_id)
         return {
