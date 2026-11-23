@@ -85,6 +85,9 @@ class FakeRedis:
     async def get(self, name):
         return self.strings.get(name)
 
+    async def exists(self, *names):
+        return sum(n in self.strings or n in self.hashes or n in self.sets for n in names)
+
     async def mget(self, keys):
         return [self.strings.get(k) for k in keys]
 

@@ -309,3 +309,47 @@ def test_swap_track_round_trips_through_json():
     assert SwapTrack.from_json(track.to_json()) == track
     assert track.my_address('123') == 'bc1qsender' and track.my_address(-45) == '0xdead'
     assert (track.src_chain, track.dst_chain, track.in_amount_float) == ('BTC', 'ETH', 0.5)
+
+
+@pytest.mark.asyncio
+async def test_limit_of_tracked_swaps_per_user():
+    from types import SimpleNamespace
+    from lib.config import SubConfig
+    from lib.depcont import DepContainer
+    from notify.personal.swap_tracker import PersonalSwapTracker
+    from comm.localization.eng_base import BaseLocalization
+    from tests.fakes import FakeDB
+
+    sent = []
+
+    async def send(channel, message, **_):
+        sent.append((channel.channel_id, message.text))
+
+    deps = DepContainer()
+    deps.cfg = SubConfig({'personal': {'swap_tracker': {'max_active_per_user': 2}}})
+    deps.db = FakeDB()
+    deps.settings_manager = SimpleNamespace(get_settings=lambda _u: _async({}))
+    deps.loc_man = SimpleNamespace(get_from_db=lambda _u, _db: _async(BaseLocalization(None)))
+    deps.broadcaster = SimpleNamespace(safe_send_message_rate=send)
+    tracker = PersonalSwapTracker(deps)
+
+    for i in range(2):
+        await tracker._save(SwapTrack(tx_id=f'T{i}', users={'u1': SwapTrack.ROLE_SENDER}, from_address='a',
+                                      dest_address='b', in_asset='BTC.BTC', in_amount=1, out_asset='ETH.ETH',
+                                      volume_usd=1.0, memo_str='=:e', start_height=1, started_ts=1.0), activate=True)
+    tracker._users_of_swap = lambda _swap: _async({'u1': SwapTrack.ROLE_SENDER})
+
+    # found by the scanner: skipped, and the owner is told once a day, not per swap
+    for tx in ('N1', 'N2'):
+        result, _ = await tracker._start_tracking(SimpleNamespace(tx_id=tx))
+        assert result == tracker.RESULT_ALREADY
+    assert len(sent) == 1 and '2 swaps' in sent[0][1]
+
+    # asked by /track: refused with a reply, no broadcast
+    result, text = await tracker._start_tracking(SimpleNamespace(tx_id='M1'), users={'u1': SwapTrack.ROLE_WATCHER},
+                                                 reply_loc=BaseLocalization(None))
+    assert result == tracker.RESULT_LIMIT and 'Try again' in text and len(sent) == 1
+
+
+async def _async(value):
+    return value

@@ -1043,6 +1043,13 @@ class BaseLocalization(ABC):  # == English
                         'I will follow it until the money is paid out or refunded.')
     TEXT_TRACK_UNAVAILABLE = '😔 Swap tracking is off on this bot.'
 
+    def text_swap_track_limit(self, limit: int, manual=False):
+        if manual:
+            return f"✋ You're already tracking {limit} swaps, the limit per user. Try again once one of them completes."
+        return (f'✋ <b>Tracking limit reached: {limit} swaps of your wallets are in progress.</b> '
+                f"New swaps won't be tracked until one of them completes.\n"
+                f'If a wallet swaps all day long, turn off "Track swaps" for it in "My wallets".')
+
     def text_track_result(self, result: str, tx_id: str):
         tx = self.link_to_tx(tx_id)
         return {

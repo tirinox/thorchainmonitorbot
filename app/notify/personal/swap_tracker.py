@@ -147,6 +147,7 @@ class PersonalSwapTracker(BaseFetcher, INotified):
     RESULT_ALREADY = 'already'
     RESULT_NOT_FOUND = 'not_found'
     RESULT_NOT_SWAP = 'not_swap'
+    RESULT_LIMIT = 'limit'  # the user follows max_active_per_user swaps already
 
     # a tx hash anywhere in a text, with or without 0x; a longer hex run is not one
     TX_HASH_RE = re.compile(r'(?<![0-9a-fA-F])(?:0x|0X)?([0-9a-fA-F]{64})(?![0-9a-fA-F])')
@@ -197,20 +198,24 @@ class PersonalSwapTracker(BaseFetcher, INotified):
             users = await self._users_of_swap(swap)
             if not users or exists:
                 return self.RESULT_ALREADY, None
-
-            # an address of a bot swaps all day long: cap the swaps followed for one user
-            active = await self.load_active()
-            for user in list(users):
-                if sum(user in t.users for t in active) >= self.max_active_per_user:
-                    self.logger.warning(f'User {user} has too many tracked swaps, skipping {swap.tx_id}')
-                    users.pop(user)
-            if not users:
-                return self.RESULT_ALREADY, None
         elif exists and await r.sismember(self.KEY_ACTIVE, swap.tx_id):
-            # asked by /track while the swap is already followed: just add the user to it
+            # asked by /track while the swap is already followed: just add the user to it, it costs no polls
             track = SwapTrack.from_json(await r.get(self.key(swap.tx_id)))
             track.users.update(users)
             await self._save(track)
+            return self.RESULT_ALREADY, None
+
+        # an address of a bot swaps all day long: cap the swaps followed for one user
+        active = await self.load_active()
+        over = [u for u in users if sum(u in t.users for t in active) >= self.max_active_per_user]
+        if over and manual:
+            return self.RESULT_LIMIT, (reply_loc.text_swap_track_limit(self.max_active_per_user, manual=True)
+                                       if reply_loc is not None else None)
+        for user in over:
+            self.logger.warning(f'User {user} has too many tracked swaps, skipping {swap.tx_id}')
+            users.pop(user)
+            await self._warn_limit(user)
+        if not users:
             return self.RESULT_ALREADY, None
 
         now = now_ts()
@@ -506,6 +511,23 @@ class PersonalSwapTracker(BaseFetcher, INotified):
                     await self._save(track)
                 else:
                     await self._drop(track)
+
+    LIMIT_WARN_EVERY_SEC = DAY  # a bot's address stays at the limit for long: tell its owner once a day
+
+    async def _warn_limit(self, user: str):
+        r = await self.deps.db.get_redis()
+        if not await r.set(f'SwapTrack:LimitWarned:{user}', 1, nx=True, ex=self.LIMIT_WARN_EVERY_SEC):
+            return
+        try:
+            settings = await self.deps.settings_manager.get_settings(user)
+            if SettingsContext.is_inactive_s(settings):
+                return
+            loc = await self.deps.loc_man.get_from_db(user, self.deps.db)
+            await self.deps.broadcaster.safe_send_message_rate(
+                ChannelDescriptor(SettingsManager.get_platform(settings), user),
+                BoardMessage(loc.text_swap_track_limit(self.max_active_per_user), msg_type=self.MSG_TYPE))
+        except Exception as e:
+            self.logger.exception(f'Failed to warn user {user} about the limit of tracked swaps: {e!r}')
 
     async def _send_all(self, track: SwapTrack, build: MessageBuilder, mute_button=False):
         settings_dic = await self.deps.settings_manager.get_settings_multi(list(track.users.keys()))
