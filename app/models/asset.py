@@ -312,6 +312,15 @@ class Asset:
         'x': 'XRP.XRP',
         'g': 'GAIA.ATOM',
         'tr': 'TRON.TRX',
+        # the rest of thornode's common/asset.go ShortCode
+        'o': 'SOL.SOL',
+        'ta': 'TAO.TAO',
+        'z': 'ZEC.ZEC',
+        'm': 'XMR.XMR',
+        'p': 'POL.POL',
+        'u': 'SUI.SUI',
+        'do': 'DOT.DOT',
+        'ad': 'ADA.ADA',
     }
 
     ABBREVIATE_GAS_ASSETS = {

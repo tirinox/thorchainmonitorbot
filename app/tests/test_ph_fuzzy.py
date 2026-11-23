@@ -24,3 +24,10 @@ def test_fuzzy_pool_search(sample_price_holder: PriceHolder):
     assert len(sample_price_holder.pool_info_map) == 45
 
     assert sample_price_holder.pool_fuzzy_first('g') == 'GAIA.ATOM'
+
+
+def test_short_codes_of_new_chains(sample_price_holder: PriceHolder):
+    # thornode's short codes win over a fuzzy match: "z" once found TRON.USDT-...Z... instead of ZEC
+    for code, asset in [('z', 'ZEC.ZEC'), ('m', 'XMR.XMR'), ('o', 'SOL.SOL'), ('ta', 'TAO.TAO'),
+                        ('p', 'POL.POL'), ('u', 'SUI.SUI'), ('do', 'DOT.DOT'), ('ad', 'ADA.ADA')]:
+        assert sample_price_holder.pool_fuzzy_first(code) == asset
