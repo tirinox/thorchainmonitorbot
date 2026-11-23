@@ -16,11 +16,11 @@ def test_expl1():
     assert get_explorer_url_to_address(NetworkIdents.MAINNET, Chains.XMR, 'xmr-address') == \
            'https://xmrchain.net/search?value=xmr-address'
     assert get_explorer_url_to_address(NetworkIdents.MAINNET, Chains.ZEC, 'zec-address') == \
-           'https://zcashblockexplorer.com/address/zec-address'
+           'https://blockchair.com/zcash/address/zec-address'
     assert get_explorer_url_to_tx(NetworkIdents.MAINNET, Chains.XMR, 'xmr-tx') == \
            'https://xmrchain.net/search?value=xmr-tx'
     assert get_explorer_url_to_tx(NetworkIdents.MAINNET, Chains.ZEC, 'zec-tx') == \
-           'https://zcashblockexplorer.com/tx/zec-tx'
+           'https://blockchair.com/zcash/transaction/zec-tx'
 
 
 def uri_parse():
