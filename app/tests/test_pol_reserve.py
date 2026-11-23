@@ -298,7 +298,6 @@ def _make_fetcher(days, monkeypatch) -> PolReserveFetcher:
     connector = _FakeConnector()
     fetcher.deps = SimpleNamespace(
         thor_connector=connector,
-        thor_connector_archive=connector,
         midgard_connector=_FakeMidgard(),
         mimir_cache=_FakeMimir(),
         db=_FakeDB(),
@@ -381,6 +380,20 @@ async def test_fetcher_does_not_cache_incomplete_snapshots(monkeypatch):
         await fetcher.fetch()
 
     assert not fetcher.deps.db.redis.hashes[PolReserveFetcher.DB_KEY_DAY_END]
+
+
+@pytest.mark.asyncio
+async def test_block_timestamp_error_carries_the_node_answer(monkeypatch):
+    fetcher = _make_fetcher(2, monkeypatch)
+
+    async def pruned(height):
+        return {'jsonrpc': '2.0', 'id': -1, 'error': {
+            'code': -32603, 'message': 'Internal error',
+            'data': f'height {height} is not available, lowest height is 28616001'}}
+
+    fetcher.deps.thor_connector.query_tendermint_block_raw = pruned
+    with pytest.raises(ConnectionError, match='lowest height is 28616001'):
+        await fetcher.get_block_timestamp(28605230)
 
 
 # ---- Infographic ----

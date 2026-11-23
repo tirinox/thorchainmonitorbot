@@ -3,7 +3,6 @@ import json
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Callable, Awaitable
 
-from api.aionode.connector import ThorConnector
 from jobs.fetch.base import BaseFetcher
 from lib.constants import thor_to_float, THOR_BLOCK_TIME, POL_RESERVE_MODULE, ADR24_FIRST_DEPLOY_BLOCK
 from lib.date_utils import DAY, HOUR, now_ts, date_parse_rfc
@@ -79,11 +78,9 @@ class PolReserveFetcher(BaseFetcher):
         self.days = days
         self._module_address = ''
 
-    @property
-    def archive_connector(self) -> ThorConnector:
-        return self.deps.thor_connector_archive or self.deps.thor_connector
-
     # ---- Snapshots ----
+    # The history is read from the main node (the backup is its fallback), not from thor_connector_archive:
+    # the public backup gateway is restored from snapshots and keeps only a few days of blocks.
 
     async def get_module_address(self) -> str:
         if not self._module_address:
@@ -93,9 +90,8 @@ class PolReserveFetcher(BaseFetcher):
             self._module_address = balance.address
         return self._module_address
 
-    async def load_snapshot(self, height: int = 0, timestamp: float = 0,
-                            connector: Optional[ThorConnector] = None) -> PolReserveSnapshot:
-        connector = connector or (self.archive_connector if height else self.deps.thor_connector)
+    async def load_snapshot(self, height: int = 0, timestamp: float = 0) -> PolReserveSnapshot:
+        connector = self.deps.thor_connector
         address = await self.get_module_address()
 
         pools = await connector.query_pools(height or None)
@@ -141,10 +137,12 @@ class PolReserveFetcher(BaseFetcher):
     # ---- History ----
 
     async def get_block_timestamp(self, height: int) -> float:
-        raw = await self.archive_connector.query_tendermint_block_raw(height)
+        raw = await self.deps.thor_connector.query_tendermint_block_raw(height)
         time_str = safe_get(raw, 'result', 'block', 'header', 'time') or safe_get(raw, 'block', 'header', 'time')
         if not time_str:
-            raise ConnectionError(f'Failed to load the timestamp of block {height}')
+            # e.g. a pruned node: "height 28605230 is not available, lowest height is 28616001"
+            error = safe_get(raw, 'error', 'data') or safe_get(raw, 'error') or 'no block in the answer'
+            raise ConnectionError(f'Failed to load the timestamp of block {height}: {error}')
         return date_parse_rfc(time_str).replace(tzinfo=timezone.utc).timestamp()
 
     async def _load_cached_day_end(self, date: str) -> Optional[PolReserveSnapshot]:
