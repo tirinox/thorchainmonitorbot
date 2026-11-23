@@ -148,3 +148,17 @@ def test_migrate_memo_parses_and_ignores_suffix(memo):
 ])
 def test_action_type(x, y, result):
     assert is_action(x, y) == result
+
+
+@pytest.mark.parametrize('memo, bps, target, built', [
+    ('BONDYIELD:thor1nyq624xyz:4000', 4000, '', 'BONDYIELD:thor1nyq624xyz:4000'),
+    ('bondyield:thor1nyq624xyz:10000:thor1payout', 10000, 'thor1payout', 'BONDYIELD:thor1nyq624xyz:10000:thor1payout'),
+    ('BONDYIELD:thor1nyq624xyz:0', 0, '', 'BONDYIELD:thor1nyq624xyz:0'),
+])
+def test_bond_yield_memo(memo, bps, target, built):
+    m = THORMemo.parse_memo(memo)
+    assert m.action == ActionType.BOND_YIELD
+    assert m.node_address == 'thor1nyq624xyz'
+    assert m.withdraw_portion_bp == bps
+    assert m.dest_address == target
+    assert m.build() == built

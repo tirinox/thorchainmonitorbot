@@ -65,6 +65,7 @@ class ActionType(Enum):
     BOND = 'bond'
     UNBOND = 'unbond'
     LEAVE = 'leave'
+    BOND_YIELD = 'bondyield'
 
     # Prospective
     LIMIT_ORDER = 'limit_order'
@@ -124,6 +125,7 @@ MEMO_ACTION_TABLE = {
     "bond": ActionType.BOND,
     "unbond": ActionType.UNBOND,
     "leave": ActionType.LEAVE,
+    "bondyield": ActionType.BOND_YIELD,
     "reserve": ActionType.RESERVE,
     "refund": ActionType.REFUND,
     "noop": ActionType.NOOP,
@@ -382,6 +384,15 @@ class THORMemo:
             # 0     1
             return cls.leave(node_address=ith(components, 1, ''))
 
+        elif tx_type == ActionType.BOND_YIELD:
+            # BONDYIELD:NODEADDR:BPS:PAYOUTTARGET (a bond provider: the share of the future rewards paid out)
+            # 0         1        2   3
+            return cls.bond_yield(
+                node_address=ith(components, 1, ''),
+                bps=ith(components, 2, 0, is_number=True),
+                payout_target=ith(components, 3, ''),
+            )
+
         elif tx_type == ActionType.OUTBOUND:
             return cls.outbound(tx_id=ith(components, 1, ''))
 
@@ -528,6 +539,11 @@ class THORMemo:
 
         elif self.action == ActionType.LEAVE:
             memo = f"LEAVE:{self.node_address}"
+
+        elif self.action == ActionType.BOND_YIELD:
+            memo = f'BONDYIELD:{self.node_address}:{self.withdraw_portion_bp}'
+            if self.dest_address:
+                memo += f':{self.dest_address}'
 
         elif self.action == ActionType.RESERVE:
             memo = 'RESERVE'
@@ -700,6 +716,12 @@ class THORMemo:
     @classmethod
     def leave(cls, node_address: str):
         return cls(ActionType.LEAVE, node_address=node_address)
+
+    @classmethod
+    def bond_yield(cls, node_address: str, bps: int, payout_target: str = ''):
+        # the paid-out share of the rewards goes to withdraw_portion_bp, the payout target to dest_address
+        return cls(ActionType.BOND_YIELD, node_address=node_address, withdraw_portion_bp=bps,
+                   dest_address=payout_target)
 
     @classmethod
     def limit_order(cls):
