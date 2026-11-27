@@ -48,9 +48,11 @@ restart: # Restart containers.
 
 
 .PHONY: poke
-poke: # Restart only the bot container, API server, renderer and dashboard without restarting the database server.
+poke: # Restart only the bot container, API server, renderer and dashboard without restarting the database server. The dashboard is rebuilt: its frontend is baked into the image.
 	git pull
-	@docker compose restart $(BOTNAME) api renderer dashboard nginx
+	@docker compose build dashboard
+	@docker compose up -d dashboard
+	@docker compose restart $(BOTNAME) api renderer nginx
 	@make -s logs
 
 
